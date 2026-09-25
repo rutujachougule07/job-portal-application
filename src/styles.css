@@ -1,0 +1,159 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Manrope", sans-serif;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-navy: #063B78;
+  --color-navy-dark: #082F63;
+  --color-royal: #125BB5;
+  --color-bright-blue: #1769C2;
+  --color-yellow: #FFC400;
+  --color-bright-yellow: #FFD21F;
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: #F5F8FC;
+  --foreground: #10233F;
+  --card: #FFFFFF;
+  --card-foreground: #10233F;
+  --popover: #FFFFFF;
+  --popover-foreground: #10233F;
+  --primary: #063B78;
+  --primary-foreground: #FFFFFF;
+  --secondary: #125BB5;
+  --secondary-foreground: #FFFFFF;
+  --muted: #EBF1F8;
+  --muted-foreground: #5B6B7F;
+  --accent: #FFC400;
+  --accent-foreground: #082F63;
+  --destructive: #DC2626;
+  --destructive-foreground: #FFFFFF;
+  --border: #DCE5F0;
+  --input: #DCE5F0;
+  --ring: #FFC400;
+  --hero-overlay: linear-gradient(135deg, rgba(8, 47, 99, 0.94) 0%, rgba(6, 59, 120, 0.88) 50%, rgba(18, 91, 181, 0.82) 100%);
+  --shadow-card: 0 4px 16px rgba(6, 59, 120, 0.08);
+  --shadow-card-hover: 0 12px 28px rgba(6, 59, 120, 0.16);
+  --shadow-elevated: 0 16px 40px rgba(6, 59, 120, 0.18);
+  --shadow-yellow: 0 8px 20px rgba(255, 196, 0, 0.35);
+}
+
+.dark {
+  --background: #F5F8FC;
+  --foreground: #10233F;
+  --card: #FFFFFF;
+  --card-foreground: #10233F;
+  --popover: #FFFFFF;
+  --popover-foreground: #10233F;
+  --primary: #063B78;
+  --primary-foreground: #FFFFFF;
+  --secondary: #125BB5;
+  --secondary-foreground: #FFFFFF;
+  --muted: #EBF1F8;
+  --muted-foreground: #5B6B7F;
+  --accent: #FFC400;
+  --accent-foreground: #082F63;
+  --border: #DCE5F0;
+  --input: #DCE5F0;
+  --ring: #FFC400;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    letter-spacing: -0.01em;
+    min-width: 320px;
+  }
+  button, a, input, select { letter-spacing: 0; }
+  ::selection { background: var(--color-yellow); color: #082F63; }
+}
+
+@layer components {
+  .nav-link {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #10233F;
+    transition: all 0.2s ease;
+  }
+  .nav-link:hover {
+    color: #125BB5;
+  }
+  .bg-hero-overlay {
+    background: var(--hero-overlay);
+  }
+  .btn-yellow {
+    background-color: #FFC400;
+    color: #082F63;
+    font-weight: 700;
+    transition: all 0.2s ease;
+  }
+  .btn-yellow:hover {
+    background-color: #FFD21F;
+    box-shadow: var(--shadow-yellow);
+    transform: translateY(-1px);
+  }
+  .btn-navy {
+    background-color: #063B78;
+    color: #FFFFFF;
+    font-weight: 600;
+    transition: all 0.2s ease;
+  }
+  .btn-navy:hover {
+    background-color: #082F63;
+  }
+  .card-realjob {
+    background-color: #FFFFFF;
+    border: 1px solid #DCE5F0;
+    border-radius: 0.75rem;
+    box-shadow: var(--shadow-card);
+    transition: all 0.25s ease;
+  }
+  .card-realjob:hover {
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-2px);
+    border-color: #1769C2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

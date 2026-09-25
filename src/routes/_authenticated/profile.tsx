@@ -1,0 +1,2 @@
+import { createFileRoute } from "@tanstack/react-router";import { GenericAdminPage } from "@/components/portal/Dashboards";
+export const Route=createFileRoute("/_authenticated/profile")({head:()=>({meta:[{title:"Profile — Karyam"},{name:"description",content:"Manage your Profile on Karyam."},{property:"og:title",content:"Profile — Karyam"},{property:"og:description",content:"Your secure Karyam Profile."},{property:"og:type",content:"website"},{name:"twitter:card",content:"summary"}]}),component:()=> <GenericAdminPage role="admin" title="Profile"/>});

@@ -1,0 +1,2 @@
+import { createFileRoute } from "@tanstack/react-router";import { SalaryPage } from "@/components/portal/Dashboards";
+export const Route=createFileRoute("/_authenticated/salary")({head:()=>({meta:[{title:"My E-Salary — Karyam"},{name:"description",content:"View salary, attendance, bonuses, deductions and payslips."},{property:"og:title",content:"My E-Salary — Karyam"},{property:"og:description",content:"Your secure salary dashboard."},{property:"og:type",content:"website"},{name:"twitter:card",content:"summary"}]}),component:()=> <SalaryPage/>});
