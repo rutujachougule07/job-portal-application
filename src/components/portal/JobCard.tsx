@@ -226,7 +226,7 @@ export function JobCard({
   job: Job;
   onApply?: (job: Job) => void;
 }) {
-  const { t } = useI18n();
+  const { t, n } = useI18n();
   const [saved, setSaved] = useState(false);
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [applied, setApplied] = useState(false);
@@ -307,11 +307,11 @@ export function JobCard({
               </span>
               <span className="inline-flex items-center gap-1 font-bold text-foreground">
                 <Wallet className="size-3.5 text-[#D4AF37]" />
-                {job.salary}
+                {n(job.salary)}
               </span>
               <span className="inline-flex items-center gap-1">
                 <Clock3 className="size-3.5 text-muted-foreground" />
-                {job.posted}
+                {n(job.posted)}
               </span>
             </div>
 
@@ -325,7 +325,7 @@ export function JobCard({
                   {job.workMode}
                 </Badge>
                 <Badge variant="outline" className="text-[11px]">
-                  {job.experience}
+                  {n(job.experience)}
                 </Badge>
                 {job.category && (
                   <Badge variant="outline" className="bg-[#D4AF37]/10 text-[#1F2937] border-[#D4AF37]/30 text-[11px]">

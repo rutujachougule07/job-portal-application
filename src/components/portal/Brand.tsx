@@ -73,10 +73,10 @@ export function Brand({
           {showTagline && (
             <div className="mt-1 flex flex-col">
               <span className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-[#125BB5] leading-tight">
-                Find Work | Find Workers
+                {t("tagline")}
               </span>
               <span className="text-[9.5px] font-bold text-[#5B6B7F] tracking-tight">
-                सर्व काही ऑनलाइन!
+                {t("marathiTagline")}
               </span>
             </div>
           )}

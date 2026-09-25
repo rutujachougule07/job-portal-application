@@ -15,6 +15,8 @@ import { PublicFooter } from "@/components/portal/PublicFooter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+import { useI18n } from "@/lib/i18n";
+
 export const Route = createFileRoute("/_authenticated/messages")({
   head: () => ({
     meta: [

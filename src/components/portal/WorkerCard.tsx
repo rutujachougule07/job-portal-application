@@ -18,12 +18,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { useI18n } from "@/lib/i18n";
 
 export type Worker = {
   id: string;
   name: string;
   profession: string;
   marathiProfession: string;
+  hindiProfession?: string;
   location: string;
   experience: string;
   expectedSalary: string;
@@ -45,6 +47,7 @@ export const workersList: Worker[] = [
     name: "Ramesh Pawar",
     profession: "Senior Electrician",
     marathiProfession: "वरिष्ठ इलेक्ट्रीशियन",
+    hindiProfession: "वरिष्ठ इलेक्ट्रीशियन",
     location: "Pune, Maharashtra",
     experience: "7 Years",
     expectedSalary: "₹25,000 / month",
@@ -64,6 +67,7 @@ export const workersList: Worker[] = [
     name: "Ganesh Patil",
     profession: "CNC Machine Operator",
     marathiProfession: "CNC मशीन ऑपरेटर",
+    hindiProfession: "सीएनसी मशीन ऑपरेटर",
     location: "Chakan, Pune",
     experience: "5 Years",
     expectedSalary: "₹28,000 / month",
@@ -83,6 +87,7 @@ export const workersList: Worker[] = [
     name: "Sunil Shinde",
     profession: "Heavy Commercial Driver",
     marathiProfession: "अवजड वाहन चालक (ड्रायव्हर)",
+    hindiProfession: "भारी वाहन चालक (ड्राइवर)",
     location: "Thane, Mumbai",
     experience: "9 Years",
     expectedSalary: "₹30,000 / month",
@@ -102,6 +107,7 @@ export const workersList: Worker[] = [
     name: "Prakash Jadhav",
     profession: "ARC & TIG Welder",
     marathiProfession: "वेल्डर (ARC / TIG)",
+    hindiProfession: "वेल्डर (ARC / TIG)",
     location: "Aurangabad / Chhatrapati Sambhajinagar",
     experience: "6 Years",
     expectedSalary: "₹24,000 / month",
@@ -121,6 +127,7 @@ export const workersList: Worker[] = [
     name: "Santosh More",
     profession: "Head Mason & Construction Supervisor",
     marathiProfession: "मुख्य गवंडी (Mason)",
+    hindiProfession: "मुख्य राजमिस्त्री (Mason)",
     location: "Nagpur, Maharashtra",
     experience: "12 Years",
     expectedSalary: "₹35,000 / month",
@@ -140,6 +147,7 @@ export const workersList: Worker[] = [
     name: "Sachin Kadam",
     profession: "Plumbing & Maintenance Specialist",
     marathiProfession: "प्लंबर व मेंटेनन्स",
+    hindiProfession: "प्लंबर व मेंटेनेंस",
     location: "Navi Mumbai, Maharashtra",
     experience: "4 Years",
     expectedSalary: "₹22,000 / month",
@@ -157,12 +165,20 @@ export const workersList: Worker[] = [
 ];
 
 export function WorkerCard({ worker }: { worker: Worker }) {
+  const { t, n, lang } = useI18n();
   const [requested, setRequested] = useState(false);
 
   const handleHireRequest = () => {
     setRequested(true);
     toast.success(`Hire request sent to ${worker.name}! They will contact you shortly.`);
   };
+
+  const displayProfession =
+    lang === "mr"
+      ? worker.marathiProfession
+      : lang === "hi"
+      ? worker.hindiProfession || worker.profession
+      : worker.profession;
 
   return (
     <div className="card-realjob p-5 flex flex-col justify-between h-full group">
@@ -187,15 +203,12 @@ export function WorkerCard({ worker }: { worker: Worker }) {
               </h3>
               <span className="inline-flex items-center gap-1 text-xs font-extrabold text-[#082F63] bg-[#FFC400] px-2 py-0.5 rounded-full">
                 <Star className="size-3 fill-[#082F63]" />
-                {worker.rating}
+                {n(worker.rating)}
               </span>
             </div>
 
             <p className="text-xs font-extrabold text-[#063B78] truncate">
-              {worker.profession}
-            </p>
-            <p className="text-[11px] font-bold text-[#125BB5]">
-              {worker.marathiProfession}
+              {displayProfession}
             </p>
 
             <div className="mt-1 flex items-center gap-2 text-xs font-semibold text-[#5B6B7F]">
@@ -210,18 +223,18 @@ export function WorkerCard({ worker }: { worker: Worker }) {
         {/* Stats Row: Experience, Salary, Availability */}
         <div className="mt-4 grid grid-cols-2 gap-2 bg-[#F5F8FC] p-2.5 rounded-lg border border-[#DCE5F0]">
           <div>
-            <span className="text-[10px] font-bold uppercase text-[#5B6B7F] block">अनुभव (Exp)</span>
-            <span className="text-xs font-extrabold text-[#10233F]">{worker.experience}</span>
+            <span className="text-[10px] font-bold uppercase text-[#5B6B7F] block">{t("experience")}</span>
+            <span className="text-xs font-extrabold text-[#10233F]">{n(worker.experience)}</span>
           </div>
           <div>
-            <span className="text-[10px] font-bold uppercase text-[#5B6B7F] block">अपेक्षित पगार</span>
-            <span className="text-xs font-black text-[#063B78]">{worker.expectedSalary}</span>
+            <span className="text-[10px] font-bold uppercase text-[#5B6B7F] block">{t("expectedSalary")}</span>
+            <span className="text-xs font-black text-[#063B78]">{n(worker.expectedSalary)}</span>
           </div>
         </div>
 
         {/* Skills Badges */}
         <div className="mt-3">
-          <span className="text-[10px] font-bold uppercase text-[#5B6B7F] block mb-1.5">प्रमुख कौशल्ये (Skills)</span>
+          <span className="text-[10px] font-bold uppercase text-[#5B6B7F] block mb-1.5">{t("keySkills")}</span>
           <div className="flex flex-wrap gap-1.5">
             {worker.skills.map((skill, idx) => (
               <Badge key={idx} variant="secondary" className="text-[10.5px] font-bold bg-[#EBF1F8] text-[#063B78] border-0">
@@ -235,10 +248,11 @@ export function WorkerCard({ worker }: { worker: Worker }) {
       {/* Action Footer */}
       <div className="mt-5 pt-3 border-t border-[#DCE5F0] flex items-center gap-2">
         <Link
-          to={`/workers/${worker.id}`}
+          to="/workers/$workerId"
+          params={{ workerId: worker.id }}
           className="flex-1 text-center py-2 px-3 rounded-lg border border-[#063B78] text-[#063B78] font-extrabold text-xs hover:bg-[#063B78] hover:text-white transition-colors"
         >
-          प्रोफाइल पहा
+          {t("viewProfile")}
         </Link>
 
         <Button
@@ -250,12 +264,12 @@ export function WorkerCard({ worker }: { worker: Worker }) {
           {requested ? (
             <span className="flex items-center gap-1">
               <CheckCircle2 className="size-3.5 text-[#082F63]" />
-              संपर्क पाठवला
+              {t("contactSent")}
             </span>
           ) : (
             <span className="flex items-center gap-1">
               <PhoneCall className="size-3.5 text-[#082F63]" />
-              कामगार हवा
+              {t("hireWorker")}
             </span>
           )}
         </Button>

@@ -20,7 +20,7 @@ import {
 import { Brand } from "./Brand";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { Button } from "@/components/ui/button";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, type TranslationKeys } from "@/lib/i18n";
 import { LanguageGate } from "./LanguageGate";
 
 type Role = "user" | "admin" | "super";
@@ -94,6 +94,24 @@ export function AppShell({ role, title, eyebrow, children }: { role: Role; title
         <nav className="space-y-1">
           {menus[role].map((item) => {
             const active = path === item.to;
+            const menuLabelKeyMap: Record<string, TranslationKeys> = {
+              Dashboard: "dashboard",
+              Jobs: "jobs",
+              Applications: "applications",
+              "E-Salary": "dashboard",
+              Notifications: "notifications",
+              Profile: "profile",
+              Applicants: "applicants",
+              Employees: "employees",
+              Reports: "reports",
+              Users: "users",
+              Employers: "employers",
+              Languages: "chooseLanguage",
+              Settings: "settings",
+            };
+            const translationKey = menuLabelKeyMap[item.label];
+            const displayLabel = translationKey ? t(translationKey) : item.label;
+
             return (
               <Link
                 key={item.to}
@@ -103,7 +121,7 @@ export function AppShell({ role, title, eyebrow, children }: { role: Role; title
                 }`}
               >
                 <item.icon className={`size-4 ${active ? "text-accent-foreground" : ""}`} />
-                {item.label}
+                {displayLabel}
               </Link>
             );
           })}

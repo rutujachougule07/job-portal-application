@@ -51,7 +51,7 @@ function Reset() {
           <Button className="w-full">Update password</Button>
         </form>
         <Button asChild variant="link" className="mt-3 w-full">
-          <Link to="/auth" search={{ mode: "login", role: "user" }}>Back to sign in</Link>
+          <Link to="/auth" search={{ mode: "login", role: "worker" }}>Back to sign in</Link>
         </Button>
       </div>
     </main>

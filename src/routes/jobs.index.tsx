@@ -17,7 +17,7 @@ import { PublicFooter } from "@/components/portal/PublicFooter";
 import { JobCard, jobs, Job } from "@/components/portal/JobCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { useI18n, getCategoryTitle } from "@/lib/i18n";
 
 export const Route = createFileRoute("/jobs/")({
   validateSearch: (search: Record<string, unknown>): { category?: string | undefined } => {
@@ -35,6 +35,7 @@ export const Route = createFileRoute("/jobs/")({
 });
 
 export function JobsListingPage() {
+  const { t, n, lang } = useI18n();
   const searchParams = Route.useSearch();
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>(searchParams.category || "all");
@@ -89,16 +90,16 @@ export function JobsListingPage() {
             <div className="relative z-10 max-w-3xl">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#FFC400] backdrop-blur mb-3">
                 <Briefcase className="size-3.5" />
-                नोकऱ्या शोधा • Find Jobs
+                {t("jobs")}
               </div>
 
               <h1 className="text-3xl sm:text-4xl font-black text-white">
-                महाराष्ट्रातील सर्वोत्तम नोकऱ्या <br />
-                <span className="text-[#FFC400]">थेट कंपनीशी संपर्क साधा</span>
+                {t("jobsInRegion")} <br />
+                <span className="text-[#FFC400]">{t("directCompanyContact")}</span>
               </h1>
 
               <p className="mt-2 text-sm text-white/90 font-medium">
-                कारखाने, बांधकाम, ड्रायव्हिंग व तांत्रिक क्षेत्रातील सर्व नोकऱ्या एकाच ठिकाणी.
+                {t("jobsSubtext")}
               </p>
 
               {/* Inline Search Bar */}
@@ -106,7 +107,7 @@ export function JobsListingPage() {
                 <div className="relative flex items-center">
                   <Search className="absolute left-3 size-4 text-[#5B6B7F]" />
                   <Input
-                    placeholder="नोकरीचे नाव किंवा कौशल्य (Job title or skill)"
+                    placeholder={t("searchJobPlaceholder")}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-9 h-11 border-0 bg-transparent text-xs text-[#10233F] font-bold focus-visible:ring-0"
@@ -119,15 +120,15 @@ export function JobsListingPage() {
                     onChange={(e) => setLocationFilter(e.target.value)}
                     className="w-full h-11 border-0 bg-transparent text-xs font-bold text-[#10233F] pl-9 pr-3 focus:outline-none"
                   >
-                    <option value="all">सर्व ठिकाणे (All Locations)</option>
-                    <option value="mumbai">Mumbai (मुंबई)</option>
-                    <option value="pune">Pune (पुणे)</option>
-                    <option value="chakan">Chakan (चाकण)</option>
+                    <option value="all">{t("allLocations")}</option>
+                    <option value="mumbai">Mumbai</option>
+                    <option value="pune">Pune</option>
+                    <option value="chakan">Chakan</option>
                     <option value="bengaluru">Bengaluru</option>
                   </select>
                 </div>
                 <Button className="btn-yellow h-11 font-black text-xs px-6">
-                  शोधा (Search)
+                  {t("search")}
                 </Button>
               </div>
             </div>
@@ -140,50 +141,50 @@ export function JobsListingPage() {
               <div className="flex items-center justify-between pb-4 border-b border-[#DCE5F0] mb-5">
                 <span className="font-black text-sm text-[#10233F] flex items-center gap-2">
                   <SlidersHorizontal className="size-4 text-[#063B78]" />
-                  फिल्टर्स (Filters)
+                  {t("filters")}
                 </span>
                 <button
                   onClick={resetFilters}
                   className="text-xs font-bold text-[#125BB5] hover:underline flex items-center gap-1"
                 >
-                  <RotateCcw className="size-3" /> रीसेट
+                  <RotateCcw className="size-3" /> {t("reset")}
                 </button>
               </div>
 
               {/* Category Filter */}
               <div className="mb-6">
                 <label className="block text-xs font-extrabold text-[#10233F] mb-2 uppercase">
-                  कामगार श्रेणी (Category)
+                  {t("jobCategory")}
                 </label>
                 <select
                   value={categoryFilter}
                   onChange={(e) => setCategoryFilter(e.target.value)}
                   className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold text-[#10233F]"
                 >
-                  <option value="all">सर्व श्रेणी (All Categories)</option>
-                  <option value="Factory Workers">Factory Workers (कारखाना)</option>
-                  <option value="Construction Workers">Construction (बांधकाम)</option>
-                  <option value="Technical Staff">Technical Staff (तांत्रिक)</option>
-                  <option value="Logistics & Drivers">Logistics & Drivers (ड्रायव्हर)</option>
-                  <option value="Skilled Workers">Skilled Workers (कुशल)</option>
-                  <option value="Electricians">Electricians (इलेक्ट्रीशियन)</option>
+                  <option value="all">{t("allCategories")}</option>
+                  <option value="Factory Workers">{getCategoryTitle("factory-workers", lang)}</option>
+                  <option value="Construction Workers">{getCategoryTitle("construction-workers", lang)}</option>
+                  <option value="Technical Staff">{getCategoryTitle("technical-staff", lang)}</option>
+                  <option value="Logistics & Drivers">{getCategoryTitle("logistics-drivers", lang)}</option>
+                  <option value="Skilled Workers">{getCategoryTitle("skilled-workers", lang)}</option>
+                  <option value="Electricians">{getCategoryTitle("electricians", lang)}</option>
                 </select>
               </div>
 
               {/* Job Type Filter */}
               <div className="mb-6">
                 <label className="block text-xs font-extrabold text-[#10233F] mb-2 uppercase">
-                  नोकरीचा प्रकार (Job Type)
+                  {t("jobTypeLabel")}
                 </label>
                 <select
                   value={typeFilter}
                   onChange={(e) => setTypeFilter(e.target.value)}
                   className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold text-[#10233F]"
                 >
-                  <option value="all">सर्व प्रकार (All Types)</option>
-                  <option value="Full-time">Full-time (पूर्ण वेळ)</option>
-                  <option value="Part-time">Part-time (अर्धा वेळ)</option>
-                  <option value="Contract">Contract (कंत्राटी)</option>
+                  <option value="all">{t("allTypes")}</option>
+                  <option value="Full-time">{t("fullTime")}</option>
+                  <option value="Part-time">{t("partTime")}</option>
+                  <option value="Contract">{t("contract")}</option>
                 </select>
               </div>
             </aside>
@@ -194,7 +195,7 @@ export function JobsListingPage() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-[#DCE5F0] mb-6">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-black text-[#10233F]">
-                    एकूण नोकऱ्या: <span className="text-[#063B78]">{filteredJobs.length}</span>
+                    {t("totalJobsCount")}: <span className="text-[#063B78]">{n(filteredJobs.length)}</span>
                   </span>
                 </div>
 
@@ -205,18 +206,18 @@ export function JobsListingPage() {
                     className="lg:hidden text-xs font-bold border-[#063B78] text-[#063B78]"
                     onClick={() => setMobileFilterOpen(true)}
                   >
-                    <Filter className="size-3.5 mr-1" /> फिल्टर्स
+                    <Filter className="size-3.5 mr-1" /> {t("filters")}
                   </Button>
 
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-[#5B6B7F] shrink-0">क्रमवारी:</span>
+                    <span className="text-xs font-bold text-[#5B6B7F] shrink-0">{t("sortByLabel")}:</span>
                     <select
                       value={sortBy}
                       onChange={(e) => setSortBy(e.target.value as any)}
                       className="h-9 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold text-[#10233F]"
                     >
-                      <option value="newest">नवीनतम (Newest First)</option>
-                      <option value="title">नावानुसार (By Title)</option>
+                      <option value="newest">{t("newestFirst")}</option>
+                      <option value="title">{t("byTitle")}</option>
                     </select>
                   </div>
                 </div>
@@ -232,12 +233,12 @@ export function JobsListingPage() {
               ) : (
                 <div className="card-realjob p-12 text-center bg-white">
                   <Briefcase className="mx-auto size-14 text-[#5B6B7F] mb-4" />
-                  <h3 className="text-xl font-black text-[#10233F]">कोणतीही नोकरी सापडली नाही</h3>
+                  <h3 className="text-xl font-black text-[#10233F]">{t("noJobsFound")}</h3>
                   <p className="text-xs font-semibold text-[#5B6B7F] mt-2">
-                    कृपया शोध शब्द बदलून पुन्हा प्रयत्न करा.
+                    {t("noJobsFoundSub")}
                   </p>
                   <Button onClick={resetFilters} className="mt-5 btn-yellow text-xs font-bold px-6">
-                    फिल्टर्स रीसेट करा
+                    {t("resetFilters")}
                   </Button>
                 </div>
               )}
@@ -251,7 +252,7 @@ export function JobsListingPage() {
             <div className="w-full max-w-xs bg-white h-full p-6 overflow-y-auto shadow-2xl flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between pb-4 border-b border-[#DCE5F0] mb-6">
-                  <span className="font-black text-base text-[#10233F]">फिल्टर्स (Filters)</span>
+                  <span className="font-black text-base text-[#10233F]">{t("filters")}</span>
                   <button onClick={() => setMobileFilterOpen(false)} className="p-1 text-[#5B6B7F]">
                     <X className="size-6" />
                   </button>
@@ -259,17 +260,17 @@ export function JobsListingPage() {
 
                 <div className="space-y-6">
                   <div>
-                    <label className="block text-xs font-extrabold text-[#10233F] mb-2 uppercase">श्रेणी</label>
+                    <label className="block text-xs font-extrabold text-[#10233F] mb-2 uppercase">{t("jobCategory")}</label>
                     <select
                       value={categoryFilter}
                       onChange={(e) => setCategoryFilter(e.target.value)}
                       className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold"
                     >
-                      <option value="all">सर्व श्रेणी</option>
-                      <option value="Factory Workers">Factory Workers</option>
-                      <option value="Construction Workers">Construction</option>
-                      <option value="Technical Staff">Technical Staff</option>
-                      <option value="Logistics & Drivers">Logistics & Drivers</option>
+                      <option value="all">{t("allCategories")}</option>
+                      <option value="Factory Workers">{getCategoryTitle("factory-workers", lang)}</option>
+                      <option value="Construction Workers">{getCategoryTitle("construction-workers", lang)}</option>
+                      <option value="Technical Staff">{getCategoryTitle("technical-staff", lang)}</option>
+                      <option value="Logistics & Drivers">{getCategoryTitle("logistics-drivers", lang)}</option>
                     </select>
                   </div>
                 </div>
@@ -277,10 +278,10 @@ export function JobsListingPage() {
 
               <div className="pt-6 border-t border-[#DCE5F0] grid grid-cols-2 gap-3">
                 <Button variant="outline" onClick={resetFilters} className="text-xs font-bold">
-                  रीसेट
+                  {t("reset")}
                 </Button>
                 <Button onClick={() => setMobileFilterOpen(false)} className="btn-yellow text-xs font-extrabold">
-                  लागू करा
+                  {t("continue")}
                 </Button>
               </div>
             </div>

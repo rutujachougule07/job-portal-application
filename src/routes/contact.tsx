@@ -1,16 +1,12 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
-  ArrowRight,
   Building2,
   CheckCircle2,
-  Clock,
-  Headphones,
   Mail,
   MapPin,
   MessageSquare,
   Phone,
-  Send,
   Sparkles,
 } from "lucide-react";
 import { PublicHeader } from "@/components/portal/PublicHeader";
@@ -18,6 +14,7 @@ import { PublicFooter } from "@/components/portal/PublicFooter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -30,6 +27,7 @@ export const Route = createFileRoute("/contact")({
 });
 
 function ContactPage() {
+  const { t } = useI18n();
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -37,7 +35,7 @@ function ContactPage() {
     name: "",
     email: "",
     phone: "",
-    subject: "Job Seeker Inquiry",
+    subject: "worker",
     message: "",
   });
 
@@ -47,7 +45,7 @@ function ContactPage() {
     setTimeout(() => {
       setLoading(false);
       setSubmitted(true);
-      setForm({ name: "", email: "", phone: "", subject: "Job Seeker Inquiry", message: "" });
+      setForm({ name: "", email: "", phone: "", subject: "worker", message: "" });
     }, 1000);
   };
 
@@ -61,16 +59,15 @@ function ContactPage() {
             <div className="relative z-10 max-w-3xl">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#FFC400] backdrop-blur mb-3">
                 <Sparkles className="size-3.5" />
-                संपर्क साधा • Contact Support
+                {t("contactSupportEyebrow")}
               </div>
 
               <h1 className="text-3xl sm:text-5xl font-black text-white">
-                REAL JOB सपोर्ट टीमशी बोला <br />
-                <span className="text-[#FFC400]">सर्व प्रश्नांची त्वरित उत्तरे</span>
+                {t("contactTitle")}
               </h1>
 
               <p className="mt-3 text-sm sm:text-base font-medium text-white/90">
-                काम शोधण्यासाठी, कामगार भरतीसाठी किंवा कोणत्याही मदतीसाठी आम्हाला थेट कॉल किंवा मेसेज करा.
+                {t("contactSubtitle")}
               </p>
             </div>
           </div>
@@ -81,13 +78,13 @@ function ContactPage() {
               <div className="size-12 rounded-xl bg-[#063B78]/10 text-[#063B78] flex items-center justify-center mb-4">
                 <Phone className="size-6 text-[#063B78]" />
               </div>
-              <h3 className="font-black text-lg text-[#10233F]">टोल-फ्री हेल्पलाईन</h3>
-              <p className="text-xs font-semibold text-[#5B6B7F] mt-1">सोमवार ते शनिवार (सकाळी ९ ते संध्याकाळी ७)</p>
+              <h3 className="font-black text-lg text-[#10233F]">{t("tollFreeTitle")}</h3>
+              <p className="text-xs font-semibold text-[#5B6B7F] mt-1">{t("tollFreeHours")}</p>
               <a href="tel:18002003040" className="mt-3 block font-black text-[#063B78] text-lg hover:underline">
                 +91 1800 200 3040
               </a>
               <span className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600">
-                <span className="size-2 rounded-full bg-emerald-500 animate-pulse" /> लाईव सपोर्ट सुरु आहे
+                <span className="size-2 rounded-full bg-emerald-500 animate-pulse" /> {t("liveSupportActive")}
               </span>
             </div>
 
@@ -95,22 +92,21 @@ function ContactPage() {
               <div className="size-12 rounded-xl bg-[#125BB5]/10 text-[#125BB5] flex items-center justify-center mb-4">
                 <Mail className="size-6 text-[#125BB5]" />
               </div>
-              <h3 className="font-black text-lg text-[#10233F]">ईमेलद्वारे संपर्क</h3>
-              <p className="text-xs font-semibold text-[#5B6B7F] mt-1">२ तासांच्या आत प्रतिसाद मिळवा</p>
+              <h3 className="font-black text-lg text-[#10233F]">{t("emailSupportTitle")}</h3>
+              <p className="text-xs font-semibold text-[#5B6B7F] mt-1">{t("emailResponseTime")}</p>
               <a href="mailto:support@realjob.in" className="mt-3 block font-black text-[#063B78] text-base hover:underline">
                 support@realjob.in
               </a>
-              <p className="text-xs font-bold text-[#5B6B7F] mt-1">मालकांसाठी: hire@realjob.in</p>
+              <p className="text-xs font-bold text-[#5B6B7F] mt-1">{t("employerEmailNote")}</p>
             </div>
 
             <div className="card-realjob p-6">
               <div className="size-12 rounded-xl bg-[#063B78]/10 text-[#063B78] flex items-center justify-center mb-4">
-                <MapPin className="size-6 text-[#FFC400] text-[#082F63]" />
+                <MapPin className="size-6 text-[#082F63]" />
               </div>
-              <h3 className="font-black text-lg text-[#10233F]">मुख्य कार्यालय (HQ Office)</h3>
-              <p className="text-xs font-semibold text-[#5B6B7F] mt-1">पुणे एमआयडीसी (Chakan / Bhosari)</p>
+              <h3 className="font-black text-lg text-[#10233F]">{t("hqTitle")}</h3>
               <address className="mt-2 text-xs font-bold not-italic text-[#10233F] leading-relaxed">
-                प्लॉट नं. ४२, एमआयडीसी भोसरी इंडस्ट्रिअल एरिया, पुणे, महाराष्ट्र ४११०२६
+                {t("hqAddress")}
               </address>
             </div>
           </div>
@@ -124,30 +120,30 @@ function ContactPage() {
                   <MessageSquare className="size-5" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-black text-[#10233F]">आम्हाला मेसेज पाठवा</h2>
-                  <p className="text-xs font-semibold text-[#5B6B7F]">खालील फॉर्म भरा आणि आमची टीम त्वरित संपर्क साधेल.</p>
+                  <h2 className="text-2xl font-black text-[#10233F]">{t("sendMessageTitle")}</h2>
+                  <p className="text-xs font-semibold text-[#5B6B7F]">{t("sendMessageDesc")}</p>
                 </div>
               </div>
 
               {submitted ? (
                 <div className="p-8 rounded-xl bg-emerald-50 border border-emerald-200 text-center text-emerald-800 space-y-3">
                   <CheckCircle2 className="mx-auto size-14 text-emerald-600 animate-bounce" />
-                  <h3 className="text-xl font-black">मेसेज यशस्वीरीत्या पाठवला गेला!</h3>
+                  <h3 className="text-xl font-black">{t("messageSentSuccess")}</h3>
                   <p className="text-xs font-semibold">
-                    REAL JOB सपोर्ट टीम २४ तासांच्या आत तुमच्याशी संपर्क साधेल.
+                    {t("messageSentDesc")}
                   </p>
                   <Button onClick={() => setSubmitted(false)} className="btn-yellow text-xs font-bold mt-4">
-                    दुसरा मेसेज पाठवा
+                    {t("sendAnotherMessage")}
                   </Button>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-extrabold text-[#10233F] mb-1">तुमचे नाव (Name) *</label>
+                      <label className="block text-xs font-extrabold text-[#10233F] mb-1">{t("yourName")} *</label>
                       <Input
                         required
-                        placeholder="उदा. राहुल जाधव"
+                        placeholder="Rahul Pawar"
                         value={form.name}
                         onChange={(e) => setForm({ ...form, name: e.target.value })}
                         className="h-11 border-[#DCE5F0] text-xs font-bold text-[#10233F]"
@@ -155,7 +151,7 @@ function ContactPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-extrabold text-[#10233F] mb-1">ईमेल (Email) *</label>
+                      <label className="block text-xs font-extrabold text-[#10233F] mb-1">{t("emailAddress")} *</label>
                       <Input
                         type="email"
                         required
@@ -169,7 +165,7 @@ function ContactPage() {
 
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-extrabold text-[#10233F] mb-1">मोबाईल नंबर (Phone)</label>
+                      <label className="block text-xs font-extrabold text-[#10233F] mb-1">{t("phoneNumber")}</label>
                       <Input
                         type="tel"
                         placeholder="+91 98220 00000"
@@ -180,25 +176,25 @@ function ContactPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-extrabold text-[#10233F] mb-1">विषय (Inquiry Subject) *</label>
+                      <label className="block text-xs font-extrabold text-[#10233F] mb-1">{t("inquirySubject")} *</label>
                       <select
                         value={form.subject}
                         onChange={(e) => setForm({ ...form, subject: e.target.value })}
                         className="w-full h-11 rounded-lg border border-[#DCE5F0] bg-white px-3 text-xs font-bold text-[#10233F]"
                       >
-                        <option value="Job Seeker Inquiry">कामगारांसाठी मदत (Worker Support)</option>
-                        <option value="Employer / Hiring Inquiry">कामगार भरती / पोस्टिंग (Employer Hiring)</option>
-                        <option value="Technical Support">तांत्रिक समस्या (Tech Support)</option>
+                        <option value="worker">{t("workerSupport")}</option>
+                        <option value="employer">{t("employerHiring")}</option>
+                        <option value="tech">{t("techSupport")}</option>
                       </select>
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-extrabold text-[#10233F] mb-1">तुमचा मेसेज (Message) *</label>
+                    <label className="block text-xs font-extrabold text-[#10233F] mb-1">{t("yourMessage")} *</label>
                     <Textarea
                       required
                       rows={4}
-                      placeholder="तुमची अडचण किंवा प्रश्न येथे सविस्तर लिहा..."
+                      placeholder={t("messagePlaceholder")}
                       value={form.message}
                       onChange={(e) => setForm({ ...form, message: e.target.value })}
                       className="border-[#DCE5F0] text-xs font-bold text-[#10233F]"
@@ -206,7 +202,7 @@ function ContactPage() {
                   </div>
 
                   <Button disabled={loading} type="submit" className="w-full btn-yellow font-black text-xs h-12">
-                    {loading ? "पाठवत आहे..." : "मेसेज पाठवा (Send Message)"}
+                    {loading ? t("sending") : t("sendMessage")}
                   </Button>
                 </form>
               )}
@@ -216,21 +212,21 @@ function ContactPage() {
             <div className="lg:col-span-5 space-y-6">
               <div className="bg-white p-6 rounded-2xl border border-[#DCE5F0] shadow-xs">
                 <h3 className="text-lg font-black text-[#10233F] mb-4 flex items-center gap-2">
-                  <Building2 className="size-5 text-[#063B78]" /> महाराष्ट्रातील प्रादेशिक कार्यालये
+                  <Building2 className="size-5 text-[#063B78]" /> {t("regionalOffices")}
                 </h3>
 
                 <div className="space-y-4 text-xs font-bold text-[#10233F]">
                   <div className="p-3 bg-[#F5F8FC] rounded-xl border border-[#DCE5F0]">
-                    <span className="text-xs font-extrabold text-[#063B78] block">पुणे (Chakan Office)</span>
-                    <span className="text-[#5B6B7F]">इंडस्ट्रिअल हब, चाकण एमआयडीसी, पुणे.</span>
+                    <span className="text-xs font-extrabold text-[#063B78] block">Pune (Chakan Office)</span>
+                    <span className="text-[#5B6B7F]">Industrial Hub, Chakan MIDC, Pune.</span>
                   </div>
                   <div className="p-3 bg-[#F5F8FC] rounded-xl border border-[#DCE5F0]">
-                    <span className="text-xs font-extrabold text-[#063B78] block">मुंबई (Thane / Navi Mumbai)</span>
-                    <span className="text-[#5B6B7F]">वाशी सेक्टर १७, नवी मुंबई.</span>
+                    <span className="text-xs font-extrabold text-[#063B78] block">Mumbai (Thane / Navi Mumbai)</span>
+                    <span className="text-[#5B6B7F]">Vashi Sector 17, Navi Mumbai.</span>
                   </div>
                   <div className="p-3 bg-[#F5F8FC] rounded-xl border border-[#DCE5F0]">
-                    <span className="text-xs font-extrabold text-[#063B78] block">छत्रपती संभाजीनगर (Aurangabad)</span>
-                    <span className="text-[#5B6B7F]">वाळूज एमआयडीसी क्षेत्र, औरंगाबाद.</span>
+                    <span className="text-xs font-extrabold text-[#063B78] block">Chhatrapati Sambhajinagar (Aurangabad)</span>
+                    <span className="text-[#5B6B7F]">Waluj MIDC Area, Chhatrapati Sambhajinagar.</span>
                   </div>
                 </div>
               </div>

@@ -1,25 +1,20 @@
 import { useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import {
-  Briefcase,
   ChevronRight,
   ChevronUp,
-  Download,
-  Headphones,
   Instagram,
   Linkedin,
   Mail,
-  MapPin,
-  PhoneCall,
   QrCode,
-  ShieldCheck,
   Twitter,
-  Users,
   Youtube,
 } from "lucide-react";
 import { LogoIcon } from "./Brand";
+import { useI18n, getCategoryTitle } from "@/lib/i18n";
 
 export function PublicFooter() {
+  const { t, n, lang } = useI18n();
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
 
@@ -57,16 +52,16 @@ export function PublicFooter() {
                   </span>
                 </div>
                 <small className="mt-1 block text-[10px] font-extrabold uppercase tracking-widest text-[#FFC400] leading-tight">
-                  FIND WORK | FIND WORKERS
+                  {t("tagline")}
                 </small>
                 <span className="text-[9px] font-bold text-slate-300">
-                  सर्व काही ऑनलाइन!
+                  {t("marathiTagline")}
                 </span>
               </div>
             </Link>
 
             <p className="text-xs leading-relaxed text-slate-300 pr-2">
-              भारतातील १ नंबर कामगार व नोकरी मंच. कारखाने, बांधकाम, ड्रायव्हिंग व तांत्रिक क्षेत्रातील सर्व कामगारांसाठी आणि कंपन्यांसाठी direct hiring solution.
+              {t("heroSubtitle")} — {t("trustVerified")}
             </p>
 
             {/* Social Icons */}
@@ -89,20 +84,20 @@ export function PublicFooter() {
             </div>
           </div>
 
-          {/* Col 2: For Workers (कामगारांसाठी) */}
+          {/* Col 2: For Workers */}
           <div>
             <h3 className="text-sm font-black text-white tracking-wide">
-              कामगारांसाठी (For Workers)
+              {t("seeker")}
             </h3>
             <div className="mt-1.5 h-[2px] w-8 bg-[#FFC400] rounded-full mb-4" />
 
             <ul className="space-y-2 text-xs font-semibold text-slate-300">
               {[
-                { label: "काम शोधा (Find Jobs)", to: "/jobs" },
-                { label: "नोकरीचे अर्ज (Applications)", to: "/auth" },
-                { label: "प्रोफाईल तयार करा (Create Profile)", to: "/auth" },
-                { label: "सत्यापन (Verification)", to: "/about" },
-                { label: "प्रश्न व उत्तरे (FAQ)", to: "/faq" },
+                { label: t("jobs"), to: "/jobs" },
+                { label: t("applications"), to: "/auth" },
+                { label: t("profile"), to: "/auth" },
+                { label: t("aboutUs"), to: "/about" },
+                { label: t("faq"), to: "/faq" },
               ].map(({ label, to }) => (
                 <li key={label}>
                   <Link
@@ -117,20 +112,20 @@ export function PublicFooter() {
             </ul>
           </div>
 
-          {/* Col 3: For Employers (मालकांसाठी) */}
+          {/* Col 3: For Employers */}
           <div>
             <h3 className="text-sm font-black text-white tracking-wide">
-              मालकांसाठी (Employers)
+              {t("employer")}
             </h3>
             <div className="mt-1.5 h-[2px] w-8 bg-[#FFC400] rounded-full mb-4" />
 
             <ul className="space-y-2 text-xs font-semibold text-slate-300">
               {[
-                { label: "नोकरी पोस्ट करा (Post Job)", to: "/auth" },
-                { label: "कामगार शोधा (Search Workers)", to: "/workers" },
-                { label: "प्रोफाईल पहा (View Profiles)", to: "/workers" },
-                { label: "थेट संपर्क (Direct Contact)", to: "/auth" },
-                { label: "कंपनी नोंदणी (Register)", to: "/auth" },
+                { label: t("hireTalent"), to: "/auth" },
+                { label: t("workers"), to: "/workers" },
+                { label: t("viewProfile"), to: "/workers" },
+                { label: t("contactUs"), to: "/contact" },
+                { label: t("register"), to: "/auth" },
               ].map(({ label, to }) => (
                 <li key={label}>
                   <Link
@@ -145,49 +140,50 @@ export function PublicFooter() {
             </ul>
           </div>
 
-          {/* Col 4: Categories (कामगार श्रेणी) */}
+          {/* Col 4: Categories */}
           <div>
             <h3 className="text-sm font-black text-white tracking-wide">
-              कामगार श्रेणी (Categories)
+              {t("categories")}
             </h3>
             <div className="mt-1.5 h-[2px] w-8 bg-[#FFC400] rounded-full mb-4" />
 
             <ul className="space-y-2 text-xs font-semibold text-slate-300">
               {[
-                { label: "Factory Workers", to: "/jobs" },
-                { label: "Construction", to: "/jobs" },
-                { label: "Technical Staff", to: "/jobs" },
-                { label: "Logistics & Drivers", to: "/jobs" },
-                { label: "Electricians", to: "/jobs" },
-                { label: "Security Guards", to: "/jobs" },
-              ].map(({ label, to }) => (
-                <li key={label}>
-                  <Link
-                    to={to}
-                    className="inline-flex items-center gap-1 hover:text-[#FFC400] hover:translate-x-1 transition-all duration-150"
-                  >
-                    <ChevronRight className="size-3 text-[#FFC400] shrink-0" />
-                    <span>{label}</span>
-                  </Link>
-                </li>
-              ))}
+                { id: "factory-workers", to: "/jobs" },
+                { id: "construction-workers", to: "/jobs" },
+                { id: "technical-staff", to: "/jobs" },
+                { id: "logistics-drivers", to: "/jobs" },
+                { id: "electricians", to: "/jobs" },
+                { id: "security", to: "/jobs" },
+              ].map(({ id, to }) => {
+                const label = getCategoryTitle(id, lang);
+                return (
+                  <li key={id}>
+                    <Link
+                      to={to}
+                      className="inline-flex items-center gap-1 hover:text-[#FFC400] hover:translate-x-1 transition-all duration-150"
+                    >
+                      <ChevronRight className="size-3 text-[#FFC400] shrink-0" />
+                      <span>{label}</span>
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           </div>
 
           {/* Col 5: Company */}
           <div>
             <h3 className="text-sm font-black text-white tracking-wide">
-              कंपनी (Company)
+              {t("brand")}
             </h3>
             <div className="mt-1.5 h-[2px] w-8 bg-[#FFC400] rounded-full mb-4" />
 
             <ul className="space-y-2 text-xs font-semibold text-slate-300">
               {[
-                { label: "आमच्याबद्दल (About Us)", to: "/about" },
-                { label: "संपर्क (Contact Us)", to: "/contact" },
-                { label: "प्रश्नोत्तरे (FAQ)", to: "/faq" },
-                { label: "गोपनीयता नियम (Privacy)", to: "/about" },
-                { label: "अटी व शर्ती (Terms)", to: "/about" },
+                { label: t("aboutUs"), to: "/about" },
+                { label: t("contactUs"), to: "/contact" },
+                { label: t("faq"), to: "/faq" },
               ].map(({ label, to }) => (
                 <li key={label}>
                   <Link
@@ -206,10 +202,10 @@ export function PublicFooter() {
           <div className="lg:border-l lg:border-white/10 lg:pl-6 space-y-5">
             <div>
               <h3 className="text-lg font-black text-white tracking-wide">
-                नवीन अपडेट्स मिळवा
+                {t("downloadTitle")}
               </h3>
               <p className="mt-1.5 text-xs font-medium text-slate-300">
-                दररोजच्या नवीन नोकऱ्या आणि कामगार भरतीची माहिती मोफत ई-मेलवर मिळवा.
+                {t("downloadSubtitle")}
               </p>
 
               <form onSubmit={handleSubscribe} className="mt-3.5 flex items-center rounded-xl border border-white/20 bg-white/10 p-1 focus-within:border-[#FFC400] transition-all">
@@ -218,7 +214,7 @@ export function PublicFooter() {
                   <input
                     type="email"
                     required
-                    placeholder="तुमचा ई-मेल प्रविष्ट करा"
+                    placeholder={t("email")}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full h-9 bg-transparent px-3 text-xs text-white placeholder-slate-300 focus:outline-none"
@@ -228,7 +224,7 @@ export function PublicFooter() {
                   type="submit"
                   className="h-9 px-4 rounded-lg bg-[#FFC400] text-[#082F63] font-black text-xs transition-colors shrink-0 shadow-sm hover:bg-[#FFD21F]"
                 >
-                  {subscribed ? "सब्क्राइब केले!" : "सबस्क्राईब"}
+                  {subscribed ? "..." : t("continue")}
                 </button>
               </form>
             </div>
@@ -238,7 +234,7 @@ export function PublicFooter() {
               <QrCode className="size-10 text-[#FFC400] shrink-0" />
               <div>
                 <span className="text-xs font-black text-white block">REAL JOB Mobile App</span>
-                <span className="text-[10px] font-bold text-slate-300">Google Play व App Store वर उपलब्ध</span>
+                <span className="text-[10px] font-bold text-slate-300">Google Play & App Store</span>
               </div>
             </div>
           </div>
@@ -251,16 +247,14 @@ export function PublicFooter() {
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 text-xs font-bold text-slate-300 sm:flex-row sm:px-6 lg:px-8">
           
           <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center sm:text-left">
-            <span>© 2026 REAL JOB. All rights reserved.</span>
+            <span>© {n(2026)} REAL JOB. {t("copyright")}</span>
             <span className="hidden text-slate-400 sm:inline">|</span>
-            <span>Find Work | Find Workers</span>
-            <span className="hidden text-slate-400 sm:inline">|</span>
-            <span className="text-[#FFC400]">"कामगारांसाठी काम • मालकांसाठी कामगार"</span>
+            <span>{t("tagline")}</span>
           </div>
 
           <div className="flex items-center gap-4">
             <span className="inline-flex items-center gap-1.5">
-              Made with <span className="text-[#FFC400]">💛</span> in Maharashtra, India.
+              Made with <span className="text-[#FFC400]">💛</span> in India.
             </span>
             <button
               onClick={scrollToTop}

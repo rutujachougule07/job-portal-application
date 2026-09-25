@@ -27,12 +27,12 @@ export function PopularJobs() {
   };
 
   const filterTabs = [
-    { id: "all", label: "All Jobs", icon: LayoutGrid },
-    { id: "tech", label: "IT & Software", icon: Code },
-    { id: "health", label: "Healthcare", icon: HeartPulse },
-    { id: "banking", label: "Banking", icon: Landmark },
-    { id: "edu", label: "Education", icon: GraduationCap },
-    { id: "mkt", label: "Marketing", icon: Briefcase },
+    { id: "all", labelKey: "allJobsTab" as const, icon: LayoutGrid },
+    { id: "tech", labelKey: "itSoftwareTab" as const, icon: Code },
+    { id: "health", labelKey: "healthcareTab" as const, icon: HeartPulse },
+    { id: "banking", labelKey: "bankingTab" as const, icon: Landmark },
+    { id: "edu", labelKey: "educationTab" as const, icon: GraduationCap },
+    { id: "mkt", labelKey: "marketingTab" as const, icon: Briefcase },
   ];
 
   const jobsList = [
@@ -140,34 +140,17 @@ export function PopularJobs() {
             {/* Eyebrow Pill */}
             <div className="inline-flex items-center gap-2 rounded-full border border-[#D4AF37]/40 bg-[#FFFDF5] px-4 py-1 text-[11px] font-bold uppercase tracking-widest text-[#1F2937] shadow-sm">
               <span className="h-1.5 w-1.5 rounded-full bg-[#D4AF37]" />
-              CURATED FOR YOU
+              {t("popularJobsEyebrow")}
             </div>
 
             {/* Heading */}
             <h2 className="mt-4 font-display text-4xl font-bold text-[#111827] sm:text-5xl">
-              Popular{" "}
-              <span className="relative inline-block text-[#D4AF37]">
-                Jobs
-                {/* Gold curved underline accent */}
-                <svg
-                  className="absolute -bottom-2 left-0 w-full text-[#D4AF37]"
-                  viewBox="0 0 120 12"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M3 9C30 3 90 2 117 8"
-                    stroke="currentColor"
-                    strokeWidth="3.5"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </span>
+              {t("popularJobs")}
             </h2>
 
             {/* Subtitle */}
             <p className="mt-4 max-w-xl text-sm leading-6 text-[#374151] sm:text-base">
-              Explore top job opportunities from leading companies and take the next step in your career.
+              {t("popularJobsSubtitle")}
             </p>
           </div>
 
@@ -210,7 +193,7 @@ export function PopularJobs() {
                 }`}
               >
                 <Icon className={`size-3.5 ${isActive ? "text-[#D4AF37]" : "text-[#374151]"}`} />
-                <span>{tab.label}</span>
+                <span>{t(tab.labelKey)}</span>
               </button>
             );
           })}
@@ -252,7 +235,7 @@ export function PopularJobs() {
                           </Link>
                           {job.featured && (
                             <span className="rounded-full border border-[#D4AF37]/40 bg-[#FFFDF5] px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-[#B59124]">
-                              Featured
+                              {t("featured")}
                             </span>
                           )}
                         </div>
@@ -299,13 +282,13 @@ export function PopularJobs() {
                 <div className="relative z-10 mt-6 flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-[#F2EFEC]">
                   <div className="flex flex-wrap gap-2">
                     <span className={`rounded-full ${job.badgeColor} px-3.5 py-1 text-xs font-bold text-white shadow-sm`}>
-                      {job.type}
+                      {job.type === "Full-time" ? t("fullTime") : job.type}
                     </span>
                     <span className="rounded-full bg-[#F2EFEC] border border-[#E5E2DA] px-3.5 py-1 text-xs font-bold text-[#374151]">
                       {job.exp}
                     </span>
                     <span className="rounded-full bg-[#F2EFEC] border border-[#E5E2DA] px-3.5 py-1 text-xs font-bold text-[#374151]">
-                      {job.mode}
+                      {job.mode === "On-site" ? t("onSite") : job.mode === "Hybrid" ? t("hybrid") : t("remote")}
                     </span>
                   </div>
 
@@ -314,7 +297,7 @@ export function PopularJobs() {
                     params={{ jobId: job.id }}
                     className={`inline-flex items-center gap-1.5 rounded-full ${job.btnColor} px-6 py-2.5 text-xs font-bold text-white shadow-md transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5`}
                   >
-                    <span>Apply Now</span>
+                    <span>{t("apply")}</span>
                     <ArrowRight className="size-3.5" />
                   </Link>
                 </div>

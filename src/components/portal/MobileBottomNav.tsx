@@ -42,6 +42,7 @@ export function MobileBottomNav() {
 
         <Link
           to="/auth"
+          search={{ mode: "login", role: "worker" }}
           className="flex flex-col items-center justify-center py-1 text-xs font-semibold text-[#5B6B7F] hover:text-[#063B78] aria-[current=page]:text-[#063B78]"
         >
           <User className="size-5 mb-0.5" />

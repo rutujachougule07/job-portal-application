@@ -17,10 +17,11 @@ import {
 } from "lucide-react";
 import { PublicHeader } from "@/components/portal/PublicHeader";
 import { PublicFooter } from "@/components/portal/PublicFooter";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/post-job")({
   head: () => ({
@@ -33,6 +34,7 @@ export const Route = createFileRoute("/_authenticated/post-job")({
 });
 
 function PostJobPage() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [showPreview, setShowPreview] = useState(false);
 

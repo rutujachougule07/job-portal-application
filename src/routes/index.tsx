@@ -32,7 +32,7 @@ import { PopularJobs } from "@/components/portal/PopularJobs";
 import { WorkerCard, workersList } from "@/components/portal/WorkerCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, getCategoryTitle } from "@/lib/i18n";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -48,7 +48,7 @@ export const Route = createFileRoute("/")({
 });
 
 function HomePage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
 
   // Search tab state: 'job' or 'worker'
   const [searchTab, setSearchTab] = useState<"job" | "worker">("job");
@@ -76,18 +76,18 @@ function HomePage() {
               {/* Badge */}
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-[#FFC400] backdrop-blur">
                 <Sparkles className="size-4" />
-                भारतातील १ नंबर कामगार व नोकरी प्लॅटफॉर्म
+                {t("heroBadge")}
               </div>
 
               {/* Headlines */}
               <h1 className="font-display text-4xl font-black leading-[1.1] text-white sm:text-6xl lg:text-7xl">
-                कामगार शोधा... <br />
-                <span className="text-[#FFC400]">काम मिळवा...</span> <br />
-                सर्व काही ऑनलाइन!
+                {t("heroTitleLine1")} <br />
+                <span className="text-[#FFC400]">{t("heroTitleLine2")}</span> <br />
+                {t("heroTitleLine3")}
               </h1>
 
               <p className="mt-4 text-lg sm:text-xl font-bold text-white/90">
-                योग्य माणूस • योग्य काम • योग्य संधी
+                {t("heroSubtitle")}
               </p>
 
               {/* Action Buttons */}
@@ -111,15 +111,15 @@ function HomePage() {
               <div className="mt-10 flex flex-wrap gap-6 text-xs sm:text-sm font-bold text-white/90">
                 <span className="inline-flex items-center gap-2">
                   <CheckCircle2 className="size-4 text-[#FFC400]" />
-                  १००% थेट फोन संपर्क
+                  {t("trustPhone")}
                 </span>
                 <span className="inline-flex items-center gap-2">
                   <CheckCircle2 className="size-4 text-[#FFC400]" />
-                  कोणतेही कमिशन नाही
+                  {t("trustCommission")}
                 </span>
                 <span className="inline-flex items-center gap-2">
                   <CheckCircle2 className="size-4 text-[#FFC400]" />
-                  सत्यापित कामगार व मालक
+                  {t("trustVerified")}
                 </span>
               </div>
             </div>
@@ -139,7 +139,7 @@ function HomePage() {
                     : "text-[#5B6B7F] hover:bg-[#F5F8FC]"
                 }`}
               >
-                🔍 नोकरी शोधा (Job Search)
+                {t("searchJobTab")}
               </button>
               <button
                 onClick={() => setSearchTab("worker")}
@@ -149,7 +149,7 @@ function HomePage() {
                     : "text-[#5B6B7F] hover:bg-[#F5F8FC]"
                 }`}
               >
-                👷 कामगार शोधा (Worker Search)
+                {t("searchWorkerTab")}
               </button>
             </div>
 
@@ -158,11 +158,7 @@ function HomePage() {
               <div className="relative flex items-center bg-[#F5F8FC] rounded-xl px-3 border border-[#DCE5F0]">
                 <Search className="size-4 text-[#063B78] shrink-0" />
                 <Input
-                  placeholder={
-                    searchTab === "job"
-                      ? "नोकरीचे नाव, कौशल्य किंवा व्यवसाय"
-                      : "कामगाराचे नाव किंवा कौशल्य (e.g. Electrician, Welder)"
-                  }
+                  placeholder={t("searchPlaceholder")}
                   value={keyword}
                   onChange={(e) => setKeyword(e.target.value)}
                   className="h-11 border-0 bg-transparent text-xs font-bold text-[#10233F] focus-visible:ring-0"
@@ -172,7 +168,7 @@ function HomePage() {
               <div className="relative flex items-center bg-[#F5F8FC] rounded-xl px-3 border border-[#DCE5F0]">
                 <MapPin className="size-4 text-[#125BB5] shrink-0" />
                 <Input
-                  placeholder="शहर / ठिकाण (e.g. Pune, Chakan, Mumbai)"
+                  placeholder={t("location")}
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   className="h-11 border-0 bg-transparent text-xs font-bold text-[#10233F] focus-visible:ring-0"
@@ -186,18 +182,18 @@ function HomePage() {
                   onChange={(e) => setCategory(e.target.value)}
                   className="w-full h-11 border-0 bg-transparent text-xs font-bold text-[#10233F] focus:outline-none"
                 >
-                  <option value="all">सर्व श्रेणी (All Categories)</option>
-                  <option value="Factory Workers">Factory Workers</option>
-                  <option value="Construction Workers">Construction</option>
-                  <option value="Technical Staff">Technical Staff</option>
-                  <option value="Logistics & Drivers">Logistics & Drivers</option>
-                  <option value="Electricians">Electricians</option>
+                  <option value="all">{t("allCategories")}</option>
+                  <option value="Factory Workers">{getCategoryTitle("factory-workers", lang)}</option>
+                  <option value="Construction Workers">{getCategoryTitle("construction-workers", lang)}</option>
+                  <option value="Technical Staff">{getCategoryTitle("technical-staff", lang)}</option>
+                  <option value="Logistics & Drivers">{getCategoryTitle("logistics-drivers", lang)}</option>
+                  <option value="Electricians">{getCategoryTitle("electricians", lang)}</option>
                 </select>
               </div>
 
               <Button asChild size="lg" className="btn-yellow h-11 px-8 font-black text-xs">
                 <Link to={searchTab === "job" ? "/jobs" : "/workers"}>
-                  {searchTab === "job" ? "नोकरी शोधा" : "कामगार शोधा"}
+                  {searchTab === "job" ? t("jobs") : t("workers")}
                 </Link>
               </Button>
             </div>
@@ -217,19 +213,19 @@ function HomePage() {
               <div>
                 <div className="inline-flex items-center gap-2 rounded-full border border-[#063B78]/20 bg-[#063B78]/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-[#063B78]">
                   <span className="h-2 w-2 rounded-full bg-[#FFC400]" />
-                  सत्यापित कामगार प्रोफाईल
+                  {t("topWorkersTitle")}
                 </div>
                 <h2 className="mt-3 text-3xl font-black text-[#10233F] sm:text-4xl">
-                  कुशल व अनुभवी <span className="text-[#063B78]">कामगारांची यादी</span>
+                  {t("topWorkersTitle")}
                 </h2>
                 <p className="mt-2 text-sm font-semibold text-[#5B6B7F]">
-                  इलेक्ट्रीशियन, ऑपरेटर, वेल्डर व ड्रायव्हर थेट फोनवर संपर्क साधून कामावर घ्या.
+                  {t("topWorkersSubtitle")}
                 </p>
               </div>
 
               <Button asChild className="btn-navy font-bold text-xs px-6 py-3 h-auto shrink-0">
                 <Link to="/workers">
-                  सर्व कामगार पहा ({workersList.length}) <ArrowRight className="ml-1.5 size-4 text-[#FFC400]" />
+                  {t("viewAll")} ({workersList.length}) <ArrowRight className="ml-1.5 size-4 text-[#FFC400]" />
                 </Link>
               </Button>
             </div>
@@ -248,13 +244,13 @@ function HomePage() {
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-2xl mx-auto mb-14">
               <span className="text-xs font-black uppercase tracking-wider text-[#125BB5] bg-[#EBF1F8] px-3 py-1 rounded-full">
-                REAL JOB वैशिष्ट्ये
+                {t("whyUs")}
               </span>
               <h2 className="mt-3 text-3xl font-black text-[#10233F] sm:text-4xl">
-                REAL JOB का निवडावे?
+                {t("whyUs")}
               </h2>
               <p className="mt-3 text-sm font-semibold text-[#5B6B7F]">
-                कामगारांना काम व मालकांना कामगार मिळवून देणारा विश्वासू मंच
+                {t("whyUsSubtitle")}
               </p>
             </div>
 
@@ -263,9 +259,9 @@ function HomePage() {
                 <div className="size-14 rounded-2xl bg-[#063B78]/10 text-[#063B78] mx-auto flex items-center justify-center mb-4">
                   <ShieldCheck className="size-7" />
                 </div>
-                <h3 className="font-black text-lg text-[#10233F]">१००% आधार पडताळणी</h3>
+                <h3 className="font-black text-lg text-[#10233F]">{t("step1Title")}</h3>
                 <p className="text-xs font-semibold text-[#5B6B7F] mt-2">
-                  सर्व कामगार व कंपन्यांची माहिती पडताळूनच व्यासपीठावर दिली जाते.
+                  {t("step1Desc")}
                 </p>
               </div>
 
@@ -273,9 +269,9 @@ function HomePage() {
                 <div className="size-14 rounded-2xl bg-[#FFC400]/20 text-[#082F63] mx-auto flex items-center justify-center mb-4">
                   <HeartHandshake className="size-7" />
                 </div>
-                <h3 className="font-black text-lg text-[#10233F]">झिरो कमिशन (Zero Fee)</h3>
+                <h3 className="font-black text-lg text-[#10233F]">{t("trustCommission")}</h3>
                 <p className="text-xs font-semibold text-[#5B6B7F] mt-2">
-                  कोणतेही एजंट फी किंवा कमिशन नाही. थेट मालकांशी बोला.
+                  {t("step3Desc")}
                 </p>
               </div>
 
@@ -283,9 +279,9 @@ function HomePage() {
                 <div className="size-14 rounded-2xl bg-[#125BB5]/10 text-[#125BB5] mx-auto flex items-center justify-center mb-4">
                   <Globe className="size-7" />
                 </div>
-                <h3 className="font-black text-lg text-[#10233F]">मराठी व प्रादेशिक भाषा</h3>
+                <h3 className="font-black text-lg text-[#10233F]">{t("chooseLanguage")}</h3>
                 <p className="text-xs font-semibold text-[#5B6B7F] mt-2">
-                  मराठी, हिंदी व इंग्रजी भाषेत सहज वापरा आणि नोकरी शोधा.
+                  {t("languageSubtitle")}
                 </p>
               </div>
 
@@ -293,9 +289,9 @@ function HomePage() {
                 <div className="size-14 rounded-2xl bg-[#063B78]/10 text-[#063B78] mx-auto flex items-center justify-center mb-4">
                   <Zap className="size-7" />
                 </div>
-                <h3 className="font-black text-lg text-[#10233F]">त्वरित भरती (Instant Hire)</h3>
+                <h3 className="font-black text-lg text-[#10233F]">{t("step3Title")}</h3>
                 <p className="text-xs font-semibold text-[#5B6B7F] mt-2">
-                  २४ तासांच्या आत कामगार मिळवा किंवा कामावर लागा.
+                  {t("step3Desc")}
                 </p>
               </div>
             </div>
@@ -308,22 +304,22 @@ function HomePage() {
             <div className="grid md:grid-cols-2 gap-10 items-center">
               <div>
                 <span className="text-xs font-black uppercase tracking-wider text-[#FFC400] bg-white/10 px-3 py-1 rounded-full border border-white/20">
-                  REAL JOB मोबाईल ॲप
+                  {t("downloadTitle")}
                 </span>
                 <h2 className="mt-4 text-3xl font-black text-white sm:text-4xl leading-tight">
-                  मोबाईल ॲप डाउनलोड करा <br />
-                  <span className="text-[#FFC400]">कामाची माहिती व्हॉट्सॲपवर मिळवा</span>
+                  {t("downloadTitle")} <br />
+                  <span className="text-[#FFC400]">{t("downloadSubtitle")}</span>
                 </h2>
                 <p className="mt-4 text-sm font-semibold text-white/90 leading-relaxed">
-                  तुमच्या मोबाईलवर दररोज नवीन नोकऱ्यांच्या सूचना मिळवा. मोफत ॲप डाउनलोड करा व १ क्लिकमध्ये अर्ज करा.
+                  {t("downloadSubtitle")}
                 </p>
 
                 <div className="mt-8 flex flex-wrap items-center gap-4">
                   <Button className="btn-yellow font-black text-xs px-6 py-3 h-12">
-                    <Download className="size-4 mr-2" /> Google Play Store
+                    <Download className="size-4 mr-2" /> {t("playStore")}
                   </Button>
                   <Button variant="outline" className="border-white text-white font-bold text-xs px-6 py-3 h-12 hover:bg-white hover:text-[#063B78]">
-                    App Store (iOS)
+                    {t("appStore")}
                   </Button>
                 </div>
               </div>
@@ -331,7 +327,7 @@ function HomePage() {
               <div className="flex justify-center md:justify-end">
                 <div className="bg-white text-[#10233F] p-6 rounded-2xl shadow-2xl border-4 border-[#FFC400] text-center max-w-xs">
                   <QrCode className="size-36 mx-auto text-[#063B78]" />
-                  <span className="block text-xs font-black text-[#063B78] mt-3">स्कॅन करा व ॲप डाउनलोड करा</span>
+                  <span className="block text-xs font-black text-[#063B78] mt-3">{t("downloadTitle")}</span>
                   <span className="block text-[10px] font-bold text-[#5B6B7F]">Scan QR to download REAL JOB App</span>
                 </div>
               </div>

@@ -32,7 +32,7 @@ export const Route = createFileRoute("/about")({
 });
 
 function AboutPage() {
-  const { t } = useI18n();
+  const { t, n } = useI18n();
 
   return (
     <>
@@ -44,16 +44,16 @@ function AboutPage() {
             <div className="max-w-3xl">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-[#FFC400] backdrop-blur-md mb-4">
                 <Sparkles className="size-4" />
-                आमच्याबद्दल • About REAL JOB
+                {t("aboutHeroEyebrow")}
               </div>
 
               <h1 className="text-4xl font-black tracking-tight sm:text-5xl lg:text-6xl text-white">
-                कामगार शोधा... काम मिळवा... <br />
-                <span className="text-[#FFC400]">सर्व काही ऑनलाइन!</span>
+                {t("heroTitleLine1")} {t("heroTitleLine2")} <br />
+                <span className="text-[#FFC400]">{t("heroTitleLine3")}</span>
               </h1>
 
               <p className="mt-6 text-lg sm:text-xl font-medium text-white/90 leading-relaxed">
-                REAL JOB is India's leading digital workforce marketplace designed to empower factory workers, construction labor, skilled technicians, drivers, and employers with direct transparent connections.
+                {t("aboutHeroSub")}
               </p>
             </div>
           </div>
@@ -63,20 +63,20 @@ function AboutPage() {
         <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 -mt-8 relative z-20">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-white rounded-2xl p-6 shadow-xl border border-[#DCE5F0]">
             <div className="text-center p-3 border-r border-[#DCE5F0] last:border-0">
-              <span className="text-3xl sm:text-4xl font-black text-[#063B78]">50,000+</span>
-              <span className="block text-xs font-bold text-[#5B6B7F] mt-1">Verified Workers (कामगार)</span>
+              <span className="text-3xl sm:text-4xl font-black text-[#063B78]">{n("50,000+")}</span>
+              <span className="block text-xs font-bold text-[#5B6B7F] mt-1">{t("statWorkers")}</span>
             </div>
             <div className="text-center p-3 border-r border-[#DCE5F0] last:border-0">
-              <span className="text-3xl sm:text-4xl font-black text-[#125BB5]">10,000+</span>
-              <span className="block text-xs font-bold text-[#5B6B7F] mt-1">Active Employers (मालक)</span>
+              <span className="text-3xl sm:text-4xl font-black text-[#125BB5]">{n("10,000+")}</span>
+              <span className="block text-xs font-bold text-[#5B6B7F] mt-1">{t("statEmployers")}</span>
             </div>
             <div className="text-center p-3 border-r border-[#DCE5F0] last:border-0">
-              <span className="text-3xl sm:text-4xl font-black text-[#063B78]">1,50,000+</span>
-              <span className="block text-xs font-bold text-[#5B6B7F] mt-1">Jobs Connected (कामाच्या संधी)</span>
+              <span className="text-3xl sm:text-4xl font-black text-[#063B78]">{n("1,50,000+")}</span>
+              <span className="block text-xs font-bold text-[#5B6B7F] mt-1">{t("statJobs")}</span>
             </div>
             <div className="text-center p-3">
-              <span className="text-3xl sm:text-4xl font-black text-[#FFC400] text-[#082F63] px-2 py-0.5 rounded bg-[#FFC400]">100%</span>
-              <span className="block text-xs font-bold text-[#5B6B7F] mt-1">Direct HR / Owner Contact</span>
+              <span className="text-3xl sm:text-4xl font-black text-[#FFC400] text-[#082F63] px-2 py-0.5 rounded bg-[#FFC400]">{n("100%")}</span>
+              <span className="block text-xs font-bold text-[#5B6B7F] mt-1">{t("statContact")}</span>
             </div>
           </div>
         </section>
@@ -90,14 +90,14 @@ function AboutPage() {
                   <div className="size-14 rounded-2xl bg-[#063B78]/10 text-[#063B78] flex items-center justify-center mb-6">
                     <Target className="size-8" />
                   </div>
-                  <h2 className="text-2xl font-black text-[#10233F]">आमचे ध्येय (Our Mission)</h2>
+                  <h2 className="text-2xl font-black text-[#10233F]">{t("ourMission")}</h2>
                   <p className="mt-4 text-sm font-semibold text-[#5B6B7F] leading-relaxed">
-                    To eliminate middleman commissions and enable every skilled, semi-skilled, and general worker in Maharashtra and across India to find dignity, fair salary, and instant employment directly through their smartphones.
+                    {t("ourMissionDesc")}
                   </p>
                 </div>
                 <div className="mt-6 pt-4 border-t border-[#DCE5F0] flex items-center gap-2 text-xs font-extrabold text-[#063B78]">
                   <CheckCircle2 className="size-4 text-[#FFC400]" />
-                  Direct Employer Access • Zero Commission
+                  {t("trustCommission")} • {t("trustPhone")}
                 </div>
               </div>
 
@@ -106,14 +106,14 @@ function AboutPage() {
                   <div className="size-14 rounded-2xl bg-[#125BB5]/10 text-[#125BB5] flex items-center justify-center mb-6">
                     <Globe className="size-8" />
                   </div>
-                  <h2 className="text-2xl font-black text-[#10233F]">आमचे उद्दिष्ट (Our Vision)</h2>
+                  <h2 className="text-2xl font-black text-[#10233F]">{t("ourVision")}</h2>
                   <p className="mt-4 text-sm font-semibold text-[#5B6B7F] leading-relaxed">
-                    To build India's largest, most trusted, multi-lingual digital workforce ecosystem where contractors, factory owners, construction companies, and individual hirers find verified talent within minutes.
+                    {t("ourVisionDesc")}
                   </p>
                 </div>
                 <div className="mt-6 pt-4 border-t border-[#DCE5F0] flex items-center gap-2 text-xs font-extrabold text-[#125BB5]">
                   <CheckCircle2 className="size-4 text-[#FFC400]" />
-                  Multi-Lingual Support • Verified Profiles
+                  {t("trustVerified")}
                 </div>
               </div>
             </div>
@@ -125,13 +125,13 @@ function AboutPage() {
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-3xl mx-auto mb-16">
               <span className="text-xs font-black uppercase tracking-wider text-[#125BB5] bg-[#EBF1F8] px-3 py-1 rounded-full">
-                सोपी कार्यपद्धती • Simple Workflow
+                {t("howWorksSimple")}
               </span>
               <h2 className="mt-3 text-3xl font-black text-[#10233F] sm:text-4xl">
-                REAL JOB कसे काम करते?
+                {t("howWorks")}
               </h2>
               <p className="mt-3 text-base font-semibold text-[#5B6B7F]">
-                कामगारांसाठी आणि मालकांसाठी पारदर्शक व सोपी प्रक्रिया
+                {t("howWorksSubtitle")}
               </p>
             </div>
 
@@ -143,37 +143,37 @@ function AboutPage() {
                     <HardHat className="size-5" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-black text-[#10233F]">कामगारांसाठी (For Workers)</h3>
-                    <span className="text-xs font-bold text-[#125BB5]">3 सोप्या पायऱ्यांमध्ये काम मिळवा</span>
+                    <h3 className="text-xl font-black text-[#10233F]">{t("forWorkersTitle")}</h3>
+                    <span className="text-xs font-bold text-[#125BB5]">{t("seekerDesc")}</span>
                   </div>
                 </div>
 
                 <div className="space-y-6">
                   <div className="flex gap-4">
-                    <span className="size-8 rounded-full bg-[#063B78] text-white font-black text-xs flex items-center justify-center shrink-0">1</span>
+                    <span className="size-8 rounded-full bg-[#063B78] text-white font-black text-xs flex items-center justify-center shrink-0">{n(1)}</span>
                     <div>
-                      <h4 className="font-extrabold text-[#10233F] text-sm">मोफत प्रोफाईल तयार करा</h4>
-                      <p className="text-xs text-[#5B6B7F] mt-1 font-semibold">तुमचे नाव, मोबाईल नंबर, कौशल्य आणि अनुभव प्रविष्ट करा.</p>
+                      <h4 className="font-extrabold text-[#10233F] text-sm">{t("forWorkersStep1Title")}</h4>
+                      <p className="text-xs text-[#5B6B7F] mt-1 font-semibold">{t("forWorkersStep1Desc")}</p>
                     </div>
                   </div>
                   <div className="flex gap-4">
-                    <span className="size-8 rounded-full bg-[#063B78] text-white font-black text-xs flex items-center justify-center shrink-0">2</span>
+                    <span className="size-8 rounded-full bg-[#063B78] text-white font-black text-xs flex items-center justify-center shrink-0">{n(2)}</span>
                     <div>
-                      <h4 className="font-extrabold text-[#10233F] text-sm">तुमच्या जवळची नोकरी शोधा</h4>
-                      <p className="text-xs text-[#5B6B7F] mt-1 font-semibold">तुमच्या शहरातील कारखाने, बांधकाम व सेवा क्षेत्रातील नोकऱ्या पहा.</p>
+                      <h4 className="font-extrabold text-[#10233F] text-sm">{t("forWorkersStep2Title")}</h4>
+                      <p className="text-xs text-[#5B6B7F] mt-1 font-semibold">{t("forWorkersStep2Desc")}</p>
                     </div>
                   </div>
                   <div className="flex gap-4">
-                    <span className="size-8 rounded-full bg-[#063B78] text-white font-black text-xs flex items-center justify-center shrink-0">3</span>
+                    <span className="size-8 rounded-full bg-[#063B78] text-white font-black text-xs flex items-center justify-center shrink-0">{n(3)}</span>
                     <div>
-                      <h4 className="font-extrabold text-[#10233F] text-sm">मालकाशी थेट कॉलवर बोला</h4>
-                      <p className="text-xs text-[#5B6B7F] mt-1 font-semibold">कोणत्याही मध्यस्थाशिवाय थेट कंपनी/मालकांशी संपर्क साधा व कामावर लागा.</p>
+                      <h4 className="font-extrabold text-[#10233F] text-sm">{t("forWorkersStep3Title")}</h4>
+                      <p className="text-xs text-[#5B6B7F] mt-1 font-semibold">{t("forWorkersStep3Desc")}</p>
                     </div>
                   </div>
                 </div>
 
                 <Button asChild className="w-full mt-8 btn-yellow font-extrabold text-sm py-3">
-                  <Link to="/jobs">काम शोधा (Find Jobs)</Link>
+                  <Link to="/jobs">{t("jobs")}</Link>
                 </Button>
               </div>
 
@@ -184,37 +184,37 @@ function AboutPage() {
                     <Building2 className="size-5" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-black text-[#10233F]">मालकांसाठी (For Employers)</h3>
-                    <span className="text-xs font-bold text-[#125BB5]">त्वरित कुशल कामगार शोधा</span>
+                    <h3 className="text-xl font-black text-[#10233F]">{t("forEmployersTitle")}</h3>
+                    <span className="text-xs font-bold text-[#125BB5]">{t("employerDesc")}</span>
                   </div>
                 </div>
 
                 <div className="space-y-6">
                   <div className="flex gap-4">
-                    <span className="size-8 rounded-full bg-[#125BB5] text-white font-black text-xs flex items-center justify-center shrink-0">1</span>
+                    <span className="size-8 rounded-full bg-[#125BB5] text-white font-black text-xs flex items-center justify-center shrink-0">{n(1)}</span>
                     <div>
-                      <h4 className="font-extrabold text-[#10233F] text-sm">नोकरी / काम पोस्ट करा</h4>
-                      <p className="text-xs text-[#5B6B7F] mt-1 font-semibold">नोकरीचे स्वरूप, आवश्यक कौशल्ये आणि पगाराचा तपशील प्रविष्ट करा.</p>
+                      <h4 className="font-extrabold text-[#10233F] text-sm">{t("forEmployersStep1Title")}</h4>
+                      <p className="text-xs text-[#5B6B7F] mt-1 font-semibold">{t("forEmployersStep1Desc")}</p>
                     </div>
                   </div>
                   <div className="flex gap-4">
-                    <span className="size-8 rounded-full bg-[#125BB5] text-white font-black text-xs flex items-center justify-center shrink-0">2</span>
+                    <span className="size-8 rounded-full bg-[#125BB5] text-white font-black text-xs flex items-center justify-center shrink-0">{n(2)}</span>
                     <div>
-                      <h4 className="font-extrabold text-[#10233F] text-sm">सत्यापित कामगार प्रोफाईल पहा</h4>
-                      <p className="text-xs text-[#5B6B7F] mt-1 font-semibold">इलेक्ट्रीशियन, वेल्डर, फॅक्टरी कामगार, ड्रायव्हर प्रोफाईल फिल्टर करा.</p>
+                      <h4 className="font-extrabold text-[#10233F] text-sm">{t("forEmployersStep2Title")}</h4>
+                      <p className="text-xs text-[#5B6B7F] mt-1 font-semibold">{t("forEmployersStep2Desc")}</p>
                     </div>
                   </div>
                   <div className="flex gap-4">
-                    <span className="size-8 rounded-full bg-[#125BB5] text-white font-black text-xs flex items-center justify-center shrink-0">3</span>
+                    <span className="size-8 rounded-full bg-[#125BB5] text-white font-black text-xs flex items-center justify-center shrink-0">{n(3)}</span>
                     <div>
-                      <h4 className="font-extrabold text-[#10233F] text-sm">त्वरित भरती करा</h4>
-                      <p className="text-xs text-[#5B6B7F] mt-1 font-semibold">थेट कॉल किंवा मेसेजद्वारे कामगारांना कामावर बोलवा.</p>
+                      <h4 className="font-extrabold text-[#10233F] text-sm">{t("forEmployersStep3Title")}</h4>
+                      <p className="text-xs text-[#5B6B7F] mt-1 font-semibold">{t("forEmployersStep3Desc")}</p>
                     </div>
                   </div>
                 </div>
 
                 <Button asChild className="w-full mt-8 btn-navy font-extrabold text-sm py-3">
-                  <Link to="/workers">कामगार शोधा (Find Workers)</Link>
+                  <Link to="/workers">{t("workers")}</Link>
                 </Button>
               </div>
             </div>
@@ -226,10 +226,10 @@ function AboutPage() {
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-2xl mx-auto mb-14">
               <h2 className="text-3xl font-black text-[#10233F] sm:text-4xl">
-                REAL JOB का निवडावे?
+                {t("whyChooseTitle")}
               </h2>
               <p className="mt-3 text-base font-semibold text-[#5B6B7F]">
-                Why REAL JOB is the preferred choice for thousands of workers & employers
+                {t("whyUsSubtitle")}
               </p>
             </div>
 
@@ -238,9 +238,9 @@ function AboutPage() {
                 <div className="size-12 rounded-full bg-[#063B78]/10 text-[#063B78] mx-auto flex items-center justify-center mb-4">
                   <ShieldCheck className="size-6" />
                 </div>
-                <h3 className="font-black text-base text-[#10233F]">100% Verified Users</h3>
+                <h3 className="font-black text-base text-[#10233F]">{t("verifiedUsersTitle")}</h3>
                 <p className="text-xs font-semibold text-[#5B6B7F] mt-2">
-                  All worker profiles and employer listings undergo strict phone and document verification.
+                  {t("verifiedUsersDesc")}
                 </p>
               </div>
 
@@ -248,9 +248,9 @@ function AboutPage() {
                 <div className="size-12 rounded-full bg-[#FFC400]/20 text-[#082F63] mx-auto flex items-center justify-center mb-4">
                   <HeartHandshake className="size-6" />
                 </div>
-                <h3 className="font-black text-base text-[#10233F]">Zero Agent Fees</h3>
+                <h3 className="font-black text-base text-[#10233F]">{t("zeroFeesTitle")}</h3>
                 <p className="text-xs font-semibold text-[#5B6B7F] mt-2">
-                  No hidden agency charges. Direct contact between employer and job seeker.
+                  {t("zeroFeesDesc")}
                 </p>
               </div>
 
@@ -258,9 +258,9 @@ function AboutPage() {
                 <div className="size-12 rounded-full bg-[#125BB5]/10 text-[#125BB5] mx-auto flex items-center justify-center mb-4">
                   <Globe className="size-6" />
                 </div>
-                <h3 className="font-black text-base text-[#10233F]">Regional Languages</h3>
+                <h3 className="font-black text-base text-[#10233F]">{t("regionalLangTitle")}</h3>
                 <p className="text-xs font-semibold text-[#5B6B7F] mt-2">
-                  Available in Marathi, Hindi, English, and major Indian regional languages.
+                  {t("regionalLangDesc")}
                 </p>
               </div>
 
@@ -268,9 +268,9 @@ function AboutPage() {
                 <div className="size-12 rounded-full bg-[#063B78]/10 text-[#063B78] mx-auto flex items-center justify-center mb-4">
                   <Zap className="size-6" />
                 </div>
-                <h3 className="font-black text-base text-[#10233F]">Instant Hiring</h3>
+                <h3 className="font-black text-base text-[#10233F]">{t("instantHiringTitle")}</h3>
                 <p className="text-xs font-semibold text-[#5B6B7F] mt-2">
-                  Connect with candidates within 24 hours of posting jobs.
+                  {t("instantHiringDesc")}
                 </p>
               </div>
             </div>
@@ -281,21 +281,21 @@ function AboutPage() {
         <section className="bg-hero-overlay text-white py-14">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
             <h2 className="text-3xl font-black sm:text-4xl text-white">
-              आजच REAL JOB मधे सामील व्हा!
+              {t("joinBannerTitle")}
             </h2>
             <p className="mt-3 text-base text-white/90 max-w-xl mx-auto font-medium">
-              योग्य माणूस • योग्य काम • योग्य संधी — सर्व काही ऑनलाइन!
+              {t("joinBannerSub")}
             </p>
 
             <div className="mt-8 flex flex-wrap justify-center gap-4">
               <Button asChild className="btn-yellow font-extrabold text-sm px-8 py-3.5 h-auto">
                 <Link to="/auth" search={{ mode: "register", role: "worker" }}>
-                  मला काम पाहिजे (Join as Worker)
+                  {t("seeker")}
                 </Link>
               </Button>
               <Button asChild variant="outline" className="border-white text-white font-extrabold text-sm px-8 py-3.5 h-auto hover:bg-white hover:text-[#063B78]">
                 <Link to="/auth" search={{ mode: "register", role: "employer" }}>
-                  मला कामगार पाहिजे (Join as Employer)
+                  {t("employer")}
                 </Link>
               </Button>
             </div>
