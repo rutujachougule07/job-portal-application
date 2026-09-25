@@ -20,7 +20,6 @@ import {
 import { Brand } from "./Brand";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { LanguageGate } from "./LanguageGate";
 
@@ -61,14 +60,9 @@ export function AppShell({ role, title, eyebrow, children }: { role: Role; title
   const navigate = useNavigate();
   const { t } = useI18n();
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
-    window.localStorage.removeItem("karyam-onboarding-done");
+  const signOut = () => {
+    window.localStorage.removeItem("realjob-user");
     navigate({ to: "/", replace: true });
-  };
-
-  const openGate = () => {
-    window.dispatchEvent(new Event("karyam-open-gate"));
   };
 
   return (
@@ -166,7 +160,7 @@ export function AppShell({ role, title, eyebrow, children }: { role: Role; title
 
             <Button variant="ghost" className="gap-2 px-2">
               <span className="grid size-8 place-items-center rounded-full bg-primary text-xs text-primary-foreground">
-                AK
+                RJ
               </span>
               <ChevronDown className="hidden size-3 sm:block" />
             </Button>

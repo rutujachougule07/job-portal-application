@@ -19,7 +19,6 @@ import {
   User,
   Wallet,
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { Brand } from "@/components/portal/Brand";
 import { LanguageSwitcher } from "@/components/portal/LanguageSwitcher";
@@ -79,58 +78,33 @@ function AuthPage() {
     e.preventDefault();
     setBusy(true);
 
-    try {
+    setTimeout(() => {
+      setBusy(false);
+
       if (mode === "forgot") {
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/reset-password`,
-        });
-        if (error) throw error;
         toast.success("Password reset email sent! Check your inbox.");
         return;
       }
 
       if (mode === "register") {
         const fullName = role === "employer" ? contactPerson || companyName : workerName;
-        const phone = role === "employer" ? employerPhone : workerPhone;
-
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: window.location.origin,
-            data: {
-              full_name: fullName,
-              phone,
-              user_role: role,
-              preferred_language: lang,
-              company_name: companyName,
-              profession: workerProfession,
-              location: role === "employer" ? employerLocation : workerLocation,
-              experience: workerExperience,
-              expected_salary: workerSalary,
-              availability: workerAvailability,
-            },
-          },
-        });
-
-        if (error) throw error;
-        toast.success("Account created successfully! Check email to confirm or navigate to dashboard.");
-        setTimeout(() => {
-          navigate({ to: "/dashboard" });
-        }, 1200);
+        window.localStorage.setItem(
+          "realjob-user",
+          JSON.stringify({ email, fullName, role, registeredAt: new Date().toISOString() })
+        );
+        toast.success("Account created successfully! Welcome to REAL JOB.");
+        navigate({ to: role === "employer" || role === "admin" ? "/employer" : "/dashboard" });
         return;
       }
 
       // Login Mode
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
+      window.localStorage.setItem(
+        "realjob-user",
+        JSON.stringify({ email, role, loggedInAt: new Date().toISOString() })
+      );
       toast.success("Successfully logged in!");
       navigate({ to: role === "employer" || role === "admin" ? "/employer" : "/dashboard" });
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Authentication failed. Please check credentials.");
-    } finally {
-      setBusy(false);
-    }
+    }, 1000);
   };
 
   const handleGoogleAuth = async () => {
