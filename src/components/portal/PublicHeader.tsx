@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Briefcase, Building2, Info, Mail, Menu, ShieldCheck, UserRound, Users, X } from "lucide-react";
+import { Briefcase, Building2, HelpCircle, Info, Mail, Menu, ShieldCheck, UserRound, Users, X } from "lucide-react";
 import { Brand } from "./Brand";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,9 @@ export function PublicHeader() {
           </Link>
           <Link to="/contact" className="nav-link text-sm font-bold hover:text-[#063B78] transition-colors">
             {t("contactUs")}
+          </Link>
+          <Link to="/faq" className="nav-link text-sm font-bold hover:text-[#063B78] transition-colors">
+            {t("faq")}
           </Link>
         </nav>
 
@@ -130,7 +133,14 @@ export function PublicHeader() {
                 <Mail className="size-5 text-[#063B78]" />
                 {t("contactUs")}
               </Link>
-
+              <Link
+                to="/faq"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-3 rounded-lg px-3 py-2.5 font-bold text-[#10233F] hover:bg-[#F5F8FC]"
+              >
+                <HelpCircle className="size-5 text-[#125BB5]" />
+                {t("faq")}
+              </Link>
             </nav>
 
             <div className="pt-4 border-t border-[#DCE5F0] grid grid-cols-2 gap-2.5">
