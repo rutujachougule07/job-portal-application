@@ -10,7 +10,6 @@ import {
   Twitter,
   Youtube,
 } from "lucide-react";
-import { LogoIcon } from "./Brand";
 import { useI18n, getCategoryTitle } from "@/lib/i18n";
 
 export function PublicFooter() {
@@ -43,21 +42,11 @@ export function PublicFooter() {
           {/* Col 1: REAL JOB Brand Info */}
           <div className="space-y-4">
             <Link to="/" className="inline-flex items-center gap-3 group">
-              <LogoIcon className="size-11 transition-transform duration-200 group-hover:scale-105" />
-              <div className="flex flex-col justify-center">
-                <div className="text-2xl font-black tracking-tight leading-none flex items-center gap-1">
-                  <span className="text-white">REAL</span>
-                  <span className="bg-[#FFC400] text-[#082F63] px-2 py-0.5 rounded font-extrabold text-lg">
-                    JOB
-                  </span>
-                </div>
-                <small className="mt-1 block text-[10px] font-extrabold uppercase tracking-widest text-[#FFC400] leading-tight">
-                  {t("tagline")}
-                </small>
-                <span className="text-[9px] font-bold text-slate-300">
-                  {t("marathiTagline")}
-                </span>
-              </div>
+              <img
+                src="/logo.png"
+                alt="REAL JOB Logo"
+                className="h-20 object-contain bg-white/95 p-2 rounded-xl shadow-md transition-transform group-hover:scale-105"
+              />
             </Link>
 
             <p className="text-xs leading-relaxed text-slate-300 pr-2">

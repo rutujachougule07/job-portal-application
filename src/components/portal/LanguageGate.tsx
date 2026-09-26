@@ -3,7 +3,6 @@ import { useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Building2, Check, Globe2, ShieldCheck, UserRound } from "lucide-react";
 import { languages, useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
-import { LogoIcon } from "./Brand";
 
 export function LanguageGate() {
   const { lang, setLang, t } = useI18n();
@@ -48,8 +47,9 @@ export function LanguageGate() {
     <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-primary/95 text-primary-foreground backdrop-blur-md">
       <div className="language-pattern min-h-screen w-full px-4 py-10 sm:py-16 flex items-center justify-center">
         <div className="mx-auto w-full max-w-4xl text-center">
-          <div className="mx-auto mb-4 flex justify-center">
-            <LogoIcon className="size-16" />
+          <div className="mx-auto mb-4 flex justify-center text-3xl font-black tracking-tight">
+            <span className="text-white">REAL</span>
+            <span className="bg-[#FFC400] text-[#082F63] px-2 py-0.5 rounded-md font-extrabold shadow-sm ml-1.5">JOB</span>
           </div>
           <p className="mb-2 text-xs font-bold uppercase tracking-widest text-accent">Job Portal • कार्याम</p>
 

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Briefcase, Building2, HelpCircle, Info, Mail, Menu, Users, X } from "lucide-react";
+import { Briefcase, Building2, HelpCircle, Info, Mail, Menu, ShieldCheck, UserRound, Users, X } from "lucide-react";
 import { Brand } from "./Brand";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { Button } from "@/components/ui/button";
@@ -12,8 +12,8 @@ export function PublicHeader() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-[#DCE5F0] bg-white/95 backdrop-blur-md shadow-xs">
-      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6">
-        <Brand />
+      <div className="mx-auto flex h-18 max-w-7xl items-center justify-between px-4 sm:px-6">
+        <Brand className="h-14 sm:h-16 scale-105 sm:scale-110 origin-left" />
 
         {/* Desktop Navigation */}
         <nav className="hidden items-center gap-6 xl:gap-8 lg:flex">
@@ -41,20 +41,24 @@ export function PublicHeader() {
         </nav>
 
         {/* Action Buttons & Utilities */}
-        <div className="flex items-center gap-3">
-          <div className="hidden sm:block">
+        <div className="flex items-center gap-2 sm:gap-2.5">
+          <div className="hidden xl:block">
             <LanguageSwitcher label="Language" showCurrent={true} />
           </div>
 
-          <Button asChild variant="outline" className="hidden sm:inline-flex border-[#063B78] text-[#063B78] font-bold hover:bg-[#063B78] hover:text-white text-xs px-4 h-10">
-            <Link to="/auth" search={{ mode: "login", role: "worker" }}>
-              {t("signIn")}
+          {/* User Login */}
+          <Button asChild variant="outline" className="hidden sm:inline-flex border-[#063B78] text-[#063B78] font-extrabold hover:bg-[#063B78] hover:text-white text-xs px-3 sm:px-3.5 h-9.5 rounded-lg shadow-2xs">
+            <Link to="/auth" search={{ mode: "login", role: "worker" }} className="inline-flex items-center gap-1.5">
+              <UserRound className="size-3.5" />
+              <span>{t("userLogin")}</span>
             </Link>
           </Button>
 
-          <Button asChild className="hidden sm:inline-flex btn-yellow font-black text-xs px-5 h-10 shadow-xs">
-            <Link to="/auth" search={{ mode: "register", role: "worker" }}>
-              {t("register")}
+          {/* Admin Login */}
+          <Button asChild className="hidden sm:inline-flex bg-[#063B78] hover:bg-[#082F63] text-white font-extrabold text-xs px-3 sm:px-3.5 h-9.5 rounded-lg shadow-xs">
+            <Link to="/auth" search={{ mode: "login", role: "admin" }} className="inline-flex items-center gap-1.5">
+              <ShieldCheck className="size-3.5 text-[#FFC400]" />
+              <span>{t("adminLogin")}</span>
             </Link>
           </Button>
 
@@ -139,15 +143,18 @@ export function PublicHeader() {
               </Link>
             </nav>
 
-            <div className="pt-4 border-t border-[#DCE5F0] grid grid-cols-2 gap-3">
-              <Button asChild variant="outline" className="w-full border-[#063B78] text-[#063B78] font-bold text-xs">
+            <div className="pt-4 border-t border-[#DCE5F0] grid grid-cols-2 gap-2.5">
+              <Button asChild variant="outline" className="w-full border-[#063B78] text-[#063B78] font-extrabold text-xs">
                 <Link to="/auth" search={{ mode: "login", role: "worker" }} onClick={() => setMobileMenuOpen(false)}>
-                  {t("signIn")}
+                  <UserRound className="size-3.5 mr-1" />
+                  {t("userLogin")}
                 </Link>
               </Button>
-              <Button asChild className="w-full btn-yellow font-extrabold text-xs">
-                <Link to="/auth" search={{ mode: "register", role: "worker" }} onClick={() => setMobileMenuOpen(false)}>
-                  {t("register")}
+
+              <Button asChild className="w-full bg-[#063B78] text-white font-extrabold text-xs">
+                <Link to="/auth" search={{ mode: "login", role: "admin" }} onClick={() => setMobileMenuOpen(false)}>
+                  <ShieldCheck className="size-3.5 mr-1 text-[#FFC400]" />
+                  {t("adminLogin")}
                 </Link>
               </Button>
             </div>

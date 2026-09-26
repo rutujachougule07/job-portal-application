@@ -73,6 +73,8 @@ function AuthPage() {
   const [contactPerson, setContactPerson] = useState("");
   const [employerPhone, setEmployerPhone] = useState("");
   const [employerLocation, setEmployerLocation] = useState("");
+  const [companyIndustry, setCompanyIndustry] = useState("Manufacturing & Engineering");
+  const [companySize, setCompanySize] = useState("10-50 Employees");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,7 +89,7 @@ function AuthPage() {
       }
 
       if (mode === "register") {
-        const fullName = role === "employer" ? contactPerson || companyName : workerName;
+        const fullName = role === "employer" || role === "admin" ? companyName : workerName;
         window.localStorage.setItem(
           "realjob-user",
           JSON.stringify({ email, fullName, role, registeredAt: new Date().toISOString() })
@@ -178,15 +180,44 @@ function AuthPage() {
             <Brand />
           </div>
 
+          {/* Role & Form Identification Badge */}
+          <div className="mb-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-black bg-[#EBF1F8] text-[#063B78] border border-[#B8D3F2]">
+            {role === "admin" ? (
+              <>
+                <Shield className="size-3.5 text-[#063B78]" />
+                <span>ॲडमिन व मालक फॉर्म (Employer & Admin Form)</span>
+              </>
+            ) : (
+              <>
+                <HardHat className="size-3.5 text-[#D99B00]" />
+                <span>कामगार / युझर फॉर्म (Worker / User Form)</span>
+              </>
+            )}
+          </div>
+
           {/* Title Header */}
           <div className="mb-6">
             <h1 className="text-2xl font-black text-[#10233F]">
-              {mode === "register" ? "नवीन खाते तयार करा (Register)" : mode === "forgot" ? "पासवर्ड रीसेट करा" : "लॉगिन करा (Login)"}
+              {role === "admin"
+                ? mode === "register"
+                  ? "ॲडमिन / मालक नोंदणी (Employer Register)"
+                  : mode === "forgot"
+                  ? "पासवर्ड रीसेट करा"
+                  : "ॲडमिन व मालक लॉगिन (Employer & Admin Login)"
+                : mode === "register"
+                ? "कामगार नोंदणी (Worker Register)"
+                : mode === "forgot"
+                ? "पासवर्ड रीसेट करा"
+                : "कामगार / युझर लॉगिन (Worker / User Login)"}
             </h1>
             <p className="mt-1 text-xs font-semibold text-[#5B6B7F]">
-              {mode === "register"
-                ? "REAL JOB वर नवीन प्रोफाईल नोंदवा व कामाला सुरुवात करा."
-                : "तुमचे ईमेल व पासवर्ड प्रविष्ट करून पुढे जा."}
+              {role === "admin"
+                ? mode === "register"
+                  ? "कंपनी व मालकांसाठी: कामगार शोधण्यासाठी नवीन खाते नोंदवा."
+                  : "कंपनी, मालक व ॲडमिनसाठी: कामगार शोधण्यासाठी व जॉब पोस्ट करण्यासाठी लॉगिन करा."
+                : mode === "register"
+                ? "कामगारांसाठी: नवीन प्रोफाईल नोंदवा व नोकरी शोधण्यास सुरुवात करा."
+                : "कामगारांसाठी: तुमचा ईमेल व पासवर्ड प्रविष्ट करून नोकरी शोधण्यासाठी लॉगिन करा."}
             </p>
           </div>
 
@@ -215,34 +246,6 @@ function AuthPage() {
                 </button>
               </div>
 
-              {/* Worker / Employer Role Toggle */}
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setRole("worker")}
-                  className={`flex items-center justify-center gap-2 p-2.5 rounded-xl border text-xs font-extrabold transition-all ${
-                    role === "worker"
-                      ? "border-[#063B78] bg-[#EBF1F8] text-[#063B78]"
-                      : "border-[#DCE5F0] text-[#5B6B7F]"
-                  }`}
-                >
-                  <HardHat className="size-4 text-[#FFC400]" />
-                  मला काम पाहिजे (Worker)
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setRole("employer")}
-                  className={`flex items-center justify-center gap-2 p-2.5 rounded-xl border text-xs font-extrabold transition-all ${
-                    role === "employer"
-                      ? "border-[#063B78] bg-[#EBF1F8] text-[#063B78]"
-                      : "border-[#DCE5F0] text-[#5B6B7F]"
-                  }`}
-                >
-                  <Building2 className="size-4 text-[#125BB5]" />
-                  मला कामगार पाहिजे (Employer)
-                </button>
-              </div>
             </div>
           )}
 
@@ -321,14 +324,14 @@ function AuthPage() {
               </>
             )}
 
-            {/* EMPLOYER REGISTRATION FIELDS */}
-            {mode === "register" && role === "employer" && (
+            {/* EMPLOYER & ADMIN REGISTRATION FIELDS */}
+            {mode === "register" && (role === "employer" || role === "admin") && (
               <>
                 <div>
-                  <Label className="text-xs font-extrabold text-[#10233F]">कंपनीचे नाव (Company Name) *</Label>
+                  <Label className="text-xs font-extrabold text-[#10233F]">कंपनी / संस्थेचे नाव (Company Name) *</Label>
                   <Input
                     required
-                    placeholder="उदा. ओम साई इंडस्ट्रीज लि."
+                    placeholder="उदा. ओम साई इंडस्ट्रियल सर्व्हिसेस लि."
                     value={companyName}
                     onChange={(e) => setCompanyName(e.target.value)}
                     className="mt-1 h-11 border-[#DCE5F0] text-xs font-bold text-[#10233F]"
@@ -337,18 +340,7 @@ function AuthPage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <Label className="text-xs font-extrabold text-[#10233F]">संपर्क व्यक्तीचे नाव (Contact Person) *</Label>
-                    <Input
-                      required
-                      placeholder="उदा. राजेश पाटील (HR)"
-                      value={contactPerson}
-                      onChange={(e) => setContactPerson(e.target.value)}
-                      className="mt-1 h-11 border-[#DCE5F0] text-xs font-bold text-[#10233F]"
-                    />
-                  </div>
-
-                  <div>
-                    <Label className="text-xs font-extrabold text-[#10233F]">मोबाईल नंबर (Mobile) *</Label>
+                    <Label className="text-xs font-extrabold text-[#10233F]">संपर्क मोबाईल नंबर (Contact Mobile) *</Label>
                     <Input
                       required
                       type="tel"
@@ -358,17 +350,32 @@ function AuthPage() {
                       className="mt-1 h-11 border-[#DCE5F0] text-xs font-bold text-[#10233F]"
                     />
                   </div>
+
+                  <div>
+                    <Label className="text-xs font-extrabold text-[#10233F]">कंपनीचे ठिकाण (Company Location) *</Label>
+                    <Input
+                      required
+                      placeholder="उदा. एमआयडीसी चाकण, पुणे"
+                      value={employerLocation}
+                      onChange={(e) => setEmployerLocation(e.target.value)}
+                      className="mt-1 h-11 border-[#DCE5F0] text-xs font-bold text-[#10233F]"
+                    />
+                  </div>
                 </div>
 
                 <div>
-                  <Label className="text-xs font-extrabold text-[#10233F]">कंपनीचे ठिकाण (Company Location) *</Label>
-                  <Input
-                    required
-                    placeholder="उदा. एमआयडीसी भोसरी, पुणे"
-                    value={employerLocation}
-                    onChange={(e) => setEmployerLocation(e.target.value)}
-                    className="mt-1 h-11 border-[#DCE5F0] text-xs font-bold text-[#10233F]"
-                  />
+                  <Label className="text-xs font-extrabold text-[#10233F]">उद्योगाचा प्रकार (Industry Type)</Label>
+                  <select
+                    value={companyIndustry}
+                    onChange={(e) => setCompanyIndustry(e.target.value)}
+                    className="mt-1 w-full h-11 rounded-lg border border-[#DCE5F0] bg-white px-3 text-xs font-bold text-[#10233F]"
+                  >
+                    <option value="Manufacturing & Engineering">ऑटो व मॅन्युफॅक्चरिंग</option>
+                    <option value="Construction & Real Estate">बांधकाम (Construction)</option>
+                    <option value="Logistics & Warehousing">लॉजिस्टिक्स व गोदामा</option>
+                    <option value="Textiles & Garments">टेक्स्टाईल व गारमेंट्स</option>
+                    <option value="Services & Hospitality">सर्व्हिसेस व हॉटेल</option>
+                  </select>
                 </div>
               </>
             )}

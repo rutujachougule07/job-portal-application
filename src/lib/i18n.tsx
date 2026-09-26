@@ -43,6 +43,8 @@ const en = {
   profile: "My Profile",
   settings: "Settings",
   signIn: "Login",
+  userLogin: "User Login",
+  adminLogin: "Admin Login",
   register: "Register",
   logout: "Logout",
 
@@ -303,7 +305,7 @@ const en = {
 
 export type TranslationKeys = keyof typeof en;
 
-const partial: Record<string, Record<TranslationKeys, string>> = {
+const partial: Record<string, Partial<Record<TranslationKeys, string>>> = {
   mr: {
     brand: "REAL JOB",
     tagline: "कामगार शोधा | काम मिळवा",
@@ -334,6 +336,8 @@ const partial: Record<string, Record<TranslationKeys, string>> = {
     profile: "माझी प्रोफाइल",
     settings: "सेटिंग्ज",
     signIn: "लॉगिन",
+    userLogin: "यूझर लॉगिन",
+    adminLogin: "ॲडमिन लॉगिन",
     register: "रजिस्टर",
     logout: "लॉगआउट",
 
