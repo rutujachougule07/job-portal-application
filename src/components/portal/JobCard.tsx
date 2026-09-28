@@ -25,6 +25,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/lib/i18n";
+import { dataStore } from "@/lib/data-store";
+import { toast } from "sonner";
 
 export type Job = {
   id: string;
@@ -253,80 +255,7 @@ export function getCompanyMetadata(job: Job): CompanyMetadata {
   };
 }
 
-export const jobs: Job[] = [
-  // 1. Construction
-  { id: "c-1", title: "Civil Engineer - Site Operations", company: "L&T Construction", location: "Mumbai, Maharashtra", salary: "₹35,000–50,000/mo", experience: "2–5 years", type: "Full-time", workMode: "On-site", posted: "1h ago", initials: "LT", category: "Construction", featured: true, openings: 25 },
-  { id: "c-2", title: "Site Supervisor & Safety Officer", company: "Shapoorji Pallonji", location: "Pune, Maharashtra", salary: "₹25,000–35,000/mo", experience: "3+ years", type: "Full-time", workMode: "On-site", posted: "3h ago", initials: "SP", category: "Construction", openings: 15 },
-  { id: "c-3", title: "Quantity Surveyor & Architect", company: "Godrej Properties", location: "Navi Mumbai, Maharashtra", salary: "₹30,000–45,000/mo", experience: "2–4 years", type: "Full-time", workMode: "On-site", posted: "5h ago", initials: "GP", category: "Construction" },
-  { id: "c-4", title: "Project Manager - Infrastructure", company: "Tata Projects", location: "Thane, Maharashtra", salary: "₹60,000–90,000/mo", experience: "5+ years", type: "Full-time", workMode: "On-site", posted: "1d ago", initials: "TP", category: "Construction", featured: true },
-
-  // 2. IT & Software
-  { id: "it-1", title: "Full Stack Software Developer", company: "TCS", location: "Pune, Maharashtra", salary: "₹50,000–80,000/mo", experience: "2–5 years", type: "Full-time", workMode: "Hybrid", posted: "30m ago", initials: "TC", category: "IT & Software", featured: true, openings: 40 },
-  { id: "it-2", title: "Frontend Developer (React/Next)", company: "Infosys", location: "Bengaluru / WFH", salary: "₹45,000–70,000/mo", experience: "1–3 years", type: "Full-time", workMode: "Remote", posted: "2h ago", initials: "IN", category: "IT & Software", featured: true },
-  { id: "it-3", title: "DevOps & Cyber Security Engineer", company: "Wipro", location: "Pune, Maharashtra", salary: "₹60,000–95,000/mo", experience: "3+ years", type: "Full-time", workMode: "Hybrid", posted: "4h ago", initials: "WP", category: "IT & Software" },
-  { id: "it-4", title: "Data Analyst & UI/UX Designer", company: "Accenture", location: "Mumbai, Maharashtra", salary: "₹40,000–65,000/mo", experience: "2–4 years", type: "Full-time", workMode: "On-site", posted: "1d ago", initials: "AC", category: "IT & Software" },
-
-  // 3. Engineering
-  { id: "eng-1", title: "Mechanical & Production Engineer", company: "Tata Motors", location: "Pune, Maharashtra", salary: "₹30,000–45,000/mo", experience: "2–4 years", type: "Full-time", workMode: "On-site", posted: "1h ago", initials: "TM", category: "Engineering", featured: true, openings: 30 },
-  { id: "eng-2", title: "Electrical & Electronics Engineer", company: "Siemens", location: "Aurangabad, Maharashtra", salary: "₹28,000–42,000/mo", experience: "1–3 years", type: "Full-time", workMode: "On-site", posted: "3h ago", initials: "SI", category: "Engineering" },
-  { id: "eng-3", title: "Automobile Quality Engineer", company: "Mahindra & Mahindra", location: "Chakan, Maharashtra", salary: "₹32,000–48,000/mo", experience: "3–5 years", type: "Full-time", workMode: "On-site", posted: "5h ago", initials: "MM", category: "Engineering" },
-
-  // 4. Healthcare & Medical
-  { id: "hc-1", title: "Staff Nurse & Medical Assistant", company: "Ruby Hall Clinic", location: "Pune, Maharashtra", salary: "₹25,000–38,000/mo", experience: "1–4 years", type: "Full-time", workMode: "On-site", posted: "2h ago", initials: "RH", category: "Healthcare & Medical", featured: true, openings: 20 },
-  { id: "hc-2", title: "Pharmacist & Lab Technician", company: "Apollo Hospital", location: "Mumbai, Maharashtra", salary: "₹22,000–32,000/mo", experience: "1–3 years", type: "Full-time", workMode: "On-site", posted: "4h ago", initials: "AH", category: "Healthcare & Medical" },
-  { id: "hc-3", title: "Doctor & Hospital Administrator", company: "Fortis Healthcare", location: "Navi Mumbai, Maharashtra", salary: "₹50,000–90,000/mo", experience: "3+ years", type: "Full-time", workMode: "On-site", posted: "1d ago", initials: "FH", category: "Healthcare & Medical" },
-
-  // 5. Finance & Accounting
-  { id: "fin-1", title: "Senior Accountant & Tax Consultant", company: "KPMG", location: "Mumbai, Maharashtra", salary: "₹35,000–55,000/mo", experience: "3–6 years", type: "Full-time", workMode: "On-site", posted: "2h ago", initials: "KP", category: "Finance & Accounting", featured: true },
-  { id: "fin-2", title: "Banking Executive & Financial Analyst", company: "HDFC Bank", location: "Pune, Maharashtra", salary: "₹28,000–42,000/mo", experience: "1–3 years", type: "Full-time", workMode: "On-site", posted: "5h ago", initials: "HD", category: "Finance & Accounting" },
-
-  // 6. Sales & Marketing
-  { id: "sm-1", title: "Digital Marketing & Sales Executive", company: "Reliance Industries", location: "Mumbai, Maharashtra", salary: "₹25,000–40,000/mo", experience: "0–2 years", type: "Full-time", workMode: "On-site", posted: "1h ago", initials: "RL", category: "Sales & Marketing", featured: true, openings: 50 },
-  { id: "sm-2", title: "Business Development & Telecaller", company: "JustDial", location: "Pune, Maharashtra", salary: "₹18,000–28,000/mo", experience: "Fresher", type: "Full-time", workMode: "On-site", posted: "3h ago", initials: "JD", category: "Sales & Marketing" },
-
-  // 7. Education
-  { id: "edu-1", title: "Academic Coordinator & Lecturer", company: "DY Patil University", location: "Pune, Maharashtra", salary: "₹35,000–50,000/mo", experience: "2+ years", type: "Full-time", workMode: "On-site", posted: "4h ago", initials: "DY", category: "Education" },
-  { id: "edu-2", title: "School Teacher & Online Tutor", company: "Podar International", location: "Mumbai, Maharashtra", salary: "₹25,000–35,000/mo", experience: "1–3 years", type: "Full-time", workMode: "On-site", posted: "1d ago", initials: "PI", category: "Education" },
-
-  // 8. Manufacturing
-  { id: "mfg-1", title: "Production Manager & Machine Operator", company: "Bharat Forge", location: "Pune, Maharashtra", salary: "₹22,000–38,000/mo", experience: "2–5 years", type: "Full-time", workMode: "On-site", posted: "2h ago", initials: "BF", category: "Manufacturing", featured: true, openings: 30 },
-
-  // 9. HR & Recruitment
-  { id: "hr-1", title: "HR Executive & Recruiter", company: "Randstad India", location: "Pune, Maharashtra", salary: "₹22,000–32,000/mo", experience: "1–3 years", type: "Full-time", workMode: "On-site", posted: "3h ago", initials: "RI", category: "HR & Recruitment" },
-
-  // 10. Hospitality & Tourism
-  { id: "hosp-1", title: "Executive Chef & Hotel Manager", company: "Taj Hotels", location: "Mumbai, Maharashtra", salary: "₹35,000–60,000/mo", experience: "3+ years", type: "Full-time", workMode: "On-site", posted: "1h ago", initials: "TH", category: "Hospitality & Tourism", featured: true },
-
-  // 11. Logistics & Transport
-  { id: "log-1", title: "Logistics & Warehouse Manager", company: "Delhivery", location: "Bhiwandi, Maharashtra", salary: "₹25,000–38,000/mo", experience: "2–4 years", type: "Full-time", workMode: "On-site", posted: "2h ago", initials: "DL", category: "Logistics & Transport" },
-
-  // 12. Government & Public Sector
-  { id: "gov-1", title: "Administrative Officer & Public Services", company: "MSEDCL / Public Sector", location: "Mumbai, Maharashtra", salary: "₹30,000–45,000/mo", experience: "1–3 years", type: "Full-time", workMode: "On-site", posted: "5h ago", initials: "GO", category: "Government & Public Sector" },
-
-  // 13. Legal
-  { id: "leg-1", title: "Legal Advisor & Compliance Officer", company: "Corporate Law Firm", location: "Mumbai, Maharashtra", salary: "₹40,000–65,000/mo", experience: "3+ years", type: "Full-time", workMode: "On-site", posted: "1d ago", initials: "CL", category: "Legal" },
-
-  // 14. Architecture & Interior Design
-  { id: "arch-1", title: "Interior Designer & 3D Visualizer", company: "Livspace", location: "Pune, Maharashtra", salary: "₹30,000–45,000/mo", experience: "2–4 years", type: "Full-time", workMode: "On-site", posted: "4h ago", initials: "LS", category: "Architecture & Interior Design" },
-
-  // 15. Retail & E-commerce
-  { id: "ret-1", title: "Store Manager & E-commerce Executive", company: "Reliance Retail", location: "Mumbai, Maharashtra", salary: "₹22,000–35,000/mo", experience: "1–3 years", type: "Full-time", workMode: "On-site", posted: "2h ago", initials: "RR", category: "Retail & E-commerce" },
-
-  // 16. Customer Service & BPO
-  { id: "bpo-1", title: "Customer Support & Technical Representative", company: "Teleperformance", location: "Pune, Maharashtra", salary: "₹18,000–28,000/mo", experience: "Fresher", type: "Full-time", workMode: "Hybrid", posted: "1h ago", initials: "TP", category: "Customer Service & BPO", featured: true, openings: 60 },
-
-  // 17. Design & Creative
-  { id: "des-1", title: "Graphic Designer & Video Editor", company: "Creative Agency", location: "Mumbai / Remote", salary: "₹25,000–40,000/mo", experience: "1–3 years", type: "Full-time", workMode: "Remote", posted: "3h ago", initials: "CA", category: "Design & Creative" },
-
-  // 18. Media & Communication
-  { id: "med-1", title: "Content Writer & PR Executive", company: "NDTV / Media House", location: "Mumbai, Maharashtra", salary: "₹25,000–38,000/mo", experience: "1–3 years", type: "Full-time", workMode: "On-site", posted: "6h ago", initials: "MH", category: "Media & Communication" },
-
-  // 19. Agriculture & Farming
-  { id: "agri-1", title: "Agricultural Engineer & Farm Manager", company: "Mahindra Agri / Sahyadri", location: "Nashik, Maharashtra", salary: "₹25,000–38,000/mo", experience: "2+ years", type: "Full-time", workMode: "On-site", posted: "1d ago", initials: "MA", category: "Agriculture & Farming" },
-
-  // 20. Science & Research
-  { id: "sci-1", title: "Research Scientist & Lab Researcher", company: "Serum Institute of India", location: "Pune, Maharashtra", salary: "₹45,000–70,000/mo", experience: "3+ years", type: "Full-time", workMode: "On-site", posted: "2h ago", initials: "SI", category: "Science & Research", featured: true }
-];
+export const jobs: Job[] = [];
 
 export function JobCard({
   job,
@@ -371,11 +300,41 @@ export function JobCard({
 
   const submitApplication = (e: React.FormEvent) => {
     e.preventDefault();
-    setApplied(true);
-    setTimeout(() => {
-      setApplied(false);
+    const currentUser = dataStore.getCurrentUser();
+    const seekerId = currentUser ? (currentUser.email || currentUser.id || "seeker-demo") : "candidate@realjob.com";
+    const seekerName = currentUser?.fullName || "Rutuja Pawar";
+
+    // Duplicate Application Check
+    if (dataStore.hasAlreadyApplied(seekerId, job.id)) {
+      toast.error(lang === "mr" ? "तुम्ही या नोकरीसाठी आधीच अर्ज भरला आहे!" : "You have already applied to this job!");
       setShowApplyModal(false);
-    }, 2500);
+      return;
+    }
+
+    try {
+      dataStore.createApplication({
+        jobId: job.id,
+        employerId: job.company,
+        jobSeekerId: seekerId,
+        candidateName: seekerName,
+        candidateEmail: seekerId,
+        candidateMobile: "+91 98220 11223",
+        jobTitle: job.title,
+        companyName: job.company,
+        location: job.location,
+        salary: job.salary,
+        resume: `${seekerName.replaceAll(" ", "_")}_Resume.pdf`,
+      });
+
+      setApplied(true);
+      toast.success(lang === "mr" ? "अर्ज यशस्वीरीत्या पाठवला!" : "Application submitted successfully!");
+      setTimeout(() => {
+        setApplied(false);
+        setShowApplyModal(false);
+      }, 2000);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to submit application");
+    }
   };
 
   // Other jobs by the same company

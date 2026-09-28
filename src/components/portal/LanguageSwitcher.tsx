@@ -56,11 +56,10 @@ export function LanguageSwitcher({
               <DropdownMenuItem
                 key={item.code}
                 onClick={() => setLang(item.code)}
-                className={`flex items-center justify-between cursor-pointer px-3 py-2 text-xs sm:text-sm rounded-lg transition-colors ${
-                  isSelected
+                className={`flex items-center justify-between cursor-pointer px-3 py-2 text-xs sm:text-sm rounded-lg transition-colors ${isSelected
                     ? "bg-[#063B78] text-white font-bold"
                     : "hover:bg-[#F5F8FC] hover:text-[#063B78]"
-                }`}
+                  }`}
               >
                 <div className="flex items-baseline gap-2">
                   <span className="font-bold">{item.native}</span>
@@ -86,4 +85,5 @@ export function LanguageSwitcher({
     </DropdownMenu>
   );
 }
+
 

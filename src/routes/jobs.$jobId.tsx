@@ -22,6 +22,8 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 
+import { dataStore } from "@/lib/data-store";
+
 export const Route = createFileRoute("/jobs/$jobId")({
   head: ({ params }) => ({
     meta: [
@@ -32,10 +34,35 @@ export const Route = createFileRoute("/jobs/$jobId")({
   component: JobDetailPage,
 });
 
+function getJobDetails(jobId: string) {
+  const storeJob = dataStore.getJobById(jobId);
+  if (storeJob) {
+    return {
+      id: storeJob.id,
+      title: storeJob.title,
+      company: storeJob.company,
+      location: storeJob.location,
+      salary: storeJob.salary,
+      experience: storeJob.experience,
+      type: storeJob.jobType,
+      workMode: (storeJob.workMode as any) || "On-site",
+      posted: storeJob.postedAgo || "Recently",
+      initials: storeJob.initials || storeJob.company.slice(0, 2).toUpperCase(),
+      category: storeJob.category,
+      featured: storeJob.featured,
+      openings: storeJob.vacancies,
+      description: storeJob.description,
+      responsibilities: storeJob.responsibilities,
+      requiredSkills: storeJob.requiredSkills,
+    };
+  }
+  return (jobs.find((j) => j.id === jobId) ?? jobs[0])!;
+}
+
 export function JobDetailPage() {
   const { t, n, lang } = useI18n();
   const { jobId } = useParams({ from: "/jobs/$jobId" });
-  const job = (jobs.find((j) => j.id === jobId) ?? jobs[0])!;
+  const job = getJobDetails(jobId);
 
   const [saved, setSaved] = useState(false);
   const [showApplyModal, setShowApplyModal] = useState(false);
@@ -48,12 +75,40 @@ export function JobDetailPage() {
 
   const handleApplySubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setApplied(true);
-    toast.success(`Application submitted for ${job.title}! ${job.company} will call you shortly.`);
-    setTimeout(() => {
+    const currentUser = dataStore.getCurrentUser();
+    const seekerId = currentUser ? (currentUser.email || currentUser.id || "seeker-demo") : (applicantName ? `seeker-${applicantName}` : "candidate@realjob.com");
+    const name = applicantName || currentUser?.fullName || "Candidate";
+
+    if (dataStore.hasAlreadyApplied(seekerId, job.id)) {
+      toast.error(lang === "mr" ? "तुम्ही या नोकरीसाठी आधीच अर्ज भरला आहे!" : "You have already applied to this job!");
       setShowApplyModal(false);
-      setApplied(false);
-    }, 2000);
+      return;
+    }
+
+    try {
+      dataStore.createApplication({
+        jobId: job.id,
+        employerId: job.company,
+        jobSeekerId: seekerId,
+        candidateName: name,
+        candidateEmail: seekerId,
+        candidateMobile: applicantPhone || "+91 98220 11223",
+        jobTitle: job.title,
+        companyName: job.company,
+        location: job.location,
+        salary: job.salary,
+        resume: `${name.replaceAll(" ", "_")}_Resume.pdf`,
+      });
+
+      setApplied(true);
+      toast.success(`Application submitted for ${job.title}! ${job.company} will call you shortly.`);
+      setTimeout(() => {
+        setShowApplyModal(false);
+        setApplied(false);
+      }, 2000);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to submit application");
+    }
   };
 
   const handleShare = () => {

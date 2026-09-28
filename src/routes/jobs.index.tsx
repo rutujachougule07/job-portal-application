@@ -47,6 +47,7 @@ import { JobCardImage } from "@/components/portal/JobCardImage";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useI18n, getCategoryTitle, getCategoryDesc } from "@/lib/i18n";
+import { dataStore, JobRecord } from "@/lib/data-store";
 
 export const Route = createFileRoute("/jobs/")({
   validateSearch: (search: Record<string, unknown>): { category?: string | undefined } => {
@@ -242,7 +243,22 @@ export function JobsListingPage() {
   };
 
   const filteredJobs = useMemo(() => {
-    return jobs.filter((job) => {
+    const dynamicJobs: Job[] = dataStore.getActiveJobs().map((dj) => ({
+      id: dj.id,
+      title: dj.title,
+      company: dj.company,
+      location: dj.location,
+      salary: dj.salary,
+      experience: dj.experience,
+      type: dj.jobType,
+      workMode: (dj.workMode as any) || "On-site",
+      posted: dj.postedAgo || "Recently",
+      initials: dj.initials || dj.company.slice(0, 2).toUpperCase(),
+      category: dj.category,
+      featured: dj.featured ?? false,
+      openings: dj.vacancies ?? 1,
+    }));
+    return dynamicJobs.filter((job) => {
       const term = searchTerm.toLowerCase();
       const matchesSearch =
         !term ||
@@ -560,89 +576,24 @@ export function JobsListingPage() {
               )}
 
               {/* Main Content Area */}
-              {categoryFilter === "all" || !categoryFilter ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {[
-                    { key: 'construction', Icon: HardHat, jobsCount: "1,950" },
-                    { key: 'it-software', Icon: Laptop, jobsCount: "3,420" },
-                    { key: 'engineering', Icon: Wrench, jobsCount: "2,840" },
-                    { key: 'healthcare-medical', Icon: Stethoscope, jobsCount: "1,680" },
-                    { key: 'finance-accounting', Icon: Landmark, jobsCount: "2,110" },
-                    { key: 'sales-marketing', Icon: TrendingUp, jobsCount: "4,150" },
-                    { key: 'education', Icon: GraduationCap, jobsCount: "1,450" },
-                    { key: 'manufacturing', Icon: Factory, jobsCount: "3,890" },
-                    { key: 'hr-recruitment', Icon: UserPlus, jobsCount: "1,220" },
-                    { key: 'hospitality-tourism', Icon: Hotel, jobsCount: "1,530" },
-                    { key: 'logistics-transport', Icon: Truck, jobsCount: "2,760" },
-                    { key: 'government-public', Icon: Building2, jobsCount: "980" },
-                    { key: 'legal', Icon: Scale, jobsCount: "640" },
-                    { key: 'architecture-design', Icon: Compass, jobsCount: "890" },
-                    { key: 'retail-ecommerce', Icon: ShoppingBag, jobsCount: "2,350" },
-                    { key: 'customer-service-bpo', Icon: Headphones, jobsCount: "3,100" },
-                    { key: 'design-creative', Icon: Palette, jobsCount: "1,140" },
-                    { key: 'media-communication', Icon: Radio, jobsCount: "780" },
-                    { key: 'agriculture-farming', Icon: Sprout, jobsCount: "1,050" },
-                    { key: 'science-research', Icon: FlaskConical, jobsCount: "740" }
-                  ].map((cat) => {
-                    const categoryTitle = getCategoryTitle(cat.key, lang);
-                    const categoryDesc = getCategoryDesc(cat.key, lang);
-                    return (
-                      <div
-                        key={cat.key}
-                        onClick={() => {
-                          setCategoryFilter(cat.key);
-                          setSubCategoryFilter("all");
-                        }}
-                        className="group card-realjob p-6 flex flex-col justify-between cursor-pointer hover:border-[#063B78] hover:shadow-lg transition-all"
-                      >
-                        <div>
-                          <div className="flex items-center justify-between mb-4">
-                            <div className="size-12 rounded-xl bg-[#063B78]/10 text-[#063B78] flex items-center justify-center group-hover:bg-[#FFC400] group-hover:text-[#082F63] transition-colors">
-                              <cat.Icon className="size-6" />
-                            </div>
-                            <span className="text-xs font-black bg-[#EBF1F8] text-[#063B78] px-2.5 py-1 rounded-full group-hover:bg-[#063B78] group-hover:text-white transition-colors">
-                              {cat.jobsCount} {t("jobsCountText")}
-                            </span>
-                          </div>
-
-                          <h3 className="text-lg font-black text-[#10233F] group-hover:text-[#063B78] transition-colors">
-                            {categoryTitle}
-                          </h3>
-                          <p className="mt-2 text-xs font-semibold text-[#5B6B7F] line-clamp-2">
-                            {categoryDesc}
-                          </p>
-                        </div>
-
-                        <div className="mt-4 pt-3 border-t border-[#DCE5F0] flex items-center justify-between text-xs font-bold text-[#063B78] group-hover:text-[#125BB5]">
-                          <span>{t("browseJobs")}</span>
-                          <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
-                        </div>
-                      </div>
-                    );
-                  })}
+              {/* Main Content Area */}
+              {filteredJobs.length > 0 ? (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                  {filteredJobs.map((job: Job) => (
+                    <JobCard key={job.id} job={job} />
+                  ))}
                 </div>
               ) : (
-                <>
-                  {/* Jobs List */}
-                  {filteredJobs.length > 0 ? (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                      {filteredJobs.map((job: Job) => (
-                        <JobCard key={job.id} job={job} />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="card-realjob p-12 text-center bg-white">
-                      <Briefcase className="mx-auto size-14 text-[#5B6B7F] mb-4" />
-                      <h3 className="text-xl font-black text-[#10233F]">{t("noJobsFound")}</h3>
-                      <p className="text-xs font-semibold text-[#5B6B7F] mt-2">
-                        {t("noJobsFoundSub")}
-                      </p>
-                      <Button onClick={resetFilters} className="mt-5 btn-yellow text-xs font-bold px-6">
-                        {t("resetFilters")}
-                      </Button>
-                    </div>
-                  )}
-                </>
+                <div className="card-realjob p-12 text-center bg-white rounded-2xl border border-[#DCE5F0]">
+                  <Briefcase className="mx-auto size-14 text-[#5B6B7F] mb-4" />
+                  <h3 className="text-xl font-black text-[#10233F]">कोणतीही नोकरी उपलब्ध नाही (No Jobs Found)</h3>
+                  <p className="text-xs font-semibold text-[#5B6B7F] mt-2">
+                    अद्याप कोणतीही नवीन नोकरी पोस्ट केलेली नाही. मालक / कंपनी नवीन नोकरी पोस्ट करतील तेव्हा ती येथे थेट दिसेल.
+                  </p>
+                  <Button onClick={resetFilters} className="mt-5 btn-yellow text-xs font-bold px-6">
+                    {t("resetFilters")}
+                  </Button>
+                </div>
               )}
             </div>
           </div>

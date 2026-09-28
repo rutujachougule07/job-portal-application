@@ -27,6 +27,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
+import { dataStore } from "@/lib/data-store";
 
 const searchSchema = z.object({
   mode: z.enum(["login", "register", "forgot"]).optional().default("login"),
@@ -89,21 +90,35 @@ function AuthPage() {
       }
 
       if (mode === "register") {
-        const fullName = role === "employer" || role === "admin" ? companyName : workerName;
-        window.localStorage.setItem(
-          "realjob-user",
-          JSON.stringify({ email, fullName, role, registeredAt: new Date().toISOString() })
-        );
+        const rawName = role === "employer" || role === "admin" ? companyName : workerName;
+        const nameString = (rawName && rawName.trim()) ? rawName.trim() : (email ? (email.split("@")[0] || "User") : "User");
+
+        const userObj = {
+          id: role === "employer" || role === "admin" ? (companyName ? `emp-${companyName.toLowerCase().replace(/\s+/g, '-')}` : "emp-001") : `seeker-${Date.now()}`,
+          email,
+          role: role === "admin" ? ("employer" as const) : role,
+          fullName: nameString,
+        };
+
+        window.localStorage.setItem("realjob-user", JSON.stringify(userObj));
+        dataStore.setCurrentUser(userObj);
+
         toast.success("Account created successfully! Welcome to REAL JOB.");
         navigate({ to: role === "employer" || role === "admin" ? "/employer" : "/dashboard" });
         return;
       }
 
       // Login Mode
-      window.localStorage.setItem(
-        "realjob-user",
-        JSON.stringify({ email, role, loggedInAt: new Date().toISOString() })
-      );
+      const userObj = {
+        id: role === "employer" || role === "admin" ? "emp-tcs" : "seeker-rutuja",
+        email,
+        role: role === "admin" ? ("employer" as const) : role,
+        fullName: email.split("@")[0] || "User",
+      };
+
+      window.localStorage.setItem("realjob-user", JSON.stringify(userObj));
+      dataStore.setCurrentUser(userObj);
+
       toast.success("Successfully logged in!");
       navigate({ to: role === "employer" || role === "admin" ? "/employer" : "/dashboard" });
     }, 1000);
