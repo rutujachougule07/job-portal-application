@@ -2,14 +2,28 @@ import { Link } from "@tanstack/react-router";
 import {
   ArrowRight,
   Building,
+  Building2,
+  Compass,
   Factory,
+  FlaskConical,
+  GraduationCap,
   HardHat,
   Headphones,
   Hotel,
+  Landmark,
+  Laptop,
   PackageCheck,
+  Palette,
+  Radio,
+  Scale,
   ShieldCheck,
+  ShoppingBag,
+  Sprout,
+  Stethoscope,
+  TrendingUp,
   Truck,
   UserCheck,
+  UserPlus,
   Users,
   Wrench,
   Zap,
@@ -20,18 +34,26 @@ export function PopularCategories() {
   const { t, n, lang } = useI18n();
 
   const realJobCategories = [
-    { id: "factory-workers", jobsCount: "2,480", icon: Factory },
-    { id: "construction-workers", jobsCount: "1,950", icon: HardHat },
-    { id: "technical-staff", jobsCount: "1,420", icon: Wrench },
-    { id: "logistics-drivers", jobsCount: "1,830", icon: Truck },
-    { id: "skilled-workers", jobsCount: "3,110", icon: UserCheck },
-    { id: "unskilled-workers", jobsCount: "2,940", icon: Users },
-    { id: "helpers", jobsCount: "2,150", icon: Headphones },
-    { id: "electricians", jobsCount: "980", icon: Zap },
-    { id: "maintenance", jobsCount: "1,120", icon: Building },
-    { id: "warehouse-workers", jobsCount: "1,640", icon: PackageCheck },
-    { id: "hotel-restaurant", jobsCount: "1,290", icon: Hotel },
-    { id: "security", jobsCount: "1,530", icon: ShieldCheck },
+    { id: "construction", jobsCount: "1,950", icon: HardHat },
+    { id: "it-software", jobsCount: "3,420", icon: Laptop },
+    { id: "engineering", jobsCount: "2,840", icon: Wrench },
+    { id: "healthcare-medical", jobsCount: "1,680", icon: Stethoscope },
+    { id: "finance-accounting", jobsCount: "2,110", icon: Landmark },
+    { id: "sales-marketing", jobsCount: "4,150", icon: TrendingUp },
+    { id: "education", jobsCount: "1,450", icon: GraduationCap },
+    { id: "manufacturing", jobsCount: "3,890", icon: Factory },
+    { id: "hr-recruitment", jobsCount: "1,220", icon: UserPlus },
+    { id: "hospitality-tourism", jobsCount: "1,530", icon: Hotel },
+    { id: "logistics-transport", jobsCount: "2,760", icon: Truck },
+    { id: "government-public", jobsCount: "980", icon: Building2 },
+    { id: "legal", jobsCount: "640", icon: Scale },
+    { id: "architecture-design", jobsCount: "890", icon: Compass },
+    { id: "retail-ecommerce", jobsCount: "2,350", icon: ShoppingBag },
+    { id: "customer-service-bpo", jobsCount: "3,100", icon: Headphones },
+    { id: "design-creative", jobsCount: "1,140", icon: Palette },
+    { id: "media-communication", jobsCount: "780", icon: Radio },
+    { id: "agriculture-farming", jobsCount: "1,050", icon: Sprout },
+    { id: "science-research", jobsCount: "740", icon: FlaskConical },
   ];
 
   return (
@@ -65,7 +87,7 @@ export function PopularCategories() {
 
         {/* Categories Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-          {realJobCategories.map((cat) => {
+          {realJobCategories.slice(0, 8).map((cat) => {
             const IconComponent = cat.icon;
             const categoryTitle = getCategoryTitle(cat.id, lang);
             const categoryDesc = getCategoryDesc(cat.id, lang);
@@ -73,7 +95,7 @@ export function PopularCategories() {
               <Link
                 key={cat.id}
                 to="/jobs"
-                search={{ category: categoryTitle }}
+                search={{ category: cat.id }}
                 className="group card-realjob p-6 flex flex-col justify-between"
               >
                 <div>

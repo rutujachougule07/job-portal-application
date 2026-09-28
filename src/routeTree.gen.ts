@@ -26,6 +26,7 @@ import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authen
 import { Route as AuthenticatedPostJobRouteImport } from './routes/_authenticated/post-job'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedSalaryRouteImport } from './routes/_authenticated/salary'
+import { Route as CompanyCompanyIdRouteImport } from './routes/company.$companyId'
 import { Route as JobsIndexRouteImport } from './routes/jobs.index'
 import { Route as JobsJobIdRouteImport } from './routes/jobs.$jobId'
 import { Route as WorkersIndexRouteImport } from './routes/workers.index'
@@ -128,6 +129,11 @@ const AuthenticatedSalaryRoute = AuthenticatedSalaryRouteImport.update({
   id: '/salary',
   path: '/salary',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const CompanyCompanyIdRoute = CompanyCompanyIdRouteImport.update({
+  id: '/company/$companyId',
+  path: '/company/$companyId',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const JobsIndexRoute = JobsIndexRouteImport.update({
   id: '/jobs/',
@@ -239,6 +245,7 @@ export interface FileRoutesByFullPath {
   '/post-job': typeof AuthenticatedPostJobRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/salary': typeof AuthenticatedSalaryRoute
+  '/company/$companyId': typeof CompanyCompanyIdRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
   '/workers/$workerId': typeof WorkersWorkerIdRoute
   '/jobs/': typeof JobsIndexRoute
@@ -273,6 +280,7 @@ export interface FileRoutesByTo {
   '/post-job': typeof AuthenticatedPostJobRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/salary': typeof AuthenticatedSalaryRoute
+  '/company/$companyId': typeof CompanyCompanyIdRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
   '/workers/$workerId': typeof WorkersWorkerIdRoute
   '/jobs': typeof JobsIndexRoute
@@ -309,6 +317,7 @@ export interface FileRoutesById {
   '/_authenticated/post-job': typeof AuthenticatedPostJobRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/salary': typeof AuthenticatedSalaryRoute
+  '/company/$companyId': typeof CompanyCompanyIdRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
   '/workers/$workerId': typeof WorkersWorkerIdRoute
   '/jobs/': typeof JobsIndexRoute
@@ -345,6 +354,7 @@ export interface FileRouteTypes {
     | '/post-job'
     | '/profile'
     | '/salary'
+    | '/company/$companyId'
     | '/jobs/$jobId'
     | '/workers/$workerId'
     | '/jobs/'
@@ -379,6 +389,7 @@ export interface FileRouteTypes {
     | '/post-job'
     | '/profile'
     | '/salary'
+    | '/company/$companyId'
     | '/jobs/$jobId'
     | '/workers/$workerId'
     | '/jobs'
@@ -414,6 +425,7 @@ export interface FileRouteTypes {
     | '/_authenticated/post-job'
     | '/_authenticated/profile'
     | '/_authenticated/salary'
+    | '/company/$companyId'
     | '/jobs/$jobId'
     | '/workers/$workerId'
     | '/jobs/'
@@ -441,6 +453,7 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   FaqRoute: typeof FaqRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  CompanyCompanyIdRoute: typeof CompanyCompanyIdRoute
   JobsJobIdRoute: typeof JobsJobIdRoute
   WorkersWorkerIdRoute: typeof WorkersWorkerIdRoute
   JobsIndexRoute: typeof JobsIndexRoute
@@ -567,6 +580,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/salary'
       preLoaderRoute: typeof AuthenticatedSalaryRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/company/$companyId': {
+      id: '/company/$companyId'
+      path: '/company/$companyId'
+      fullPath: '/company/$companyId'
+      preLoaderRoute: typeof CompanyCompanyIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/jobs/': {
       id: '/jobs/'
@@ -763,6 +783,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   FaqRoute: FaqRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  CompanyCompanyIdRoute: CompanyCompanyIdRoute,
   JobsJobIdRoute: JobsJobIdRoute,
   WorkersWorkerIdRoute: WorkersWorkerIdRoute,
   JobsIndexRoute: JobsIndexRoute,

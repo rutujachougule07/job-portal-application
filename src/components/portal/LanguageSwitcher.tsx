@@ -11,13 +11,13 @@ import {
 import { Button } from "@/components/ui/button";
 
 export function LanguageSwitcher({
-  label = "Languages",
+  label = "Language",
   showCurrent = true,
 }: {
   label?: string;
   showCurrent?: boolean;
 }) {
-  const { lang, setLang } = useI18n();
+  const { lang, setLang, t } = useI18n();
   const currentItem = languages.find((item) => item.code === lang) || languages[0];
 
   const openGate = () => {
@@ -30,12 +30,12 @@ export function LanguageSwitcher({
         <Button
           variant="outline"
           size="sm"
-          className="h-9 gap-2 px-3 text-xs font-semibold bg-card border-border hover:bg-secondary transition-colors"
+          className="h-9 gap-1.5 px-2.5 sm:px-3 text-xs font-bold bg-white border-[#DCE5F0] hover:bg-[#F5F8FC] transition-all shadow-2xs text-[#10233F]"
         >
-          <Globe2 className="size-4 text-accent" />
-          <span>{label}</span>
+          <Globe2 className="size-4 text-[#063B78] shrink-0" />
+          <span className="hidden md:inline">{label}</span>
           {showCurrent && (
-            <span className="rounded bg-accent/15 px-1.5 py-0.5 text-[11px] font-bold text-accent-foreground">
+            <span className="rounded bg-[#063B78]/10 px-1.5 py-0.5 text-[11px] font-extrabold text-[#063B78]">
               {currentItem.native}
             </span>
           )}
@@ -43,44 +43,47 @@ export function LanguageSwitcher({
         </Button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" className="w-52 p-1.5 shadow-xl border-border bg-popover text-popover-foreground z-50">
-        <DropdownMenuLabel className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground px-2.5 py-1.5">
-          Select Language • भाषा निवडा
+      <DropdownMenuContent align="end" className="w-56 p-2 shadow-2xl border-[#DCE5F0] bg-white text-[#10233F] z-[60] rounded-xl">
+        <DropdownMenuLabel className="text-[11px] font-black uppercase tracking-wider text-[#5B6B7F] px-2 py-1">
+          {t("chooseLanguage")} • भाषा निवडा
         </DropdownMenuLabel>
-        <DropdownMenuSeparator className="my-1" />
+        <DropdownMenuSeparator className="my-1.5 bg-[#DCE5F0]" />
 
-        <div className="max-h-64 overflow-y-auto space-y-0.5">
+        <div className="max-h-72 overflow-y-auto space-y-1 pr-0.5">
           {languages.map((item) => {
             const isSelected = item.code === lang;
             return (
               <DropdownMenuItem
                 key={item.code}
                 onClick={() => setLang(item.code)}
-                className={`flex items-center justify-between cursor-pointer px-2.5 py-2 text-sm rounded-md transition-colors ${
+                className={`flex items-center justify-between cursor-pointer px-3 py-2 text-xs sm:text-sm rounded-lg transition-colors ${
                   isSelected
-                    ? "bg-primary/10 text-primary font-bold"
-                    : "hover:bg-secondary hover:text-foreground"
+                    ? "bg-[#063B78] text-white font-bold"
+                    : "hover:bg-[#F5F8FC] hover:text-[#063B78]"
                 }`}
               >
                 <div className="flex items-baseline gap-2">
-                  <span className="font-semibold">{item.native}</span>
-                  <span className="text-[11px] text-muted-foreground">({item.name})</span>
+                  <span className="font-bold">{item.native}</span>
+                  <span className={`text-[11px] ${isSelected ? "text-slate-200" : "text-slate-500"}`}>
+                    ({item.name})
+                  </span>
                 </div>
-                {isSelected && <Check className="size-4 text-accent stroke-[2.5]" />}
+                {isSelected && <Check className="size-4 text-[#FFC400] stroke-[3]" />}
               </DropdownMenuItem>
             );
           })}
         </div>
 
-        <DropdownMenuSeparator className="my-1" />
+        <DropdownMenuSeparator className="my-1.5 bg-[#DCE5F0]" />
         <DropdownMenuItem
           onClick={openGate}
-          className="cursor-pointer px-2.5 py-2 text-xs font-semibold text-accent-foreground hover:bg-accent/10 rounded-md flex items-center gap-2"
+          className="cursor-pointer px-3 py-2 text-xs font-bold text-[#063B78] hover:bg-[#F5F8FC] rounded-lg flex items-center gap-2"
         >
-          <UserCheck className="size-3.5 text-accent" />
-          Change Profile (User / Admin)
+          <UserCheck className="size-4 text-[#063B78]" />
+          {t("selectRole")} / Profile
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
 }
+

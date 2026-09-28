@@ -1,16 +1,26 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import {
-  Bookmark,
-  BookmarkCheck,
   Building2,
   CheckCircle2,
   Clock3,
+  Globe,
   MapPin,
   Send,
   Sparkles,
+  Users,
   Wallet,
   X,
+  Award,
+  ShieldCheck,
+  Star,
+  ExternalLink,
+  Briefcase,
+  BookOpen,
+  Gift,
+  Building,
+  Share2,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,194 +39,293 @@ export type Job = {
   initials: string;
   category: string;
   featured?: boolean;
+  openings?: number;
 };
 
+export type CompanyMetadata = {
+  name: string;
+  industry: string;
+  founded: string;
+  size: string;
+  headquarters: string;
+  rating: string;
+  reviewsCount: string;
+  website: string;
+  aboutMr: string;
+  aboutEn: string;
+  trustBadges: string[];
+  perksMr: string[];
+  perksEn: string[];
+  jobDescMr: string;
+  jobDescEn: string;
+  skills: string[];
+};
+
+export const companyDatabase: Record<string, CompanyMetadata> = {
+  "L&T Construction": {
+    name: "Larsen & Toubro (L&T) Construction",
+    industry: "Engineering & Heavy Construction",
+    founded: "1938",
+    size: "50,000+ Employees",
+    headquarters: "Mumbai, Maharashtra",
+    rating: "4.6",
+    reviewsCount: "12,450+",
+    website: "https://www.larsentoubro.com",
+    aboutMr: "L&T Construction ही भारतातील सर्वात मोठी आणि जागतिक स्तरावरील अव्वल दर्जाची इन्फ्रास्ट्रक्चर व अभियांत्रिकी कंपनी आहे. कंपनी मेट्रो, पूल, हायवे आणि मोठ्या कमर्शियल प्रोजेक्ट्सचे काम करते.",
+    aboutEn: "L&T Construction is India's largest infrastructure engineering & construction conglomerate with landmark global mega-projects.",
+    trustBadges: ["GST Verified Employer", "ISO 9001 Certified", "Govt Infrastructure Partner", "Top Employer 2026"],
+    perksMr: ["PF + ESIC वैद्यकीय विमा", "मोफत कॅन्टीन व वाहतूक सुविधा", "वार्षिक दिवाळी व परफॉर्मन्स बोनस", "साइट निवास व्यवस्था (Accommodation)"],
+    perksEn: ["PF + ESIC Medical Insurance", "Subsidized Canteen & Transport", "Annual Performance Bonus", "Site Accommodation Provided"],
+    jobDescMr: "साइट ऑपरेशन, क्वालिटी कंट्रोल, प्रोग्रेस ट्रॅकिंग आणि सुरक्षा नियमांचे पालन करून बांधकाम प्रकल्प वेळेत पूर्ण करण्याची जबाबदारी राहील.",
+    jobDescEn: "Responsible for site execution, quality assurance, safety protocol compliance, and structural progress tracking.",
+    skills: ["Civil Engineering", "Site Safety", "AutoCAD", "Project Management", "Quality Inspection"]
+  },
+  "Shapoorji Pallonji": {
+    name: "Shapoorji Pallonji & Co. Ltd.",
+    industry: "Real Estate & Construction",
+    founded: "1865",
+    size: "35,000+ Employees",
+    headquarters: "Mumbai, Maharashtra",
+    rating: "4.5",
+    reviewsCount: "8,900+",
+    website: "https://www.shapoorjipallonji.com",
+    aboutMr: "१५० वर्षांपेक्षा जास्त समृद्ध वारसा असणारी Shapoorji Pallonji ग्रुप ही भारतातील प्रीमियर रिअल इस्टेट व कन्स्ट्रक्शन कंपनी आहे.",
+    aboutEn: "Shapoorji Pallonji is a 150+ year old premier Indian conglomerate operating in construction, real estate, and infrastructure.",
+    trustBadges: ["A+ Govt Rated", "GST Registered", "Safety Certified 2026"],
+    perksMr: ["आरोग्य विमा", "ओव्हरटाइम अलाउन्स", "तांत्रिक प्रशिक्षण"],
+    perksEn: ["Health Insurance", "Overtime Allowance", "Technical Training"],
+    jobDescMr: "सिव्हिल स्ट्रक्चर तपासणे, साइट लेबर मॅनेजमेंट आणि मटेरियल ऑडिट करणे.",
+    jobDescEn: "Site structural inspections, labor management, material audit and daily reporting.",
+    skills: ["Site Supervision", "Structural Safety", "Labor Management", "Material Testing"]
+  },
+  "TCS": {
+    name: "Tata Consultancy Services (TCS)",
+    industry: "IT & Software Services",
+    founded: "1968",
+    size: "600,000+ Employees",
+    headquarters: "Mumbai, Maharashtra",
+    rating: "4.7",
+    reviewsCount: "45,000+",
+    website: "https://www.tcs.com",
+    aboutMr: "टाटा समूहाची TCS ही जगातील अग्रगण्य आयटी सर्व्हिसेस, कन्सलटिंग आणि बिझनेस सोल्युशन्स देणारी कंपनी आहे.",
+    aboutEn: "TCS is a global leader in IT services, consulting & business solutions partnering with top Fortune 500 enterprises.",
+    trustBadges: ["Global Top Employer", "Tata Group Brand", "100% Tax Compliant"],
+    perksMr: ["हायब्रिड / WFH पर्याय", "कुटुंब आरोग्य विमा (₹5 लाख)", "TCS Xplore लर्निंग कोर्सेस", "कॅब पिक & ड्रॉप"],
+    perksEn: ["Hybrid / Remote Work", "Family Health Cover (₹5L)", "TCS Upskilling Programs", "Cab Drop Service"],
+    jobDescMr: "एंटरप्राइज सॉफ्टवेअर डिझाइन करणे, रिॲक्ट/जावा कोडिंग, एपीआय इंटिग्रेशन आणि बग फिक्सिंग करणे.",
+    jobDescEn: "Design and implement enterprise Web apps, React/Node microservices, API integrations, and code optimization.",
+    skills: ["React", "Node.js", "Java / Python", "SQL / NoSQL", "Git"]
+  },
+  "Infosys": {
+    name: "Infosys Limited",
+    industry: "IT & Next-Gen Digital Services",
+    founded: "1981",
+    size: "300,000+ Employees",
+    headquarters: "Bengaluru, Karnataka",
+    rating: "4.6",
+    reviewsCount: "38,000+",
+    website: "https://www.infosys.com",
+    aboutMr: "इन्फोसिस ही डिजिटल ट्रान्सफॉर्मेशन आणि सॉफ्टवेअर सोल्यूशन्स देणारी भारतातील अव्वल जागतिक कंपनी आहे.",
+    aboutEn: "Infosys is a global leader in next-generation digital services and consulting.",
+    trustBadges: ["Listed on NYSE", "Top Employer India", "Verified Recruiter"],
+    perksMr: ["वर्क फ्रॉम होम फ्लेक्सिबिलिटी", "वार्षिक अप्र Appraisals", "इन्फोसिस स्प्रिंगबोर्ड लर्निंग"],
+    perksEn: ["Work From Home Flexibility", "Annual Performance Appraisal", "Infosys Springboard Learning"],
+    jobDescMr: "वेब व मोबाईल ॲप्लिकेशन डेव्हलपमेंट, फ्रंटएंड आणि युझर एक्सपिरियन्स डिझाइन.",
+    jobDescEn: "Develop responsive web interfaces, frontend logic, component integration and cloud deployment.",
+    skills: ["React.js", "TypeScript", "Tailwind CSS", "REST API", "UI Testing"]
+  },
+  "Tata Motors": {
+    name: "Tata Motors Commercial & Passenger Vehicles",
+    industry: "Automobile & Manufacturing",
+    founded: "1945",
+    size: "80,000+ Employees",
+    headquarters: "Pune / Mumbai, Maharashtra",
+    rating: "4.7",
+    reviewsCount: "18,200+",
+    website: "https://www.tatamotors.com",
+    aboutMr: "टाटा मोटर्स ही भारतातील सर्वात मोठी ऑटोमोबाईल उत्पादक कंपनी असून EV (इलेक्ट्रिक व्हेईकल) क्षेत्रात क्रांती घडवत आहे.",
+    aboutEn: "Tata Motors is India's pioneer automotive manufacturer leading the Electric Vehicle revolution.",
+    trustBadges: ["Make in India Pioneer", "Tata Trust Certified", "ISO 14001 Compliant"],
+    perksMr: ["कंपनी बस सेवा (पुणे/पिंपरी)", "कॅन्टीन भोजन सवलत", "मेडिक्लेम व ग्रॅच्युइटी"],
+    perksEn: ["Free Factory Bus Service", "Subsidized Canteen Meals", "Mediclaim & Gratuity"],
+    jobDescMr: "असेंब्ली लाईन प्रोडक्शन, मेकॅनिकल कंपोनंट टेस्टिंग आणि क्वालिटी अश्युरन्स तपासणे.",
+    jobDescEn: "Assembly line oversight, mechanical testing, vehicle quality audit and production throughput.",
+    skills: ["Mechanical Engineering", "Production Planning", "Quality Inspection", "AutoCAD / CATIA"]
+  },
+  "Ruby Hall Clinic": {
+    name: "Grant Medical Foundation - Ruby Hall Clinic",
+    industry: "Healthcare & Multispecialty Hospital",
+    founded: "1959",
+    size: "4,500+ Staff",
+    headquarters: "Pune, Maharashtra",
+    rating: "4.8",
+    reviewsCount: "5,600+",
+    website: "https://www.rubyhall.com",
+    aboutMr: "रुबी हॉल क्लिनिक हे पुण्यातील सर्वात प्रख्यात आणि NABH मान्यताप्राप्त मल्टीस्पेशालिटी हॉस्पिटल आहे.",
+    aboutEn: "Ruby Hall Clinic is a premier NABH-accredited multispecialty tertiary care hospital in Maharashtra.",
+    trustBadges: ["NABH Accredited Hospital", "Govt Health Partner", "Top Healthcare Brand"],
+    perksMr: ["कर्मचारी व कुटुंब मोफत रुग्णालय उपचार", "नाईट शिफ्ट अलाउन्स", "नर्सिंग क्वार्टर्स"],
+    perksEn: ["Free Hospital Care for Staff", "Night Shift Allowance", "Nursing Quarters"],
+    jobDescMr: "पेशंट केअर, आयसीयू ऑब्झर्व्हेशन, डॉक्टर असिस्टन्स आणि मेडिकल रेकॉर्ड्स मेंटेन करणे.",
+    jobDescEn: "Patient nursing care, ICU monitoring, physician assistance, and clinical documentation.",
+    skills: ["Patient Nursing", "ICU Care", "First Aid / CPR", "Medical Records"]
+  },
+  "KPMG": {
+    name: "KPMG India",
+    industry: "Financial Advisory, Audit & Tax",
+    founded: "1993",
+    size: "20,000+ Professionals",
+    headquarters: "Mumbai, Maharashtra",
+    rating: "4.6",
+    reviewsCount: "9,100+",
+    website: "https://home.kpmg/in",
+    aboutMr: "केपीएमजी ही जगप्रसिद्ध बिग-४ मधील एक फायनान्शियल ऑडिट, टॅक्स सल्लागार आणि कॉर्पोरेट अकाऊंटिंग कंपनी आहे.",
+    aboutEn: "KPMG is one of the Big Four global financial auditing, advisory and accounting firms.",
+    trustBadges: ["Big 4 Financial Brand", "Certified Tax Consultants", "Top Corporate Firm"],
+    perksMr: ["उच्च कॉर्पोरेट पगार", "वार्षिक इन्सेन्टिव्ह", "सीए व फायनान्स स्पॉन्सरशिप"],
+    perksEn: ["High Corporate Pay", "Annual Performance Bonus", "Finance Certifications Cover"],
+    jobDescMr: "जीएसटी रिटर्न्स, कॉर्पोरेट टॅक्स ऑडिट, बॅलन्स शीट फायनलायझेशन आणि फायनान्शियल प्लॅनिंग करणे.",
+    jobDescEn: "Corporate tax auditing, GST compliance, balance sheet finalization and client risk assessment.",
+    skills: ["Accounting", "GST / Income Tax", "Tally Prime", "Financial Audit", "Excel Mastery"]
+  },
+  "Reliance Industries": {
+    name: "Reliance Industries & Digital Services",
+    industry: "Conglomerate - Retail, Telecom & Energy",
+    founded: "1958",
+    size: "350,000+ Employees",
+    headquarters: "Mumbai, Maharashtra",
+    rating: "4.7",
+    reviewsCount: "28,000+",
+    website: "https://www.ril.com",
+    aboutMr: "रिलायन्स इंडस्ट्रिज ही भारतातील सर्वात मोठी प्रायव्हेट कंपनी असून रिटेल, टेलिकॉम (Jio) आणि ऊर्जेमध्ये अग्रगण्य आहे.",
+    aboutEn: "Reliance Industries Limited is India's largest private sector enterprise spanning Energy, Retail & Digital.",
+    trustBadges: ["India #1 Fortune 500", "GST Registered", "Verified Enterprise"],
+    perksMr: ["रिलायन्स रिटेल डिस्काऊंट", "मेडिकल इन्शुरन्स (₹4 लाख)", "कर्मचारी शेअर योजना"],
+    perksEn: ["Reliance Store Discounts", "Comprehensive Medical Cover", "Employee Stock Options"],
+    jobDescMr: "डिजिटल मार्केटिंग कॅम्पेन, सेल्स एक्झिक्युशन, बिझनेस डेव्हलपमेंट आणि कस्टमर ऑनबोर्डिंग.",
+    jobDescEn: "Lead digital marketing drives, B2B/B2C sales execution, and market expansion campaigns.",
+    skills: ["Sales Management", "Digital Marketing", "Business Development", "Client Relationship"]
+  },
+  "Bharat Forge": {
+    name: "Bharat Forge Limited (Kalyani Group)",
+    industry: "Heavy Engineering & Manufacturing",
+    founded: "1961",
+    size: "12,000+ Employees",
+    headquarters: "Pune, Maharashtra",
+    rating: "4.6",
+    reviewsCount: "4,200+",
+    website: "https://www.bharatforge.com",
+    aboutMr: "भारत फोर्ज ही जगातील दुसऱ्या क्रमांकाची सर्वात मोठी ऑटोमोबाईल व एरोस्पेस फोर्जिंग उत्पादक कंपनी आहे.",
+    aboutEn: "Bharat Forge is a global engineering leader manufacturing critical automotive & aerospace components.",
+    trustBadges: ["Defense & Aerospace Approved", "ISO 45001", "Kalyani Group Brand"],
+    perksMr: ["मोफत कॅन्टीन व चहा", "सुरक्षा किट व गणवेश", "वार्षिक बोनस व PF"],
+    perksEn: ["Free Canteen & Refreshments", "Safety Gear & Uniform", "Annual Bonus & PF"],
+    jobDescMr: "सीएनसी मशीन ऑपरेटिंग, मॅन्युफॅक्चरिंग लाईन सुपरव्हिजन आणि मेटल चाचणी करणे.",
+    jobDescEn: "CNC machine operations, metallurgy quality check, and shopfloor production target management.",
+    skills: ["CNC / VMC Operations", "Manufacturing Supervision", "Quality Assurance", "Plant Safety"]
+  }
+};
+
+// Fallback metadata generator for any company not explicitly mapped
+export function getCompanyMetadata(job: Job): CompanyMetadata {
+  const found = companyDatabase[job.company];
+  if (found) {
+    return found;
+  }
+
+  return {
+    name: job.company,
+    industry: job.category || "General Industry",
+    founded: "2010",
+    size: "500+ Employees",
+    headquarters: job.location || "Maharashtra, India",
+    rating: "4.5",
+    reviewsCount: "150+ Reviews",
+    website: `https://www.google.com/search?q=${encodeURIComponent(job.company)}`,
+    aboutMr: `${job.company} ही ${job.category} क्षेत्रातील अधिकृत आणि नोंदणीकृत कंपनी आहे. कंपनी उच्च दर्जाच्या सेवा आणि रोजगार संधी उपलब्ध करून देते.`,
+    aboutEn: `${job.company} is a verified enterprise in the ${job.category} sector providing reliable products, services, and career opportunities.`,
+    trustBadges: ["GST Registered Employer", "REAL JOB Verified", "Government Compliant"],
+    perksMr: ["PF + ESIC सुविधा", "नियमित पगार व बोनस", "कामाचे सुरक्षित वातावरण"],
+    perksEn: ["PF + ESIC Benefits", "Timely Salary & Bonus", "Safe Working Environment"],
+    jobDescMr: `${job.title} या पदासाठी मुख्य जबाबदाऱ्यांमध्ये दैनिक कामकाज, टीम वर्क आणि दिलेल्या उद्दिष्टांची पूर्तता करणे समाविष्ट आहे.`,
+    jobDescEn: `Primary duties for ${job.title} include daily operational execution, teamwork, and target milestone completion.`,
+    skills: [job.category, "Teamwork", "Problem Solving", "Domain Expertise"]
+  };
+}
+
 export const jobs: Job[] = [
-  {
-    id: "senior-product-designer",
-    title: "Senior Product Designer",
-    company: "Aurora Fintech",
-    location: "Mumbai, Maharashtra",
-    salary: "₹18–24 LPA",
-    experience: "4–6 years",
-    type: "Full-time",
-    workMode: "Hybrid",
-    posted: "2h ago",
-    initials: "AF",
-    category: "Technology & IT",
-    featured: true,
-  },
-  {
-    id: "software-engineer",
-    title: "Software Engineer II",
-    company: "Nexa Systems",
-    location: "Pune, Maharashtra",
-    salary: "₹14–20 LPA",
-    experience: "3–5 years",
-    type: "Full-time",
-    workMode: "Remote",
-    posted: "5h ago",
-    initials: "NS",
-    category: "Technology & IT",
-    featured: true,
-  },
-  {
-    id: "healthcare-manager",
-    title: "Healthcare Operations Manager",
-    company: "Aarogya Care",
-    location: "Bengaluru, Karnataka",
-    salary: "₹10–14 LPA",
-    experience: "5+ years",
-    type: "Full-time",
-    workMode: "On-site",
-    posted: "1d ago",
-    initials: "AC",
-    category: "Healthcare & Pharma",
-  },
-  {
-    id: "relationship-manager",
-    title: "Relationship Manager",
-    company: "Sampada Bank",
-    location: "Ahmedabad, Gujarat",
-    salary: "₹7–10 LPA",
-    experience: "2–4 years",
-    type: "Full-time",
-    workMode: "On-site",
-    posted: "1d ago",
-    initials: "SB",
-    category: "Banking & Finance",
-  },
-  {
-    id: "digital-marketing-lead",
-    title: "Digital Marketing Lead",
-    company: "Zenith Media",
-    location: "Delhi NCR",
-    salary: "₹12–16 LPA",
-    experience: "3–6 years",
-    type: "Full-time",
-    workMode: "Hybrid",
-    posted: "2d ago",
-    initials: "ZM",
-    category: "Marketing & Media",
-  },
-  {
-    id: "b2b-sales-manager",
-    title: "B2B Enterprise Sales Manager",
-    company: "Karyam Corp",
-    location: "Mumbai, Maharashtra",
-    salary: "₹15–22 LPA",
-    experience: "4–7 years",
-    type: "Full-time",
-    workMode: "Hybrid",
-    posted: "3d ago",
-    initials: "KC",
-    category: "Sales & Business Dev",
-    featured: true,
-  },
-  {
-    id: "senior-data-analyst",
-    title: "Senior Data Analyst",
-    company: "Quant Insights",
-    location: "Bengaluru, Karnataka",
-    salary: "₹16–22 LPA",
-    experience: "3–5 years",
-    type: "Full-time",
-    workMode: "Remote",
-    posted: "3d ago",
-    initials: "QI",
-    category: "Technology & IT",
-  },
-  {
-    id: "talent-acquisition-specialist",
-    title: "Talent Acquisition Specialist",
-    company: "People First HR",
-    location: "Hyderabad, Telangana",
-    salary: "₹8–12 LPA",
-    experience: "2–4 years",
-    type: "Full-time",
-    workMode: "Hybrid",
-    posted: "4d ago",
-    initials: "PF",
-    category: "Management & HR",
-  },
-  {
-    id: "academic-lecturer",
-    title: "Senior Academic Lecturer",
-    company: "EduVantage Academy",
-    location: "Pune, Maharashtra",
-    salary: "₹8–11 LPA",
-    experience: "3–6 years",
-    type: "Full-time",
-    workMode: "On-site",
-    posted: "4d ago",
-    initials: "EA",
-    category: "Education & Teaching",
-  },
-  {
-    id: "mechanical-engineer",
-    title: "Mechanical Design Engineer",
-    company: "Apex Dynamics",
-    location: "Mumbai, Maharashtra",
-    salary: "₹10–15 LPA",
-    experience: "3–5 years",
-    type: "Full-time",
-    workMode: "On-site",
-    posted: "5d ago",
-    initials: "AD",
-    category: "Engineering & Mfg",
-  },
-  {
-    id: "ui-ux-designer",
-    title: "UI/UX Creative Designer",
-    company: "Canvas Labs",
-    location: "Bengaluru, Karnataka",
-    salary: "₹12–18 LPA",
-    experience: "2–5 years",
-    type: "Full-time",
-    workMode: "Remote",
-    posted: "5d ago",
-    initials: "CL",
-    category: "Design & Creative",
-  },
-  {
-    id: "bpo-support-lead",
-    title: "Customer Support Manager",
-    company: "Global Voice BPO",
-    location: "Delhi NCR",
-    salary: "₹6–9 LPA",
-    experience: "2–4 years",
-    type: "Full-time",
-    workMode: "On-site",
-    posted: "6d ago",
-    initials: "GV",
-    category: "Customer Support",
-  },
-  {
-    id: "supply-chain-manager",
-    title: "Fleet Logistics & Supply Lead",
-    company: "SwiftExpress Logistics",
-    location: "Mumbai, Maharashtra",
-    salary: "₹9–14 LPA",
-    experience: "3–6 years",
-    type: "Full-time",
-    workMode: "On-site",
-    posted: "6d ago",
-    initials: "SL",
-    category: "Logistics & Supply",
-  },
-  {
-    id: "civil-site-engineer",
-    title: "Senior Civil Construction Engineer",
-    company: "BuildTech Infra",
-    location: "Pune, Maharashtra",
-    salary: "₹11–16 LPA",
-    experience: "4–8 years",
-    type: "Full-time",
-    workMode: "On-site",
-    posted: "1w ago",
-    initials: "BI",
-    category: "Construction & Realty",
-  },
+  // 1. Construction
+  { id: "c-1", title: "Civil Engineer - Site Operations", company: "L&T Construction", location: "Mumbai, Maharashtra", salary: "₹35,000–50,000/mo", experience: "2–5 years", type: "Full-time", workMode: "On-site", posted: "1h ago", initials: "LT", category: "Construction", featured: true, openings: 25 },
+  { id: "c-2", title: "Site Supervisor & Safety Officer", company: "Shapoorji Pallonji", location: "Pune, Maharashtra", salary: "₹25,000–35,000/mo", experience: "3+ years", type: "Full-time", workMode: "On-site", posted: "3h ago", initials: "SP", category: "Construction", openings: 15 },
+  { id: "c-3", title: "Quantity Surveyor & Architect", company: "Godrej Properties", location: "Navi Mumbai, Maharashtra", salary: "₹30,000–45,000/mo", experience: "2–4 years", type: "Full-time", workMode: "On-site", posted: "5h ago", initials: "GP", category: "Construction" },
+  { id: "c-4", title: "Project Manager - Infrastructure", company: "Tata Projects", location: "Thane, Maharashtra", salary: "₹60,000–90,000/mo", experience: "5+ years", type: "Full-time", workMode: "On-site", posted: "1d ago", initials: "TP", category: "Construction", featured: true },
+
+  // 2. IT & Software
+  { id: "it-1", title: "Full Stack Software Developer", company: "TCS", location: "Pune, Maharashtra", salary: "₹50,000–80,000/mo", experience: "2–5 years", type: "Full-time", workMode: "Hybrid", posted: "30m ago", initials: "TC", category: "IT & Software", featured: true, openings: 40 },
+  { id: "it-2", title: "Frontend Developer (React/Next)", company: "Infosys", location: "Bengaluru / WFH", salary: "₹45,000–70,000/mo", experience: "1–3 years", type: "Full-time", workMode: "Remote", posted: "2h ago", initials: "IN", category: "IT & Software", featured: true },
+  { id: "it-3", title: "DevOps & Cyber Security Engineer", company: "Wipro", location: "Pune, Maharashtra", salary: "₹60,000–95,000/mo", experience: "3+ years", type: "Full-time", workMode: "Hybrid", posted: "4h ago", initials: "WP", category: "IT & Software" },
+  { id: "it-4", title: "Data Analyst & UI/UX Designer", company: "Accenture", location: "Mumbai, Maharashtra", salary: "₹40,000–65,000/mo", experience: "2–4 years", type: "Full-time", workMode: "On-site", posted: "1d ago", initials: "AC", category: "IT & Software" },
+
+  // 3. Engineering
+  { id: "eng-1", title: "Mechanical & Production Engineer", company: "Tata Motors", location: "Pune, Maharashtra", salary: "₹30,000–45,000/mo", experience: "2–4 years", type: "Full-time", workMode: "On-site", posted: "1h ago", initials: "TM", category: "Engineering", featured: true, openings: 30 },
+  { id: "eng-2", title: "Electrical & Electronics Engineer", company: "Siemens", location: "Aurangabad, Maharashtra", salary: "₹28,000–42,000/mo", experience: "1–3 years", type: "Full-time", workMode: "On-site", posted: "3h ago", initials: "SI", category: "Engineering" },
+  { id: "eng-3", title: "Automobile Quality Engineer", company: "Mahindra & Mahindra", location: "Chakan, Maharashtra", salary: "₹32,000–48,000/mo", experience: "3–5 years", type: "Full-time", workMode: "On-site", posted: "5h ago", initials: "MM", category: "Engineering" },
+
+  // 4. Healthcare & Medical
+  { id: "hc-1", title: "Staff Nurse & Medical Assistant", company: "Ruby Hall Clinic", location: "Pune, Maharashtra", salary: "₹25,000–38,000/mo", experience: "1–4 years", type: "Full-time", workMode: "On-site", posted: "2h ago", initials: "RH", category: "Healthcare & Medical", featured: true, openings: 20 },
+  { id: "hc-2", title: "Pharmacist & Lab Technician", company: "Apollo Hospital", location: "Mumbai, Maharashtra", salary: "₹22,000–32,000/mo", experience: "1–3 years", type: "Full-time", workMode: "On-site", posted: "4h ago", initials: "AH", category: "Healthcare & Medical" },
+  { id: "hc-3", title: "Doctor & Hospital Administrator", company: "Fortis Healthcare", location: "Navi Mumbai, Maharashtra", salary: "₹50,000–90,000/mo", experience: "3+ years", type: "Full-time", workMode: "On-site", posted: "1d ago", initials: "FH", category: "Healthcare & Medical" },
+
+  // 5. Finance & Accounting
+  { id: "fin-1", title: "Senior Accountant & Tax Consultant", company: "KPMG", location: "Mumbai, Maharashtra", salary: "₹35,000–55,000/mo", experience: "3–6 years", type: "Full-time", workMode: "On-site", posted: "2h ago", initials: "KP", category: "Finance & Accounting", featured: true },
+  { id: "fin-2", title: "Banking Executive & Financial Analyst", company: "HDFC Bank", location: "Pune, Maharashtra", salary: "₹28,000–42,000/mo", experience: "1–3 years", type: "Full-time", workMode: "On-site", posted: "5h ago", initials: "HD", category: "Finance & Accounting" },
+
+  // 6. Sales & Marketing
+  { id: "sm-1", title: "Digital Marketing & Sales Executive", company: "Reliance Industries", location: "Mumbai, Maharashtra", salary: "₹25,000–40,000/mo", experience: "0–2 years", type: "Full-time", workMode: "On-site", posted: "1h ago", initials: "RL", category: "Sales & Marketing", featured: true, openings: 50 },
+  { id: "sm-2", title: "Business Development & Telecaller", company: "JustDial", location: "Pune, Maharashtra", salary: "₹18,000–28,000/mo", experience: "Fresher", type: "Full-time", workMode: "On-site", posted: "3h ago", initials: "JD", category: "Sales & Marketing" },
+
+  // 7. Education
+  { id: "edu-1", title: "Academic Coordinator & Lecturer", company: "DY Patil University", location: "Pune, Maharashtra", salary: "₹35,000–50,000/mo", experience: "2+ years", type: "Full-time", workMode: "On-site", posted: "4h ago", initials: "DY", category: "Education" },
+  { id: "edu-2", title: "School Teacher & Online Tutor", company: "Podar International", location: "Mumbai, Maharashtra", salary: "₹25,000–35,000/mo", experience: "1–3 years", type: "Full-time", workMode: "On-site", posted: "1d ago", initials: "PI", category: "Education" },
+
+  // 8. Manufacturing
+  { id: "mfg-1", title: "Production Manager & Machine Operator", company: "Bharat Forge", location: "Pune, Maharashtra", salary: "₹22,000–38,000/mo", experience: "2–5 years", type: "Full-time", workMode: "On-site", posted: "2h ago", initials: "BF", category: "Manufacturing", featured: true, openings: 30 },
+
+  // 9. HR & Recruitment
+  { id: "hr-1", title: "HR Executive & Recruiter", company: "Randstad India", location: "Pune, Maharashtra", salary: "₹22,000–32,000/mo", experience: "1–3 years", type: "Full-time", workMode: "On-site", posted: "3h ago", initials: "RI", category: "HR & Recruitment" },
+
+  // 10. Hospitality & Tourism
+  { id: "hosp-1", title: "Executive Chef & Hotel Manager", company: "Taj Hotels", location: "Mumbai, Maharashtra", salary: "₹35,000–60,000/mo", experience: "3+ years", type: "Full-time", workMode: "On-site", posted: "1h ago", initials: "TH", category: "Hospitality & Tourism", featured: true },
+
+  // 11. Logistics & Transport
+  { id: "log-1", title: "Logistics & Warehouse Manager", company: "Delhivery", location: "Bhiwandi, Maharashtra", salary: "₹25,000–38,000/mo", experience: "2–4 years", type: "Full-time", workMode: "On-site", posted: "2h ago", initials: "DL", category: "Logistics & Transport" },
+
+  // 12. Government & Public Sector
+  { id: "gov-1", title: "Administrative Officer & Public Services", company: "MSEDCL / Public Sector", location: "Mumbai, Maharashtra", salary: "₹30,000–45,000/mo", experience: "1–3 years", type: "Full-time", workMode: "On-site", posted: "5h ago", initials: "GO", category: "Government & Public Sector" },
+
+  // 13. Legal
+  { id: "leg-1", title: "Legal Advisor & Compliance Officer", company: "Corporate Law Firm", location: "Mumbai, Maharashtra", salary: "₹40,000–65,000/mo", experience: "3+ years", type: "Full-time", workMode: "On-site", posted: "1d ago", initials: "CL", category: "Legal" },
+
+  // 14. Architecture & Interior Design
+  { id: "arch-1", title: "Interior Designer & 3D Visualizer", company: "Livspace", location: "Pune, Maharashtra", salary: "₹30,000–45,000/mo", experience: "2–4 years", type: "Full-time", workMode: "On-site", posted: "4h ago", initials: "LS", category: "Architecture & Interior Design" },
+
+  // 15. Retail & E-commerce
+  { id: "ret-1", title: "Store Manager & E-commerce Executive", company: "Reliance Retail", location: "Mumbai, Maharashtra", salary: "₹22,000–35,000/mo", experience: "1–3 years", type: "Full-time", workMode: "On-site", posted: "2h ago", initials: "RR", category: "Retail & E-commerce" },
+
+  // 16. Customer Service & BPO
+  { id: "bpo-1", title: "Customer Support & Technical Representative", company: "Teleperformance", location: "Pune, Maharashtra", salary: "₹18,000–28,000/mo", experience: "Fresher", type: "Full-time", workMode: "Hybrid", posted: "1h ago", initials: "TP", category: "Customer Service & BPO", featured: true, openings: 60 },
+
+  // 17. Design & Creative
+  { id: "des-1", title: "Graphic Designer & Video Editor", company: "Creative Agency", location: "Mumbai / Remote", salary: "₹25,000–40,000/mo", experience: "1–3 years", type: "Full-time", workMode: "Remote", posted: "3h ago", initials: "CA", category: "Design & Creative" },
+
+  // 18. Media & Communication
+  { id: "med-1", title: "Content Writer & PR Executive", company: "NDTV / Media House", location: "Mumbai, Maharashtra", salary: "₹25,000–38,000/mo", experience: "1–3 years", type: "Full-time", workMode: "On-site", posted: "6h ago", initials: "MH", category: "Media & Communication" },
+
+  // 19. Agriculture & Farming
+  { id: "agri-1", title: "Agricultural Engineer & Farm Manager", company: "Mahindra Agri / Sahyadri", location: "Nashik, Maharashtra", salary: "₹25,000–38,000/mo", experience: "2+ years", type: "Full-time", workMode: "On-site", posted: "1d ago", initials: "MA", category: "Agriculture & Farming" },
+
+  // 20. Science & Research
+  { id: "sci-1", title: "Research Scientist & Lab Researcher", company: "Serum Institute of India", location: "Pune, Maharashtra", salary: "₹45,000–70,000/mo", experience: "3+ years", type: "Full-time", workMode: "On-site", posted: "2h ago", initials: "SI", category: "Science & Research", featured: true }
 ];
 
 export function JobCard({
@@ -226,16 +335,17 @@ export function JobCard({
   job: Job;
   onApply?: (job: Job) => void;
 }) {
-  const { t, n } = useI18n();
+  const { t, n, lang } = useI18n();
   const [saved, setSaved] = useState(false);
   const [showApplyModal, setShowApplyModal] = useState(false);
+  const [showCompanyModal, setShowCompanyModal] = useState(false);
+  const [activeModalTab, setActiveModalTab] = useState<"company" | "job" | "openings">("company");
   const [applied, setApplied] = useState(false);
 
-  const toggleSave = () => {
-    setSaved(!saved);
-  };
+  const companyMeta = getCompanyMetadata(job);
 
-  const handleApplyClick = () => {
+  const handleApplyClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (onApply) {
       onApply(job);
     } else {
@@ -243,116 +353,499 @@ export function JobCard({
     }
   };
 
+  const [copied, setCopied] = useState(false);
+
+  const handleShareClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCopied(true);
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(window.location.href);
+    }
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const openModalTab = (tab: "company" | "job" | "openings") => {
+    setActiveModalTab(tab);
+    setShowCompanyModal(true);
+  };
+
   const submitApplication = (e: React.FormEvent) => {
     e.preventDefault();
     setApplied(true);
     setTimeout(() => {
-      setShowApplyModal(false);
       setApplied(false);
-    }, 2000);
+      setShowApplyModal(false);
+    }, 2500);
   };
+
+  // Other jobs by the same company
+  const companyJobs = jobs.filter((j) => j.company === job.company);
 
   return (
     <>
-      <article className="group relative rounded-2xl border border-border bg-card p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-[#D4AF37]/50 hover:shadow-md">
-        {job.featured && (
-          <div className="absolute right-6 top-6 inline-flex items-center gap-1 rounded-full bg-[#D4AF37]/15 px-2.5 py-0.5 text-[10px] font-bold text-[#D4AF37]">
-            <Sparkles className="size-3" /> Featured
+      <article className="card-realjob p-5 flex flex-col justify-between group relative overflow-hidden bg-white border border-[#DCE5F0] hover:border-[#063B78]/40 hover:shadow-lg transition-all rounded-2xl">
+        {/* Top Badges & Utilities */}
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {job.featured && (
+              <Badge className="bg-[#FFC400] text-[#082F63] font-black text-[10px] uppercase tracking-wider px-2 py-0.5 border-0">
+                <Sparkles className="mr-1 size-3" /> {lang === "mr" ? "खास संधी" : "Featured"}
+              </Badge>
+            )}
+            <Badge variant="outline" className="border-[#063B78]/20 text-[#063B78] font-bold text-[10px] bg-[#063B78]/5">
+              <CheckCircle2 className="mr-1 size-3 text-emerald-600" /> GST Verified
+            </Badge>
           </div>
-        )}
 
-        <div className="flex items-start gap-4">
-          {/* Company Avatar */}
-          <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-[#1F2937] font-display text-lg font-bold text-white shadow-sm group-hover:bg-[#D4AF37] group-hover:text-[#1F2937] transition-colors">
+          <div className="flex items-center gap-1">
+            {/* Share Button */}
+            <button
+              onClick={handleShareClick}
+              title={lang === "mr" ? "नोकरी शेअर करा" : "Share Job"}
+              className="text-[#5B6B7F] hover:text-[#063B78] p-1.5 rounded-full hover:bg-[#F5F8FC] transition-colors relative"
+            >
+              {copied ? (
+                <span className="text-xs font-bold text-emerald-600 flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 animate-fade-in">
+                  <Check className="size-3" /> {lang === "mr" ? "कॉपी झाली!" : "Copied!"}
+                </span>
+              ) : (
+                <Share2 className="size-4" />
+              )}
+            </button>
+
+            {/* Save / Bookmark Button */}
+            <button
+              onClick={() => setSaved(!saved)}
+              aria-label="Save Job"
+              title={lang === "mr" ? "नोकरी सेव्ह करा" : "Save Job"}
+              className="text-[#5B6B7F] hover:text-[#063B78] p-1.5 rounded-full hover:bg-[#F5F8FC] transition-colors"
+            >
+              {saved ? (
+                <span className="text-[#063B78] font-bold text-xs flex items-center gap-1 bg-[#063B78]/10 px-2 py-0.5 rounded-full">
+                  ★ Saved
+                </span>
+              ) : (
+                <span className="text-[#5B6B7F] text-xs flex items-center gap-1 px-1.5">
+                  ☆ Save
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Company Header Info */}
+        <div className="flex items-start gap-3">
+          {/* Logo Click -> Opens Official Company Website Directly */}
+          <a
+            href={companyMeta.website}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={`${companyMeta.name} ची अधिकृत वेबसाईट उघडा (${companyMeta.website})`}
+            className="grid size-12 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-[#063B78] to-[#082F63] font-black text-white text-base shadow-sm hover:scale-105 transition-transform"
+          >
             {job.initials}
-          </span>
+          </a>
 
           <div className="min-w-0 flex-1">
-            <div className="flex items-start justify-between gap-2 pr-16">
-              <div>
-                <Link
-                  to="/jobs/$jobId"
-                  params={{ jobId: job.id }}
-                  className="font-display text-xl font-bold text-foreground transition-colors hover:text-[#D4AF37]"
-                >
-                  {job.title}
-                </Link>
-                <p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                  <Building2 className="size-3.5 text-primary" />
-                  {job.company}
-                </p>
-              </div>
+            {/* Job Title Click -> Opens Job Details (JD) */}
+            <h3
+              onClick={() => openModalTab("job")}
+              title={lang === "mr" ? "नोकरीचे सविस्तर स्वरूप (Job Details) पाहा" : "View Full Job Details"}
+              className="font-display text-base sm:text-lg font-black text-[#10233F] hover:text-[#063B78] hover:underline cursor-pointer transition-colors line-clamp-1"
+            >
+              {job.title}
+            </h3>
 
-              {/* Bookmark Save Button */}
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={toggleSave}
-                aria-label={saved ? "Remove Bookmark" : "Save Job"}
-                className={`size-9 rounded-full transition-colors ${
-                  saved
-                    ? "bg-[#D4AF37]/15 text-[#D4AF37] hover:bg-[#D4AF37]/25"
-                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                }`}
+            {/* Company Name Click -> Opens Official Company Website Directly */}
+            <a
+              href={companyMeta.website}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={`${companyMeta.name} ची अधिकृत वेबसाईट उघडा`}
+              className="mt-0.5 inline-flex items-center gap-1.5 text-xs font-bold text-[#125BB5] hover:underline"
+            >
+              <Building2 className="size-3.5 text-[#063B78]" />
+              <span className="truncate">{job.company}</span>
+              <ShieldCheck className="size-3.5 text-emerald-600 shrink-0" />
+              <span className="text-[10px] font-black text-[#FFC400] bg-[#082F63] px-1.5 py-0.2 rounded-full">
+                ★ {companyMeta.rating}
+              </span>
+              <ExternalLink className="size-3 text-[#125BB5] shrink-0" />
+            </a>
+
+            <div className="mt-1 flex items-center gap-2 text-xs font-semibold text-[#5B6B7F]">
+              <button
+                onClick={() => openModalTab("job")}
+                className="inline-flex items-center gap-1 hover:text-[#063B78] hover:underline"
               >
-                {saved ? <BookmarkCheck className="size-4 fill-current" /> : <Bookmark className="size-4" />}
-              </Button>
-            </div>
-
-            {/* Badges / Specs Row */}
-            <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground">
-              <span className="inline-flex items-center gap-1 font-medium">
-                <MapPin className="size-3.5 text-[#D4AF37]" />
-                {job.location}
-              </span>
-              <span className="inline-flex items-center gap-1 font-bold text-foreground">
-                <Wallet className="size-3.5 text-[#D4AF37]" />
-                {n(job.salary)}
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <Clock3 className="size-3.5 text-muted-foreground" />
-                {n(job.posted)}
-              </span>
-            </div>
-
-            {/* Tags & Active Apply Action */}
-            <div className="mt-5 flex items-center justify-between border-t border-border/60 pt-4">
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="secondary" className="text-[11px] font-semibold">
-                  {job.type}
-                </Badge>
-                <Badge variant="outline" className="text-[11px]">
-                  {job.workMode}
-                </Badge>
-                <Badge variant="outline" className="text-[11px]">
-                  {n(job.experience)}
-                </Badge>
-                {job.category && (
-                  <Badge variant="outline" className="bg-[#D4AF37]/10 text-[#1F2937] border-[#D4AF37]/30 text-[11px]">
-                    {job.category}
-                  </Badge>
-                )}
-              </div>
-
-              <Button
-                size="sm"
-                onClick={handleApplyClick}
-                className="bg-[#1F2937] hover:bg-[#D4AF37] hover:text-[#1F2937] font-semibold text-xs transition-colors px-4 h-9"
-              >
-                {t("apply")}
-              </Button>
+                <MapPin className="size-3.5 text-[#063B78]" /> {job.location}
+              </button>
             </div>
           </div>
         </div>
+
+        {/* Salary and Openings Box */}
+        <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-[#F5F8FC] p-3 border border-[#DCE5F0]/50">
+          <div
+            onClick={() => openModalTab("job")}
+            className="flex items-center gap-2.5 cursor-pointer hover:opacity-80 transition-opacity"
+            title={lang === "mr" ? "पगार व नोकरीचे तपशील पाहा" : "View Salary Details"}
+          >
+            <div className="grid size-8 shrink-0 place-items-center rounded-lg bg-[#063B78]/10 text-[#063B78]">
+              <Wallet className="size-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[9px] font-bold uppercase text-[#5B6B7F] truncate">
+                {lang === "mr" ? "सुरुवातीचा पगार" : "Starting Salary"}
+              </p>
+              <p className="text-xs sm:text-sm font-black text-[#063B78] truncate">{n(job.salary)}</p>
+            </div>
+          </div>
+
+          {job.openings && (
+            <div
+              onClick={() => openModalTab("openings")}
+              className="flex items-center gap-2.5 border-l border-[#DCE5F0] pl-3 cursor-pointer hover:opacity-80 transition-opacity"
+              title={lang === "mr" ? "या कंपनीतील इतर सर्व जागा पाहा" : "View Active Openings"}
+            >
+              <div className="grid size-8 shrink-0 place-items-center rounded-lg bg-[#FFC400]/20 text-[#082F63]">
+                <Users className="size-4" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[9px] font-bold uppercase text-[#5B6B7F] truncate">
+                  {lang === "mr" ? "एकूण जागा" : "Openings"}
+                </p>
+                <p className="text-xs sm:text-sm font-black text-[#10233F] truncate">
+                  {n(job.openings)}+ {lang === "mr" ? "शिल्लक" : "Vacancies"}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Clickable Tags & Skills */}
+        <div className="mt-4 flex flex-wrap items-center gap-2 relative z-0">
+          <span className="inline-flex items-center gap-1 rounded-lg bg-[#063B78]/5 px-2 py-1 text-[10px] sm:text-[11px] font-bold text-[#063B78] whitespace-nowrap">
+            <Clock3 className="size-3" /> {job.type}
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-lg bg-[#063B78]/5 px-2 py-1 text-[10px] sm:text-[11px] font-bold text-[#063B78] whitespace-nowrap">
+            {job.workMode}
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-lg bg-[#063B78]/5 px-2 py-1 text-[10px] sm:text-[11px] font-bold text-[#063B78] whitespace-nowrap">
+            {lang === "mr" ? "अनुभव" : "Exp"}: {n(job.experience)}
+          </span>
+
+          {companyMeta.skills.slice(0, 2).map((skill, idx) => (
+            <button
+              key={idx}
+              onClick={() => openModalTab("job")}
+              title={`View ${skill} requirement details`}
+              className="inline-flex items-center gap-1 rounded-lg bg-[#FFC400]/15 border border-[#FFC400]/30 hover:bg-[#FFC400] transition-colors px-2 py-1 text-[10px] sm:text-[11px] font-black text-[#082F63] whitespace-nowrap"
+            >
+              {skill}
+            </button>
+          ))}
+        </div>
+
+        {/* Action Buttons Footer */}
+        <div className="mt-5 flex items-center justify-between gap-2 border-t border-[#DCE5F0] pt-4 relative z-20">
+          <Button
+            asChild
+            variant="outline"
+            className="h-9 text-xs font-black border-[#063B78]/30 text-[#063B78] hover:bg-[#063B78] hover:text-white rounded-xl shadow-2xs px-3"
+          >
+            <a
+              href={companyMeta.website}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={`${companyMeta.name} ची अधिकृत वेबसाईट उघडा (${companyMeta.website})`}
+            >
+              <Building className="mr-1.5 size-3.5" />
+              {lang === "mr" ? "कंपनी वेबसाईट" : "Company Website"}
+              <ExternalLink className="ml-1 size-3" />
+            </a>
+          </Button>
+
+          <Button
+            onClick={handleApplyClick}
+            className="btn-yellow h-9 px-5 font-black text-xs shadow-sm rounded-xl"
+          >
+            {t("apply")} <Send className="ml-1.5 size-3" />
+          </Button>
+        </div>
       </article>
+
+      {/* Naukri.com Style Company Profile & Job Details Modal */}
+      {showCompanyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#082F63]/70 backdrop-blur-md p-4 animate-in fade-in duration-200">
+          <div className="relative w-full max-w-3xl rounded-3xl border border-[#DCE5F0] bg-white shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            
+            {/* Header Banner */}
+            <div className="bg-gradient-to-r from-[#063B78] via-[#082F63] to-[#125BB5] p-6 text-white relative">
+              <button
+                onClick={() => setShowCompanyModal(false)}
+                className="absolute right-4 top-4 grid size-8 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+              >
+                <X className="size-5" />
+              </button>
+
+              <div className="flex items-start gap-4">
+                <div className="grid size-16 shrink-0 place-items-center rounded-2xl bg-white font-black text-[#063B78] text-2xl shadow-lg border-2 border-[#FFC400]">
+                  {job.initials}
+                </div>
+
+                <div className="space-y-1 min-w-0 pr-8">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[10px] font-black uppercase tracking-wider bg-[#FFC400] text-[#082F63] px-2 py-0.5 rounded-full">
+                      {companyMeta.industry}
+                    </span>
+                    <span className="text-xs font-bold text-emerald-300 flex items-center gap-1">
+                      <ShieldCheck className="size-4" /> Real Job Verified Employer
+                    </span>
+                  </div>
+
+                  <h2 className="text-xl sm:text-2xl font-black text-white truncate">
+                    {companyMeta.name}
+                  </h2>
+
+                  <div className="flex items-center gap-3 text-xs font-bold text-slate-200 flex-wrap">
+                    <span className="flex items-center gap-1">
+                      <MapPin className="size-3.5 text-[#FFC400]" /> {companyMeta.headquarters}
+                    </span>
+                    <span>•</span>
+                    <span className="flex items-center gap-1 text-[#FFC400]">
+                      <Star className="size-3.5 fill-[#FFC400]" /> {companyMeta.rating} / 5.0 ({companyMeta.reviewsCount})
+                    </span>
+                    <span>•</span>
+                    <span>Est. {companyMeta.founded}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Navigation Tabs */}
+              <div className="flex items-center gap-2 mt-6 border-b border-white/20">
+                <button
+                  onClick={() => setActiveModalTab("company")}
+                  className={`pb-2.5 px-3 text-xs sm:text-sm font-black transition-all border-b-2 ${
+                    activeModalTab === "company"
+                      ? "border-[#FFC400] text-[#FFC400]"
+                      : "border-transparent text-white/70 hover:text-white"
+                  }`}
+                >
+                  🏢 {lang === "mr" ? "कंपनी पार्श्वभूमी" : "Company Profile"}
+                </button>
+
+                <button
+                  onClick={() => setActiveModalTab("job")}
+                  className={`pb-2.5 px-3 text-xs sm:text-sm font-black transition-all border-b-2 ${
+                    activeModalTab === "job"
+                      ? "border-[#FFC400] text-[#FFC400]"
+                      : "border-transparent text-white/70 hover:text-white"
+                  }`}
+                >
+                  📋 {lang === "mr" ? "नोकरी सविस्तर माहिती" : "Job Details"}
+                </button>
+
+                <button
+                  onClick={() => setActiveModalTab("openings")}
+                  className={`pb-2.5 px-3 text-xs sm:text-sm font-black transition-all border-b-2 ${
+                    activeModalTab === "openings"
+                      ? "border-[#FFC400] text-[#FFC400]"
+                      : "border-transparent text-white/70 hover:text-white"
+                  }`}
+                >
+                  🚀 {lang === "mr" ? "इतर जागा" : "Active Openings"} ({companyJobs.length})
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body Content */}
+            <div className="p-6 overflow-y-auto space-y-6 flex-1 text-[#10233F]">
+              
+              {/* TAB 1: Company Profile */}
+              {activeModalTab === "company" && (
+                <div className="space-y-6 animate-fade-in">
+                  
+                  {/* Trust Badges */}
+                  <div>
+                    <h4 className="text-xs font-black uppercase text-[#5B6B7F] tracking-wider mb-2">
+                      {lang === "mr" ? "विश्वासार्हता आणि प्रमाणपत्रे" : "Verification Badges"}
+                    </h4>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {companyMeta.trustBadges.map((badge, idx) => (
+                        <span key={idx} className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-1.5 text-xs font-black text-emerald-800">
+                          <CheckCircle2 className="size-4 text-emerald-600" />
+                          {badge}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* About Company */}
+                  <div>
+                    <h4 className="text-sm font-black text-[#063B78] mb-2 flex items-center gap-2">
+                      <Building2 className="size-4 text-[#063B78]" />
+                      {lang === "mr" ? "कंपनीबद्दल थोडक्यात (About Company)" : "About Company"}
+                    </h4>
+                    <p className="text-xs sm:text-sm font-semibold leading-relaxed text-[#5B6B7F] bg-[#F5F8FC] p-4 rounded-2xl border border-[#DCE5F0]">
+                      {lang === "mr" ? companyMeta.aboutMr : companyMeta.aboutEn}
+                    </p>
+                  </div>
+
+                  {/* Company Quick Facts */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="p-3 rounded-xl bg-[#F5F8FC] border border-[#DCE5F0]">
+                      <span className="text-[10px] font-bold text-[#5B6B7F] uppercase block">कर्मचारी संख्या</span>
+                      <span className="text-xs font-black text-[#063B78]">{companyMeta.size}</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-[#F5F8FC] border border-[#DCE5F0]">
+                      <span className="text-[10px] font-bold text-[#5B6B7F] uppercase block">स्थापना वर्ष</span>
+                      <span className="text-xs font-black text-[#063B78]">वर्ष {companyMeta.founded}</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-[#F5F8FC] border border-[#DCE5F0]">
+                      <span className="text-[10px] font-bold text-[#5B6B7F] uppercase block">मुख्यालय</span>
+                      <span className="text-xs font-black text-[#063B78] truncate block">{companyMeta.headquarters}</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-[#F5F8FC] border border-[#DCE5F0]">
+                      <span className="text-[10px] font-bold text-[#5B6B7F] uppercase block">वेबसाईट</span>
+                      <a href={companyMeta.website} target="_blank" rel="noreferrer" className="text-xs font-black text-[#125BB5] hover:underline flex items-center gap-1">
+                        Visit Site <ExternalLink className="size-3" />
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* Employee Perks & Benefits */}
+                  <div>
+                    <h4 className="text-sm font-black text-[#063B78] mb-2 flex items-center gap-2">
+                      <Gift className="size-4 text-[#FFC400]" />
+                      {lang === "mr" ? "कामगारांना मिळणाऱ्या सुविधा (Employee Benefits & Perks)" : "Employee Perks"}
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {(lang === "mr" ? companyMeta.perksMr : companyMeta.perksEn).map((perk, idx) => (
+                        <div key={idx} className="flex items-center gap-2 p-2.5 rounded-xl bg-[#EBF1F8] text-xs font-bold text-[#063B78]">
+                          <Award className="size-4 text-[#063B78] shrink-0" />
+                          <span>{perk}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                </div>
+              )}
+
+              {/* TAB 2: Job Details */}
+              {activeModalTab === "job" && (
+                <div className="space-y-6 animate-fade-in">
+                  
+                  {/* Role Overview */}
+                  <div className="p-4 rounded-2xl bg-[#063B78]/5 border border-[#063B78]/15 space-y-2">
+                    <h3 className="text-base font-black text-[#063B78]">{job.title}</h3>
+                    <div className="flex flex-wrap items-center gap-4 text-xs font-bold text-[#5B6B7F]">
+                      <span>💰 Salary: {job.salary}</span>
+                      <span>📍 Location: {job.location}</span>
+                      <span>💼 Exp: {job.experience}</span>
+                      <span>🕒 Type: {job.type} ({job.workMode})</span>
+                    </div>
+                  </div>
+
+                  {/* Job Description */}
+                  <div>
+                    <h4 className="text-sm font-black text-[#063B78] mb-2 flex items-center gap-2">
+                      <Briefcase className="size-4 text-[#063B78]" />
+                      {lang === "mr" ? "कामाचे स्वरूप आणि जबाबदाऱ्या" : "Job Description & Duties"}
+                    </h4>
+                    <p className="text-xs sm:text-sm font-semibold leading-relaxed text-[#5B6B7F] bg-[#F5F8FC] p-4 rounded-2xl border border-[#DCE5F0]">
+                      {lang === "mr" ? companyMeta.jobDescMr : companyMeta.jobDescEn}
+                    </p>
+                  </div>
+
+                  {/* Required Skills */}
+                  <div>
+                    <h4 className="text-sm font-black text-[#063B78] mb-2 flex items-center gap-2">
+                      <BookOpen className="size-4 text-[#063B78]" />
+                      {lang === "mr" ? "आवश्यक कौशल्ये (Required Skills)" : "Required Skills"}
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {companyMeta.skills.map((skill, idx) => (
+                        <span key={idx} className="px-3 py-1 rounded-xl bg-[#063B78] text-white text-xs font-bold shadow-2xs">
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                </div>
+              )}
+
+              {/* TAB 3: Active Openings */}
+              {activeModalTab === "openings" && (
+                <div className="space-y-4 animate-fade-in">
+                  <h4 className="text-xs font-black uppercase text-[#5B6B7F] tracking-wider">
+                    {companyMeta.name} {lang === "mr" ? "मधील इतर सर्व नोकऱ्या" : "Active Vacancies"}
+                  </h4>
+
+                  {companyJobs.map((cj) => (
+                    <div key={cj.id} className="p-4 rounded-2xl border border-[#DCE5F0] bg-[#F5F8FC] flex items-center justify-between gap-3">
+                      <div>
+                        <h5 className="font-black text-sm text-[#10233F]">{cj.title}</h5>
+                        <p className="text-xs font-semibold text-[#5B6B7F] mt-0.5">
+                          {cj.location} • {cj.salary} • {cj.experience}
+                        </p>
+                      </div>
+                      <Button
+                        onClick={() => {
+                          setShowCompanyModal(false);
+                          setShowApplyModal(true);
+                        }}
+                        className="btn-yellow h-8 px-4 font-black text-xs rounded-xl shrink-0"
+                      >
+                        Apply <Send className="ml-1 size-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+            </div>
+
+            {/* Modal Bottom Action Footer */}
+            <div className="p-4 bg-[#F5F8FC] border-t border-[#DCE5F0] flex items-center justify-between gap-3">
+              <div className="text-xs font-bold text-[#5B6B7F]">
+                <span>{lang === "mr" ? "थेट HR पडताळणी पूर्ण झालेली कंपनी" : "Verified HR Direct Recruiter"}</span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowCompanyModal(false)}
+                  className="h-10 text-xs font-bold px-4 rounded-xl border-[#DCE5F0]"
+                >
+                  {lang === "mr" ? "बंद करा" : "Close"}
+                </Button>
+                
+                <Button
+                  onClick={() => {
+                    setShowCompanyModal(false);
+                    setShowApplyModal(true);
+                  }}
+                  className="btn-yellow h-10 px-6 font-black text-xs rounded-xl shadow-md"
+                >
+                  {t("apply")} <Send className="ml-1.5 size-3.5" />
+                </Button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
 
       {/* Interactive Apply Modal */}
       {showApplyModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="relative w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#082F63]/70 backdrop-blur-md p-4 animate-in fade-in duration-200">
+          <div className="relative w-full max-w-lg rounded-3xl border border-[#DCE5F0] bg-white p-6 shadow-2xl">
             <button
               onClick={() => setShowApplyModal(false)}
-              className="absolute right-4 top-4 grid size-8 place-items-center rounded-full bg-secondary text-muted-foreground hover:text-foreground"
+              className="absolute right-4 top-4 grid size-8 place-items-center rounded-full bg-[#F5F8FC] text-[#5B6B7F] hover:text-[#10233F]"
             >
               <X className="size-4" />
             </button>
@@ -360,47 +853,58 @@ export function JobCard({
             {applied ? (
               <div className="py-8 text-center space-y-3">
                 <CheckCircle2 className="mx-auto size-14 text-emerald-600 animate-bounce" />
-                <h3 className="font-display text-2xl font-bold text-primary">Application Submitted!</h3>
-                <p className="text-xs text-muted-foreground">
-                  Your profile and resume have been sent to <strong>{job.company}</strong> for the <strong>{job.title}</strong> role.
+                <h3 className="font-display text-2xl font-black text-[#10233F]">
+                  {lang === "mr" ? "अर्ज यशस्वीरीत्या पाठवला!" : "Application Submitted!"}
+                </h3>
+                <p className="text-xs font-semibold text-[#5B6B7F]">
+                  {job.company} {lang === "mr" ? "कंपनीच्या HR विभागाकडे तुमचा अर्ज व प्रोफाइल पाठवले आहे." : "HR team will review your application soon."}
                 </p>
               </div>
             ) : (
               <form onSubmit={submitApplication} className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <span className="grid size-12 place-items-center rounded-xl bg-[#1F2937] font-bold text-white">
+                  <span className="grid size-12 place-items-center rounded-xl bg-[#063B78] font-black text-white text-lg">
                     {job.initials}
                   </span>
                   <div>
-                    <h3 className="font-display text-lg font-bold text-primary">{job.title}</h3>
-                    <p className="text-xs text-muted-foreground">{job.company} · {job.location}</p>
+                    <h3 className="font-display text-base font-black text-[#10233F]">{job.title}</h3>
+                    <p className="text-xs font-bold text-[#125BB5]">{job.company} · {job.location}</p>
                   </div>
                 </div>
 
-                <div className="rounded-lg bg-secondary/80 p-3 text-xs space-y-1">
-                  <span className="font-semibold text-foreground">Verified Direct Employer</span>
-                  <p className="text-muted-foreground">Salary Band: {job.salary} | Mode: {job.workMode}</p>
+                <div className="rounded-xl bg-[#F5F8FC] p-3 text-xs space-y-1 border border-[#DCE5F0]">
+                  <span className="font-black text-[#063B78] flex items-center gap-1">
+                    <ShieldCheck className="size-3.5 text-emerald-600" />
+                    {lang === "mr" ? "शासकीय/GST नोंदणीकृत मालक" : "Verified Direct Employer"}
+                  </span>
+                  <p className="text-[#5B6B7F] font-semibold">
+                    {lang === "mr" ? "पगार अंदाज:" : "Salary:"} {job.salary} | Mode: {job.workMode}
+                  </p>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold mb-1">Upload / Select Resume</label>
-                  <select className="w-full h-10 rounded-md border border-input bg-background px-3 text-xs shadow-sm">
+                  <label className="block text-xs font-bold mb-1 text-[#10233F]">
+                    {lang === "mr" ? "रेझ्युमे / बायोडेटा निवडा" : "Upload / Select Resume"}
+                  </label>
+                  <select className="w-full h-10 rounded-xl border border-[#DCE5F0] bg-white px-3 text-xs font-bold text-[#10233F] shadow-2xs">
                     <option>Payal_Wankar_Resume_2026.pdf (Verified)</option>
                     <option>Upload New Resume...</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold mb-1">Short Cover Note (Optional)</label>
+                  <label className="block text-xs font-bold mb-1 text-[#10233F]">
+                    {lang === "mr" ? "थोडक्यात संदेश (पर्यायी)" : "Short Cover Note (Optional)"}
+                  </label>
                   <textarea
                     rows={3}
-                    placeholder="Briefly share why you are a great fit for this role..."
-                    className="w-full rounded-md border border-input bg-background p-2.5 text-xs shadow-sm focus:outline-none focus:ring-1 focus:ring-[#D4AF37]"
+                    placeholder={lang === "mr" ? "तुम्ही या कामासाठी योग्य का आहात ते थोडक्यात लिहा..." : "Briefly share why you are a great fit..."}
+                    className="w-full rounded-xl border border-[#DCE5F0] bg-white p-2.5 text-xs font-semibold shadow-2xs focus:outline-none focus:ring-1 focus:ring-[#063B78]"
                   />
                 </div>
 
-                <Button type="submit" className="w-full h-11 bg-[#1F2937] hover:bg-[#D4AF37] hover:text-[#1F2937] font-semibold text-xs">
-                  Submit Application <Send className="ml-2 size-4" />
+                <Button type="submit" className="btn-yellow w-full h-11 font-black text-xs shadow-md rounded-xl">
+                  {lang === "mr" ? "नोकरीसाठी अर्ज सादर करा" : "Submit Application"} <Send className="ml-2 size-4" />
                 </Button>
               </form>
             )}

@@ -133,21 +133,19 @@ function HomePage() {
             <div className="flex items-center gap-2 mb-4 border-b border-[#DCE5F0] pb-3">
               <button
                 onClick={() => setSearchTab("job")}
-                className={`px-5 py-2 rounded-lg font-black text-xs transition-all ${
-                  searchTab === "job"
-                    ? "bg-[#063B78] text-white shadow-xs"
-                    : "text-[#5B6B7F] hover:bg-[#F5F8FC]"
-                }`}
+                className={`px-5 py-2 rounded-lg font-black text-xs transition-all ${searchTab === "job"
+                  ? "bg-[#063B78] text-white shadow-xs"
+                  : "text-[#5B6B7F] hover:bg-[#F5F8FC]"
+                  }`}
               >
                 {t("searchJobTab")}
               </button>
               <button
                 onClick={() => setSearchTab("worker")}
-                className={`px-5 py-2 rounded-lg font-black text-xs transition-all ${
-                  searchTab === "worker"
-                    ? "bg-[#063B78] text-white shadow-xs"
-                    : "text-[#5B6B7F] hover:bg-[#F5F8FC]"
-                }`}
+                className={`px-5 py-2 rounded-lg font-black text-xs transition-all ${searchTab === "worker"
+                  ? "bg-[#063B78] text-white shadow-xs"
+                  : "text-[#5B6B7F] hover:bg-[#F5F8FC]"
+                  }`}
               >
                 {t("searchWorkerTab")}
               </button>
@@ -183,16 +181,36 @@ function HomePage() {
                   className="w-full h-11 border-0 bg-transparent text-xs font-bold text-[#10233F] focus:outline-none"
                 >
                   <option value="all">{t("allCategories")}</option>
-                  <option value="Factory Workers">{getCategoryTitle("factory-workers", lang)}</option>
-                  <option value="Construction Workers">{getCategoryTitle("construction-workers", lang)}</option>
-                  <option value="Technical Staff">{getCategoryTitle("technical-staff", lang)}</option>
-                  <option value="Logistics & Drivers">{getCategoryTitle("logistics-drivers", lang)}</option>
-                  <option value="Electricians">{getCategoryTitle("electricians", lang)}</option>
+                  <option value="construction">Construction</option>
+                  <option value="it-software">IT & Software</option>
+                  <option value="engineering">Engineering</option>
+                  <option value="healthcare-medical">Healthcare & Medical</option>
+                  <option value="finance-accounting">Finance & Accounting</option>
+                  <option value="sales-marketing">Sales & Marketing</option>
+                  <option value="education">Education</option>
+                  <option value="manufacturing">Manufacturing</option>
+                  <option value="hr-recruitment">HR & Recruitment</option>
+                  <option value="hospitality-tourism">Hospitality & Tourism</option>
+                  <option value="logistics-transport">Logistics & Transport</option>
+                  <option value="government-public">Government & Public Sector</option>
+                  <option value="legal">Legal</option>
+                  <option value="architecture-design">Architecture & Interior Design</option>
+                  <option value="retail-ecommerce">Retail & E-commerce</option>
+                  <option value="customer-service-bpo">Customer Service & BPO</option>
+                  <option value="design-creative">Design & Creative</option>
+                  <option value="media-communication">Media & Communication</option>
+                  <option value="agriculture-farming">Agriculture & Farming</option>
+                  <option value="science-research">Science & Research</option>
                 </select>
               </div>
 
               <Button asChild size="lg" className="btn-yellow h-11 px-8 font-black text-xs">
-                <Link to={searchTab === "job" ? "/jobs" : "/workers"}>
+                <Link
+                  to={searchTab === "job" ? "/jobs" : "/workers"}
+                  search={{
+                    ...(category !== "all" ? { category } : {}),
+                  }}
+                >
                   {searchTab === "job" ? t("jobs") : t("workers")}
                 </Link>
               </Button>

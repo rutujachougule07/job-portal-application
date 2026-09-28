@@ -168,8 +168,8 @@ export function AppShell({ role, title, eyebrow, children }: { role: Role; title
               <Link to="/">{t("viewWebsite")}</Link>
             </Button>
 
-            <div className="hidden sm:block">
-              <LanguageSwitcher label="Languages" showCurrent={true} />
+            <div className="flex items-center">
+              <LanguageSwitcher label={t("languageLabel")} showCurrent={true} />
             </div>
 
             <Button size="icon" variant="outline" aria-label="Notifications">

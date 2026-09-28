@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import {
+  ArrowLeft,
   Bookmark,
   BookmarkCheck,
   Building2,
@@ -15,6 +16,7 @@ import {
 import { PublicHeader } from "@/components/portal/PublicHeader";
 import { PublicFooter } from "@/components/portal/PublicFooter";
 import { JobCard, jobs } from "@/components/portal/JobCard";
+import { JobCardImage } from "@/components/portal/JobCardImage";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -31,7 +33,7 @@ export const Route = createFileRoute("/jobs/$jobId")({
 });
 
 export function JobDetailPage() {
-  const { t, n } = useI18n();
+  const { t, n, lang } = useI18n();
   const { jobId } = useParams({ from: "/jobs/$jobId" });
   const job = (jobs.find((j) => j.id === jobId) ?? jobs[0])!;
 
@@ -72,13 +74,21 @@ export function JobDetailPage() {
       <PublicHeader />
       <main className="bg-[#F5F8FC] min-h-screen py-8">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          {/* Breadcrumb Navigation */}
-          <div className="flex items-center gap-2 text-xs font-bold text-[#5B6B7F] mb-6">
-            <Link to="/" className="hover:text-[#063B78]">{t("home")}</Link>
-            <span>/</span>
-            <Link to="/jobs" className="hover:text-[#063B78]">{t("jobs")}</Link>
-            <span>/</span>
-            <span className="text-[#10233F]">{job.title}</span>
+          {/* Top Navigation */}
+          <div className="flex flex-wrap items-center gap-4 mb-6">
+            <button
+              onClick={() => window.history.back()}
+              className="px-3 py-2 text-[#5B6B7F] hover:text-[#10233F] hover:bg-white rounded-lg flex items-center gap-1.5 text-[13px] font-bold transition-colors shrink-0 shadow-sm border border-[#DCE5F0] bg-white"
+            >
+              <ArrowLeft className="size-4" /> {lang === "mr" ? "मागे जा" : "Back"}
+            </button>
+            <div className="flex items-center gap-2 text-xs font-bold text-[#5B6B7F]">
+              <Link to="/" className="hover:text-[#063B78]">{t("home")}</Link>
+              <span>/</span>
+              <Link to="/jobs" className="hover:text-[#063B78]">{t("jobs")}</Link>
+              <span>/</span>
+              <span className="text-[#10233F]">{job.title}</span>
+            </div>
           </div>
 
           {/* Top Job Banner Card */}
@@ -182,27 +192,10 @@ export function JobDetailPage() {
                   </ul>
                 </div>
 
-                <div>
-                  <h2 className="text-lg font-black text-[#10233F] mb-3">{t("benefitsPerks")}</h2>
-                  <div className="flex flex-wrap gap-2">
-                    {["Free Food", "Free Accommodation", "Overtime Allowance", "PF & ESIC Insurance"].map((b, i) => (
-                      <Badge key={i} className="bg-[#EBF1F8] text-[#063B78] font-bold text-xs px-3 py-1 border-0">
-                        ✓ {b}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
+
               </div>
 
-              {/* Similar Jobs */}
-              <div>
-                <h3 className="text-xl font-black text-[#10233F] mb-4">{t("similarJobs")}</h3>
-                <div className="space-y-4">
-                  {similarJobs.map((simJob) => (
-                    <JobCard key={simJob.id} job={simJob} />
-                  ))}
-                </div>
-              </div>
+
             </div>
 
             {/* Right Sticky Sidebar */}

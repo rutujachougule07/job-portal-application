@@ -26,9 +26,6 @@ export function PublicHeader() {
           <Link to="/workers" className="nav-link text-sm font-bold hover:text-[#063B78] transition-colors">
             {t("workers")}
           </Link>
-          <Link to="/categories" className="nav-link text-sm font-bold hover:text-[#063B78] transition-colors">
-            {t("categories")}
-          </Link>
           <Link to="/about" className="nav-link text-sm font-bold hover:text-[#063B78] transition-colors">
             {t("aboutUs")}
           </Link>
@@ -42,8 +39,8 @@ export function PublicHeader() {
 
         {/* Action Buttons & Utilities */}
         <div className="flex items-center gap-2 sm:gap-2.5">
-          <div className="hidden xl:block">
-            <LanguageSwitcher label="Language" showCurrent={true} />
+          <div className="flex items-center">
+            <LanguageSwitcher label={t("languageLabel")} showCurrent={true} />
           </div>
 
           {/* User Login */}
@@ -81,7 +78,7 @@ export function PublicHeader() {
           <div className="bg-white border-b border-[#DCE5F0] p-6 shadow-xl space-y-4 max-h-[calc(100vh-5rem)] overflow-y-auto">
             <div className="flex items-center justify-between pb-4 border-b border-[#DCE5F0]">
               <span className="text-xs font-bold uppercase tracking-wider text-[#5B6B7F]">Navigation</span>
-              <LanguageSwitcher label="Language" showCurrent={true} />
+              <LanguageSwitcher label={t("languageLabel")} showCurrent={true} />
             </div>
 
             <nav className="grid gap-2">
@@ -109,14 +106,7 @@ export function PublicHeader() {
                 <Users className="size-5 text-[#FFC400]" />
                 {t("workers")}
               </Link>
-              <Link
-                to="/categories"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-3 rounded-lg px-3 py-2.5 font-bold text-[#10233F] hover:bg-[#F5F8FC]"
-              >
-                <Building2 className="size-5 text-[#063B78]" />
-                {t("categories")}
-              </Link>
+
               <Link
                 to="/about"
                 onClick={() => setMobileMenuOpen(false)}
