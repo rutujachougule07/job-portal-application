@@ -23,7 +23,6 @@ import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 
 import { dataStore } from "@/lib/data-store";
-import { notifyEmployerOnApplication } from "@/lib/notifications";
 
 export const Route = createFileRoute("/jobs/$jobId")({
   head: ({ params }) => ({
@@ -55,8 +54,6 @@ function getJobDetails(jobId: string) {
       description: storeJob.description,
       responsibilities: storeJob.responsibilities,
       requiredSkills: storeJob.requiredSkills,
-      whatsappNumber: storeJob.whatsappNumber,
-      contactEmail: storeJob.contactEmail,
     };
   }
   return (jobs.find((j) => j.id === jobId) ?? jobs[0])!;
@@ -65,7 +62,7 @@ function getJobDetails(jobId: string) {
 export function JobDetailPage() {
   const { t, n, lang } = useI18n();
   const { jobId } = useParams({ from: "/jobs/$jobId" });
-  const job = getJobDetails(jobId) as any;
+  const job = getJobDetails(jobId);
 
   const [saved, setSaved] = useState(false);
   const [showApplyModal, setShowApplyModal] = useState(false);
@@ -73,9 +70,6 @@ export function JobDetailPage() {
   const [applicantName, setApplicantName] = useState("");
   const [applicantPhone, setApplicantPhone] = useState("");
   const [applicantExp, setApplicantExp] = useState("3 Years");
-  
-  const [whatsappUrl, setWhatsappUrl] = useState("");
-  const [mailtoUrl, setMailtoUrl] = useState("");
 
   const similarJobs = jobs.filter((j) => j.id !== job.id).slice(0, 3);
 
@@ -104,26 +98,14 @@ export function JobDetailPage() {
         location: job.location,
         salary: job.salary,
         resume: `${name.replaceAll(" ", "_")}_Resume.pdf`,
-        candidateExp: applicantExp,
       });
 
-      const notifyUrls = notifyEmployerOnApplication({
-        candidateName: name,
-        candidateEmail: seekerId,
-        candidateMobile: applicantPhone || "+91 98220 11223",
-        candidateExp: applicantExp,
-        jobTitle: job.title,
-        companyName: job.company,
-        employerEmail: (job as any).contactEmail,
-        employerPhone: (job as any).whatsappNumber,
-      });
-
-      setWhatsappUrl(notifyUrls.whatsappUrl);
-      setMailtoUrl(notifyUrls.mailtoUrl);
       setApplied(true);
-      toast.success(`Application submitted for ${job.title}!`);
-      
-      // We don't auto-close the modal immediately so user can click the WhatsApp button
+      toast.success(`Application submitted for ${job.title}! ${job.company} will call you shortly.`);
+      setTimeout(() => {
+        setShowApplyModal(false);
+        setApplied(false);
+      }, 2000);
     } catch (err: any) {
       toast.error(err.message || "Failed to submit application");
     }
@@ -242,23 +224,28 @@ export function JobDetailPage() {
               <div className="bg-white p-6 sm:p-8 rounded-2xl border border-[#DCE5F0] shadow-xs space-y-6">
                 <div>
                   <h2 className="text-lg font-black text-[#10233F] mb-3">{t("jobDescription")}</h2>
-                  <p className="text-sm font-semibold text-[#5B6B7F] leading-relaxed whitespace-pre-wrap">
-                    {job.description || "माहिती उपलब्ध नाही (Description not provided)."}
+                  <p className="text-sm font-semibold text-[#5B6B7F] leading-relaxed">
+                    Urgent requirement for skilled and experienced workforce in factory operations. The candidate should have relevant experience, willingness to work in shifts and maintain quality standards.
                   </p>
                 </div>
 
-                  <h2 className="text-lg font-black text-[#10233F] mb-3">{t("requirements")} (पात्रता व कौशल्ये)</h2>
+                <div>
+                  <h2 className="text-lg font-black text-[#10233F] mb-3">{t("responsibilities")}</h2>
                   <ul className="space-y-2 text-sm font-semibold text-[#5B6B7F] list-disc pl-5">
-                    <li><strong>शिक्षण (Education):</strong> {job.qualification || "Not specified"}</li>
-                    <li><strong>अनुभव (Experience):</strong> {job.experience || "Not specified"}</li>
-                    {job.requiredSkills && job.requiredSkills.length > 0 && (
-                      <li><strong>कौशल्ये (Skills):</strong> {job.requiredSkills.join(", ")}</li>
-                    )}
-                    {job.benefits && job.benefits.length > 0 && (
-                      <li><strong>फायदे (Benefits):</strong> {job.benefits.join(", ")}</li>
-                    )}
-                    <li><strong>रिक्त जागा (Vacancies):</strong> {job.vacancies || 1}</li>
+                    <li>Perform day-to-day operations and maintenance.</li>
+                    <li>Follow safety guidelines and complete production targets on time.</li>
+                    <li>Coordinate with team supervisor and plant management.</li>
                   </ul>
+                </div>
+
+                <div>
+                  <h2 className="text-lg font-black text-[#10233F] mb-3">{t("requirements")}</h2>
+                  <ul className="space-y-2 text-sm font-semibold text-[#5B6B7F] list-disc pl-5">
+                    <li>10th / 12th Pass or ITI Trade Certificate.</li>
+                    <li>1 to 5 years relevant trade experience.</li>
+                    <li>Punctuality and dedication to work.</li>
+                  </ul>
+                </div>
 
 
               </div>
@@ -269,25 +256,12 @@ export function JobDetailPage() {
             {/* Right Sticky Sidebar */}
             <div>
               <div className="bg-white p-6 rounded-2xl border border-[#DCE5F0] shadow-xs sticky top-24 space-y-6">
+                <div>
                   <h3 className="text-lg font-black text-[#10233F]">{t("talkDirectlyToEmployer")}</h3>
-                  <p className="text-xs font-semibold text-[#5B6B7F] mt-1 mb-4">
+                  <p className="text-xs font-semibold text-[#5B6B7F] mt-1">
                     {t("directContactDesc")}
                   </p>
-                  
-                  <div className="bg-[#EBF1F8] p-3 rounded-lg border border-[#DCE5F0] space-y-1.5 mb-2">
-                    <p className="text-xs font-bold text-[#082F63] uppercase">संपर्क अधिकारी (Contact)</p>
-                    <p className="text-sm font-black text-[#10233F]">{job.contactPerson || job.company}</p>
-                    {job.contactPhone && (
-                      <p className="text-xs font-bold text-[#5B6B7F] flex items-center gap-1.5">
-                        📞 {job.contactPhone}
-                      </p>
-                    )}
-                    {job.whatsappNumber && (
-                      <p className="text-xs font-bold text-[#25D366] flex items-center gap-1.5">
-                        💬 WhatsApp: {job.whatsappNumber}
-                      </p>
-                    )}
-                  </div>
+                </div>
 
                 <div className="space-y-3 pt-2">
                   <div className="flex items-center gap-3 text-xs font-bold text-[#10233F]">
@@ -324,38 +298,9 @@ export function JobDetailPage() {
                 <div className="text-center py-8">
                   <CheckCircle2 className="size-16 text-[#063B78] mx-auto mb-3 animate-bounce" />
                   <h3 className="text-xl font-black text-[#10233F]">{t("applicationSubmitted")}</h3>
-                  <p className="text-xs font-semibold text-[#5B6B7F] mt-2 mb-6">
-                    तुमचा अर्ज यशस्वीरीत्या जमा झाला आहे. कंपनीला थेट सूचित करण्यासाठी खालील पर्यायांचा वापर करा.
+                  <p className="text-xs font-semibold text-[#5B6B7F] mt-2">
+                    {t("applicationSubmittedDesc")}
                   </p>
-                  
-                  <div className="flex flex-col gap-3">
-                    <Button 
-                      asChild 
-                      className="bg-[#25D366] hover:bg-[#1DA851] text-white font-black text-xs py-3 h-11 w-full"
-                    >
-                      <a href={whatsappUrl} target="_blank" rel="noreferrer">
-                        WhatsApp वर माहिती पाठवा
-                      </a>
-                    </Button>
-                    <Button 
-                      asChild 
-                      variant="outline"
-                      className="border-[#063B78] text-[#063B78] font-black text-xs py-3 h-11 w-full"
-                    >
-                      <a href={mailtoUrl} target="_blank" rel="noreferrer">
-                        Email द्वारे सूचित करा
-                      </a>
-                    </Button>
-                    <button 
-                      onClick={() => {
-                        setShowApplyModal(false);
-                        setApplied(false);
-                      }}
-                      className="text-xs font-bold text-[#5B6B7F] underline mt-3 hover:text-[#10233F]"
-                    >
-                      बंद करा
-                    </button>
-                  </div>
                 </div>
               ) : (
                 <form onSubmit={handleApplySubmit} className="space-y-4">

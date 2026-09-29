@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 import {
@@ -75,59 +75,7 @@ function AuthPage() {
   const [employerPhone, setEmployerPhone] = useState("");
   const [employerLocation, setEmployerLocation] = useState("");
   const [companyIndustry, setCompanyIndustry] = useState("Manufacturing & Engineering");
-  const [detectedIndustry, setDetectedIndustry] = useState<string | null>(null);
   const [companySize, setCompanySize] = useState("10-50 Employees");
-
-  const ALL_INDUSTRIES = [
-    { value: "Manufacturing & Engineering", label: "ऑटो व मॅन्युफॅक्चरिंग (Auto / Mfg)" },
-    { value: "Sugar Factory", label: "साखर कारखाना (Sugar Factory)" },
-    { value: "Agriculture", label: "शेती व कृषी (Agriculture)" },
-    { value: "Food & Pharma Processing", label: "अन्नप्रक्रिया व फार्मा (Food / Pharma)" },
-    { value: "Construction & Real Estate", label: "बांधकाम (Construction)" },
-    { value: "Logistics & Warehousing", label: "लॉजिस्टिक्स व गोदामा (Logistics)" },
-    { value: "Textiles & Garments", label: "टेक्स्टाईल व गारमेंट्स (Textiles)" },
-    { value: "Services & Hospitality", label: "सर्व्हिसेस व हॉटेल (Services & Hotel)" },
-    { value: "IT & Software", label: "आयटी व सॉफ्टवेअर (IT & Software)" },
-    { value: "Other", label: "इतर (Other)" },
-  ];
-  
-  // Auto-detect Industry based on company name
-  useEffect(() => {
-    if (mode !== "register" || (role !== "employer" && role !== "admin")) return;
-    
-    if (!companyName.trim()) {
-      setDetectedIndustry(null);
-      return;
-    }
-    
-    const nameLower = companyName.toLowerCase();
-    let detected = null;
-    
-    if (nameLower.includes("sakhar") || nameLower.includes("sugar") || nameLower.includes("karkhana")) {
-      detected = "Sugar Factory";
-    } else if (nameLower.includes("agro") || nameLower.includes("krushi") || nameLower.includes("farm") || nameLower.includes("sheti")) {
-      detected = "Agriculture";
-    } else if (nameLower.includes("auto") || nameLower.includes("motor") || nameLower.includes("mfg") || nameLower.includes("manufacturing") || nameLower.includes("engineering") || nameLower.includes("steel") || nameLower.includes("metal") || nameLower.includes("iron")) {
-      detected = "Manufacturing & Engineering";
-    } else if (nameLower.includes("builder") || nameLower.includes("construction") || nameLower.includes("infra") || nameLower.includes("real estate") || nameLower.includes("developer") || nameLower.includes("bandhkam")) {
-      detected = "Construction & Real Estate";
-    } else if (nameLower.includes("textile") || nameLower.includes("garment") || nameLower.includes("clothing") || nameLower.includes("apparel") || nameLower.includes("kapad") || nameLower.includes("suti")) {
-      detected = "Textiles & Garments";
-    } else if (nameLower.includes("food") || nameLower.includes("pharma") || nameLower.includes("medical") || nameLower.includes("hospital") || nameLower.includes("clinic") || nameLower.includes("baker")) {
-      detected = "Food & Pharma Processing";
-    } else if (nameLower.includes("software") || nameLower.includes("tech") || nameLower.includes("infotech") || nameLower.includes("it solution") || nameLower.includes("digital")) {
-      detected = "IT & Software";
-    } else if (nameLower.includes("logistics") || nameLower.includes("transport") || nameLower.includes("mover") || nameLower.includes("warehouse") || nameLower.includes("cargo") || nameLower.includes("godam")) {
-      detected = "Logistics & Warehousing";
-    } else if (nameLower.includes("hotel") || nameLower.includes("service") || nameLower.includes("hospitality") || nameLower.includes("resort") || nameLower.includes("restaurant") || nameLower.includes("cater")) {
-      detected = "Services & Hospitality";
-    }
-
-    setDetectedIndustry(detected);
-    if (detected) {
-      setCompanyIndustry(detected);
-    }
-  }, [companyName, mode, role]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -146,15 +94,11 @@ function AuthPage() {
         const nameString = (rawName && rawName.trim()) ? rawName.trim() : (email ? (email.split("@")[0] || "User") : "User");
 
         const userObj = {
-          id: role === "employer" || role === "admin" ? (companyName ? `emp-${companyName.toLowerCase().replace(/\s+/g, '-')}` : `emp-${Date.now()}`) : `seeker-${Date.now()}`,
+          id: role === "employer" || role === "admin" ? (companyName ? `emp-${companyName.toLowerCase().replace(/\s+/g, '-')}` : "emp-001") : `seeker-${Date.now()}`,
           email,
           role: role === "admin" ? ("employer" as const) : role,
           fullName: nameString,
-          companyName: role === "employer" || role === "admin" ? companyName : undefined,
         };
-
-        // Save to Registered Users
-        dataStore.registerUser(userObj);
 
         window.localStorage.setItem("realjob-user", JSON.stringify(userObj));
         dataStore.setCurrentUser(userObj);
@@ -165,18 +109,18 @@ function AuthPage() {
       }
 
       // Login Mode
-      const existingUser = dataStore.getUserByEmail(email);
-      
-      if (!existingUser) {
-        toast.error("या नंबर/ईमेल वर कोणतेही अकाउंट आढळले नाही. कृपया आधी रजिस्ट्रेशन करा.");
-        return;
-      }
+      const userObj = {
+        id: role === "employer" || role === "admin" ? "emp-tcs" : "seeker-rutuja",
+        email,
+        role: role === "admin" ? ("employer" as const) : role,
+        fullName: email.split("@")[0] || "User",
+      };
 
-      window.localStorage.setItem("realjob-user", JSON.stringify(existingUser));
-      dataStore.setCurrentUser(existingUser);
+      window.localStorage.setItem("realjob-user", JSON.stringify(userObj));
+      dataStore.setCurrentUser(userObj);
 
       toast.success("Successfully logged in!");
-      navigate({ to: existingUser.role === "employer" || existingUser.role === "admin" ? "/employer" : "/dashboard" });
+      navigate({ to: role === "employer" || role === "admin" ? "/employer" : "/dashboard" });
     }, 1000);
   };
 
@@ -441,12 +385,11 @@ function AuthPage() {
                     onChange={(e) => setCompanyIndustry(e.target.value)}
                     className="mt-1 w-full h-11 rounded-lg border border-[#DCE5F0] bg-white px-3 text-xs font-bold text-[#10233F]"
                   >
-                    {(detectedIndustry 
-                      ? ALL_INDUSTRIES.filter(ind => ind.value === detectedIndustry || ind.value === "Other")
-                      : ALL_INDUSTRIES
-                    ).map(ind => (
-                      <option key={ind.value} value={ind.value}>{ind.label}</option>
-                    ))}
+                    <option value="Manufacturing & Engineering">ऑटो व मॅन्युफॅक्चरिंग</option>
+                    <option value="Construction & Real Estate">बांधकाम (Construction)</option>
+                    <option value="Logistics & Warehousing">लॉजिस्टिक्स व गोदामा</option>
+                    <option value="Textiles & Garments">टेक्स्टाईल व गारमेंट्स</option>
+                    <option value="Services & Hospitality">सर्व्हिसेस व हॉटेल</option>
                   </select>
                 </div>
               </>

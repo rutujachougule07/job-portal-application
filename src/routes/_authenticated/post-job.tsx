@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   Briefcase,
@@ -26,220 +26,172 @@ import { useI18n } from "@/lib/i18n";
 import { dataStore } from "@/lib/data-store";
 
 const SUBCATEGORIES_MAP: Record<string, string[]> = {
+  "HR & Recruitment": [
+    "HR Executive (एचआर एक्झिक्युटिव्ह)",
+    "HR Manager (एचआर मॅनेजर)",
+    "Recruiter / Talent Acquisition (भरती अधिकारी)",
+    "Technical Recruiter (आयटी भरतीदार)",
+    "Payroll Executive (पेरोल एक्झिक्युटिव्ह)",
+    "HR Generalist",
+  ],
   "IT & Software": [
-    "Web Development",
-    "Software Development",
-    "Mobile App Development",
-    "Testing & QA",
-    "Data & Analytics",
-    "Cyber Security",
-    "DevOps & Cloud",
-    "IT Support",
-    "UI/UX Design"
+    "Full Stack Developer",
+    "Frontend Developer",
+    "Backend Developer",
+    "Web Developer",
+    "React Developer",
+    "Java Developer",
+    "Python Developer",
+    "Software Developer",
+    "Software Tester / QA",
+    "Data Analyst",
+    "DevOps Engineer",
+    "UI/UX Designer",
   ],
   "Engineering": [
-    "Mechanical Engineering",
-    "Civil Engineering",
-    "Electrical Engineering",
-    "Electronics Engineering",
-    "Production Engineering",
-    "Automobile Engineering"
-  ],
-  "Construction": [
-    "Civil Engineering",
-    "Site Engineering",
-    "Architecture",
-    "Project Management",
-    "Construction Management",
-    "Skilled Trades"
-  ],
-  "Manufacturing": [
-    "CNC / Machine Operator",
-    "Boiler Operator",
-    "Turbine Operator",
-    "Centrifugal Machine Operator",
-    "Pan Man / Pan Boiler",
-    "Evaporator Operator",
-    "Mill House Operator",
-    "Boiling House Operator",
-    "Crane / Heavy Machine Operator",
-    "Plant Operator",
-    "Fitter / Turner",
-    "Welder",
-    "Wireman / Electrician",
-    "Production",
-    "Quality Control",
-    "Maintenance",
-    "Assembly",
-    "Operations"
+    "Mechanical Engineer",
+    "Electrical Engineer",
+    "Civil Engineer",
+    "Electronics Engineer",
+    "Production Engineer",
+    "Automobile Engineer",
+    "Quality Engineer",
   ],
   "Healthcare & Medical": [
-    "Nursing",
-    "Doctor / Physician",
-    "Pharmacy",
-    "Medical Assistant",
+    "Staff Nurse (परिचारिका)",
+    "ICU Assistant",
+    "Doctor",
+    "Pharmacist (औषधनिर्माता)",
     "Lab Technician",
-    "Healthcare Support"
+    "Medical Assistant",
+  ],
+  "Finance & Accounting": [
+    "Accountant (लेखापाल)",
+    "Finance Executive",
+    "Banking Executive",
+    "Auditor",
+    "Tax Consultant / GST Executive",
   ],
   "Sales & Marketing": [
-    "Sales",
-    "Digital Marketing",
-    "Marketing",
-    "Business Development",
-    "Telecalling"
+    "Sales Executive",
+    "Business Development Executive",
+    "Digital Marketing Specialist",
+    "Telecaller / Customer Support",
+    "Field Sales Officer",
   ],
-  "Human Resources": [
-    "Recruitment",
-    "HR Operations",
-    "Payroll",
-    "Talent Acquisition"
-  ],
-  "Accounting": [
-    "Accounts & Finance",
-    "Audit",
-    "Taxation",
-    "Billing"
-  ],
-  "Education & Teaching": [
-    "School Teacher",
-    "College / University",
-    "Tutor",
-    "Training & Development"
-  ],
-  "Banking & Finance": [
-    "Banking Operations",
-    "Investment Banking",
-    "Financial Analyst",
-    "Loan Officer"
-  ],
-  "Customer Service": [
-    "Customer Support",
-    "Client Relationship",
-    "Technical Support"
-  ],
-  "BPO & Call Centre": [
-    "Inbound",
-    "Outbound",
-    "Back Office",
-    "Data Entry"
-  ],
-  "Retail & E-commerce": [
-    "Store Manager",
-    "Sales Associate",
-    "Merchandising",
-    "Supply Chain"
-  ],
-  "Hospitality & Hotel": [
-    "Chef / Cook",
-    "Housekeeping",
-    "Front Desk",
-    "Restaurant Manager"
-  ],
-  "Logistics & Supply Chain": [
-    "Warehouse Management",
-    "Supply Chain Execution",
-    "Inventory Control"
-  ],
-  "Transport": [
-    "Driver",
-    "Delivery",
-    "Fleet Management"
-  ],
-  "Government & Public Sector": [
-    "Public Administration",
-    "Defense",
-    "Clerical"
-  ],
-  "Legal": [
-    "Corporate Law",
-    "Litigation",
-    "Legal Documentation"
+  "Education": [
+    "School Teacher (शिक्षक)",
+    "Professor / Lecturer",
+    "Online Tutor",
+    "Academic Coordinator",
   ],
   "Design & Creative": [
-    "Graphic Design",
-    "Video Editing",
-    "Animation",
-    "Interior Design"
+    "Graphic Designer",
+    "Video Editor",
+    "Content Creator",
+    "UI/UX Designer",
   ],
-  "Media & Entertainment": [
-    "Journalism",
-    "Content Creation",
-    "Production"
+  "Legal": [
+    "Lawyer / Advocate",
+    "Legal Executive",
+    "Compliance Officer",
   ],
-  "Security Services": [
-    "Security Guard",
-    "Security Management",
-    "CCTV Operator"
+  "Architecture & Design": [
+    "Architect",
+    "Interior Designer",
+    "3D Visualizer / CAD Designer",
   ],
-  "Administration & Office": [
-    "Office Admin",
-    "Receptionist",
-    "Personal Assistant"
+  "Factory Workers": [
+    "CNC / VMC Machine Operator",
+    "Assembly Line Worker",
+    "Quality Inspector",
+    "Factory Helper (कारखाना मदतनीस)",
+    "Production Supervisor",
+    "Welder (वेल्डर)",
+  ],
+  "Construction & Building": [
+    "Construction Worker (बांधकाम कामगार)",
+    "Mason (गवंडी)",
+    "Helper (मदतनीस)",
+    "Carpenter (सुतार)",
+    "Painter (रंगारी)",
+    "Plumber (प्लंबर)",
+    "Electrician (इलेक्ट्रीशियन)",
+    "Tile Worker",
+    "Welder (वेल्डर)",
+    "Steel Fixer",
+    "Civil Engineer",
+  ],
+  "Technical Staff": [
+    "Technician",
+    "Maintenance Engineer",
+    "Electrician",
+    "Fitter / Turner",
+    "Tool & Die Maker",
+  ],
+  "Logistics & Drivers": [
+    "Driver (ड्रायव्हर)",
+    "Heavy Commercial Truck Driver",
+    "Tempo / Auto Driver",
+    "Delivery Worker (डिलिव्हरी बॉय)",
+    "Loader & Unloader (हमाल)",
   ],
   "Agriculture & Farming": [
-    "Farming Operations",
-    "Agri Business",
-    "Dairy & Poultry"
+    "Farm Worker (शेतमजूर)",
+    "Tractor Operator (ट्रॅक्टर चालक)",
+    "Harvesting Worker (काढणी कामगार)",
+    "Gardener (माळी)",
+    "Dairy Worker (दुग्धव्यवसाय कामगार)",
+    "Poultry Worker (पोल्ट्री कामगार)",
+    "Fruit Picker",
   ],
-  "Beauty & Wellness": [
-    "Beautician",
-    "Spa Therapist",
-    "Fitness Trainer"
+  "Skilled Workers": [
+    "Senior Electrician",
+    "Mason",
+    "Welder",
+    "Mechanic",
+    "Fitter",
+    "Plumber",
   ],
-  "Telecom": [
-    "Network Engineer",
-    "Telecom Sales",
-    "Installation"
+  "Unskilled Workers": [
+    "General Helper (मदतनीस)",
+    "Loading Worker",
+    "Site Helper",
+    "Cleaning Helper",
   ],
-  "Insurance": [
-    "Insurance Agent",
-    "Claims Processing",
-    "Underwriting"
+  "Electricians": [
+    "Electrician (इलेक्ट्रीशियन)",
+    "Panel Wireman",
+    "Maintenance Technician",
+    "AC / Repair Technician",
   ],
-  "Pharmaceutical": [
-    "Pharma Sales",
-    "Clinical Research",
-    "Quality Assurance"
+  "Warehouse Workers": [
+    "Warehouse Helper",
+    "Picker & Packer",
+    "Inventory Controller",
+    "Forklift Operator",
   ],
-  "Research & Development": [
-    "Scientific Research",
-    "Product R&D",
-    "Market Research"
+  "Hotel & Restaurant": [
+    "Chef / Head Cook (आचारी)",
+    "Assistant Cook (सहाय्यक आचारी)",
+    "Waiter / Server",
+    "Housekeeping Staff",
+    "Receptionist / Counter Staff",
   ],
-  "Real Estate": [
-    "Property Sales",
-    "Facility Management",
-    "Real Estate Agent"
+  "Security": [
+    "Security Guard (सुरक्षा रक्षक)",
+    "Security Supervisor",
+    "CCTV Monitor",
   ],
-  "Other": [
-    "Other"
-  ]
+  "Helpers": [
+    "General Helper (मदतनीस)",
+    "Housekeeping",
+    "Office Boy / Peon",
+    "Attendant",
+  ],
 };
 
-const INDUSTRIES = [
-  "Information Technology",
-  "Sugar Factory",
-  "Manufacturing & Heavy Machinery",
-  "Automobile",
-  "Healthcare & Pharmaceuticals",
-  "Construction & Real Estate",
-  "Education & E-Learning",
-  "Banking & Financial Services",
-  "Retail & FMCG",
-  "Logistics & Transportation",
-  "Hospitality & Tourism",
-  "Media & Entertainment",
-  "Telecommunications",
-  "Agriculture & Agrotech",
-  "Other Industry"
-];
-
 export const Route = createFileRoute("/_authenticated/post-job")({
-  validateSearch: (search: Record<string, unknown>): { edit?: string } => {
-    return {
-      ...(search['edit'] ? { edit: search['edit'] as string } : {})
-    };
-  },
   head: () => ({
     meta: [
       { title: "Post a New Job — REAL JOB Employer Portal" },
@@ -254,8 +206,6 @@ function PostJobPage() {
   const navigate = useNavigate();
   const [showPreview, setShowPreview] = useState(false);
 
-  const { edit: editJobId } = Route.useSearch();
-
   // Form State
   const [formData, setFormData] = useState({
     title: "",
@@ -269,83 +219,22 @@ function PostJobPage() {
     experience: "1-3 Years",
     jobType: "Full-time",
     vacancies: "5",
-    skills: "",
-    education: "",
-    languages: "",
-    benefits: "",
+    skills: "Recruitment, Screening, Interviewing, Payroll",
+    education: "MBA / Graduate",
+    languages: "English, Hindi, Marathi",
+    benefits: "Health Insurance, Annual Bonus",
     description: "",
     contactPerson: "",
     contactPhone: "",
-    contactEmail: "",
-    whatsappNumber: "",
-    industry: "",
   });
-
-  useEffect(() => {
-    if (editJobId) {
-      const job = dataStore.getJobById(editJobId);
-      if (job) {
-        setFormData({
-          title: job.title || "",
-          category: job.category || "HR & Recruitment",
-          subcategory: job.subcategory || "",
-          company: job.company || "",
-          location: job.location || "",
-          salaryMin: job.salaryMin ? job.salaryMin.toString() : "",
-          salaryMax: job.salaryMax ? job.salaryMax.toString() : "",
-          salaryType: job.salaryType === "Daily" ? "Per Day" : "Per Month",
-          experience: job.experience || "1-3 Years",
-          jobType: job.jobType || "Full-time",
-          vacancies: job.vacancies ? job.vacancies.toString() : "5",
-          skills: job.requiredSkills ? job.requiredSkills.join(", ") : "",
-          education: job.qualification || "",
-          languages: "",
-          benefits: job.benefits ? job.benefits.join(", ") : "",
-          description: job.description || "",
-          contactPerson: job.contactPerson || "",
-          contactPhone: job.contactPhone || "",
-          contactEmail: job.contactEmail || "",
-          whatsappNumber: job.whatsappNumber || "",
-          industry: job.industry || "",
-        });
-      }
-    } else {
-      const user = dataStore.getCurrentUser();
-      if (user) {
-        setFormData((prev) => ({
-          ...prev,
-          company: (user as any).companyName || user.fullName || prev.company,
-        }));
-      }
-    }
-  }, [editJobId]);
 
   const handleChange = (field: string, value: string) => {
     if (field === "category") {
-      let autoInd = "";
-      if (value === "IT & Software") autoInd = "Information Technology";
-      else if (value === "Engineering" || value === "Manufacturing") autoInd = "Manufacturing & Heavy Machinery";
-      else if (value === "Healthcare & Medical") autoInd = "Healthcare & Pharmaceuticals";
-      else if (value === "Construction") autoInd = "Construction & Real Estate";
-      else if (value === "Education & Teaching") autoInd = "Education & E-Learning";
-      else if (value === "Banking & Finance") autoInd = "Banking & Financial Services";
-      else if (value === "Retail & E-commerce") autoInd = "Retail & FMCG";
-      else if (value === "Logistics & Supply Chain") autoInd = "Logistics & Transportation";
-      else if (value === "Hospitality & Hotel") autoInd = "Hospitality & Tourism";
-      else if (value === "Media & Entertainment") autoInd = "Media & Entertainment";
-      else if (value === "Telecom") autoInd = "Telecommunications";
-      else if (value === "Agriculture & Farming") autoInd = "Agriculture & Agrotech";
-
+      const subOptions = SUBCATEGORIES_MAP[value] || ["General Role"];
       setFormData((prev) => ({
         ...prev,
         category: value,
-        subcategory: "", // Reset subcategory when category changes
-        industry: autoInd || prev.industry
-      }));
-    } else if (field === "subcategory") {
-      setFormData((prev) => ({
-        ...prev,
-        subcategory: value,
+        subcategory: subOptions[0],
       }));
     } else {
       setFormData((prev) => ({ ...prev, [field]: value }));
@@ -377,157 +266,47 @@ function PostJobPage() {
     const skillsArray = formData.skills ? formData.skills.split(",").map(s => s.trim()) : ["General Work"];
     const benefitsArray = formData.benefits ? formData.benefits.split(",").map(b => b.trim()) : ["Standard Allowance"];
 
-    const jobPayload = {
+    dataStore.createJob({
+      employerId,
       title: formData.title,
       company: formData.company,
       category: formData.category,
-      subcategory: formData.subcategory,
-      industry: formData.industry,
+      subcategory: formData.category,
       description: formData.description || `${formData.title} job posting for ${formData.company}.`,
       responsibilities: ["Execute daily operations and shopfloor targets", "Maintain site and safety standards"],
       requiredSkills: skillsArray,
       qualification: formData.education || "10th Pass",
       experience: formData.experience,
       salary: salaryString,
-      ...(formData.salaryMin ? { salaryMin: parseInt(formData.salaryMin) } : {}),
-      ...(formData.salaryMax ? { salaryMax: parseInt(formData.salaryMax) } : {}),
-      salaryType: formData.salaryType === "Per Day" ? "Daily" : "Monthly" as any,
+      salaryMin: formData.salaryMin ? parseInt(formData.salaryMin) : undefined,
+      salaryMax: formData.salaryMax ? parseInt(formData.salaryMax) : undefined,
+      salaryType: formData.salaryType === "Per Day" ? "Daily" : "Monthly",
       location: formData.location,
       jobType: (formData.jobType as any) || "Full Time",
-      workMode: "On-site" as any,
+      workMode: "On-site",
       vacancies: parseInt(formData.vacancies) || 5,
       benefits: benefitsArray,
-      contactPerson: formData.contactPerson,
-      contactPhone: formData.contactPhone,
-      contactEmail: formData.contactEmail,
-      whatsappNumber: formData.whatsappNumber,
-    };
+      status: "Active",
+    });
 
-    if (editJobId) {
-      dataStore.updateJob(editJobId, jobPayload);
-      toast.success("Job updated successfully!");
-    } else {
-      dataStore.createJob({
-        ...jobPayload,
-        employerId,
-        status: "Active",
-      });
-      toast.success("Job published successfully on REAL JOB!");
-    }
-
+    toast.success("Job published successfully on REAL JOB!");
     setTimeout(() => {
-      navigate({ to: "/employer/jobs" });
+      navigate({ to: "/jobs" });
     }, 1500);
   };
-
-  const getFilteredCategories = () => {
-    if (!formData.title || formData.title.trim() === "") return Object.keys(SUBCATEGORIES_MAP);
-    
-    const titleLower = formData.title.toLowerCase().trim();
-    
-    // 1. Exact matches first
-    const exactMatchCats = Object.keys(SUBCATEGORIES_MAP).filter(cat => {
-      if (cat.toLowerCase().includes(titleLower) || titleLower.includes(cat.toLowerCase())) return true;
-      return (SUBCATEGORIES_MAP[cat] || []).some(sub => 
-        titleLower.includes(sub.toLowerCase()) || sub.toLowerCase().includes(titleLower)
-      );
-    });
-    
-    if (exactMatchCats.length > 0) return exactMatchCats;
-
-    // 2. Fallback keyword matches
-    const searchTerms = titleLower.split(" ").filter(t => t.length > 2);
-    if (searchTerms.length === 0) return Object.keys(SUBCATEGORIES_MAP);
-
-    const matches = Object.keys(SUBCATEGORIES_MAP).filter(cat => {
-      if (searchTerms.some(term => cat.toLowerCase().includes(term))) return true;
-      if ((SUBCATEGORIES_MAP[cat] || []).some(sub => searchTerms.some(term => sub.toLowerCase().includes(term)))) return true;
-      return false;
-    });
-
-    return matches.length > 0 ? matches : Object.keys(SUBCATEGORIES_MAP);
-  };
-
-  const getFilteredSubcategories = (cat: string) => {
-    if (!cat) return [];
-    if (!formData.title || formData.title.trim() === "") return SUBCATEGORIES_MAP[cat] || [];
-
-    const titleLower = formData.title.toLowerCase().trim();
-
-    // 1. Exact matches
-    const exactMatches = (SUBCATEGORIES_MAP[cat] || []).filter(sub => 
-      titleLower.includes(sub.toLowerCase()) || sub.toLowerCase().includes(titleLower)
-    );
-    if (exactMatches.length > 0) return exactMatches;
-
-    // 2. Keyword matches
-    const searchTerms = titleLower.split(" ").filter(t => t.length > 2);
-    if (searchTerms.length === 0) return SUBCATEGORIES_MAP[cat] || [];
-
-    const matches = (SUBCATEGORIES_MAP[cat] || []).filter(sub => 
-      searchTerms.some(term => sub.toLowerCase().includes(term))
-    );
-
-    return matches.length > 0 ? matches : (SUBCATEGORIES_MAP[cat] || []);
-  };
-
-  useEffect(() => {
-    if (formData.title) {
-      const filteredCats = getFilteredCategories();
-      if (filteredCats.length === 1 && (!formData.category || !filteredCats.includes(formData.category))) {
-        const cat = filteredCats[0];
-        if (cat) {
-          const filteredSubs = getFilteredSubcategories(cat);
-
-          let autoInd = "";
-          if (cat === "IT & Software") autoInd = "Information Technology";
-          else if (cat === "Engineering" || cat === "Manufacturing") autoInd = "Manufacturing & Heavy Machinery";
-          else if (cat === "Healthcare & Medical") autoInd = "Healthcare & Pharmaceuticals";
-          else if (cat === "Construction") autoInd = "Construction & Real Estate";
-          else if (cat === "Education & Teaching") autoInd = "Education & E-Learning";
-          else if (cat === "Banking & Finance") autoInd = "Banking & Financial Services";
-          else if (cat === "Retail & E-commerce") autoInd = "Retail & FMCG";
-          else if (cat === "Logistics & Supply Chain") autoInd = "Logistics & Transportation";
-          else if (cat === "Hospitality & Hotel") autoInd = "Hospitality & Tourism";
-          else if (cat === "Media & Entertainment") autoInd = "Media & Entertainment";
-          else if (cat === "Telecom") autoInd = "Telecommunications";
-          else if (cat === "Agriculture & Farming") autoInd = "Agriculture & Agrotech";
-
-          setFormData(prev => ({ 
-            ...prev, 
-            category: cat,
-            subcategory: filteredSubs.length === 1 ? (filteredSubs[0] || "") : "",
-            industry: prev.industry || autoInd
-          }));
-        }
-      }
-    }
-  }, [formData.title]);
 
   return (
     <>
       <PublicHeader />
       <main className="bg-[#F5F8FC] min-h-screen py-10">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-          {/* Back Button */}
-          <div className="mb-4">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => navigate({ to: "/employer/jobs" })}
-              className="text-[#063B78] hover:bg-[#063B78]/10 font-bold -ml-4"
-            >
-              ← मागे जा (Back)
-            </Button>
-          </div>
-
           {/* Header Card */}
           <div className="bg-hero-overlay p-8 rounded-2xl text-white mb-8 shadow-md">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#FFC400] backdrop-blur mb-3">
               <Briefcase className="size-4" />
-              {editJobId ? "नोकरी एडिट करा • Edit Job" : "नवीन नोकरी पोस्ट करा • Post Job"}
+              नवीन नोकरी पोस्ट करा • Post Job
             </div>
-            <h1 className="text-3xl font-black text-white">{editJobId ? "नोकरीची माहिती अपडेट करा" : "कामगारांसाठी नोकरी प्रसिद्ध करा"}</h1>
+            <h1 className="text-3xl font-black text-white">कामगारांसाठी नोकरी प्रसिद्ध करा</h1>
             <p className="text-sm font-medium text-white/90 mt-1">
               कारखाने, बांधकाम व व्यवसाय क्षेत्रातील कामगारांपर्यंत तुमची नोकरी त्वरित पोहोचवा.
             </p>
@@ -570,54 +349,53 @@ function PostJobPage() {
 
                 <div>
                   <label className="block text-xs font-extrabold text-[#10233F] mb-1.5 uppercase">
-                    उद्योग / क्षेत्र (Industry)
+                    कामगार / नोकरी श्रेणी (Category) *
                   </label>
                   <select
-                    value={formData.industry}
-                    onChange={(e) => handleChange("industry", e.target.value)}
-                    className="w-full h-11 rounded-lg border border-[#DCE5F0] bg-white px-3 text-xs font-bold text-[#10233F]"
-                  >
-                    <option value="">निवडा (Select Industry)</option>
-                    {INDUSTRIES.map((ind) => (
-                      <option key={ind} value={ind}>
-                        {ind}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-extrabold text-[#10233F] mb-1.5 uppercase">
-                    कामगार / नोकरी श्रेणी (Job Category) *
-                  </label>
-                  <select
-                    required
                     value={formData.category}
                     onChange={(e) => handleChange("category", e.target.value)}
                     className="w-full h-11 rounded-lg border border-[#DCE5F0] bg-white px-3 text-xs font-bold text-[#10233F]"
                   >
-                    <option value="" disabled>निवडा (Select Category)</option>
-                    {Object.keys(SUBCATEGORIES_MAP).map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
+                    <optgroup label="💻 Professional & Corporate Categories (कॉर्पोरेट श्रेणी)">
+                      <option value="IT & Software">IT & Software (आयटी व सॉफ्टवेअर)</option>
+                      <option value="Engineering">Engineering (अभियांत्रिकी व तांत्रिक)</option>
+                      <option value="Healthcare & Medical">Healthcare & Medical (वैद्यकीय व आरोग्य)</option>
+                      <option value="Finance & Accounting">Finance & Accounting (वित्त व अकाऊंटिंग)</option>
+                      <option value="Sales & Marketing">Sales & Marketing (विक्री व मार्केटिंग)</option>
+                      <option value="Education">Education (शिक्षण व अध्यापन)</option>
+                      <option value="HR & Recruitment">HR & Recruitment (एचआर व भरती)</option>
+                      <option value="Design & Creative">Design & Creative (डिझाइन व आर्ट)</option>
+                      <option value="Legal">Legal & Compliance (कायदेशीर)</option>
+                      <option value="Architecture & Design">Architecture & Design (स्थापत्य डिझाइन)</option>
+                    </optgroup>
+
+                    <optgroup label="🛠️ Skilled & Worker Categories (कामगार व व्यवसाय श्रेणी)">
+                      <option value="Factory Workers">Factory Workers (कारखाना कामगार)</option>
+                      <option value="Construction & Building">Construction Workers (बांधकाम)</option>
+                      <option value="Technical Staff">Technical Staff (तांत्रिक कामगार)</option>
+                      <option value="Logistics & Drivers">Logistics & Drivers (ड्रायव्हर व वाहतूक)</option>
+                      <option value="Agriculture & Farming">Agriculture & Farming (शेती व कृषी)</option>
+                      <option value="Skilled Workers">Skilled Workers (कुशल कामगार)</option>
+                      <option value="Unskilled Workers">Unskilled Workers (अकुशल कामगार)</option>
+                      <option value="Electricians">Electricians & Maintenance (इलेक्ट्रीशियन व मेंटेनन्स)</option>
+                      <option value="Warehouse Workers">Warehouse Workers (वेअरहाउस)</option>
+                      <option value="Hotel & Restaurant">Hotel & Restaurant (हॉटेल व रेस्टॉरंट)</option>
+                      <option value="Security">Security Guards (सुरक्षा रक्षक)</option>
+                      <option value="Helpers">Helpers & Attendants (मदतनीस)</option>
+                    </optgroup>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-xs font-extrabold text-[#10233F] mb-1.5 uppercase">
-                    उपश्रेणी (Job Subcategory) *
+                    उपश्रेणी / पद (Subcategory / Role) *
                   </label>
                   <select
-                    required
-                    disabled={!formData.category}
                     value={formData.subcategory}
                     onChange={(e) => handleChange("subcategory", e.target.value)}
-                    className="w-full h-11 rounded-lg border border-[#DCE5F0] bg-white px-3 text-xs font-bold text-[#10233F] disabled:opacity-50"
+                    className="w-full h-11 rounded-lg border border-[#DCE5F0] bg-white px-3 text-xs font-bold text-[#10233F]"
                   >
-                    <option value="" disabled>निवडा (Select Subcategory)</option>
-                    {formData.category && (SUBCATEGORIES_MAP[formData.category] || []).map((sub) => (
+                    {(SUBCATEGORIES_MAP[formData.category] || ["General Role"]).map((sub) => (
                       <option key={sub} value={sub}>
                         {sub}
                       </option>
@@ -738,7 +516,17 @@ function PostJobPage() {
               </h2>
 
               <div className="space-y-5">
-
+                <div>
+                  <label className="block text-xs font-extrabold text-[#10233F] mb-1.5 uppercase">
+                    आवश्यक कौशल्ये (Required Skills, Comma Separated)
+                  </label>
+                  <Input
+                    placeholder="उदा. Wiring, ITI Certificate, Panel Inspection"
+                    value={formData.skills}
+                    onChange={(e) => handleChange("skills", e.target.value)}
+                    className="h-11 border-[#DCE5F0] text-xs font-bold text-[#10233F]"
+                  />
+                </div>
 
                 <div>
                   <label className="block text-xs font-extrabold text-[#10233F] mb-1.5 uppercase">
@@ -765,25 +553,13 @@ function PostJobPage() {
                       className="h-11 border-[#DCE5F0] text-xs font-bold text-[#10233F]"
                     />
                   </div>
-                  
-                  <div>
-                    <label className="block text-xs font-extrabold text-[#10233F] mb-1.5 uppercase">
-                      संपर्क व्यक्ती (Contact Person Name)
-                    </label>
-                    <Input
-                      placeholder="उदा. HR Ramesh Pawar"
-                      value={formData.contactPerson}
-                      onChange={(e) => handleChange("contactPerson", e.target.value)}
-                      className="h-11 border-[#DCE5F0] text-xs font-bold text-[#10233F]"
-                    />
-                  </div>
 
                   <div>
                     <label className="block text-xs font-extrabold text-[#10233F] mb-1.5 uppercase">
-                      मोबाईल / व्हॉट्सॲप नंबर (Mobile / WhatsApp)
+                      संपर्क व्यक्ती व मोबाईल (Contact Person & Phone)
                     </label>
                     <Input
-                      placeholder="उदा. +91 98220 11223"
+                      placeholder="उदा. HR Ramesh Pawar (+91 98220 11223)"
                       value={formData.contactPhone}
                       onChange={(e) => handleChange("contactPhone", e.target.value)}
                       className="h-11 border-[#DCE5F0] text-xs font-bold text-[#10233F]"
@@ -795,26 +571,14 @@ function PostJobPage() {
 
             {/* Actions Footer */}
             <div className="pt-6 border-t border-[#DCE5F0] flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                {editJobId && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => navigate({ to: "/employer/jobs" })}
-                    className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 font-bold text-xs"
-                  >
-                    रद्द करा (Cancel)
-                  </Button>
-                )}
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleSaveDraft}
-                  className="border-[#063B78] text-[#063B78] font-bold text-xs"
-                >
-                  <Save className="size-4 mr-1.5" /> ड्राफ्ट सेव्ह करा (Save Draft)
-                </Button>
-              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleSaveDraft}
+                className="border-[#063B78] text-[#063B78] font-bold text-xs"
+              >
+                <Save className="size-4 mr-1.5" /> ड्राफ्ट सेव्ह करा (Save Draft)
+              </Button>
 
               <div className="flex items-center gap-3">
                 <Button
@@ -827,7 +591,7 @@ function PostJobPage() {
                 </Button>
 
                 <Button type="submit" className="btn-yellow font-black text-xs px-8 py-3 h-11">
-                  <Send className="size-4 mr-1.5" /> {editJobId ? "माहिती सेव्ह करा (Update Job)" : "नोकरी प्रसिद्ध करा (Publish Job)"}
+                  <Send className="size-4 mr-1.5" /> नोकरी प्रसिद्ध करा (Publish Job)
                 </Button>
               </div>
             </div>

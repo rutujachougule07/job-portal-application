@@ -293,10 +293,10 @@ export function EmployerDashboard() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Active Jobs" value={empJobs.length.toString()} change="Live on portal" icon={BriefcaseBusiness} to="/employer/jobs" />
-        <StatCard label="Total Applications" value={empApps.length.toString()} change="Direct Candidate Submissions" icon={FileText} to="/employer/applicants" />
-        <StatCard label="Shortlisted" value={shortlistedCount.toString()} change="Ready for Interview" icon={UserCheck} to="/employer/applicants" />
-        <StatCard label="Selected Hires" value={empApps.filter((a) => a.status === "Selected").length.toString()} change="Hired Candidate Count" icon={Users} to="/employer/applicants" />
+        <StatCard label="Active Jobs" value={empJobs.length.toString()} change="Live on portal" icon={BriefcaseBusiness} />
+        <StatCard label="Total Applications" value={empApps.length.toString()} change="Direct Candidate Submissions" icon={FileText} />
+        <StatCard label="Shortlisted" value={shortlistedCount.toString()} change="Ready for Interview" icon={UserCheck} />
+        <StatCard label="Selected Hires" value={empApps.filter((a) => a.status === "Selected").length.toString()} change="Hired Candidate Count" icon={Users} />
       </div>
 
       <div className="mt-7 grid gap-6 xl:grid-cols-[1.4fr_1fr]">
@@ -546,20 +546,8 @@ function ManageEmployerJobs({ employerName }: { employerName: string }) {
                 <Button
                   size="sm"
                   variant="ghost"
-                  asChild
-                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 p-2 cursor-pointer"
-                  title="Edit Job"
-                >
-                  <Link to="/post-job" search={{ edit: j.id }}>
-                    <Edit className="size-4" />
-                  </Link>
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
                   onClick={() => deleteJob(j.id)}
                   className="text-red-600 hover:text-red-700 hover:bg-red-50 p-2"
-                  title="Delete Job"
                 >
                   <Trash2 className="size-4" />
                 </Button>

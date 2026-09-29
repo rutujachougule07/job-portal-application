@@ -1,2 +1,0 @@
-import { createFileRoute } from "@tanstack/react-router";import { EmployerDashboard } from "@/components/portal/Dashboards";
-export const Route=createFileRoute("/_authenticated/employer/")({head:()=>({meta:[{title:"Employer Dashboard — Karyam"},{name:"description",content:"Manage recruitment, candidates, employees and payroll."},{property:"og:title",content:"Employer Dashboard — Karyam"},{property:"og:description",content:"Recruitment and workforce management."},{property:"og:type",content:"website"},{name:"twitter:card",content:"summary"}]}),component:EmployerDashboard});
