@@ -18,9 +18,7 @@ import { Route as ContactRouteImport } from './routes/contact'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedApplicationsRouteImport } from './routes/_authenticated/applications'
-import { Route as AuthenticatedControlRouteImport } from './routes/_authenticated/control'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
-import { Route as AuthenticatedEmployerRouteImport } from './routes/_authenticated/employer'
 import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated/messages'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedPostJobRouteImport } from './routes/_authenticated/post-job'
@@ -31,6 +29,7 @@ import { Route as JobsIndexRouteImport } from './routes/jobs.index'
 import { Route as JobsJobIdRouteImport } from './routes/jobs.$jobId'
 import { Route as WorkersIndexRouteImport } from './routes/workers.index'
 import { Route as WorkersWorkerIdRouteImport } from './routes/workers.$workerId'
+import { Route as AuthenticatedControlIndexRouteImport } from './routes/_authenticated/control.index'
 import { Route as AuthenticatedControlEmployersRouteImport } from './routes/_authenticated/control.employers'
 import { Route as AuthenticatedControlJobsRouteImport } from './routes/_authenticated/control.jobs'
 import { Route as AuthenticatedControlLanguagesRouteImport } from './routes/_authenticated/control.languages'
@@ -38,6 +37,7 @@ import { Route as AuthenticatedControlReportsRouteImport } from './routes/_authe
 import { Route as AuthenticatedControlSalaryRouteImport } from './routes/_authenticated/control.salary'
 import { Route as AuthenticatedControlSettingsRouteImport } from './routes/_authenticated/control.settings'
 import { Route as AuthenticatedControlUsersRouteImport } from './routes/_authenticated/control.users'
+import { Route as AuthenticatedEmployerIndexRouteImport } from './routes/_authenticated/employer.index'
 import { Route as AuthenticatedEmployerApplicantsRouteImport } from './routes/_authenticated/employer.applicants'
 import { Route as AuthenticatedEmployerEmployeesRouteImport } from './routes/_authenticated/employer.employees'
 import { Route as AuthenticatedEmployerJobsRouteImport } from './routes/_authenticated/employer.jobs'
@@ -89,19 +89,9 @@ const AuthenticatedApplicationsRoute =
     path: '/applications',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedControlRoute = AuthenticatedControlRouteImport.update({
-  id: '/control',
-  path: '/control',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedEmployerRoute = AuthenticatedEmployerRouteImport.update({
-  id: '/employer',
-  path: '/employer',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedMessagesRoute = AuthenticatedMessagesRouteImport.update({
@@ -155,77 +145,89 @@ const WorkersWorkerIdRoute = WorkersWorkerIdRouteImport.update({
   path: '/workers/$workerId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedControlIndexRoute =
+  AuthenticatedControlIndexRouteImport.update({
+    id: '/control/',
+    path: '/control/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedControlEmployersRoute =
   AuthenticatedControlEmployersRouteImport.update({
-    id: '/employers',
-    path: '/employers',
-    getParentRoute: () => AuthenticatedControlRoute,
+    id: '/control/employers',
+    path: '/control/employers',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedControlJobsRoute =
   AuthenticatedControlJobsRouteImport.update({
-    id: '/jobs',
-    path: '/jobs',
-    getParentRoute: () => AuthenticatedControlRoute,
+    id: '/control/jobs',
+    path: '/control/jobs',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedControlLanguagesRoute =
   AuthenticatedControlLanguagesRouteImport.update({
-    id: '/languages',
-    path: '/languages',
-    getParentRoute: () => AuthenticatedControlRoute,
+    id: '/control/languages',
+    path: '/control/languages',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedControlReportsRoute =
   AuthenticatedControlReportsRouteImport.update({
-    id: '/reports',
-    path: '/reports',
-    getParentRoute: () => AuthenticatedControlRoute,
+    id: '/control/reports',
+    path: '/control/reports',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedControlSalaryRoute =
   AuthenticatedControlSalaryRouteImport.update({
-    id: '/salary',
-    path: '/salary',
-    getParentRoute: () => AuthenticatedControlRoute,
+    id: '/control/salary',
+    path: '/control/salary',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedControlSettingsRoute =
   AuthenticatedControlSettingsRouteImport.update({
-    id: '/settings',
-    path: '/settings',
-    getParentRoute: () => AuthenticatedControlRoute,
+    id: '/control/settings',
+    path: '/control/settings',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedControlUsersRoute =
   AuthenticatedControlUsersRouteImport.update({
-    id: '/users',
-    path: '/users',
-    getParentRoute: () => AuthenticatedControlRoute,
+    id: '/control/users',
+    path: '/control/users',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedEmployerIndexRoute =
+  AuthenticatedEmployerIndexRouteImport.update({
+    id: '/employer/',
+    path: '/employer/',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedEmployerApplicantsRoute =
   AuthenticatedEmployerApplicantsRouteImport.update({
-    id: '/applicants',
-    path: '/applicants',
-    getParentRoute: () => AuthenticatedEmployerRoute,
+    id: '/employer/applicants',
+    path: '/employer/applicants',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedEmployerEmployeesRoute =
   AuthenticatedEmployerEmployeesRouteImport.update({
-    id: '/employees',
-    path: '/employees',
-    getParentRoute: () => AuthenticatedEmployerRoute,
+    id: '/employer/employees',
+    path: '/employer/employees',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedEmployerJobsRoute =
   AuthenticatedEmployerJobsRouteImport.update({
-    id: '/jobs',
-    path: '/jobs',
-    getParentRoute: () => AuthenticatedEmployerRoute,
+    id: '/employer/jobs',
+    path: '/employer/jobs',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedEmployerReportsRoute =
   AuthenticatedEmployerReportsRouteImport.update({
-    id: '/reports',
-    path: '/reports',
-    getParentRoute: () => AuthenticatedEmployerRoute,
+    id: '/employer/reports',
+    path: '/employer/reports',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedEmployerSalaryRoute =
   AuthenticatedEmployerSalaryRouteImport.update({
-    id: '/salary',
-    path: '/salary',
-    getParentRoute: () => AuthenticatedEmployerRoute,
+    id: '/employer/salary',
+    path: '/employer/salary',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -237,9 +239,7 @@ export interface FileRoutesByFullPath {
   '/faq': typeof FaqRoute
   '/reset-password': typeof ResetPasswordRoute
   '/applications': typeof AuthenticatedApplicationsRoute
-  '/control': typeof AuthenticatedControlRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/employer': typeof AuthenticatedEmployerRouteWithChildren
   '/messages': typeof AuthenticatedMessagesRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/post-job': typeof AuthenticatedPostJobRoute
@@ -262,6 +262,8 @@ export interface FileRoutesByFullPath {
   '/employer/jobs': typeof AuthenticatedEmployerJobsRoute
   '/employer/reports': typeof AuthenticatedEmployerReportsRoute
   '/employer/salary': typeof AuthenticatedEmployerSalaryRoute
+  '/control/': typeof AuthenticatedControlIndexRoute
+  '/employer/': typeof AuthenticatedEmployerIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -272,9 +274,7 @@ export interface FileRoutesByTo {
   '/faq': typeof FaqRoute
   '/reset-password': typeof ResetPasswordRoute
   '/applications': typeof AuthenticatedApplicationsRoute
-  '/control': typeof AuthenticatedControlRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/employer': typeof AuthenticatedEmployerRouteWithChildren
   '/messages': typeof AuthenticatedMessagesRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/post-job': typeof AuthenticatedPostJobRoute
@@ -297,6 +297,8 @@ export interface FileRoutesByTo {
   '/employer/jobs': typeof AuthenticatedEmployerJobsRoute
   '/employer/reports': typeof AuthenticatedEmployerReportsRoute
   '/employer/salary': typeof AuthenticatedEmployerSalaryRoute
+  '/control': typeof AuthenticatedControlIndexRoute
+  '/employer': typeof AuthenticatedEmployerIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -309,9 +311,7 @@ export interface FileRoutesById {
   '/faq': typeof FaqRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/applications': typeof AuthenticatedApplicationsRoute
-  '/_authenticated/control': typeof AuthenticatedControlRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
-  '/_authenticated/employer': typeof AuthenticatedEmployerRouteWithChildren
   '/_authenticated/messages': typeof AuthenticatedMessagesRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/post-job': typeof AuthenticatedPostJobRoute
@@ -334,6 +334,8 @@ export interface FileRoutesById {
   '/_authenticated/employer/jobs': typeof AuthenticatedEmployerJobsRoute
   '/_authenticated/employer/reports': typeof AuthenticatedEmployerReportsRoute
   '/_authenticated/employer/salary': typeof AuthenticatedEmployerSalaryRoute
+  '/_authenticated/control/': typeof AuthenticatedControlIndexRoute
+  '/_authenticated/employer/': typeof AuthenticatedEmployerIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -346,9 +348,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/reset-password'
     | '/applications'
-    | '/control'
     | '/dashboard'
-    | '/employer'
     | '/messages'
     | '/notifications'
     | '/post-job'
@@ -371,6 +371,8 @@ export interface FileRouteTypes {
     | '/employer/jobs'
     | '/employer/reports'
     | '/employer/salary'
+    | '/control/'
+    | '/employer/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -381,9 +383,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/reset-password'
     | '/applications'
-    | '/control'
     | '/dashboard'
-    | '/employer'
     | '/messages'
     | '/notifications'
     | '/post-job'
@@ -406,6 +406,8 @@ export interface FileRouteTypes {
     | '/employer/jobs'
     | '/employer/reports'
     | '/employer/salary'
+    | '/control'
+    | '/employer'
   id:
     | '__root__'
     | '/'
@@ -417,9 +419,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/reset-password'
     | '/_authenticated/applications'
-    | '/_authenticated/control'
     | '/_authenticated/dashboard'
-    | '/_authenticated/employer'
     | '/_authenticated/messages'
     | '/_authenticated/notifications'
     | '/_authenticated/post-job'
@@ -442,6 +442,8 @@ export interface FileRouteTypes {
     | '/_authenticated/employer/jobs'
     | '/_authenticated/employer/reports'
     | '/_authenticated/employer/salary'
+    | '/_authenticated/control/'
+    | '/_authenticated/employer/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -525,25 +527,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedApplicationsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/control': {
-      id: '/_authenticated/control'
-      path: '/control'
-      fullPath: '/control'
-      preLoaderRoute: typeof AuthenticatedControlRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/employer': {
-      id: '/_authenticated/employer'
-      path: '/employer'
-      fullPath: '/employer'
-      preLoaderRoute: typeof AuthenticatedEmployerRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/messages': {
@@ -616,94 +604,115 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkersWorkerIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/control/': {
+      id: '/_authenticated/control/'
+      path: '/control'
+      fullPath: '/control/'
+      preLoaderRoute: typeof AuthenticatedControlIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/control/employers': {
       id: '/_authenticated/control/employers'
-      path: '/employers'
+      path: '/control/employers'
       fullPath: '/control/employers'
       preLoaderRoute: typeof AuthenticatedControlEmployersRouteImport
-      parentRoute: typeof AuthenticatedControlRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/control/jobs': {
       id: '/_authenticated/control/jobs'
-      path: '/jobs'
+      path: '/control/jobs'
       fullPath: '/control/jobs'
       preLoaderRoute: typeof AuthenticatedControlJobsRouteImport
-      parentRoute: typeof AuthenticatedControlRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/control/languages': {
       id: '/_authenticated/control/languages'
-      path: '/languages'
+      path: '/control/languages'
       fullPath: '/control/languages'
       preLoaderRoute: typeof AuthenticatedControlLanguagesRouteImport
-      parentRoute: typeof AuthenticatedControlRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/control/reports': {
       id: '/_authenticated/control/reports'
-      path: '/reports'
+      path: '/control/reports'
       fullPath: '/control/reports'
       preLoaderRoute: typeof AuthenticatedControlReportsRouteImport
-      parentRoute: typeof AuthenticatedControlRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/control/salary': {
       id: '/_authenticated/control/salary'
-      path: '/salary'
+      path: '/control/salary'
       fullPath: '/control/salary'
       preLoaderRoute: typeof AuthenticatedControlSalaryRouteImport
-      parentRoute: typeof AuthenticatedControlRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/control/settings': {
       id: '/_authenticated/control/settings'
-      path: '/settings'
+      path: '/control/settings'
       fullPath: '/control/settings'
       preLoaderRoute: typeof AuthenticatedControlSettingsRouteImport
-      parentRoute: typeof AuthenticatedControlRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/control/users': {
       id: '/_authenticated/control/users'
-      path: '/users'
+      path: '/control/users'
       fullPath: '/control/users'
       preLoaderRoute: typeof AuthenticatedControlUsersRouteImport
-      parentRoute: typeof AuthenticatedControlRoute
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/employer/': {
+      id: '/_authenticated/employer/'
+      path: '/employer'
+      fullPath: '/employer/'
+      preLoaderRoute: typeof AuthenticatedEmployerIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/employer/applicants': {
       id: '/_authenticated/employer/applicants'
-      path: '/applicants'
+      path: '/employer/applicants'
       fullPath: '/employer/applicants'
       preLoaderRoute: typeof AuthenticatedEmployerApplicantsRouteImport
-      parentRoute: typeof AuthenticatedEmployerRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/employer/employees': {
       id: '/_authenticated/employer/employees'
-      path: '/employees'
+      path: '/employer/employees'
       fullPath: '/employer/employees'
       preLoaderRoute: typeof AuthenticatedEmployerEmployeesRouteImport
-      parentRoute: typeof AuthenticatedEmployerRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/employer/jobs': {
       id: '/_authenticated/employer/jobs'
-      path: '/jobs'
+      path: '/employer/jobs'
       fullPath: '/employer/jobs'
       preLoaderRoute: typeof AuthenticatedEmployerJobsRouteImport
-      parentRoute: typeof AuthenticatedEmployerRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/employer/reports': {
       id: '/_authenticated/employer/reports'
-      path: '/reports'
+      path: '/employer/reports'
       fullPath: '/employer/reports'
       preLoaderRoute: typeof AuthenticatedEmployerReportsRouteImport
-      parentRoute: typeof AuthenticatedEmployerRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/employer/salary': {
       id: '/_authenticated/employer/salary'
-      path: '/salary'
+      path: '/employer/salary'
       fullPath: '/employer/salary'
       preLoaderRoute: typeof AuthenticatedEmployerSalaryRouteImport
-      parentRoute: typeof AuthenticatedEmployerRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
   }
 }
 
-interface AuthenticatedControlRouteChildren {
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedApplicationsRoute: typeof AuthenticatedApplicationsRoute
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedMessagesRoute: typeof AuthenticatedMessagesRoute
+  AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
+  AuthenticatedPostJobRoute: typeof AuthenticatedPostJobRoute
+  AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedSalaryRoute: typeof AuthenticatedSalaryRoute
   AuthenticatedControlEmployersRoute: typeof AuthenticatedControlEmployersRoute
   AuthenticatedControlJobsRoute: typeof AuthenticatedControlJobsRoute
   AuthenticatedControlLanguagesRoute: typeof AuthenticatedControlLanguagesRoute
@@ -711,9 +720,23 @@ interface AuthenticatedControlRouteChildren {
   AuthenticatedControlSalaryRoute: typeof AuthenticatedControlSalaryRoute
   AuthenticatedControlSettingsRoute: typeof AuthenticatedControlSettingsRoute
   AuthenticatedControlUsersRoute: typeof AuthenticatedControlUsersRoute
+  AuthenticatedEmployerApplicantsRoute: typeof AuthenticatedEmployerApplicantsRoute
+  AuthenticatedEmployerEmployeesRoute: typeof AuthenticatedEmployerEmployeesRoute
+  AuthenticatedEmployerJobsRoute: typeof AuthenticatedEmployerJobsRoute
+  AuthenticatedEmployerReportsRoute: typeof AuthenticatedEmployerReportsRoute
+  AuthenticatedEmployerSalaryRoute: typeof AuthenticatedEmployerSalaryRoute
+  AuthenticatedControlIndexRoute: typeof AuthenticatedControlIndexRoute
+  AuthenticatedEmployerIndexRoute: typeof AuthenticatedEmployerIndexRoute
 }
 
-const AuthenticatedControlRouteChildren: AuthenticatedControlRouteChildren = {
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedApplicationsRoute: AuthenticatedApplicationsRoute,
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedMessagesRoute: AuthenticatedMessagesRoute,
+  AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
+  AuthenticatedPostJobRoute: AuthenticatedPostJobRoute,
+  AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedSalaryRoute: AuthenticatedSalaryRoute,
   AuthenticatedControlEmployersRoute: AuthenticatedControlEmployersRoute,
   AuthenticatedControlJobsRoute: AuthenticatedControlJobsRoute,
   AuthenticatedControlLanguagesRoute: AuthenticatedControlLanguagesRoute,
@@ -721,54 +744,13 @@ const AuthenticatedControlRouteChildren: AuthenticatedControlRouteChildren = {
   AuthenticatedControlSalaryRoute: AuthenticatedControlSalaryRoute,
   AuthenticatedControlSettingsRoute: AuthenticatedControlSettingsRoute,
   AuthenticatedControlUsersRoute: AuthenticatedControlUsersRoute,
-}
-
-const AuthenticatedControlRouteWithChildren =
-  AuthenticatedControlRoute._addFileChildren(AuthenticatedControlRouteChildren)
-
-interface AuthenticatedEmployerRouteChildren {
-  AuthenticatedEmployerApplicantsRoute: typeof AuthenticatedEmployerApplicantsRoute
-  AuthenticatedEmployerEmployeesRoute: typeof AuthenticatedEmployerEmployeesRoute
-  AuthenticatedEmployerJobsRoute: typeof AuthenticatedEmployerJobsRoute
-  AuthenticatedEmployerReportsRoute: typeof AuthenticatedEmployerReportsRoute
-  AuthenticatedEmployerSalaryRoute: typeof AuthenticatedEmployerSalaryRoute
-}
-
-const AuthenticatedEmployerRouteChildren: AuthenticatedEmployerRouteChildren = {
   AuthenticatedEmployerApplicantsRoute: AuthenticatedEmployerApplicantsRoute,
   AuthenticatedEmployerEmployeesRoute: AuthenticatedEmployerEmployeesRoute,
   AuthenticatedEmployerJobsRoute: AuthenticatedEmployerJobsRoute,
   AuthenticatedEmployerReportsRoute: AuthenticatedEmployerReportsRoute,
   AuthenticatedEmployerSalaryRoute: AuthenticatedEmployerSalaryRoute,
-}
-
-const AuthenticatedEmployerRouteWithChildren =
-  AuthenticatedEmployerRoute._addFileChildren(
-    AuthenticatedEmployerRouteChildren,
-  )
-
-interface AuthenticatedRouteRouteChildren {
-  AuthenticatedApplicationsRoute: typeof AuthenticatedApplicationsRoute
-  AuthenticatedControlRoute: typeof AuthenticatedControlRouteWithChildren
-  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
-  AuthenticatedEmployerRoute: typeof AuthenticatedEmployerRouteWithChildren
-  AuthenticatedMessagesRoute: typeof AuthenticatedMessagesRoute
-  AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
-  AuthenticatedPostJobRoute: typeof AuthenticatedPostJobRoute
-  AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
-  AuthenticatedSalaryRoute: typeof AuthenticatedSalaryRoute
-}
-
-const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedApplicationsRoute: AuthenticatedApplicationsRoute,
-  AuthenticatedControlRoute: AuthenticatedControlRouteWithChildren,
-  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
-  AuthenticatedEmployerRoute: AuthenticatedEmployerRouteWithChildren,
-  AuthenticatedMessagesRoute: AuthenticatedMessagesRoute,
-  AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
-  AuthenticatedPostJobRoute: AuthenticatedPostJobRoute,
-  AuthenticatedProfileRoute: AuthenticatedProfileRoute,
-  AuthenticatedSalaryRoute: AuthenticatedSalaryRoute,
+  AuthenticatedControlIndexRoute: AuthenticatedControlIndexRoute,
+  AuthenticatedEmployerIndexRoute: AuthenticatedEmployerIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

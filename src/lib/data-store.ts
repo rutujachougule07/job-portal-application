@@ -49,6 +49,7 @@ export type JobRecord = {
   company: string;
   category: string;
   subcategory: string;
+  industry?: string;
   description: string;
   responsibilities: string[];
   requiredSkills: string[];
@@ -68,6 +69,10 @@ export type JobRecord = {
   initials: string;
   featured?: boolean;
   status: JobStatus;
+  contactEmail?: string;
+  contactPhone?: string;
+  whatsappNumber?: string;
+  contactPerson?: string;
 };
 
 export type ApplicationStatus = "Applied" | "Viewed" | "Shortlisted" | "Interview" | "Selected" | "Rejected";
@@ -85,6 +90,7 @@ export type ApplicationRecord = {
   location: string;
   salary: string;
   resume: string;
+  candidateExp?: string;
   appliedDate: string;
   status: ApplicationStatus;
 };
@@ -120,6 +126,7 @@ class DataStoreManager {
     JOB_ALERTS: "realjob_db_job_alerts",
     PROFILES: "realjob_db_profiles",
     EMPLOYERS: "realjob_db_employers",
+    USERS: "realjob_db_users",
   };
 
   constructor() {
@@ -141,6 +148,31 @@ class DataStoreManager {
     if (!localStorage.getItem(this.STORAGE_KEYS.JOB_ALERTS)) {
       localStorage.setItem(this.STORAGE_KEYS.JOB_ALERTS, JSON.stringify([]));
     }
+    if (!localStorage.getItem(this.STORAGE_KEYS.USERS)) {
+      localStorage.setItem(this.STORAGE_KEYS.USERS, JSON.stringify([]));
+    }
+  }
+
+  // --- USER REGISTRATION & AUTHENTICATION ---
+  public getAllUsers(): any[] {
+    if (typeof window === "undefined") return [];
+    const raw = localStorage.getItem(this.STORAGE_KEYS.USERS);
+    return raw ? JSON.parse(raw) : [];
+  }
+
+  public registerUser(userObj: any) {
+    const users = this.getAllUsers();
+    // Check if exists (case insensitive)
+    if (!users.some(u => (u.email || "").toLowerCase() === (userObj.email || "").toLowerCase())) {
+      users.push(userObj);
+      if (typeof window !== "undefined") {
+        localStorage.setItem(this.STORAGE_KEYS.USERS, JSON.stringify(users));
+      }
+    }
+  }
+
+  public getUserByEmail(email: string) {
+    return this.getAllUsers().find(u => (u.email || "").toLowerCase() === (email || "").toLowerCase());
   }
 
   // --- USER AUTHENTICATION & CURRENT SESSION ---

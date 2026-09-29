@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import {
   Building2,
   CheckCircle2,
@@ -27,6 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/lib/i18n";
 import { dataStore } from "@/lib/data-store";
 import { toast } from "sonner";
+import { notifyEmployerOnApplication } from "@/lib/notifications";
 
 export type Job = {
   id: string;
@@ -40,6 +41,8 @@ export type Job = {
   posted: string;
   initials: string;
   category: string;
+  subcategory?: string;
+  industry?: string;
   featured?: boolean;
   openings?: number;
 };
@@ -265,11 +268,15 @@ export function JobCard({
   onApply?: (job: Job) => void;
 }) {
   const { t, n, lang } = useI18n();
+  const navigate = useNavigate();
   const [saved, setSaved] = useState(false);
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [showCompanyModal, setShowCompanyModal] = useState(false);
   const [activeModalTab, setActiveModalTab] = useState<"company" | "job" | "openings">("company");
   const [applied, setApplied] = useState(false);
+  
+  const [whatsappUrl, setWhatsappUrl] = useState("");
+  const [mailtoUrl, setMailtoUrl] = useState("");
 
   const companyMeta = getCompanyMetadata(job);
 
@@ -324,14 +331,28 @@ export function JobCard({
         location: job.location,
         salary: job.salary,
         resume: `${seekerName.replaceAll(" ", "_")}_Resume.pdf`,
+        candidateExp: job.experience,
       });
+
+      const storeJob = dataStore.getJobById(job.id);
+
+      const notifyUrls = notifyEmployerOnApplication({
+        candidateName: seekerName,
+        candidateEmail: seekerId,
+        candidateMobile: "+91 98220 11223",
+        candidateExp: job.experience,
+        jobTitle: job.title,
+        companyName: job.company,
+        employerEmail: storeJob?.contactEmail || "",
+        employerPhone: storeJob?.whatsappNumber || "",
+      });
+
+      setWhatsappUrl(notifyUrls.whatsappUrl);
+      setMailtoUrl(notifyUrls.mailtoUrl);
 
       setApplied(true);
       toast.success(lang === "mr" ? "अर्ज यशस्वीरीत्या पाठवला!" : "Application submitted successfully!");
-      setTimeout(() => {
-        setApplied(false);
-        setShowApplyModal(false);
-      }, 2000);
+      // Modal stays open so they can click the WhatsApp button
     } catch (err: any) {
       toast.error(err.message || "Failed to submit application");
     }
@@ -484,6 +505,19 @@ export function JobCard({
 
         {/* Clickable Tags & Skills */}
         <div className="mt-4 flex flex-wrap items-center gap-2 relative z-0">
+          {job.category && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate({ to: "/jobs", search: { category: job.category } });
+              }}
+              title={`View more jobs in ${job.category}`}
+              className="inline-flex items-center gap-1 rounded-lg bg-[#FFC400]/15 border border-[#FFC400]/30 hover:bg-[#FFC400] transition-colors px-2 py-1 text-[10px] sm:text-[11px] font-black text-[#082F63] whitespace-nowrap"
+            >
+              {job.category}
+            </button>
+          )}
+
           <span className="inline-flex items-center gap-1 rounded-lg bg-[#063B78]/5 px-2 py-1 text-[10px] sm:text-[11px] font-bold text-[#063B78] whitespace-nowrap">
             <Clock3 className="size-3" /> {job.type}
           </span>
@@ -494,12 +528,15 @@ export function JobCard({
             {lang === "mr" ? "अनुभव" : "Exp"}: {n(job.experience)}
           </span>
 
-          {companyMeta.skills.slice(0, 2).map((skill, idx) => (
+          {companyMeta.skills.slice(0, 3).filter(s => s !== job.category).map((skill, idx) => (
             <button
               key={idx}
-              onClick={() => openModalTab("job")}
+              onClick={(e) => {
+                e.stopPropagation();
+                openModalTab("job");
+              }}
               title={`View ${skill} requirement details`}
-              className="inline-flex items-center gap-1 rounded-lg bg-[#FFC400]/15 border border-[#FFC400]/30 hover:bg-[#FFC400] transition-colors px-2 py-1 text-[10px] sm:text-[11px] font-black text-[#082F63] whitespace-nowrap"
+              className="inline-flex items-center gap-1 rounded-lg bg-[#F5F8FC] border border-[#DCE5F0] hover:bg-[#EBF1F8] transition-colors px-2 py-1 text-[10px] sm:text-[11px] font-bold text-[#5B6B7F] whitespace-nowrap"
             >
               {skill}
             </button>
@@ -507,24 +544,7 @@ export function JobCard({
         </div>
 
         {/* Action Buttons Footer */}
-        <div className="mt-5 flex items-center justify-between gap-2 border-t border-[#DCE5F0] pt-4 relative z-20">
-          <Button
-            asChild
-            variant="outline"
-            className="h-9 text-xs font-black border-[#063B78]/30 text-[#063B78] hover:bg-[#063B78] hover:text-white rounded-xl shadow-2xs px-3"
-          >
-            <a
-              href={companyMeta.website}
-              target="_blank"
-              rel="noopener noreferrer"
-              title={`${companyMeta.name} ची अधिकृत वेबसाईट उघडा (${companyMeta.website})`}
-            >
-              <Building className="mr-1.5 size-3.5" />
-              {lang === "mr" ? "कंपनी वेबसाईट" : "Company Website"}
-              <ExternalLink className="ml-1 size-3" />
-            </a>
-          </Button>
-
+        <div className="mt-5 flex items-center justify-end gap-2 border-t border-[#DCE5F0] pt-4 relative z-20">
           <Button
             onClick={handleApplyClick}
             className="btn-yellow h-9 px-5 font-black text-xs shadow-sm rounded-xl"
@@ -815,9 +835,37 @@ export function JobCard({
                 <h3 className="font-display text-2xl font-black text-[#10233F]">
                   {lang === "mr" ? "अर्ज यशस्वीरीत्या पाठवला!" : "Application Submitted!"}
                 </h3>
-                <p className="text-xs font-semibold text-[#5B6B7F]">
-                  {job.company} {lang === "mr" ? "कंपनीच्या HR विभागाकडे तुमचा अर्ज व प्रोफाइल पाठवले आहे." : "HR team will review your application soon."}
+                <p className="text-xs font-semibold text-[#5B6B7F] mb-6">
+                  {lang === "mr" ? "तुमचा अर्ज यशस्वीरीत्या जमा झाला आहे. कंपनीला थेट सूचित करण्यासाठी खालील पर्यायांचा वापर करा." : "Application sent successfully. Use options below to notify employer instantly."}
                 </p>
+                <div className="flex flex-col gap-3">
+                  <Button 
+                    asChild 
+                    className="bg-[#25D366] hover:bg-[#1DA851] text-white font-black text-xs py-3 h-11 w-full rounded-xl"
+                  >
+                    <a href={whatsappUrl} target="_blank" rel="noreferrer">
+                      WhatsApp वर माहिती पाठवा
+                    </a>
+                  </Button>
+                  <Button 
+                    asChild 
+                    variant="outline"
+                    className="border-[#063B78] text-[#063B78] font-black text-xs py-3 h-11 w-full rounded-xl"
+                  >
+                    <a href={mailtoUrl} target="_blank" rel="noreferrer">
+                      Email द्वारे सूचित करा
+                    </a>
+                  </Button>
+                  <button 
+                    onClick={() => {
+                      setShowApplyModal(false);
+                      setApplied(false);
+                    }}
+                    className="text-xs font-bold text-[#5B6B7F] underline mt-3 hover:text-[#10233F]"
+                  >
+                    {lang === "mr" ? "बंद करा" : "Close"}
+                  </button>
+                </div>
               </div>
             ) : (
               <form onSubmit={submitApplication} className="space-y-4">

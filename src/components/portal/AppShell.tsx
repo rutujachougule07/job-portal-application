@@ -36,11 +36,8 @@ const menus: Record<Role, Array<{ label: string; icon: typeof LayoutDashboard; t
   ],
   admin: [
     { label: "Dashboard", icon: LayoutDashboard, to: "/employer" },
-    { label: "Jobs", icon: BriefcaseBusiness, to: "/employer/jobs" },
+    { label: "Posted Jobs", icon: BriefcaseBusiness, to: "/employer/jobs" },
     { label: "Applicants", icon: Users, to: "/employer/applicants" },
-    { label: "Employees", icon: Building2, to: "/employer/employees" },
-    { label: "E-Salary", icon: WalletCards, to: "/employer/salary" },
-    { label: "Reports", icon: BarChart3, to: "/employer/reports" },
   ],
   super: [
     { label: "Dashboard", icon: LayoutDashboard, to: "/control" },
@@ -58,7 +55,7 @@ export function AppShell({ role, title, eyebrow, children }: { role: Role; title
   const [open, setOpen] = useState(false);
   const path = useLocation().pathname;
   const navigate = useNavigate();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
 
   const signOut = () => {
     window.localStorage.removeItem("realjob-user");
@@ -87,7 +84,7 @@ export function AppShell({ role, title, eyebrow, children }: { role: Role; title
             {role === "admin" ? "Employer Admin" : role === "super" ? "Super Admin" : "User Portal"}
           </p>
           <p className="mt-1 text-sm font-semibold">
-            {role === "user" ? "My Career" : role === "admin" ? "Nexa Systems" : "Platform Control"}
+            {role === "user" ? "My Career" : role === "admin" ? (eyebrow || "Employer Admin") : "Platform Control"}
           </p>
         </div>
 
@@ -97,6 +94,7 @@ export function AppShell({ role, title, eyebrow, children }: { role: Role; title
             const menuLabelKeyMap: Record<string, TranslationKeys> = {
               Dashboard: "dashboard",
               Jobs: "jobs",
+              "Posted Jobs": "postedJobs" as any, // fallback below if key doesn't exist
               Applications: "applications",
               "E-Salary": "dashboard",
               Notifications: "notifications",
@@ -110,12 +108,15 @@ export function AppShell({ role, title, eyebrow, children }: { role: Role; title
               Settings: "settings",
             };
             const translationKey = menuLabelKeyMap[item.label];
-            const displayLabel = translationKey ? t(translationKey) : item.label;
+            const displayLabel = translationKey && t(translationKey as any) !== translationKey 
+                                  ? t(translationKey as any) 
+                                  : (item.label === "Posted Jobs" ? (lang === "mr" ? "माझे जॉब्स" : "Posted Jobs") : item.label);
 
             return (
               <Link
                 key={item.to}
                 to={item.to}
+                onClick={() => setOpen(false)}
                 className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition ${
                   active ? "bg-sidebar-accent text-primary" : "text-sidebar-foreground hover:bg-secondary"
                 }`}

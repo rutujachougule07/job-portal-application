@@ -94,15 +94,15 @@ export function JobsListingPage() {
       { id: "Safety Officer", label: "Safety Officer" }
     ],
     "it-software": [
-      { id: "Software Developer", label: "Software Developer" },
-      { id: "Web Developer", label: "Web Developer" },
-      { id: "Full Stack Developer", label: "Full Stack Developer" },
-      { id: "Frontend Developer", label: "Frontend Developer" },
-      { id: "Backend Developer", label: "Backend Developer" },
-      { id: "UI/UX Designer", label: "UI/UX Designer" },
-      { id: "DevOps Engineer", label: "DevOps Engineer" },
-      { id: "Data Analyst", label: "Data Analyst" },
-      { id: "Cyber Security", label: "Cyber Security" }
+      { id: "Web Development", label: "Web Developer" },
+      { id: "Software Development", label: "Software Developer" },
+      { id: "Mobile App Development", label: "App Developer" },
+      { id: "Testing & QA", label: "QA / Tester" },
+      { id: "Data & Analytics", label: "Data Analyst" },
+      { id: "Cyber Security", label: "Cyber Security" },
+      { id: "DevOps & Cloud", label: "DevOps Engineer" },
+      { id: "IT Support", label: "IT Support" },
+      { id: "UI/UX Design", label: "UI/UX Designer" }
     ],
     "engineering": [
       { id: "Mechanical Engineer", label: "Mechanical Engineer" },
@@ -146,11 +146,12 @@ export function JobsListingPage() {
       { id: "School Administrator", label: "School Administrator" }
     ],
     "manufacturing": [
-      { id: "Production", label: "Production" },
-      { id: "Quality Control", label: "Quality Control" },
-      { id: "Machine Operator", label: "Machine Operator" },
-      { id: "Maintenance Engineer", label: "Maintenance Engineer" },
-      { id: "Production Manager", label: "Production Manager" }
+      { id: "Sugar Factory", label: "Sugar Factory" },
+      { id: "Automobile", label: "Automobile Factory" },
+      { id: "Manufacturing & Heavy Machinery", label: "Heavy Machinery" },
+      { id: "Textile Mill", label: "Textile Mill" },
+      { id: "Chemical Plant", label: "Chemical Plant" },
+      { id: "FMCG", label: "FMCG / Consumer Goods" }
     ],
     "hr-recruitment": [
       { id: "HR Executive", label: "HR Executive" },
@@ -255,6 +256,8 @@ export function JobsListingPage() {
       posted: dj.postedAgo || "Recently",
       initials: dj.initials || dj.company.slice(0, 2).toUpperCase(),
       category: dj.category,
+      subcategory: dj.subcategory || "",
+      industry: dj.industry || "",
       featured: dj.featured ?? false,
       openings: dj.vacancies ?? 1,
     }));
@@ -282,7 +285,13 @@ export function JobsListingPage() {
           if (subCategoryFilter === "all") {
             matchesCategory = true;
           } else {
-            matchesCategory = job.category === subCategoryFilter;
+            const tgt = (subCategoryFilter || "").toLowerCase().trim();
+            const sub = (job.subcategory || "").toLowerCase().trim();
+            const ind = (job.industry || "").toLowerCase().trim();
+            const title = (job.title || "").toLowerCase().trim();
+            const subFirst = sub.split(" ")[0] || "";
+            const tgtFirst = tgt.split(" ")[0] || "";
+            matchesCategory = sub === tgt || ind === tgt || (sub !== "" && tgt.includes(subFirst)) || (tgt !== "" && sub.includes(tgtFirst)) || title.includes(tgtFirst);
           }
         }
       }
@@ -577,7 +586,54 @@ export function JobsListingPage() {
 
               {/* Main Content Area */}
               {/* Main Content Area */}
-              {filteredJobs.length > 0 ? (
+              {categoryFilter === "all" ? (
+                <div>
+                  <h3 className="text-xl font-black text-[#10233F] mb-6">
+                    {lang === "mr" ? "तुमच्या क्षेत्रातील नोकऱ्या शोधा" : "Explore by Category"}
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
+                    {[
+                      { id: "it-software", icon: <Laptop className="size-8 mb-4 text-[#063B78]" />, title: "IT & Software", jobsCount: "120+" },
+                      { id: "manufacturing", icon: <Factory className="size-8 mb-4 text-[#063B78]" />, title: "Factory / Manufacturing", jobsCount: "350+" },
+                      { id: "construction", icon: <HardHat className="size-8 mb-4 text-[#063B78]" />, title: "Construction", jobsCount: "210+" },
+                      { id: "healthcare-medical", icon: <Stethoscope className="size-8 mb-4 text-[#063B78]" />, title: "Healthcare & Medical", jobsCount: "85+" },
+                      { id: "finance-accounting", icon: <Landmark className="size-8 mb-4 text-[#063B78]" />, title: "Banking & Finance", jobsCount: "150+" },
+                      { id: "sales-marketing", icon: <TrendingUp className="size-8 mb-4 text-[#063B78]" />, title: "Sales & Marketing", jobsCount: "400+" },
+                      { id: "logistics-transport", icon: <Truck className="size-8 mb-4 text-[#063B78]" />, title: "Logistics & Transport", jobsCount: "280+" },
+                      { id: "hospitality-tourism", icon: <Hotel className="size-8 mb-4 text-[#063B78]" />, title: "Hospitality & Hotel", jobsCount: "190+" },
+                    ].map((cat) => (
+                      <button
+                        key={cat.id}
+                        onClick={() => {
+                          setCategoryFilter(cat.id);
+                          window.scrollTo({ top: 300, behavior: 'smooth' });
+                        }}
+                        className="p-6 bg-white border border-[#DCE5F0] rounded-2xl hover:border-[#063B78]/40 hover:shadow-lg transition-all flex flex-col items-center justify-center text-center group cursor-pointer"
+                      >
+                        <div className="p-3 bg-[#F5F8FC] rounded-2xl group-hover:bg-[#EBF1F8] transition-colors mb-3">
+                          {cat.icon}
+                        </div>
+                        <h4 className="font-black text-sm text-[#10233F]">{cat.title}</h4>
+                        <span className="text-[11px] font-bold text-[#5B6B7F] mt-1 bg-[#F5F8FC] px-2 py-0.5 rounded-md">
+                          {cat.jobsCount} {lang === "mr" ? "नोकऱ्या" : "Jobs"}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                  
+                  {/* Also show recent jobs below categories */}
+                  <div className="flex items-center justify-between mb-6 border-t border-[#DCE5F0] pt-6">
+                    <h3 className="text-xl font-black text-[#10233F]">
+                      {lang === "mr" ? "नवीनतम नोकऱ्या (Recent Jobs)" : "Recent Jobs"}
+                    </h3>
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                    {filteredJobs.slice(0, 10).map((job: Job) => (
+                      <JobCard key={job.id} job={job} />
+                    ))}
+                  </div>
+                </div>
+              ) : filteredJobs.length > 0 ? (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                   {filteredJobs.map((job: Job) => (
                     <JobCard key={job.id} job={job} />
