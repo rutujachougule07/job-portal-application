@@ -234,7 +234,7 @@ function PostJobPage() {
       setFormData((prev) => ({
         ...prev,
         category: value,
-        subcategory: subOptions[0],
+        subcategory: subOptions[0] || "General Role",
       }));
     } else {
       setFormData((prev) => ({ ...prev, [field]: value }));
@@ -271,15 +271,15 @@ function PostJobPage() {
       title: formData.title,
       company: formData.company,
       category: formData.category,
-      subcategory: formData.category,
+      subcategory: formData.subcategory || formData.category,
       description: formData.description || `${formData.title} job posting for ${formData.company}.`,
       responsibilities: ["Execute daily operations and shopfloor targets", "Maintain site and safety standards"],
       requiredSkills: skillsArray,
       qualification: formData.education || "10th Pass",
       experience: formData.experience,
       salary: salaryString,
-      salaryMin: formData.salaryMin ? parseInt(formData.salaryMin) : undefined,
-      salaryMax: formData.salaryMax ? parseInt(formData.salaryMax) : undefined,
+      ...(formData.salaryMin ? { salaryMin: parseInt(formData.salaryMin) } : {}),
+      ...(formData.salaryMax ? { salaryMax: parseInt(formData.salaryMax) } : {}),
       salaryType: formData.salaryType === "Per Day" ? "Daily" : "Monthly",
       location: formData.location,
       jobType: (formData.jobType as any) || "Full Time",

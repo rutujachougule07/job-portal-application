@@ -1,353 +1,298 @@
 import { useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
-  ArrowRight,
-  BadgeCheck,
+  ShieldCheck,
+  UserCheck,
   Briefcase,
   Building2,
-  CheckCircle2,
-  ChevronRight,
-  Download,
-  Factory,
-  Globe,
-  HardHat,
-  Headphones,
-  HeartHandshake,
-  MapPin,
-  PhoneCall,
-  QrCode,
-  Search,
-  ShieldCheck,
-  Sparkles,
-  Star,
   Users,
-  Wrench,
+  ArrowRight,
+  Sparkles,
+  CheckCircle2,
+  Lock,
+  Globe,
+  PhoneCall,
+  LayoutDashboard,
   Zap,
+  HeartHandshake,
+  Award
 } from "lucide-react";
 import careerTeam from "@/assets/career-team.jpg";
-import { PublicHeader } from "@/components/portal/PublicHeader";
+import { Brand } from "@/components/portal/Brand";
+import { LanguageSwitcher } from "@/components/portal/LanguageSwitcher";
 import { PublicFooter } from "@/components/portal/PublicFooter";
-import { PopularCategories } from "@/components/portal/PopularCategories";
-import { PopularJobs } from "@/components/portal/PopularJobs";
-import { WorkerCard, workersList } from "@/components/portal/WorkerCard";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useI18n, getCategoryTitle } from "@/lib/i18n";
+import { useI18n } from "@/lib/i18n";
+import { toast } from "sonner";
+import { dataStore } from "@/lib/data-store";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "REAL JOB — Find Work | Find Workers | सर्व काही ऑनलाइन!" },
-      { name: "description", content: "India's premier digital workforce platform connecting verified workers with top factory, construction & technical employers." },
-      { property: "og:title", content: "REAL JOB — Find Work | Find Workers" },
-      { property: "og:description", content: "योग्य माणूस • योग्य काम • योग्य संधी — सर्व काही ऑनलाइन!" },
+      { title: "REAL JOB — Portal Entrance | User Login & Admin Login" },
+      { name: "description", content: "Select User Login to browse jobs & hire workers or Admin Login for platform administration." },
+      { property: "og:title", content: "REAL JOB — Portal Entrance" },
+      { property: "og:description", content: "योग्य माणूस • योग्य काम • योग्य संधी — Portal Entrance" },
       { property: "og:type", content: "website" },
     ],
   }),
-  component: HomePage,
+  component: LandingGatewayPage,
 });
 
-function HomePage() {
-  const { t, lang } = useI18n();
+export function LandingGatewayPage() {
+  const { t } = useI18n();
+  const navigate = useNavigate();
 
-  // Search tab state: 'job' or 'worker'
-  const [searchTab, setSearchTab] = useState<"job" | "worker">("job");
-  const [keyword, setKeyword] = useState("");
-  const [location, setLocation] = useState("");
-  const [category, setCategory] = useState("all");
+  const handleQuickUserEntry = () => {
+    const userObj = {
+      id: "seeker-demo",
+      email: "user@realjob.com",
+      role: "worker" as const,
+      fullName: "Rutuja Pawar (Candidate)",
+    };
+    window.localStorage.setItem("realjob-user", JSON.stringify(userObj));
+    dataStore.setCurrentUser(userObj);
+    toast.success("User Portal Ready! Redirecting to main website...");
+    navigate({ to: "/home" });
+  };
+
+  const handleQuickAdminEntry = () => {
+    const adminObj = {
+      id: "admin-super",
+      email: "admin@realjob.com",
+      role: "admin" as const,
+      fullName: "Platform Admin Manager",
+    };
+    window.localStorage.setItem("realjob-user", JSON.stringify(adminObj));
+    dataStore.setCurrentUser(adminObj);
+    toast.success("Admin Portal Ready! Opening Admin Control Dashboard...");
+    navigate({ to: "/admin" });
+  };
 
   return (
-    <>
-      <PublicHeader />
-      <main className="bg-[#F5F8FC]">
-        {/* HERO SECTION */}
-        <section className="relative isolate min-h-[640px] overflow-hidden">
+    <div className="min-h-screen bg-[#F5F8FC] flex flex-col justify-between">
+      {/* LANDING HEADER */}
+      <header className="sticky top-0 z-50 border-b border-[#DCE5F0] bg-white/95 backdrop-blur-md shadow-xs">
+        <div className="mx-auto flex h-18 max-w-7xl items-center justify-between px-4 sm:px-6">
+          <Brand className="h-14 sm:h-16 scale-105 origin-left" />
+
+          <div className="flex items-center gap-2 sm:gap-3">
+            <LanguageSwitcher label={t("languageLabel")} showCurrent={true} />
+
+            <Button
+              asChild
+              variant="outline"
+              className="border-[#063B78] text-[#063B78] font-extrabold hover:bg-[#063B78] hover:text-white text-xs px-3 sm:px-4 h-9.5 rounded-lg shadow-2xs"
+            >
+              <Link to="/auth" search={{ mode: "login", role: "worker" }}>
+                <UserCheck className="size-4 mr-1.5" />
+                {t("userLogin")}
+              </Link>
+            </Button>
+
+            <Button
+              asChild
+              className="bg-[#063B78] hover:bg-[#082F63] text-white font-extrabold text-xs px-3 sm:px-4 h-9.5 rounded-lg shadow-xs"
+            >
+              <Link to="/auth" search={{ mode: "login", role: "admin" }}>
+                <ShieldCheck className="size-4 mr-1.5 text-[#FFC400]" />
+                {t("adminLogin")}
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <main className="flex-1">
+        {/* HERO HERO OVERLAY SECTION */}
+        <section className="relative isolate overflow-hidden bg-hero-overlay py-16 sm:py-24 text-white">
           <img
             src={careerTeam}
-            alt="REAL JOB India Workforce & Construction Workers"
-            width={1600}
-            height={1000}
-            className="absolute inset-0 h-full w-full object-cover object-center"
+            alt="REAL JOB India Portal"
+            className="absolute inset-0 h-full w-full object-cover object-center opacity-25"
           />
-          <div className="absolute inset-0 bg-hero-overlay" />
-
-          <div className="relative mx-auto flex min-h-[640px] max-w-7xl flex-col justify-center px-4 py-20 sm:px-6 lg:px-8">
-            <div className="max-w-3xl">
-              {/* Badge */}
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-[#FFC400] backdrop-blur">
-                <Sparkles className="size-4" />
-                {t("heroBadge")}
-              </div>
-
-              {/* Headlines */}
-              <h1 className="font-display text-4xl font-black leading-[1.1] text-white sm:text-6xl lg:text-7xl">
-                {t("heroTitleLine1")} <br />
-                <span className="text-[#FFC400]">{t("heroTitleLine2")}</span> <br />
-                {t("heroTitleLine3")}
-              </h1>
-
-              <p className="mt-4 text-lg sm:text-xl font-bold text-white/90">
-                {t("heroSubtitle")}
-              </p>
-
-              {/* Action Buttons */}
-              <div className="mt-8 flex flex-wrap gap-4">
-                <Button asChild size="lg" className="btn-yellow h-13 px-8 text-sm font-black shadow-md">
-                  <Link to="/jobs">
-                    {t("findJob")}
-                    <ArrowRight className="ml-1 size-4" />
-                  </Link>
-                </Button>
-
-                <Button asChild size="lg" className="btn-navy h-13 px-8 text-sm font-bold border border-white/30">
-                  <Link to="/workers">
-                    {t("hireTalent")}
-                    <Users className="ml-1.5 size-4" />
-                  </Link>
-                </Button>
-              </div>
-
-              {/* Trust Features */}
-              <div className="mt-10 flex flex-wrap gap-6 text-xs sm:text-sm font-bold text-white/90">
-                <span className="inline-flex items-center gap-2">
-                  <CheckCircle2 className="size-4 text-[#FFC400]" />
-                  {t("trustPhone")}
-                </span>
-                <span className="inline-flex items-center gap-2">
-                  <CheckCircle2 className="size-4 text-[#FFC400]" />
-                  {t("trustCommission")}
-                </span>
-                <span className="inline-flex items-center gap-2">
-                  <CheckCircle2 className="size-4 text-[#FFC400]" />
-                  {t("trustVerified")}
-                </span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* SEARCH INTERFACE OVERLAY */}
-        <section className="relative z-20 mx-auto -mt-12 max-w-6xl px-4 sm:px-6">
-          <div className="rounded-2xl border border-[#DCE5F0] bg-white p-5 shadow-xl">
-            {/* Search Tab Switcher: Job Search vs Worker Search */}
-            <div className="flex items-center gap-2 mb-4 border-b border-[#DCE5F0] pb-3">
-              <button
-                onClick={() => setSearchTab("job")}
-                className={`px-5 py-2 rounded-lg font-black text-xs transition-all ${searchTab === "job"
-                  ? "bg-[#063B78] text-white shadow-xs"
-                  : "text-[#5B6B7F] hover:bg-[#F5F8FC]"
-                  }`}
-              >
-                {t("searchJobTab")}
-              </button>
-              <button
-                onClick={() => setSearchTab("worker")}
-                className={`px-5 py-2 rounded-lg font-black text-xs transition-all ${searchTab === "worker"
-                  ? "bg-[#063B78] text-white shadow-xs"
-                  : "text-[#5B6B7F] hover:bg-[#F5F8FC]"
-                  }`}
-              >
-                {t("searchWorkerTab")}
-              </button>
+          <div className="relative mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-[#FFC400] backdrop-blur">
+              <Sparkles className="size-4" />
+              भारतातील #१ कामगार व जॉब डिजिटल पोर्टल (Portal Entrance)
             </div>
 
-            {/* Search Inputs */}
-            <div className="grid gap-3 md:grid-cols-[1fr_0.8fr_0.8fr_auto]">
-              <div className="relative flex items-center bg-[#F5F8FC] rounded-xl px-3 border border-[#DCE5F0]">
-                <Search className="size-4 text-[#063B78] shrink-0" />
-                <Input
-                  placeholder={t("searchPlaceholder")}
-                  value={keyword}
-                  onChange={(e) => setKeyword(e.target.value)}
-                  className="h-11 border-0 bg-transparent text-xs font-bold text-[#10233F] focus-visible:ring-0"
-                />
-              </div>
+            <h1 className="font-display text-3xl font-black leading-tight sm:text-5xl lg:text-6xl text-white">
+              REAL JOB पोर्टल मध्ये आपले स्वागत आहे! <br />
+              <span className="text-[#FFC400]">योग्य माणूस • योग्य काम • योग्य संधी</span>
+            </h1>
 
-              <div className="relative flex items-center bg-[#F5F8FC] rounded-xl px-3 border border-[#DCE5F0]">
-                <MapPin className="size-4 text-[#125BB5] shrink-0" />
-                <Input
-                  placeholder={t("location")}
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  className="h-11 border-0 bg-transparent text-xs font-bold text-[#10233F] focus-visible:ring-0"
-                />
-              </div>
+            <p className="mx-auto mt-4 max-w-2xl text-base sm:text-lg font-semibold text-white/90">
+              पुढील पर्यायांमधून आपले पोर्टल निवडा — युजर लॉगिन द्वारे वेबसाईट वापरा किंवा ॲडमिन लॉगिन द्वारे डॅशबोर्ड नियंत्रित करा.
+            </p>
 
-              <div className="relative flex items-center bg-[#F5F8FC] rounded-xl px-3 border border-[#DCE5F0]">
-                <Briefcase className="size-4 text-[#063B78] shrink-0" />
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="w-full h-11 border-0 bg-transparent text-xs font-bold text-[#10233F] focus:outline-none"
-                >
-                  <option value="all">{t("allCategories")}</option>
-                  <option value="construction">Construction</option>
-                  <option value="it-software">IT & Software</option>
-                  <option value="engineering">Engineering</option>
-                  <option value="healthcare-medical">Healthcare & Medical</option>
-                  <option value="finance-accounting">Finance & Accounting</option>
-                  <option value="sales-marketing">Sales & Marketing</option>
-                  <option value="education">Education</option>
-                  <option value="manufacturing">Manufacturing</option>
-                  <option value="hr-recruitment">HR & Recruitment</option>
-                  <option value="hospitality-tourism">Hospitality & Tourism</option>
-                  <option value="logistics-transport">Logistics & Transport</option>
-                  <option value="government-public">Government & Public Sector</option>
-                  <option value="legal">Legal</option>
-                  <option value="architecture-design">Architecture & Interior Design</option>
-                  <option value="retail-ecommerce">Retail & E-commerce</option>
-                  <option value="customer-service-bpo">Customer Service & BPO</option>
-                  <option value="design-creative">Design & Creative</option>
-                  <option value="media-communication">Media & Communication</option>
-                  <option value="agriculture-farming">Agriculture & Farming</option>
-                  <option value="science-research">Science & Research</option>
-                </select>
-              </div>
-
-              <Button asChild size="lg" className="btn-yellow h-11 px-8 font-black text-xs">
-                <Link
-                  to={searchTab === "job" ? "/jobs" : "/workers"}
-                  search={{
-                    ...(category !== "all" ? { category } : {}),
-                  }}
-                >
-                  {searchTab === "job" ? t("jobs") : t("workers")}
-                </Link>
+            {/* QUICK ONE-CLICK ACCESS BAR */}
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-4 bg-white/10 p-3 rounded-2xl border border-white/20 max-w-xl mx-auto backdrop-blur-md">
+              <span className="text-xs font-black uppercase text-[#FFC400] w-full sm:w-auto">
+                ⚡ झटपट चाचणी (Quick Access):
+              </span>
+              <Button
+                onClick={handleQuickUserEntry}
+                className="btn-yellow text-xs font-black h-9 px-4 shadow-sm"
+              >
+                👤 युजर पोर्टलवर जा (User Portal)
+              </Button>
+              <Button
+                onClick={handleQuickAdminEntry}
+                className="bg-white hover:bg-gray-100 text-[#063B78] text-xs font-black h-9 px-4 shadow-sm"
+              >
+                🛡️ ॲडमिन डॅशबोर्ड पहा (Admin Panel)
               </Button>
             </div>
           </div>
         </section>
 
-        {/* POPULAR JOB CATEGORIES */}
-        <PopularCategories />
-
-        {/* FEATURED JOBS SECTION */}
-        <PopularJobs />
-
-        {/* FEATURED VERIFIED WORKERS SECTION */}
-        <section className="py-16 sm:py-24 bg-white border-y border-[#DCE5F0]">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+        {/* DUAL PORTAL CARDS (MAIN USER REQUIREMENT) */}
+        <section className="relative z-20 mx-auto -mt-10 max-w-6xl px-4 sm:px-6 mb-16">
+          <div className="grid gap-8 md:grid-cols-2">
+            
+            {/* CARD 1: USER PORTAL / LOGIN */}
+            <div className="group rounded-3xl border-2 border-[#DCE5F0] bg-white p-8 shadow-xl transition-all duration-300 hover:border-[#063B78] hover:shadow-2xl flex flex-col justify-between">
               <div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-[#063B78]/20 bg-[#063B78]/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-[#063B78]">
-                  <span className="h-2 w-2 rounded-full bg-[#FFC400]" />
-                  {t("topWorkersTitle")}
+                <div className="flex items-center justify-between mb-6">
+                  <span className="grid size-16 place-items-center rounded-2xl bg-[#EBF1F8] text-[#063B78] group-hover:bg-[#063B78] group-hover:text-white transition-colors">
+                    <UserCheck className="size-8" />
+                  </span>
+                  <span className="rounded-full bg-[#EBF1F8] px-3 py-1 text-xs font-black uppercase text-[#063B78]">
+                    कामगार & मालक दालन
+                  </span>
                 </div>
-                <h2 className="mt-3 text-3xl font-black text-[#10233F] sm:text-4xl">
-                  {t("topWorkersTitle")}
+
+                <h2 className="text-2xl font-black text-[#10233F] group-hover:text-[#063B78] transition-colors">
+                  युजर लॉगिन / User Portal
                 </h2>
                 <p className="mt-2 text-sm font-semibold text-[#5B6B7F]">
-                  {t("topWorkersSubtitle")}
+                  नोकरी शोधक कामगार, कारागीर आणि काम देणाऱ्या कंपन्यांसाठी युजर लॉगिन आणि मुख्य जॉब वेबसाईट.
                 </p>
+
+                <div className="mt-6 space-y-3 pt-4 border-t border-[#DCE5F0]">
+                  {[
+                    "१०,०००+ सत्यापित कुशल कामगार व नोकऱ्या",
+                    "कोणतेही मध्यस्थ किंवा कमिशन नाही (0% Commission)",
+                    "थेट फोन अथवा व्हॉट्सॲपवर संपर्क करा",
+                    "नवीन प्रोफाईल तयार करा & जॉब्स ट्रॅक करा",
+                  ].map((feat, i) => (
+                    <div key={i} className="flex items-center gap-3 text-xs font-bold text-[#10233F]">
+                      <CheckCircle2 className="size-4 text-[#063B78] shrink-0" />
+                      {feat}
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              <Button asChild className="btn-navy font-bold text-xs px-6 py-3 h-auto shrink-0">
-                <Link to="/workers">
-                  {t("viewAll")} ({workersList.length}) <ArrowRight className="ml-1.5 size-4 text-[#FFC400]" />
-                </Link>
-              </Button>
+              <div className="mt-8 grid gap-3 pt-6 border-t border-[#DCE5F0]">
+                <Button
+                  asChild
+                  size="lg"
+                  className="btn-navy h-12 w-full font-black text-sm shadow-md"
+                >
+                  <Link to="/auth" search={{ mode: "login", role: "worker" }}>
+                    <UserCheck className="size-4 mr-2" />
+                    युजर लॉगिन करा (User Login)
+                    <ArrowRight className="ml-auto size-4 text-[#FFC400]" />
+                  </Link>
+                </Button>
+
+                <Button
+                  asChild
+                  variant="outline"
+                  size="lg"
+                  className="h-11 w-full border-[#063B78] text-[#063B78] font-black text-xs hover:bg-[#EBF1F8]"
+                >
+                  <Link to="/home">
+                    🌐 मुख्य वेबसाईट पहा (Go to Main Website)
+                  </Link>
+                </Button>
+              </div>
             </div>
 
-            {/* Workers Cards Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {workersList.slice(0, 3).map((worker) => (
-                <WorkerCard key={worker.id} worker={worker} />
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* WHY CHOOSE REAL JOB */}
-        <section className="py-16 sm:py-24">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="text-center max-w-2xl mx-auto mb-14">
-              <span className="text-xs font-black uppercase tracking-wider text-[#125BB5] bg-[#EBF1F8] px-3 py-1 rounded-full">
-                {t("whyUs")}
-              </span>
-              <h2 className="mt-3 text-3xl font-black text-[#10233F] sm:text-4xl">
-                {t("whyUs")}
-              </h2>
-              <p className="mt-3 text-sm font-semibold text-[#5B6B7F]">
-                {t("whyUsSubtitle")}
-              </p>
-            </div>
-
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="card-realjob p-6 text-center">
-                <div className="size-14 rounded-2xl bg-[#063B78]/10 text-[#063B78] mx-auto flex items-center justify-center mb-4">
-                  <ShieldCheck className="size-7" />
-                </div>
-                <h3 className="font-black text-lg text-[#10233F]">{t("step1Title")}</h3>
-                <p className="text-xs font-semibold text-[#5B6B7F] mt-2">
-                  {t("step1Desc")}
-                </p>
-              </div>
-
-              <div className="card-realjob p-6 text-center">
-                <div className="size-14 rounded-2xl bg-[#FFC400]/20 text-[#082F63] mx-auto flex items-center justify-center mb-4">
-                  <HeartHandshake className="size-7" />
-                </div>
-                <h3 className="font-black text-lg text-[#10233F]">{t("trustCommission")}</h3>
-                <p className="text-xs font-semibold text-[#5B6B7F] mt-2">
-                  {t("step3Desc")}
-                </p>
-              </div>
-
-              <div className="card-realjob p-6 text-center">
-                <div className="size-14 rounded-2xl bg-[#125BB5]/10 text-[#125BB5] mx-auto flex items-center justify-center mb-4">
-                  <Globe className="size-7" />
-                </div>
-                <h3 className="font-black text-lg text-[#10233F]">{t("chooseLanguage")}</h3>
-                <p className="text-xs font-semibold text-[#5B6B7F] mt-2">
-                  {t("languageSubtitle")}
-                </p>
-              </div>
-
-              <div className="card-realjob p-6 text-center">
-                <div className="size-14 rounded-2xl bg-[#063B78]/10 text-[#063B78] mx-auto flex items-center justify-center mb-4">
-                  <Zap className="size-7" />
-                </div>
-                <h3 className="font-black text-lg text-[#10233F]">{t("step3Title")}</h3>
-                <p className="text-xs font-semibold text-[#5B6B7F] mt-2">
-                  {t("step3Desc")}
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* MOBILE APP PROMOTION BANNER */}
-        <section className="bg-hero-overlay text-white py-16 relative overflow-hidden">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="grid md:grid-cols-2 gap-10 items-center">
+            {/* CARD 2: ADMIN PORTAL / LOGIN */}
+            <div className="group rounded-3xl border-2 border-[#DCE5F0] bg-white p-8 shadow-xl transition-all duration-300 hover:border-[#FFC400] hover:shadow-2xl flex flex-col justify-between">
               <div>
-                <span className="text-xs font-black uppercase tracking-wider text-[#FFC400] bg-white/10 px-3 py-1 rounded-full border border-white/20">
-                  {t("downloadTitle")}
-                </span>
-                <h2 className="mt-4 text-3xl font-black text-white sm:text-4xl leading-tight">
-                  {t("downloadTitle")} <br />
-                  <span className="text-[#FFC400]">{t("downloadSubtitle")}</span>
+                <div className="flex items-center justify-between mb-6">
+                  <span className="grid size-16 place-items-center rounded-2xl bg-[#FFF8E1] text-[#082F63] group-hover:bg-[#FFC400] group-hover:text-[#082F63] transition-colors">
+                    <ShieldCheck className="size-8" />
+                  </span>
+                  <span className="rounded-full bg-[#FFF8E1] px-3 py-1 text-xs font-black uppercase text-[#082F63]">
+                    प्रशासकीय दालन (Control)
+                  </span>
+                </div>
+
+                <h2 className="text-2xl font-black text-[#10233F] group-hover:text-[#082F63] transition-colors">
+                  ॲडमिन लॉगिन / Admin Portal
                 </h2>
-                <p className="mt-4 text-sm font-semibold text-white/90 leading-relaxed">
-                  {t("downloadSubtitle")}
+                <p className="mt-2 text-sm font-semibold text-[#5B6B7F]">
+                  प्लॅटफॉर्म व्यवस्थापक आणि प्रशासकांसाठी स्वतंत्र ॲडमिन डॅशबोर्ड आणि नियंत्रण दालन.
                 </p>
 
-                <div className="mt-8 flex flex-wrap items-center gap-4">
-                  <Button className="btn-yellow font-black text-xs px-6 py-3 h-12">
-                    <Download className="size-4 mr-2" /> {t("playStore")}
-                  </Button>
-                  <Button variant="outline" className="border-white text-white font-bold text-xs px-6 py-3 h-12 hover:bg-white hover:text-[#063B78]">
-                    {t("appStore")}
-                  </Button>
+                <div className="mt-6 space-y-3 pt-4 border-t border-[#DCE5F0]">
+                  {[
+                    "कामगार, कंपनी व युजर्सचे संपूर्ण नियंत्रण",
+                    "नोकरी पोस्टिंग्स मंजुरी & स्टेटस मॅनेजमेंट",
+                    "ई-पगार (E-Salary) & पेरोल पडताळणी",
+                    "प्लॅटफॉर्म रिपोर्ट, विश्लेषण & सेटिंग्ज",
+                  ].map((feat, i) => (
+                    <div key={i} className="flex items-center gap-3 text-xs font-bold text-[#10233F]">
+                      <CheckCircle2 className="size-4 text-[#082F63] shrink-0" />
+                      {feat}
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              <div className="flex justify-center md:justify-end">
-                <div className="bg-white text-[#10233F] p-6 rounded-2xl shadow-2xl border-4 border-[#FFC400] text-center max-w-xs">
-                  <QrCode className="size-36 mx-auto text-[#063B78]" />
-                  <span className="block text-xs font-black text-[#063B78] mt-3">{t("downloadTitle")}</span>
-                  <span className="block text-[10px] font-bold text-[#5B6B7F]">Scan QR to download REAL JOB App</span>
-                </div>
+              <div className="mt-8 grid gap-3 pt-6 border-t border-[#DCE5F0]">
+                <Button
+                  asChild
+                  size="lg"
+                  className="btn-yellow h-12 w-full font-black text-sm shadow-md"
+                >
+                  <Link to="/auth" search={{ mode: "login", role: "admin" }}>
+                    <ShieldCheck className="size-4 mr-2" />
+                    ॲडमिन लॉगिन करा (Admin Login)
+                    <ArrowRight className="ml-auto size-4" />
+                  </Link>
+                </Button>
+
+                <Button
+                  asChild
+                  variant="outline"
+                  size="lg"
+                  className="h-11 w-full border-[#063B78] text-[#063B78] font-black text-xs hover:bg-[#EBF1F8]"
+                >
+                  <Link to="/admin">
+                    🛡️ ॲडमिन डॅशबोर्ड पहा (Go to Admin Dashboard)
+                  </Link>
+                </Button>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        {/* METRICS & ADVANTAGES */}
+        <section className="py-12 bg-white border-y border-[#DCE5F0]">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 text-center">
+              <div className="p-4">
+                <strong className="block text-3xl sm:text-4xl font-black text-[#063B78]">१०,०००+</strong>
+                <span className="text-xs font-bold text-[#5B6B7F]">सत्यापित कामगार (Verified Workers)</span>
+              </div>
+              <div className="p-4">
+                <strong className="block text-3xl sm:text-4xl font-black text-[#063B78]">५,०००+</strong>
+                <span className="text-xs font-bold text-[#5B6B7F]">सक्रिय नोकऱ्या (Live Job Openings)</span>
+              </div>
+              <div className="p-4">
+                <strong className="block text-3xl sm:text-4xl font-black text-[#063B78]">१,२००+</strong>
+                <span className="text-xs font-bold text-[#5B6B7F]">कारखाने व कंपन्या (Employers)</span>
+              </div>
+              <div className="p-4">
+                <strong className="block text-3xl sm:text-4xl font-black text-[#063B78]">०%</strong>
+                <span className="text-xs font-bold text-[#5B6B7F]">कमिशन नियम (Zero Commission)</span>
               </div>
             </div>
           </div>
@@ -355,6 +300,6 @@ function HomePage() {
       </main>
 
       <PublicFooter />
-    </>
+    </div>
   );
 }

@@ -104,23 +104,23 @@ function AuthPage() {
         dataStore.setCurrentUser(userObj);
 
         toast.success("Account created successfully! Welcome to REAL JOB.");
-        navigate({ to: role === "employer" || role === "admin" ? "/employer" : "/dashboard" });
+        navigate({ to: role === "admin" ? "/admin" : role === "employer" ? "/employer" : "/home" });
         return;
       }
 
       // Login Mode
       const userObj = {
-        id: role === "employer" || role === "admin" ? "emp-tcs" : "seeker-rutuja",
+        id: role === "admin" ? "admin-001" : role === "employer" ? "emp-tcs" : "seeker-rutuja",
         email,
-        role: role === "admin" ? ("employer" as const) : role,
-        fullName: email.split("@")[0] || "User",
+        role: role === "admin" ? ("admin" as const) : role,
+        fullName: email.split("@")[0] || (role === "admin" ? "System Admin" : "User"),
       };
 
       window.localStorage.setItem("realjob-user", JSON.stringify(userObj));
       dataStore.setCurrentUser(userObj);
 
       toast.success("Successfully logged in!");
-      navigate({ to: role === "employer" || role === "admin" ? "/employer" : "/dashboard" });
+      navigate({ to: role === "admin" ? "/admin" : role === "employer" ? "/employer" : "/home" });
     }, 1000);
   };
 

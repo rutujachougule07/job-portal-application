@@ -55,8 +55,8 @@ export type JobRecord = {
   qualification: string;
   experience: string;
   salary: string;
-  salaryMin?: number;
-  salaryMax?: number;
+  salaryMin?: number | undefined;
+  salaryMax?: number | undefined;
   salaryType: SalaryType;
   location: string;
   jobType: JobType;
@@ -108,6 +108,33 @@ export type JobAlertPreference = {
   createdAt: string;
 };
 
+export type InterviewRecord = {
+  id: string;
+  applicationId: string;
+  jobId: string;
+  candidateName: string;
+  candidateEmail: string;
+  jobTitle: string;
+  companyName: string;
+  interviewDate: string;
+  interviewTime: string;
+  type: "Online" | "Offline" | "Phone";
+  meetingLink?: string;
+  interviewer: string;
+  notes?: string;
+};
+
+export type UserResumeRecord = {
+  id: string;
+  userId: string;
+  fileName: string;
+  fileSize: string;
+  fileFormat: string;
+  uploadDate: string;
+  isDefault: boolean;
+  status: string;
+};
+
 // INITIAL SEED DATA FOR REAL JOBS (Initially 100% empty; populated when employers post real jobs)
 const INITIAL_JOBS: JobRecord[] = [];
 
@@ -120,6 +147,8 @@ class DataStoreManager {
     JOB_ALERTS: "realjob_db_job_alerts",
     PROFILES: "realjob_db_profiles",
     EMPLOYERS: "realjob_db_employers",
+    INTERVIEWS: "realjob_db_interviews",
+    RESUMES: "realjob_db_resumes",
   };
 
   constructor() {
@@ -451,6 +480,76 @@ class DataStoreManager {
       .slice(0, 6)
       .map((item) => item.job);
   }
+
+  // --- ALIASES & INTERVIEWS & RESUMES ---
+  public getApplicationsByJobSeeker(jobSeekerId: string): ApplicationRecord[] {
+    return this.getJobSeekerApplications(jobSeekerId);
+  }
+
+  public getInterviews(): InterviewRecord[] {
+    if (typeof window === "undefined") return [];
+    const raw = localStorage.getItem(this.STORAGE_KEYS.INTERVIEWS);
+    if (!raw) return [];
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return [];
+    }
+  }
+
+  public scheduleInterview(data: Omit<InterviewRecord, "id">): InterviewRecord {
+    const interviews = this.getInterviews();
+    const newInt: InterviewRecord = {
+      ...data,
+      id: `int-${Date.now()}`,
+    };
+    interviews.unshift(newInt);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(this.STORAGE_KEYS.INTERVIEWS, JSON.stringify(interviews));
+    }
+    return newInt;
+  }
+
+  public getUserResumes(userId: string): UserResumeRecord[] {
+    if (typeof window === "undefined") return [];
+    const raw = localStorage.getItem(this.STORAGE_KEYS.RESUMES);
+    if (!raw) return [];
+    try {
+      const all: UserResumeRecord[] = JSON.parse(raw);
+      return all.filter((r) => r.userId === userId);
+    } catch {
+      return [];
+    }
+  }
+
+  public addUserResume(data: Omit<UserResumeRecord, "id" | "uploadDate"> & { uploadDate?: string }): UserResumeRecord {
+    const raw = localStorage.getItem(this.STORAGE_KEYS.RESUMES);
+    const existing: UserResumeRecord[] = raw ? JSON.parse(raw) : [];
+    const newRes: UserResumeRecord = {
+      ...data,
+      id: `res-${Date.now()}`,
+      uploadDate: data.uploadDate || new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
+    };
+    existing.unshift(newRes);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(this.STORAGE_KEYS.RESUMES, JSON.stringify(existing));
+    }
+    return newRes;
+  }
+
+  public deleteUserResume(id: string): boolean {
+    const raw = localStorage.getItem(this.STORAGE_KEYS.RESUMES);
+    if (!raw) return true;
+    try {
+      let existing: UserResumeRecord[] = JSON.parse(raw);
+      existing = existing.filter((r) => r.id !== id);
+      if (typeof window !== "undefined") {
+        localStorage.setItem(this.STORAGE_KEYS.RESUMES, JSON.stringify(existing));
+      }
+    } catch {}
+    return true;
+  }
 }
 
 export const dataStore = new DataStoreManager();
+
