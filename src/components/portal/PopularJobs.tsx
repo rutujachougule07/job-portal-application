@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 
+import { dataStore } from "@/lib/data-store";
+
 export function PopularJobs() {
   const { t } = useI18n();
   const [activeTab, setActiveTab] = useState("all");
@@ -35,97 +37,28 @@ export function PopularJobs() {
     { id: "mkt", labelKey: "marketingTab" as const, icon: Briefcase },
   ];
 
-  const jobsList = [
-    {
-      id: "senior-product-designer",
-      title: "Senior Product Designer",
-      company: "Aurora Fintech",
-      location: "Mumbai, Maharashtra",
-      salary: "₹18–24 LPA",
-      posted: "2h ago",
-      type: "Full-time",
-      exp: "4–6 years",
-      mode: "On-site",
-      featured: true,
-      badgeColor: "bg-[#1F2937]",
-      btnColor: "bg-[#1F2937] hover:bg-[#D4AF37] hover:text-[#1F2937]",
-      waveGlow: "from-[#1F2937]/15 via-[#1F2937]/5",
-      logoSvg: (
-        <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[#1F2937] text-white shadow-md">
-          <div className="flex flex-col items-center leading-none">
-            <span className="font-serif text-lg font-bold text-[#D4AF37]">A</span>
-            <span className="text-[7px] font-extrabold tracking-tighter text-white uppercase">AURORA</span>
-          </div>
-        </div>
-      ),
-    },
-    {
-      id: "software-engineer",
-      title: "Software Engineer II",
-      company: "Nexa Systems",
-      location: "Pune · Hybrid",
-      salary: "₹14–20 LPA",
-      posted: "5h ago",
-      type: "Full-time",
-      exp: "3–5 years",
-      mode: "Hybrid",
-      badgeColor: "bg-[#111827]",
-      btnColor: "bg-[#111827] hover:bg-[#D4AF37] hover:text-[#111827]",
-      waveGlow: "from-[#374151]/15 via-[#374151]/5",
-      logoSvg: (
-        <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[#111827] text-white shadow-md">
-          <div className="flex flex-col items-center leading-none">
-            <span className="font-serif text-lg font-bold text-white">N</span>
-            <span className="text-[7px] font-extrabold tracking-tighter text-[#D4AF37] uppercase">NEXA</span>
-          </div>
-        </div>
-      ),
-    },
-    {
-      id: "healthcare-manager",
-      title: "Healthcare Operations Manager",
-      company: "Aarogya Care",
-      location: "Bengaluru, Karnataka",
-      salary: "₹10–14 LPA",
-      posted: "1d ago",
-      type: "Full-time",
-      exp: "5+ years",
-      mode: "On-site",
-      badgeColor: "bg-[#164E3D]",
-      btnColor: "bg-[#164E3D] hover:bg-[#D4AF37] hover:text-[#1F2937]",
-      waveGlow: "from-[#164E3D]/15 via-[#164E3D]/5",
-      logoSvg: (
-        <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[#164E3D] text-white shadow-md">
-          <div className="flex flex-col items-center leading-none">
-            <HeartPulse className="size-5 text-[#A3E635]" />
-            <span className="text-[6.5px] font-bold tracking-tighter text-white uppercase mt-0.5">Aarogya</span>
-          </div>
-        </div>
-      ),
-    },
-    {
-      id: "relationship-manager",
-      title: "Relationship Manager",
-      company: "Sampada Bank",
-      location: "Ahmedabad, Gujarat",
-      salary: "₹7–10 LPA",
-      posted: "1d ago",
-      type: "Full-time",
-      exp: "2–4 years",
-      mode: "On-site",
-      badgeColor: "bg-[#7A4B1B]",
-      btnColor: "bg-[#7A4B1B] hover:bg-[#D4AF37] hover:text-[#1F2937]",
-      waveGlow: "from-[#7A4B1B]/15 via-[#7A4B1B]/5",
-      logoSvg: (
-        <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[#7A4B1B] text-white shadow-md">
-          <div className="flex flex-col items-center leading-none">
-            <span className="font-serif text-lg font-bold text-[#F5E3A0]">S</span>
-            <span className="text-[6px] font-bold tracking-tighter text-white uppercase">SAMPADA</span>
-          </div>
-        </div>
-      ),
-    },
-  ];
+  const allJobsFromStore = dataStore.getAllJobs();
+
+  const jobsList = allJobsFromStore.map((j) => ({
+    id: j.id,
+    title: j.title,
+    company: j.company,
+    location: j.location,
+    salary: j.salary,
+    posted: j.postedAgo || "Just now",
+    type: j.jobType || "Full Time",
+    exp: j.experience || "Any",
+    mode: j.workMode || "On-site",
+    featured: true,
+    badgeColor: "bg-[#063B78]",
+    btnColor: "bg-[#063B78] hover:bg-[#082F63] text-white",
+    waveGlow: "from-[#063B78]/15 via-[#063B78]/5",
+    logoSvg: (
+      <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[#063B78] text-white shadow-md font-black text-[#FFC400] text-sm">
+        {j.initials || (j.company ? j.company.substring(0, 2).toUpperCase() : "RJ")}
+      </div>
+    ),
+  }));
 
   return (
     <section className="relative bg-[#F8F7F4] py-20 sm:py-28 overflow-hidden">
@@ -204,8 +137,15 @@ export function PopularJobs() {
         </div>
 
         {/* 4 Job Cards Grid (2x2) */}
-        <div className="mt-8 grid gap-6 lg:grid-cols-2">
-          {jobsList.map((job) => {
+        {jobsList.length === 0 ? (
+          <div className="mt-8 p-12 text-center bg-white rounded-3xl border border-[#E5E2DA] shadow-sm">
+            <Briefcase className="size-12 mx-auto text-[#063B78] mb-3 opacity-60" />
+            <h3 className="text-lg font-black text-[#10233F]">अद्याप कोणतीही नोकरी जोडलेली नाही (No Jobs Posted Yet)</h3>
+            <p className="text-xs font-bold text-[#5B6B7F] mt-1">ॲडमिन कंट्रोल पॅनेलवरून नवीन नोकऱ्या जोडल्यावर त्या येथे थेट दिसतील.</p>
+          </div>
+        ) : (
+          <div className="mt-8 grid gap-6 lg:grid-cols-2">
+            {jobsList.map((job) => {
             const isSaved = !!savedJobs[job.id];
             return (
               <div
@@ -282,7 +222,7 @@ export function PopularJobs() {
                 <div className="relative z-10 mt-6 flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-[#F2EFEC]">
                   <div className="flex flex-wrap gap-2">
                     <span className={`rounded-full ${job.badgeColor} px-3.5 py-1 text-xs font-bold text-white shadow-sm`}>
-                      {job.type === "Full-time" ? t("fullTime") : job.type}
+                      {(job.type as string) === "Full Time" || (job.type as string) === "Full-time" ? t("fullTime") : job.type}
                     </span>
                     <span className="rounded-full bg-[#F2EFEC] border border-[#E5E2DA] px-3.5 py-1 text-xs font-bold text-[#374151]">
                       {job.exp}
@@ -305,6 +245,7 @@ export function PopularJobs() {
             );
           })}
         </div>
+        )}
       </div>
     </section>
   );

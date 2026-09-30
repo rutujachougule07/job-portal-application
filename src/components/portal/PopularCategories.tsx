@@ -1,7 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import {
   ArrowRight,
-  Building,
   Building2,
   Compass,
   Factory,
@@ -12,48 +11,52 @@ import {
   Hotel,
   Landmark,
   Laptop,
-  PackageCheck,
   Palette,
   Radio,
   Scale,
-  ShieldCheck,
   ShoppingBag,
   Sprout,
   Stethoscope,
   TrendingUp,
   Truck,
-  UserCheck,
   UserPlus,
-  Users,
   Wrench,
-  Zap,
 } from "lucide-react";
 import { useI18n, getCategoryTitle, getCategoryDesc } from "@/lib/i18n";
+import { dataStore } from "@/lib/data-store";
 
 export function PopularCategories() {
   const { t, n, lang } = useI18n();
 
+  const allJobs = dataStore.getAllJobs();
+
+  const getCategoryJobCount = (catId: string) => {
+    return allJobs.filter((j) => {
+      const cat = (j.category || "").toLowerCase();
+      const title = (j.title || "").toLowerCase();
+      const query = catId.toLowerCase();
+      if (cat.includes(query)) return true;
+      if (catId === "construction") return cat.includes("construction") || cat.includes("building") || title.includes("construction") || title.includes("civil");
+      if (catId === "it-software") return cat.includes("it") || cat.includes("software") || title.includes("developer") || title.includes("software");
+      if (catId === "engineering") return cat.includes("engineering") || cat.includes("technical") || title.includes("engineer");
+      if (catId === "healthcare-medical") return cat.includes("health") || cat.includes("medical") || cat.includes("nursing");
+      if (catId === "finance-accounting") return cat.includes("finance") || cat.includes("accounting") || cat.includes("account");
+      if (catId === "sales-marketing") return cat.includes("sales") || cat.includes("marketing");
+      if (catId === "education") return cat.includes("education") || cat.includes("teaching");
+      if (catId === "manufacturing") return cat.includes("manufacturing") || cat.includes("industrial") || cat.includes("factory") || title.includes("operator") || title.includes("mfg");
+      return false;
+    }).length;
+  };
+
   const realJobCategories = [
-    { id: "construction", jobsCount: "1,950", icon: HardHat },
-    { id: "it-software", jobsCount: "3,420", icon: Laptop },
-    { id: "engineering", jobsCount: "2,840", icon: Wrench },
-    { id: "healthcare-medical", jobsCount: "1,680", icon: Stethoscope },
-    { id: "finance-accounting", jobsCount: "2,110", icon: Landmark },
-    { id: "sales-marketing", jobsCount: "4,150", icon: TrendingUp },
-    { id: "education", jobsCount: "1,450", icon: GraduationCap },
-    { id: "manufacturing", jobsCount: "3,890", icon: Factory },
-    { id: "hr-recruitment", jobsCount: "1,220", icon: UserPlus },
-    { id: "hospitality-tourism", jobsCount: "1,530", icon: Hotel },
-    { id: "logistics-transport", jobsCount: "2,760", icon: Truck },
-    { id: "government-public", jobsCount: "980", icon: Building2 },
-    { id: "legal", jobsCount: "640", icon: Scale },
-    { id: "architecture-design", jobsCount: "890", icon: Compass },
-    { id: "retail-ecommerce", jobsCount: "2,350", icon: ShoppingBag },
-    { id: "customer-service-bpo", jobsCount: "3,100", icon: Headphones },
-    { id: "design-creative", jobsCount: "1,140", icon: Palette },
-    { id: "media-communication", jobsCount: "780", icon: Radio },
-    { id: "agriculture-farming", jobsCount: "1,050", icon: Sprout },
-    { id: "science-research", jobsCount: "740", icon: FlaskConical },
+    { id: "construction", icon: HardHat },
+    { id: "it-software", icon: Laptop },
+    { id: "engineering", icon: Wrench },
+    { id: "healthcare-medical", icon: Stethoscope },
+    { id: "finance-accounting", icon: Landmark },
+    { id: "sales-marketing", icon: TrendingUp },
+    { id: "education", icon: GraduationCap },
+    { id: "manufacturing", icon: Factory },
   ];
 
   return (
@@ -80,7 +83,7 @@ export function PopularCategories() {
             to="/categories"
             className="inline-flex items-center gap-2 rounded-lg bg-[#063B78] px-6 py-3 text-sm font-bold text-white shadow-md transition-all duration-200 hover:bg-[#082F63] hover:shadow-lg"
           >
-            <span>{t("viewAll")} ({n(realJobCategories.length)})</span>
+            <span>{t("viewAll")} ({n(allJobs.length)})</span>
             <ArrowRight className="size-4 text-[#FFC400]" />
           </Link>
         </div>
@@ -104,7 +107,7 @@ export function PopularCategories() {
                       <IconComponent className="size-6" />
                     </div>
                     <span className="text-xs font-black bg-[#EBF1F8] text-[#063B78] px-2.5 py-1 rounded-full group-hover:bg-[#063B78] group-hover:text-white transition-colors">
-                      {n(cat.jobsCount)} {t("jobsCountText")}
+                      {n(getCategoryJobCount(cat.id))} {t("jobsCountText")}
                     </span>
                   </div>
 

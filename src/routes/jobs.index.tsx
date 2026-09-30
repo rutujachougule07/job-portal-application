@@ -272,19 +272,27 @@ export function JobsListingPage() {
         matchesCategory = true;
       } else {
         const normalizedFilter = categoryFilter.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-');
+        const jobCatNorm = (job.category || "").toLowerCase().replace(/ & /g, '-').replace(/ /g, '-');
         
-        // Handle matching against main category or subcategories
         const subCats = subCategoryMap[normalizedFilter] || [];
-        const isMainCategoryMatch = job.category?.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-') === normalizedFilter;
-        const isSubCategoryMatch = subCats.some(sub => sub.id === job.category);
+        const isMainCategoryMatch = jobCatNorm.includes(normalizedFilter) || normalizedFilter.includes(jobCatNorm);
+        const isSubCategoryMatch = subCats.some(sub => 
+          job.title.toLowerCase().includes(sub.id.toLowerCase()) || 
+          job.category.toLowerCase().includes(sub.id.toLowerCase())
+        );
 
-        if (isMainCategoryMatch || isSubCategoryMatch) {
-          if (subCategoryFilter === "all") {
-            matchesCategory = true;
-          } else {
-            matchesCategory = job.category === subCategoryFilter;
-          }
-        }
+        matchesCategory = isMainCategoryMatch || isSubCategoryMatch;
+      }
+
+      if (matchesCategory && subCategoryFilter !== "all" && subCategoryFilter) {
+        const subClean = subCategoryFilter.toLowerCase();
+        const titleClean = job.title.toLowerCase();
+        const catClean = (job.category || "").toLowerCase();
+
+        matchesCategory = 
+          titleClean.includes(subClean) || 
+          catClean.includes(subClean) ||
+          subClean.includes(titleClean);
       }
 
       const matchesLocation =

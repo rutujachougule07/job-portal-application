@@ -172,6 +172,17 @@ class DataStoreManager {
     }
   }
 
+  public getRegisteredUsers(): Array<{ id: string; email: string; mobile?: string; role: UserRole; fullName: string }> {
+    if (typeof window === "undefined") return [];
+    const raw = localStorage.getItem("realjob_db_registered_users");
+    if (!raw) return [];
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return [];
+    }
+  }
+
   // --- USER AUTHENTICATION & CURRENT SESSION ---
   public getCurrentUser(): { email: string; role: UserRole; fullName?: string; id?: string } | null {
     if (typeof window === "undefined") return null;
