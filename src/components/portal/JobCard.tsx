@@ -27,6 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/lib/i18n";
 import { dataStore } from "@/lib/data-store";
 import { toast } from "sonner";
+import { getFallbackConfig } from "@/lib/applicationConfig";
 
 export type Job = {
   id: string;
@@ -273,62 +274,6 @@ export function JobCard({
 
   const [fieldValues, setFieldValues] = useState<Record<string, any>>({});
   const [customAnswers, setCustomAnswers] = useState<Record<string, any>>({});
-
-  const getFallbackConfig = (category: string) => {
-    const cat = (category || "").toLowerCase();
-    const config = {
-      fields: {
-        fullName: "required" as any,
-        mobile: "required" as any,
-        currentLocation: "required" as any,
-        experience: "optional" as any,
-      } as Record<string, string>,
-      customQuestions: []
-    };
-
-    if (cat.includes("it") || cat.includes("software") || cat.includes("tech")) {
-      config.fields = {
-        ...config.fields,
-        email: "required",
-        education: "required",
-        skills: "required",
-        projects: "required",
-        github: "required",
-        portfolio: "optional",
-        resume: "required",
-        expectedSalary: "optional",
-        noticePeriod: "required",
-      };
-    } else if (cat.includes("health") || cat.includes("medic") || cat.includes("nurs")) {
-      config.fields = {
-        ...config.fields,
-        education: "required",
-        certifications: "required",
-        experience: "required",
-        resume: "required",
-        availability: "required",
-      };
-    } else if (cat.includes("construct") || cat.includes("mason")) {
-      config.fields = {
-        ...config.fields,
-        skills: "required",
-        relevantExperience: "optional",
-        preferredLocation: "optional",
-        availability: "required",
-        expectedSalary: "optional",
-        willingToRelocate: "optional",
-        resume: "optional",
-      };
-    } else {
-      // Default general fields
-      config.fields = {
-        ...config.fields,
-        resume: "optional",
-        email: "optional",
-      };
-    }
-    return config;
-  };
 
   const appConfig = (job as any).applicationConfig || getFallbackConfig(job.category);
 
@@ -931,11 +876,25 @@ export function JobCard({
                         </select>
                       ) : fieldKey === "availability" || fieldKey === "noticePeriod" ? (
                         <input type="date" required={isReq} value={fieldValues[fieldKey] || ""} onChange={e => handleFieldChange(fieldKey, e.target.value)} className="w-full h-12 rounded-xl border border-[#DCE5F0] bg-white px-4 text-sm font-semibold text-[#10233F] focus:outline-none focus:ring-2 focus:ring-[#063B78]" />
-                      ) : fieldKey === "willingToRelocate" ? (
+                      ) : fieldKey === "willingToRelocate" || fieldKey === "fieldSalesExperience" || fieldKey === "travelWillingness" || fieldKey === "onlineTeachingExperience" ? (
                          <select required={isReq} value={fieldValues[fieldKey] || ""} onChange={e => handleFieldChange(fieldKey, e.target.value)} className="w-full h-12 rounded-xl border border-[#DCE5F0] bg-white px-4 text-sm font-semibold text-[#10233F] focus:outline-none focus:ring-2 focus:ring-[#063B78]">
                            <option value="">Select</option>
                            <option value="Yes">Yes</option>
                            <option value="No">No</option>
+                         </select>
+                      ) : fieldKey === "preferredTeachingMode" ? (
+                         <select required={isReq} value={fieldValues[fieldKey] || ""} onChange={e => handleFieldChange(fieldKey, e.target.value)} className="w-full h-12 rounded-xl border border-[#DCE5F0] bg-white px-4 text-sm font-semibold text-[#10233F] focus:outline-none focus:ring-2 focus:ring-[#063B78]">
+                           <option value="">Select Mode</option>
+                           <option value="Online">Online</option>
+                           <option value="Offline">Offline</option>
+                           <option value="Hybrid">Hybrid</option>
+                         </select>
+                      ) : fieldKey === "workModePreference" ? (
+                         <select required={isReq} value={fieldValues[fieldKey] || ""} onChange={e => handleFieldChange(fieldKey, e.target.value)} className="w-full h-12 rounded-xl border border-[#DCE5F0] bg-white px-4 text-sm font-semibold text-[#10233F] focus:outline-none focus:ring-2 focus:ring-[#063B78]">
+                           <option value="">Select Mode</option>
+                           <option value="Remote">Remote</option>
+                           <option value="Hybrid">Hybrid</option>
+                           <option value="Office">Office</option>
                          </select>
                       ) : (
                         <input
@@ -943,7 +902,7 @@ export function JobCard({
                           required={isReq}
                           value={fieldValues[fieldKey] || ""}
                           onChange={(e) => handleFieldChange(fieldKey, e.target.value)}
-                          className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold text-[#10233F]"
+                          className="w-full h-12 rounded-xl border border-[#DCE5F0] bg-white px-4 text-sm font-semibold text-[#10233F] focus:outline-none focus:ring-2 focus:ring-[#063B78]"
                         />
                       )}
                     </div>
