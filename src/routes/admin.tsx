@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   ShieldCheck,
@@ -60,6 +60,7 @@ export function AdminDashboardPage() {
   const [jobSearch, setJobSearch] = useState("");
   const [appSearch, setAppSearch] = useState("");
   const [filterJobId, setFilterJobId] = useState<string | null>(null);
+  const [expandedApp, setExpandedApp] = useState<string | null>(null);
 
   // User Accounts for Admin View (Live Dynamic Data)
   const [registeredUsers, setRegisteredUsers] = useState<
@@ -840,7 +841,8 @@ export function AdminDashboardPage() {
                     <th className="p-3.5">संपर्क पर्याय (Direct Contact)</th>
                     <th className="p-3.5">अर्जाची तारीख (Applied Date)</th>
                     <th className="p-3.5">सध्याची स्थिती (Status)</th>
-                    <th className="p-3.5 text-right">संपर्क क्र. (Mobile)</th>
+                    <th className="p-3.5">संपर्क क्र. (Mobile)</th>
+                    <th className="p-3.5 text-right">तपशील (Details)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#DCE5F0] font-semibold text-[#10233F]">
@@ -853,56 +855,97 @@ export function AdminDashboardPage() {
                         a.candidateMobile.toLowerCase().includes(appSearch.toLowerCase())
                     )
                     .map((a) => (
-                      <tr key={a.id} className="hover:bg-[#F5F8FC]">
-                        <td className="p-3.5 font-black text-[#063B78]">
-                          <div>{a.candidateName}</div>
-                          <div className="text-[11px] text-[#5B6B7F] font-normal">{a.candidateEmail}</div>
-                        </td>
-                        <td className="p-3.5">
-                          <div className="font-bold text-[#10233F]">{a.jobTitle}</div>
-                          <div className="text-[11px] text-[#125BB5]">{a.companyName || "Company"} • {a.location}</div>
-                        </td>
-                        <td className="p-3.5">
-                          <div className="flex items-center gap-2">
-                            <a
-                              href={`tel:${a.candidateMobile}`}
-                              className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-bold text-[10px] hover:bg-emerald-700 transition-all flex items-center gap-1"
+                      <Fragment key={a.id}>
+                        <tr className="hover:bg-[#F5F8FC]">
+                          <td className="p-3.5 font-black text-[#063B78]">
+                            <div>{a.candidateName}</div>
+                            <div className="text-[11px] text-[#5B6B7F] font-normal">{a.candidateEmail}</div>
+                          </td>
+                          <td className="p-3.5">
+                            <div className="font-bold text-[#10233F]">{a.jobTitle}</div>
+                            <div className="text-[11px] text-[#125BB5]">{a.companyName || "Company"} • {a.location}</div>
+                          </td>
+                          <td className="p-3.5">
+                            <div className="flex items-center gap-2">
+                              <a
+                                href={`tel:${a.candidateMobile}`}
+                                className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-bold text-[10px] hover:bg-emerald-700 transition-all flex items-center gap-1"
+                              >
+                                📞 कॉल करा
+                              </a>
+                              <a
+                                href={`https://wa.me/${a.candidateMobile.replace(/\D/g, "")}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="px-2.5 py-1 rounded-lg bg-green-600 text-white font-bold text-[10px] hover:bg-green-700 transition-all flex items-center gap-1"
+                              >
+                                💬 WhatsApp
+                              </a>
+                            </div>
+                          </td>
+                          <td className="p-3.5 text-[#5B6B7F] font-bold">{a.appliedDate}</td>
+                          <td className="p-3.5">
+                            <select
+                              value={a.status}
+                              onChange={(e) => handleUpdateAppStatus(a.id, e.target.value as any)}
+                              className="h-8 px-2 rounded-lg border border-[#DCE5F0] text-xs font-black focus:outline-none focus:border-[#063B78]"
                             >
-                              📞 कॉल करा
-                            </a>
-                            <a
-                              href={`https://wa.me/${a.candidateMobile.replace(/\D/g, "")}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="px-2.5 py-1 rounded-lg bg-green-600 text-white font-bold text-[10px] hover:bg-green-700 transition-all flex items-center gap-1"
+                              <option value="Applied">📝 Applied</option>
+                              <option value="Viewed">👀 Viewed</option>
+                              <option value="Shortlisted">⭐ Shortlisted</option>
+                              <option value="Interview">📅 Interview Scheduled</option>
+                              <option value="Selected">✅ Selected / Hired</option>
+                              <option value="Rejected">❌ Rejected</option>
+                            </select>
+                          </td>
+                          <td className="p-3.5 font-bold text-[#063B78]">
+                            {a.candidateMobile}
+                          </td>
+                          <td className="p-3.5 text-right">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setExpandedApp(expandedApp === a.id ? null : a.id)}
+                              className="text-[10px] h-7 px-3 border-[#063B78] text-[#063B78] hover:bg-[#063B78] hover:text-white"
                             >
-                              💬 WhatsApp
-                            </a>
-                          </div>
-                        </td>
-                        <td className="p-3.5 text-[#5B6B7F] font-bold">{a.appliedDate}</td>
-                        <td className="p-3.5">
-                          <select
-                            value={a.status}
-                            onChange={(e) => handleUpdateAppStatus(a.id, e.target.value as any)}
-                            className="h-8 px-2 rounded-lg border border-[#DCE5F0] text-xs font-black focus:outline-none focus:border-[#063B78]"
-                          >
-                            <option value="Applied">📝 Applied</option>
-                            <option value="Viewed">👀 Viewed</option>
-                            <option value="Shortlisted">⭐ Shortlisted</option>
-                            <option value="Interview">📅 Interview Scheduled</option>
-                            <option value="Selected">✅ Selected / Hired</option>
-                            <option value="Rejected">❌ Rejected</option>
-                          </select>
-                        </td>
-                        <td className="p-3.5 text-right font-bold text-[#063B78]">
-                          {a.candidateMobile}
-                        </td>
-                      </tr>
+                              {expandedApp === a.id ? "बंद करा" : "सविस्तर पहा"}
+                            </Button>
+                          </td>
+                        </tr>
+                        {expandedApp === a.id && (
+                          <tr className="bg-[#F8FAFC]">
+                            <td colSpan={7} className="p-4 border-t border-[#DCE5F0]">
+                              <div className="bg-white p-5 rounded-xl border border-[#E2E8F0] shadow-sm">
+                                 <h4 className="font-bold text-[#10233F] mb-4 border-b pb-2 flex items-center gap-2">
+                                   <FileText className="size-4 text-[#063B78]" />
+                                   उमेदवाराची सविस्तर माहिती (Candidate Details)
+                                 </h4>
+                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                                   {a.fieldValues && Object.entries(a.fieldValues).map(([key, value]) => (
+                                      <div key={key} className="text-xs bg-[#F5F8FC] p-3 rounded-lg border border-[#DCE5F0]">
+                                        <div className="font-bold text-[#5B6B7F] capitalize mb-1">{key.replace(/([A-Z])/g, ' $1').trim()}</div> 
+                                        <div className="font-black text-[#10233F]">{value as string}</div>
+                                      </div>
+                                   ))}
+                                   {a.customAnswers && Object.entries(a.customAnswers).map(([key, value]) => (
+                                      <div key={key} className="text-xs bg-[#F5F8FC] p-3 rounded-lg border border-[#DCE5F0]">
+                                        <div className="font-bold text-[#5B6B7F] capitalize mb-1">{key}</div> 
+                                        <div className="font-black text-[#10233F]">{value as string}</div>
+                                      </div>
+                                   ))}
+                                   {(!a.fieldValues && !a.customAnswers) && (
+                                     <div className="text-sm font-semibold text-[#5B6B7F]">अधिक माहिती उपलब्ध नाही.</div>
+                                   )}
+                                 </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
                     ))}
                   {applications.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="p-8 text-center text-xs font-bold text-[#5B6B7F] bg-[#F8FAFF]">
+                      <td colSpan={7} className="p-8 text-center text-xs font-bold text-[#5B6B7F] bg-[#F8FAFF]">
                         अद्याप कोणत्याही कामगाराने अर्ज केलेला नाही (No job applications received yet)
                       </td>
                     </tr>
