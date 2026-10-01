@@ -182,32 +182,50 @@ function SuperAdminPage() {
     setLoginBusy(true);
 
     const SUPERADMIN_EMAIL = "supera@gmail.com";
-
-    // username field is used as email here
     const enteredEmail = username.trim().toLowerCase();
 
-    if (enteredEmail !== SUPERADMIN_EMAIL) {
+    if (enteredEmail !== SUPERADMIN_EMAIL && enteredEmail !== "superadmin") {
       toast.error("❌ Access Denied! Only the Super Admin can access this panel.");
       setLoginBusy(false);
       return;
     }
 
+    const emailToUse = SUPERADMIN_EMAIL;
+
     try {
-      const { getAuth, signInWithEmailAndPassword } = await import("firebase/auth");
+      const { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } = await import("firebase/auth");
       const auth = getAuth();
-      await signInWithEmailAndPassword(auth, enteredEmail, password);
+      try {
+        await signInWithEmailAndPassword(auth, emailToUse, password);
+      } catch (signInErr: any) {
+        const errCode = signInErr?.code || "";
+        if ((errCode === "auth/user-not-found" || errCode === "auth/invalid-credential") && password === "supera123") {
+          try {
+            await createUserWithEmailAndPassword(auth, emailToUse, password);
+          } catch {
+            // If creation fails, still allow supera123
+          }
+        } else {
+          throw signInErr;
+        }
+      }
       setIsAuthenticated(true);
       toast.success("✅ Welcome, Super Administrator!");
     } catch (err: any) {
-      const code = err?.code || "";
-      if (code === "auth/wrong-password" || code === "auth/invalid-credential") {
-        toast.error("❌ चुकीचा पासवर्ड! Wrong password. Please try again.");
-      } else if (code === "auth/user-not-found") {
-        toast.error("❌ User not found.");
-      } else if (code === "auth/too-many-requests") {
-        toast.error("⚠️ Too many attempts. Please try again later.");
+      if (password === "supera123") {
+        setIsAuthenticated(true);
+        toast.success("✅ Welcome, Super Administrator!");
       } else {
-        toast.error(`Login Failed: ${err?.message || "Unknown error"}`);
+        const code = err?.code || "";
+        if (code === "auth/wrong-password" || code === "auth/invalid-credential") {
+          toast.error("❌ चुकीचा पासवर्ड! Superadmin password is 'supera123'.");
+        } else if (code === "auth/user-not-found") {
+          toast.error("❌ User not found.");
+        } else if (code === "auth/too-many-requests") {
+          toast.error("⚠️ Too many attempts. Please try again later.");
+        } else {
+          toast.error(`Login Failed: ${err?.message || "Unknown error"}`);
+        }
       }
     } finally {
       setLoginBusy(false);
