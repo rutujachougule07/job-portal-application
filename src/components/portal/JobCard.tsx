@@ -868,7 +868,7 @@ export function JobCard({
       {/* Interactive Apply Modal */}
       {showApplyModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#082F63]/70 backdrop-blur-md p-4 animate-in fade-in duration-200">
-          <div className="relative w-full max-w-3xl rounded-3xl border border-[#DCE5F0] bg-white p-6 shadow-2xl">
+          <div className="relative w-full max-w-4xl rounded-3xl border border-[#DCE5F0] bg-white p-6 shadow-2xl">
             <button
               onClick={() => setShowApplyModal(false)}
               className="absolute right-4 top-4 grid size-8 place-items-center rounded-full bg-[#F5F8FC] text-[#5B6B7F] hover:text-[#10233F]"
@@ -887,7 +887,7 @@ export function JobCard({
                 </p>
               </div>
             ) : (
-              <form onSubmit={submitApplication} className="space-y-4 max-h-[70vh] overflow-y-auto px-2">
+              <form onSubmit={submitApplication} className="space-y-4 px-2">
                 <div className="flex items-center gap-3 sticky top-0 bg-white z-10 pb-2">
                   <span className="grid size-12 place-items-center rounded-xl bg-[#063B78] font-black text-white text-lg">
                     {job.initials}
@@ -972,7 +972,7 @@ export function JobCard({
                 ))}
                 </div>
 
-                <Button type="submit" className="btn-yellow w-full h-11 font-black text-xs shadow-md rounded-xl sticky bottom-0">
+                <Button type="submit" className="btn-yellow w-full h-12 mt-2 font-black text-sm shadow-md rounded-xl">
                   {lang === "mr" ? "नोकरीसाठी अर्ज सादर करा" : "Submit Application"} <Send className="ml-2 size-4" />
                 </Button>
               </form>

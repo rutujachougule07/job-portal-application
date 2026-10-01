@@ -355,7 +355,7 @@ export function JobDetailPage() {
         {/* Apply Modal */}
         {showApplyModal && (
           <div className="fixed inset-0 z-50 bg-[#082F63]/60 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white w-full max-w-3xl rounded-2xl p-6 shadow-2xl relative">
+            <div className="bg-white w-full max-w-4xl rounded-2xl p-6 shadow-2xl relative">
               <button onClick={() => setShowApplyModal(false)} className="absolute right-4 top-4 text-[#5B6B7F]">
                 <X className="size-5" />
               </button>
@@ -369,7 +369,7 @@ export function JobDetailPage() {
                   </p>
                 </div>
               ) : (
-                <form onSubmit={handleApplySubmit} className="space-y-4 max-h-[70vh] overflow-y-auto px-2">
+                <form onSubmit={handleApplySubmit} className="space-y-4 px-2">
                   <h3 className="text-lg font-black text-[#10233F] sticky top-0 bg-white z-10 pb-1">{job.title}</h3>
                   <p className="text-xs font-semibold text-[#5B6B7F] pb-2">{job.company} • {job.location}</p>
 
@@ -436,7 +436,7 @@ export function JobDetailPage() {
                   ))}
                   </div>
 
-                  <Button type="submit" className="w-full btn-yellow font-black text-xs py-3 h-11 sticky bottom-0">
+                  <Button type="submit" className="w-full btn-yellow font-black text-sm py-3 h-12 mt-2">
                     {t("submitApplication")}
                   </Button>
                 </form>
