@@ -182,20 +182,49 @@ class DataStoreManager {
       localStorage.setItem(this.STORAGE_KEYS.JOB_ALERTS, JSON.stringify([]));
     }
     
-    // Background sync from Firebase to LocalStorage
+    // Bidirectional sync with Firebase
     fbSync(async () => {
       const jobsSnap = await getDocs(collection(db, "jobs"));
+      const appsSnap = await getDocs(collection(db, "applications"));
+
       if (!jobsSnap.empty) {
+        // Firebase has jobs → use Firebase as source of truth
         const fbJobs = jobsSnap.docs.map(d => d.data());
         localStorage.setItem(this.STORAGE_KEYS.JOBS, JSON.stringify(fbJobs));
+      } else {
+        // Firebase empty → push local jobs to Firebase
+        const localJobs: JobRecord[] = JSON.parse(localStorage.getItem(this.STORAGE_KEYS.JOBS) || "[]");
+        for (const job of localJobs) {
+          await setDoc(doc(db, "jobs", job.id), job);
+        }
       }
-      const appsSnap = await getDocs(collection(db, "applications"));
+
       if (!appsSnap.empty) {
         const fbApps = appsSnap.docs.map(d => d.data());
         localStorage.setItem(this.STORAGE_KEYS.APPLICATIONS, JSON.stringify(fbApps));
+      } else {
+        const localApps: ApplicationRecord[] = JSON.parse(localStorage.getItem(this.STORAGE_KEYS.APPLICATIONS) || "[]");
+        for (const app of localApps) {
+          await setDoc(doc(db, "applications", app.id), app);
+        }
       }
     });
   }
+
+  /** Force-push all local data to Firebase (use from Admin panel) */
+  public async pushAllToFirebase(): Promise<{ jobs: number; applications: number }> {
+    const jobs: JobRecord[] = JSON.parse(localStorage.getItem(this.STORAGE_KEYS.JOBS) || "[]");
+    const apps: ApplicationRecord[] = JSON.parse(localStorage.getItem(this.STORAGE_KEYS.APPLICATIONS) || "[]");
+
+    for (const job of jobs) {
+      await setDoc(doc(db, "jobs", job.id), job);
+    }
+    for (const app of apps) {
+      await setDoc(doc(db, "applications", app.id), app);
+    }
+    return { jobs: jobs.length, applications: apps.length };
+  }
+
 
   public getRegisteredUsers(): Array<{ id: string; email: string; mobile?: string; role: UserRole; fullName: string }> {
     if (typeof window === "undefined") return [];

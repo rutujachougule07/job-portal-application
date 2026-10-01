@@ -11,7 +11,8 @@ import {
   Edit,
   Search,
   BarChart3,
-  FileText
+  FileText,
+  UploadCloud
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,6 +62,19 @@ export function AdminDashboardPage() {
   const [appSearch, setAppSearch] = useState("");
   const [filterJobId, setFilterJobId] = useState<string | null>(null);
   const [expandedApp, setExpandedApp] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
+
+  const handleFirebaseSync = async () => {
+    setSyncing(true);
+    try {
+      const result = await dataStore.pushAllToFirebase();
+      toast.success(`✅ Firebase Sync Done! Jobs: ${result.jobs}, Applications: ${result.applications}`);
+    } catch (e: any) {
+      toast.error(`Firebase Sync Failed: ${e?.message || e}`);
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   // User Accounts for Admin View (Live Dynamic Data)
   const [registeredUsers, setRegisteredUsers] = useState<
@@ -567,6 +581,14 @@ export function AdminDashboardPage() {
           </div>
 
           <div className="flex flex-wrap gap-2">
+            <Button
+              onClick={handleFirebaseSync}
+              disabled={syncing}
+              className="bg-orange-500 hover:bg-orange-600 text-white text-xs font-black px-4 py-2 disabled:opacity-60"
+            >
+              <UploadCloud className="size-4 mr-1" />
+              {syncing ? "Syncing..." : "🔥 Firebase Sync"}
+            </Button>
             <Button
               onClick={handleAddNewJobClick}
               className="btn-yellow text-xs font-black px-4 py-2"
