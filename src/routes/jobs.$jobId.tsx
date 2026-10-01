@@ -355,7 +355,7 @@ export function JobDetailPage() {
         {/* Apply Modal */}
         {showApplyModal && (
           <div className="fixed inset-0 z-50 bg-[#082F63]/60 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl relative">
+            <div className="bg-white w-full max-w-3xl rounded-2xl p-6 shadow-2xl relative">
               <button onClick={() => setShowApplyModal(false)} className="absolute right-4 top-4 text-[#5B6B7F]">
                 <X className="size-5" />
               </button>
@@ -370,9 +370,10 @@ export function JobDetailPage() {
                 </div>
               ) : (
                 <form onSubmit={handleApplySubmit} className="space-y-4 max-h-[70vh] overflow-y-auto px-2">
-                  <h3 className="text-lg font-black text-[#10233F] sticky top-0 bg-white z-10 pb-2">{job.title}</h3>
-                  <p className="text-xs font-semibold text-[#5B6B7F]">{job.company} • {job.location}</p>
+                  <h3 className="text-lg font-black text-[#10233F] sticky top-0 bg-white z-10 pb-1">{job.title}</h3>
+                  <p className="text-xs font-semibold text-[#5B6B7F] pb-2">{job.company} • {job.location}</p>
 
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {Object.keys(appConfig.fields).map(fieldKey => {
                     const req = appConfig.fields[fieldKey];
                     if (req === "hidden") return null;
@@ -433,6 +434,7 @@ export function JobDetailPage() {
                       )}
                     </div>
                   ))}
+                  </div>
 
                   <Button type="submit" className="w-full btn-yellow font-black text-xs py-3 h-11 sticky bottom-0">
                     {t("submitApplication")}
