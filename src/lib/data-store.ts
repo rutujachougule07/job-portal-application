@@ -58,6 +58,7 @@ export type JobRecord = {
   salaryMin?: number | undefined;
   salaryMax?: number | undefined;
   salaryType: SalaryType;
+  applicationConfig?: any;
   location: string;
   jobType: JobType;
   workMode: WorkMode;

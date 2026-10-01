@@ -387,7 +387,7 @@ export function JobCard({
         companyName: job.company,
         location: job.location,
         salary: job.salary,
-        resume: fieldValues.resume || `${seekerName.replaceAll(" ", "_")}_Resume.pdf`,
+        resume: fieldValues['resume'] || `${seekerName.replaceAll(" ", "_")}_Resume.pdf`,
         fieldValues,
         customAnswers,
         category: job.category
