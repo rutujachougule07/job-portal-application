@@ -24,12 +24,17 @@ import {
   Briefcase,
   ChevronDown,
   ChevronUp,
-  Eye
+  Eye,
+  FileText,
+  Phone,
+  Mail,
+  UserCheck,
+  BadgeCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { LanguageSwitcher } from "@/components/portal/LanguageSwitcher";
-import { dataStore, JobRecord } from "@/lib/data-store";
+import { dataStore, JobRecord, ApplicationRecord } from "@/lib/data-store";
 
 export const Route = createFileRoute("/superadmin")({
   head: () => ({
@@ -96,8 +101,20 @@ function SuperAdminPage() {
   const [allJobs, setAllJobs] = useState<JobRecord[]>([]);
   const [approvalFilter, setApprovalFilter] = useState<"pending" | "approved" | "rejected" | "all">("pending");
 
+  // Users & Applications State
+  const [allUsers, setAllUsers] = useState<Array<{ id: string; email: string; mobile?: string; role: any; fullName: string; createdAt?: string }>>([]);
+  const [allApplications, setAllApplications] = useState<ApplicationRecord[]>([]);
+
+  const [userSearchQuery, setUserSearchQuery] = useState("");
+  const [userRoleFilter, setUserRoleFilter] = useState<"all" | "worker" | "employer">("all");
+
+  const [appSearchQuery, setAppSearchQuery] = useState("");
+  const [appStatusFilter, setAppStatusFilter] = useState<string>("all");
+
   useEffect(() => {
     setAllJobs(dataStore.getAllJobs());
+    setAllUsers(dataStore.getRegisteredUserAccounts());
+    setAllApplications(dataStore.getAllApplications());
   }, []);
 
   const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
@@ -371,6 +388,8 @@ function SuperAdminPage() {
           {[
             { id: "dashboard", label: "Dashboard Overview", icon: BarChart3 },
             { id: "job-approvals", label: "Job Approvals", icon: CheckCircle2, count: pendingJobsCount },
+            { id: "users-directory", label: "Registered Users", icon: Users, count: allUsers.length },
+            { id: "job-applications", label: "Job Applications", icon: FileText, count: allApplications.length },
             { id: "landing-page", label: "Landing Page", icon: Globe },
           ].map((item) => (
             <button
@@ -754,6 +773,324 @@ function SuperAdminPage() {
             </div>
           )}
 
+          {/* Registered Users Section */}
+          {activeTab === "users-directory" && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              {/* Stat Summary */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="bg-white p-5 rounded-2xl border border-[#E0E8F5] shadow-sm">
+                  <div className="flex items-center justify-between mb-2 text-[#063B78]">
+                    <span className="text-xs font-black uppercase tracking-wider text-[#5B6B7F]">Total Registered Users</span>
+                    <Users className="size-5" />
+                  </div>
+                  <div className="text-3xl font-black text-[#063B78]">{allUsers.length}</div>
+                  <p className="text-xs text-[#5B6B7F] mt-1">Platform wide accounts</p>
+                </div>
+
+                <div className="bg-white p-5 rounded-2xl border border-[#E0E8F5] shadow-sm">
+                  <div className="flex items-center justify-between mb-2 text-emerald-600">
+                    <span className="text-xs font-black uppercase tracking-wider text-[#5B6B7F]">Workers / Job Seekers</span>
+                    <UserCheck className="size-5" />
+                  </div>
+                  <div className="text-3xl font-black text-[#063B78]">
+                    {allUsers.filter(u => u.role === "worker").length}
+                  </div>
+                  <p className="text-xs text-[#5B6B7F] mt-1">Registered worker accounts</p>
+                </div>
+
+                <div className="bg-white p-5 rounded-2xl border border-[#E0E8F5] shadow-sm">
+                  <div className="flex items-center justify-between mb-2 text-indigo-600">
+                    <span className="text-xs font-black uppercase tracking-wider text-[#5B6B7F]">Employers / Companies</span>
+                    <Building2 className="size-5" />
+                  </div>
+                  <div className="text-3xl font-black text-[#063B78]">
+                    {allUsers.filter(u => u.role === "employer" || u.role === "admin").length}
+                  </div>
+                  <p className="text-xs text-[#5B6B7F] mt-1">Registered company accounts</p>
+                </div>
+              </div>
+
+              {/* Search & Filter Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-white p-4 rounded-2xl border border-[#E0E8F5] shadow-sm gap-3">
+                <div className="relative flex-1 max-w-md">
+                  <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#9DAEC5]" />
+                  <input
+                    type="text"
+                    placeholder="Search user by name, email or mobile..."
+                    value={userSearchQuery}
+                    onChange={(e) => setUserSearchQuery(e.target.value)}
+                    className="w-full h-10 pl-10 pr-4 rounded-xl bg-[#F8FAFF] border border-[#DCE5F0] text-xs font-bold text-[#063B78] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  {[
+                    { id: "all", label: `All Users (${allUsers.length})` },
+                    { id: "worker", label: `Workers (${allUsers.filter(u => u.role === "worker").length})` },
+                    { id: "employer", label: `Employers (${allUsers.filter(u => u.role === "employer" || u.role === "admin").length})` },
+                  ].map((btn) => (
+                    <button
+                      key={btn.id}
+                      onClick={() => setUserRoleFilter(btn.id as any)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                        userRoleFilter === btn.id
+                          ? "bg-[#063B78] text-white shadow-sm"
+                          : "bg-[#F8FAFF] text-[#5B6B7F] hover:bg-[#E0E8F5]"
+                      }`}
+                    >
+                      {btn.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Registered Users Table */}
+              <div className="bg-white rounded-2xl border border-[#E0E8F5] shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-[#063B78] text-white font-black uppercase text-[11px] tracking-wider">
+                      <tr>
+                        <th className="p-4">User Details</th>
+                        <th className="p-4">Email Address</th>
+                        <th className="p-4">Role / Type</th>
+                        <th className="p-4">Mobile Number</th>
+                        <th className="p-4">User ID</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#E0E8F5] font-semibold text-[#10233F]">
+                      {allUsers
+                        .filter((u) => {
+                          if (userRoleFilter === "worker") return u.role === "worker";
+                          if (userRoleFilter === "employer") return u.role === "employer" || u.role === "admin";
+                          return true;
+                        })
+                        .filter((u) => {
+                          if (!userSearchQuery.trim()) return true;
+                          const q = userSearchQuery.toLowerCase();
+                          return (
+                            u.fullName.toLowerCase().includes(q) ||
+                            u.email.toLowerCase().includes(q) ||
+                            (u.mobile || "").includes(q)
+                          );
+                        })
+                        .length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="p-8 text-center text-[#5B6B7F] font-bold">
+                            No registered users match your search query.
+                          </td>
+                        </tr>
+                      ) : (
+                        allUsers
+                          .filter((u) => {
+                            if (userRoleFilter === "worker") return u.role === "worker";
+                            if (userRoleFilter === "employer") return u.role === "employer" || u.role === "admin";
+                            return true;
+                          })
+                          .filter((u) => {
+                            if (!userSearchQuery.trim()) return true;
+                            const q = userSearchQuery.toLowerCase();
+                            return (
+                              u.fullName.toLowerCase().includes(q) ||
+                              u.email.toLowerCase().includes(q) ||
+                              (u.mobile || "").includes(q)
+                            );
+                          })
+                          .map((u) => (
+                            <tr key={u.id} className="hover:bg-[#F8FAFF] transition-colors">
+                              <td className="p-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="size-9 bg-gradient-to-br from-[#063B78] to-[#0A4F9E] text-white font-black rounded-xl flex items-center justify-center text-xs shadow-sm">
+                                    {u.fullName.charAt(0).toUpperCase()}
+                                  </div>
+                                  <div>
+                                    <strong className="block font-black text-[#063B78]">{u.fullName}</strong>
+                                    <span className="text-[10px] text-[#5B6B7F]">Registered User</span>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="p-4 font-bold text-[#063B78]">
+                                <div className="flex items-center gap-1.5">
+                                  <Mail className="size-3.5 text-[#5B6B7F]" />
+                                  {u.email}
+                                </div>
+                              </td>
+                              <td className="p-4">
+                                {u.role === "employer" || u.role === "admin" ? (
+                                  <span className="px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-800 text-[11px] font-black inline-flex items-center gap-1">
+                                    <Building2 className="size-3" /> Employer
+                                  </span>
+                                ) : (
+                                  <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-black inline-flex items-center gap-1">
+                                    <UserCheck className="size-3" /> Worker / Seeker
+                                  </span>
+                                )}
+                              </td>
+                              <td className="p-4 font-bold text-[#5B6B7F]">
+                                <div className="flex items-center gap-1.5">
+                                  <Phone className="size-3.5 text-[#5B6B7F]" />
+                                  {u.mobile || "Not provided"}
+                                </div>
+                              </td>
+                              <td className="p-4 text-[11px] font-mono font-bold text-[#9DAEC5]">{u.id}</td>
+                            </tr>
+                          ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Job Applications Audit Section */}
+          {activeTab === "job-applications" && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              {/* Stat Summary */}
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <div className="bg-white p-5 rounded-2xl border border-[#E0E8F5] shadow-sm">
+                  <span className="text-xs font-black uppercase tracking-wider text-[#5B6B7F]">Total Applications</span>
+                  <div className="text-3xl font-black text-[#063B78] mt-2">{allApplications.length}</div>
+                  <p className="text-xs text-[#5B6B7F] mt-1">Submitted on portal</p>
+                </div>
+
+                <div className="bg-white p-5 rounded-2xl border border-[#E0E8F5] shadow-sm">
+                  <span className="text-xs font-black uppercase tracking-wider text-amber-700">Applied / Under Review</span>
+                  <div className="text-3xl font-black text-amber-600 mt-2">
+                    {allApplications.filter(a => a.status === "Applied" || a.status === "Viewed").length}
+                  </div>
+                  <p className="text-xs text-[#5B6B7F] mt-1">New applications</p>
+                </div>
+
+                <div className="bg-white p-5 rounded-2xl border border-[#E0E8F5] shadow-sm">
+                  <span className="text-xs font-black uppercase tracking-wider text-emerald-700">Shortlisted / Selected</span>
+                  <div className="text-3xl font-black text-emerald-600 mt-2">
+                    {allApplications.filter(a => a.status === "Shortlisted" || a.status === "Selected").length}
+                  </div>
+                  <p className="text-xs text-[#5B6B7F] mt-1">Accepted candidates</p>
+                </div>
+
+                <div className="bg-white p-5 rounded-2xl border border-[#E0E8F5] shadow-sm">
+                  <span className="text-xs font-black uppercase tracking-wider text-red-700">Rejected Applications</span>
+                  <div className="text-3xl font-black text-red-600 mt-2">
+                    {allApplications.filter(a => a.status === "Rejected").length}
+                  </div>
+                  <p className="text-xs text-[#5B6B7F] mt-1">Declined applications</p>
+                </div>
+              </div>
+
+              {/* Search & Filter Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-white p-4 rounded-2xl border border-[#E0E8F5] shadow-sm gap-3">
+                <div className="relative flex-1 max-w-md">
+                  <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#9DAEC5]" />
+                  <input
+                    type="text"
+                    placeholder="Search candidate name, email or job title..."
+                    value={appSearchQuery}
+                    onChange={(e) => setAppSearchQuery(e.target.value)}
+                    className="w-full h-10 pl-10 pr-4 rounded-xl bg-[#F8FAFF] border border-[#DCE5F0] text-xs font-bold text-[#063B78] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
+                  />
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {["all", "Applied", "Shortlisted", "Selected", "Rejected"].map((st) => (
+                    <button
+                      key={st}
+                      onClick={() => setAppStatusFilter(st)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                        appStatusFilter === st
+                          ? "bg-[#063B78] text-white shadow-sm"
+                          : "bg-[#F8FAFF] text-[#5B6B7F] hover:bg-[#E0E8F5]"
+                      }`}
+                    >
+                      {st === "all" ? `All (${allApplications.length})` : st}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Job Applications Table */}
+              <div className="bg-white rounded-2xl border border-[#E0E8F5] shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-[#063B78] text-white font-black uppercase text-[11px] tracking-wider">
+                      <tr>
+                        <th className="p-4">Candidate Applicant</th>
+                        <th className="p-4">Applied Job Title</th>
+                        <th className="p-4">Company Name</th>
+                        <th className="p-4">Status</th>
+                        <th className="p-4">Applied Date</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#E0E8F5] font-semibold text-[#10233F]">
+                      {allApplications
+                        .filter((a) => {
+                          if (appStatusFilter !== "all" && a.status !== appStatusFilter) return false;
+                          if (!appSearchQuery.trim()) return true;
+                          const q = appSearchQuery.toLowerCase();
+                          return (
+                            a.candidateName.toLowerCase().includes(q) ||
+                            a.candidateEmail.toLowerCase().includes(q) ||
+                            a.jobTitle.toLowerCase().includes(q) ||
+                            a.companyName.toLowerCase().includes(q)
+                          );
+                        })
+                        .length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="p-8 text-center text-[#5B6B7F] font-bold">
+                            No job applications found matching your criteria.
+                          </td>
+                        </tr>
+                      ) : (
+                        allApplications
+                          .filter((a) => {
+                            if (appStatusFilter !== "all" && a.status !== appStatusFilter) return false;
+                            if (!appSearchQuery.trim()) return true;
+                            const q = appSearchQuery.toLowerCase();
+                            return (
+                              a.candidateName.toLowerCase().includes(q) ||
+                              a.candidateEmail.toLowerCase().includes(q) ||
+                              a.jobTitle.toLowerCase().includes(q) ||
+                              a.companyName.toLowerCase().includes(q)
+                            );
+                          })
+                          .map((a) => (
+                            <tr key={a.id} className="hover:bg-[#F8FAFF] transition-colors">
+                              <td className="p-4">
+                                <strong className="block font-black text-[#063B78]">{a.candidateName}</strong>
+                                <div className="text-[11px] text-[#5B6B7F] flex items-center gap-2 mt-0.5">
+                                  <span><Mail className="size-3 inline mr-1" />{a.candidateEmail}</span>
+                                  {a.candidateMobile && <span><Phone className="size-3 inline mr-1" />{a.candidateMobile}</span>}
+                                </div>
+                              </td>
+                              <td className="p-4">
+                                <strong className="block font-bold text-[#063B78]">{a.jobTitle}</strong>
+                                <span className="text-[10px] text-[#5B6B7F]">{a.location}</span>
+                              </td>
+                              <td className="p-4 font-bold text-[#063B78]">{a.companyName}</td>
+                              <td className="p-4">
+                                <span
+                                  className={`px-2.5 py-1 rounded-full text-[11px] font-black inline-flex items-center gap-1 ${
+                                    a.status === "Selected"
+                                      ? "bg-emerald-100 text-emerald-800"
+                                      : a.status === "Shortlisted"
+                                      ? "bg-amber-100 text-amber-800"
+                                      : a.status === "Rejected"
+                                      ? "bg-red-100 text-red-800"
+                                      : "bg-blue-100 text-blue-800"
+                                  }`}
+                                >
+                                  {a.status}
+                                </span>
+                              </td>
+                              <td className="p-4 font-bold text-[#5B6B7F]">{a.appliedDate}</td>
+                            </tr>
+                          ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
           {activeTab === "landing-page" && (
             <div className="space-y-6 animate-in fade-in duration-500">
               <div className="bg-white p-6 rounded-2xl border border-[#E0E8F5] shadow-sm">
@@ -970,7 +1307,7 @@ function SuperAdminPage() {
             </div>
           )}
 
-          {activeTab !== "dashboard" && activeTab !== "landing-page" && activeTab !== "job-approvals" && (
+          {activeTab !== "dashboard" && activeTab !== "landing-page" && activeTab !== "job-approvals" && activeTab !== "users-directory" && activeTab !== "job-applications" && (
             <div className="h-full flex flex-col items-center justify-center text-[#9DAEC5] animate-in fade-in duration-500">
               <Settings className="size-16 mb-4 text-[#DCE5F0]" />
               <h2 className="text-xl font-black text-[#063B78] mb-2">{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Module</h2>
