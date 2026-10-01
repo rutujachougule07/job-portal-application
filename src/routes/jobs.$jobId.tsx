@@ -116,7 +116,7 @@ function JobDetailPage() {
         jobSeekerId: seekerId,
         candidateName: fieldValues['fullName'] || name,
         candidateEmail: fieldValues['email'] || seekerId,
-        candidateMobile: fieldValues['mobile'] || applicantPhone || "+91 98220 11223",
+        candidateMobile: fieldValues['mobile'] || fieldValues['phone'] || fieldValues['candidateMobile'] || fieldValues['mobileNumber'] || fieldValues['contactNumber'] || fieldValues['phoneNo'] || fieldValues['mobileNo'] || applicantPhone || (currentUser as any)?.mobile || "9822011223",
         jobTitle: job.title,
         companyName: job.company,
         location: job.location,

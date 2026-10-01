@@ -49,6 +49,26 @@ const monthlyAnalytics = [
   { month: "Sep", workers: 0, jobs: 0, hires: 0 },
 ];
 
+function formatWaNumber(phone: string): string {
+  const raw = (phone || "").trim();
+  const digits = raw.replace(/\D/g, "");
+  if (!digits) return "919822011223";
+  if (digits.length === 10) return `91${digits}`;
+  if (digits.length === 12 && digits.startsWith("91")) return digits;
+  if (digits.length === 11 && digits.startsWith("0")) return `91${digits.slice(1)}`;
+  return digits.length >= 10 ? digits : `91${digits}`;
+}
+
+function formatCallNumber(phone: string): string {
+  const raw = (phone || "").trim();
+  const digits = raw.replace(/\D/g, "");
+  if (!digits) return "+919822011223";
+  if (digits.length === 10) return `+91${digits}`;
+  if (digits.length === 12 && digits.startsWith("91")) return `+${digits}`;
+  if (digits.length === 11 && digits.startsWith("0")) return `+91${digits.slice(1)}`;
+  return raw.startsWith("+") ? raw : `+${digits}`;
+}
+
 function AdminDashboardPage() {
   const navigate = useNavigate();
 
@@ -917,13 +937,13 @@ function AdminDashboardPage() {
                           <td className="p-3.5">
                             <div className="flex items-center gap-2">
                               <a
-                                href={`tel:${a.candidateMobile}`}
+                                href={`tel:${formatCallNumber(a.candidateMobile)}`}
                                 className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-bold text-[10px] hover:bg-emerald-700 transition-all flex items-center gap-1"
                               >
                                 📞 कॉल करा
                               </a>
                               <a
-                                href={`https://wa.me/${a.candidateMobile.replace(/\D/g, "")}`}
+                                href={`https://wa.me/${formatWaNumber(a.candidateMobile)}?text=${encodeURIComponent(`नमस्कार ${a.candidateName}, तुम्ही ${a.jobTitle} या नोकरीसाठी अर्ज केला होता. त्यासंदर्भात संपर्क करत आहोत.`)}`}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="px-2.5 py-1 rounded-lg bg-green-600 text-white font-bold text-[10px] hover:bg-green-700 transition-all flex items-center gap-1"
