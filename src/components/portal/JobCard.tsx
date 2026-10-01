@@ -867,8 +867,8 @@ export function JobCard({
 
       {/* Interactive Apply Modal */}
       {showApplyModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#082F63]/70 backdrop-blur-md p-4 animate-in fade-in duration-200">
-          <div className="relative w-full max-w-4xl rounded-3xl border border-[#DCE5F0] bg-white p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-[#082F63]/70 backdrop-blur-md p-4 sm:p-8 overflow-y-auto animate-in fade-in duration-200">
+          <div className="relative w-full max-w-4xl my-auto sm:my-8 rounded-3xl border border-[#DCE5F0] bg-white p-6 sm:p-10 shadow-2xl">
             <button
               onClick={() => setShowApplyModal(false)}
               className="absolute right-4 top-4 grid size-8 place-items-center rounded-full bg-[#F5F8FC] text-[#5B6B7F] hover:text-[#10233F]"
@@ -887,20 +887,20 @@ export function JobCard({
                 </p>
               </div>
             ) : (
-              <form onSubmit={submitApplication} className="space-y-4 px-2">
-                <div className="flex items-center gap-3 sticky top-0 bg-white z-10 pb-2">
-                  <span className="grid size-12 place-items-center rounded-xl bg-[#063B78] font-black text-white text-lg">
+              <form onSubmit={submitApplication} className="space-y-6">
+                <div className="flex items-center gap-4 border-b border-[#DCE5F0] pb-4">
+                  <span className="grid size-16 place-items-center rounded-2xl bg-[#063B78] font-black text-white text-2xl">
                     {job.initials}
                   </span>
                   <div>
-                    <h3 className="font-display text-base font-black text-[#10233F]">{job.title}</h3>
-                    <p className="text-xs font-bold text-[#125BB5]">{job.company} · {job.location}</p>
+                    <h3 className="font-display text-xl font-black text-[#10233F]">{job.title}</h3>
+                    <p className="text-sm font-bold text-[#125BB5]">{job.company} · {job.location}</p>
                   </div>
                 </div>
 
-                <div className="rounded-xl bg-[#F5F8FC] p-3 text-xs space-y-1 border border-[#DCE5F0]">
-                  <span className="font-black text-[#063B78] flex items-center gap-1">
-                    <ShieldCheck className="size-3.5 text-emerald-600" />
+                <div className="rounded-2xl bg-[#F5F8FC] p-4 text-sm space-y-2 border border-[#DCE5F0]">
+                  <span className="font-black text-[#063B78] flex items-center gap-1.5">
+                    <ShieldCheck className="size-4 text-emerald-600" />
                     {lang === "mr" ? "शासकीय/GST नोंदणीकृत मालक" : "Verified Direct Employer"}
                   </span>
                   <p className="text-[#5B6B7F] font-semibold">
@@ -908,7 +908,7 @@ export function JobCard({
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
 
                 {Object.keys(appConfig.fields).map(fieldKey => {
                   const req = appConfig.fields[fieldKey];
@@ -917,12 +917,12 @@ export function JobCard({
                   const label = fieldKey.replace(/([A-Z])/g, ' $1').trim().replace(/^./, str => str.toUpperCase());
                   
                   return (
-                    <div key={fieldKey}>
-                      <label className="block text-xs font-extrabold text-[#10233F] mb-1">{label} {isReq && "*"}</label>
+                    <div key={fieldKey} className="space-y-1.5">
+                      <label className="block text-sm font-extrabold text-[#10233F]">{label} {isReq && <span className="text-red-500">*</span>}</label>
                       {fieldKey === "resume" || fieldKey === "profilePhoto" ? (
-                        <input type="file" required={isReq} onChange={e => handleFieldChange(fieldKey, e.target.files?.[0]?.name)} className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 py-2 text-xs font-bold text-[#10233F]" />
+                        <input type="file" required={isReq} onChange={e => handleFieldChange(fieldKey, e.target.files?.[0]?.name)} className="w-full h-12 rounded-xl border border-[#DCE5F0] bg-white px-4 py-2.5 text-sm font-semibold text-[#10233F] focus:outline-none focus:ring-2 focus:ring-[#063B78]" />
                       ) : fieldKey === "experience" || fieldKey === "relevantExperience" ? (
-                        <select required={isReq} value={fieldValues[fieldKey] || ""} onChange={e => handleFieldChange(fieldKey, e.target.value)} className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold text-[#10233F]">
+                        <select required={isReq} value={fieldValues[fieldKey] || ""} onChange={e => handleFieldChange(fieldKey, e.target.value)} className="w-full h-12 rounded-xl border border-[#DCE5F0] bg-white px-4 text-sm font-semibold text-[#10233F] focus:outline-none focus:ring-2 focus:ring-[#063B78]">
                           <option value="">Select Experience</option>
                           <option value="Fresher">Fresher</option>
                           <option value="1-3 Years">1 - 3 Years</option>
@@ -930,9 +930,9 @@ export function JobCard({
                           <option value="5+ Years">5+ Years</option>
                         </select>
                       ) : fieldKey === "availability" || fieldKey === "noticePeriod" ? (
-                        <input type="date" required={isReq} value={fieldValues[fieldKey] || ""} onChange={e => handleFieldChange(fieldKey, e.target.value)} className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold text-[#10233F]" />
+                        <input type="date" required={isReq} value={fieldValues[fieldKey] || ""} onChange={e => handleFieldChange(fieldKey, e.target.value)} className="w-full h-12 rounded-xl border border-[#DCE5F0] bg-white px-4 text-sm font-semibold text-[#10233F] focus:outline-none focus:ring-2 focus:ring-[#063B78]" />
                       ) : fieldKey === "willingToRelocate" ? (
-                         <select required={isReq} value={fieldValues[fieldKey] || ""} onChange={e => handleFieldChange(fieldKey, e.target.value)} className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold text-[#10233F]">
+                         <select required={isReq} value={fieldValues[fieldKey] || ""} onChange={e => handleFieldChange(fieldKey, e.target.value)} className="w-full h-12 rounded-xl border border-[#DCE5F0] bg-white px-4 text-sm font-semibold text-[#10233F] focus:outline-none focus:ring-2 focus:ring-[#063B78]">
                            <option value="">Select</option>
                            <option value="Yes">Yes</option>
                            <option value="No">No</option>
@@ -951,30 +951,32 @@ export function JobCard({
                 })}
 
                 {appConfig.customQuestions && appConfig.customQuestions.map((q: any) => (
-                  <div key={q.id}>
-                    <label className="block text-xs font-extrabold text-[#10233F] mb-1">{q.question} {q.required && "*"}</label>
+                  <div key={q.id} className="col-span-1 md:col-span-2 space-y-1.5">
+                    <label className="block text-sm font-extrabold text-[#10233F]">{q.question} {q.required && <span className="text-red-500">*</span>}</label>
                     {q.type === "long" ? (
-                      <textarea required={q.required} value={customAnswers[q.id] || ""} onChange={e => handleCustomChange(q.id, e.target.value)} className="w-full rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] p-3 text-xs font-bold text-[#10233F]" />
+                      <textarea required={q.required} value={customAnswers[q.id] || ""} onChange={e => handleCustomChange(q.id, e.target.value)} className="w-full rounded-xl border border-[#DCE5F0] bg-white p-4 text-sm font-semibold text-[#10233F] focus:outline-none focus:ring-2 focus:ring-[#063B78]" rows={3} />
                     ) : q.type === "yesno" ? (
-                       <select required={q.required} value={customAnswers[q.id] || ""} onChange={e => handleCustomChange(q.id, e.target.value)} className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold text-[#10233F]">
+                       <select required={q.required} value={customAnswers[q.id] || ""} onChange={e => handleCustomChange(q.id, e.target.value)} className="w-full h-12 rounded-xl border border-[#DCE5F0] bg-white px-4 text-sm font-semibold text-[#10233F] focus:outline-none focus:ring-2 focus:ring-[#063B78]">
                          <option value="">Select option</option>
                          <option value="Yes">Yes</option>
                          <option value="No">No</option>
                        </select>
                     ) : q.type === "number" ? (
-                      <input type="number" required={q.required} value={customAnswers[q.id] || ""} onChange={e => handleCustomChange(q.id, e.target.value)} className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold text-[#10233F]" />
+                      <input type="number" required={q.required} value={customAnswers[q.id] || ""} onChange={e => handleCustomChange(q.id, e.target.value)} className="w-full h-12 rounded-xl border border-[#DCE5F0] bg-white px-4 text-sm font-semibold text-[#10233F] focus:outline-none focus:ring-2 focus:ring-[#063B78]" />
                     ) : q.type === "date" ? (
-                      <input type="date" required={q.required} value={customAnswers[q.id] || ""} onChange={e => handleCustomChange(q.id, e.target.value)} className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold text-[#10233F]" />
+                      <input type="date" required={q.required} value={customAnswers[q.id] || ""} onChange={e => handleCustomChange(q.id, e.target.value)} className="w-full h-12 rounded-xl border border-[#DCE5F0] bg-white px-4 text-sm font-semibold text-[#10233F] focus:outline-none focus:ring-2 focus:ring-[#063B78]" />
                     ) : (
-                      <input type="text" required={q.required} value={customAnswers[q.id] || ""} onChange={e => handleCustomChange(q.id, e.target.value)} className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold text-[#10233F]" />
+                      <input type="text" required={q.required} value={customAnswers[q.id] || ""} onChange={e => handleCustomChange(q.id, e.target.value)} className="w-full h-12 rounded-xl border border-[#DCE5F0] bg-white px-4 text-sm font-semibold text-[#10233F] focus:outline-none focus:ring-2 focus:ring-[#063B78]" />
                     )}
                   </div>
                 ))}
                 </div>
 
-                <Button type="submit" className="btn-yellow w-full h-12 mt-2 font-black text-sm shadow-md rounded-xl">
-                  {lang === "mr" ? "नोकरीसाठी अर्ज सादर करा" : "Submit Application"} <Send className="ml-2 size-4" />
-                </Button>
+                <div className="pt-4 border-t border-[#DCE5F0] flex justify-end">
+                  <Button type="submit" className="btn-yellow h-12 px-8 font-black text-sm shadow-md rounded-xl">
+                    {lang === "mr" ? "अंतिम अर्ज सादर करा" : "Submit Final Application"} <Send className="ml-2 size-4" />
+                  </Button>
+                </div>
               </form>
             )}
           </div>
