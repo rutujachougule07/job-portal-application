@@ -600,15 +600,25 @@ function SuperAdminPage() {
                 </div>
 
                 <div className="mt-8 border-t border-[#E0E8F5] pt-6">
-                  <h4 className="text-sm font-black text-[#063B78] mb-4">Popular Job Categories</h4>
-                  <div className="space-y-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-sm font-black text-[#063B78]">Popular Job Categories</h4>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="border-dashed border-[#063B78]/30 text-[#063B78] font-bold text-xs hover:bg-[#063B78]/5"
+                      onClick={() => setCategories([...categories, { label: "New Category", iconName: "Briefcase", theme: "blue" }])}
+                    >
+                      + Add Category
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                     {categories.map((cat, i) => (
-                      <div key={i} className="flex flex-col sm:flex-row gap-3 p-4 bg-[#F8FAFF] border border-[#DCE5F0] rounded-xl items-center">
-                        <div className="flex-1 w-full">
-                          <label className="block text-[10px] font-black text-[#5B6B7F] uppercase tracking-wider mb-1">Label</label>
+                      <div key={i} className="p-3 bg-[#F8FAFF] border border-[#DCE5F0] rounded-xl flex items-center gap-2">
+                        <div className="flex-1 min-w-0">
+                          <label className="block text-[9px] font-black text-[#5B6B7F] uppercase tracking-wider mb-1">Label</label>
                           <input 
                             type="text" 
-                            className="w-full h-9 px-3 bg-white border border-[#DCE5F0] rounded-lg text-sm font-bold text-[#063B78]" 
+                            className="w-full h-8 px-2.5 bg-white border border-[#DCE5F0] rounded-lg text-xs font-bold text-[#063B78] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50" 
                             value={cat.label}
                             onChange={(e) => {
                               const newCat = [...categories];
@@ -617,11 +627,11 @@ function SuperAdminPage() {
                             }}
                           />
                         </div>
-                        <div className="flex items-end pt-1 sm:pt-4">
+                        <div className="flex items-end pt-3">
                           <Button 
                             variant="destructive" 
                             size="sm" 
-                            className="h-9 text-xs font-bold"
+                            className="h-8 px-2.5 text-[11px] font-bold"
                             onClick={() => {
                               const newCat = [...categories];
                               newCat.splice(i, 1);
@@ -633,13 +643,6 @@ function SuperAdminPage() {
                         </div>
                       </div>
                     ))}
-                    <Button 
-                      variant="outline" 
-                      className="w-full border-dashed border-[#DCE5F0] text-[#063B78] font-bold"
-                      onClick={() => setCategories([...categories, { label: "New Category", iconName: "Briefcase", theme: "blue" }])}
-                    >
-                      + Add Category
-                    </Button>
                   </div>
                 </div>
 
