@@ -216,3 +216,27 @@ export const getFallbackConfig = (category: string) => {
   }
   return config;
 };
+
+export const groupFieldsBySection = (fields: Record<string, string>) => {
+  const sections = {
+    personal: {} as Record<string, string>,
+    work: {} as Record<string, string>,
+    salary: {} as Record<string, string>,
+    documents: {} as Record<string, string>,
+  };
+
+  Object.keys(fields).forEach(key => {
+    const k = key.toLowerCase();
+    if (k.includes("name") || k.includes("email") || k.includes("mobile") || k.includes("location")) {
+      sections.personal[key] = fields[key];
+    } else if (k.includes("salary") || k.includes("ctc") || k.includes("wage") || k.includes("notice") || k.includes("joining") || k.includes("availability") || k.includes("mode") || k.includes("shift")) {
+      sections.salary[key] = fields[key];
+    } else if (k.includes("resume") || k.includes("certificate") || k.includes("photo") || k.includes("portfolio") || k.includes("proof")) {
+      sections.documents[key] = fields[key];
+    } else {
+      sections.work[key] = fields[key];
+    }
+  });
+
+  return sections;
+};
