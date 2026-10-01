@@ -88,6 +88,8 @@ function SuperAdminPage() {
     if (savedMetrics) setMetrics(JSON.parse(savedMetrics));
     if (savedAbout) setAboutData(JSON.parse(savedAbout));
     if (savedCategories) setCategories(JSON.parse(savedCategories));
+  }, []);
+
   const [allJobs, setAllJobs] = useState<JobRecord[]>([]);
   const [approvalFilter, setApprovalFilter] = useState<"pending" | "approved" | "rejected" | "all">("pending");
 
@@ -866,7 +868,7 @@ function SuperAdminPage() {
             </div>
           )}
 
-          {activeTab !== "dashboard" && activeTab !== "landing-page" && (
+          {activeTab !== "dashboard" && activeTab !== "landing-page" && activeTab !== "job-approvals" && (
             <div className="h-full flex flex-col items-center justify-center text-[#9DAEC5] animate-in fade-in duration-500">
               <Settings className="size-16 mb-4 text-[#DCE5F0]" />
               <h2 className="text-xl font-black text-[#063B78] mb-2">{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Module</h2>
