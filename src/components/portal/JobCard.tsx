@@ -279,13 +279,12 @@ export function JobCard({
   const [applied, setApplied] = useState(false);
 
   useEffect(() => {
-    if (showApplyModal || showCompanyModal) {
-      const originalStyle = window.getComputedStyle(document.body).overflow;
-      document.body.style.overflow = "hidden";
-      return () => {
-        document.body.style.overflow = originalStyle;
-      };
-    }
+    if (!showApplyModal && !showCompanyModal) return;
+    const originalStyle = window.getComputedStyle(document.body).overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = originalStyle;
+    };
   }, [showApplyModal, showCompanyModal]);
 
   const [fieldValues, setFieldValues] = useState<Record<string, any>>({});
@@ -939,7 +938,7 @@ export function JobCard({
                     </div>
                     <div>
                       <p className="text-xs font-bold text-[#5B6B7F]">Vacancies</p>
-                      <p className="text-sm font-black text-[#10233F]">{job.vacancies || 1}</p>
+                      <p className="text-sm font-black text-[#10233F]">{(job as any).vacancies || 1}</p>
                     </div>
                   </div>
                 </div>
