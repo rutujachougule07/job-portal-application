@@ -1,8 +1,8 @@
 import { Link } from "@tanstack/react-router";
+import { useMemo } from "react";
 import {
   ArrowRight,
-  Building2,
-  Compass,
+  Briefcase,
   Factory,
   FlaskConical,
   GraduationCap,
@@ -30,30 +30,40 @@ export function PopularCategories({ limit = 8, hideHeader = false }: { limit?: n
 
   const allJobs = dataStore.getAllJobs();
 
-  const getSubcategoryCount = (catId: string) => {
-    const counts: Record<string, number> = {
-      "construction": 9,
-      "it-software": 9,
-      "engineering": 7,
-      "healthcare-medical": 6,
-      "finance-accounting": 6,
-      "sales-marketing": 6,
-      "education": 6,
-      "manufacturing": 5,
-    };
-    return counts[catId] || 0;
-  };
+  const dynamicCategories = useMemo(() => {
+    const catData = new Map<string, { id: string, subcategories: Set<string> }>();
+    
+    allJobs.forEach(job => {
+      if (!job.category) return;
+      if (!catData.has(job.category)) {
+        catData.set(job.category, { id: job.category, subcategories: new Set<string>() });
+      }
+      if (job.subcategory) {
+        catData.get(job.category)!.subcategories.add(job.subcategory);
+      }
+    });
 
-  const realJobCategories = [
-    { id: "construction", icon: HardHat },
-    { id: "it-software", icon: Laptop },
-    { id: "engineering", icon: Wrench },
-    { id: "healthcare-medical", icon: Stethoscope },
-    { id: "finance-accounting", icon: Landmark },
-    { id: "sales-marketing", icon: TrendingUp },
-    { id: "education", icon: GraduationCap },
-    { id: "manufacturing", icon: Factory },
-  ];
+    return Array.from(catData.values()).map(data => {
+       let icon = Briefcase;
+       const lc = data.id.toLowerCase();
+       if (lc.includes('construction') || lc.includes('builder') || lc.includes('civil')) icon = HardHat;
+       else if (lc.includes('software') || lc.includes('it') || lc.includes('develop')) icon = Laptop;
+       else if (lc.includes('engineer') || lc.includes('tech')) icon = Wrench;
+       else if (lc.includes('health') || lc.includes('medic') || lc.includes('doctor')) icon = Stethoscope;
+       else if (lc.includes('financ') || lc.includes('account') || lc.includes('bank')) icon = Landmark;
+       else if (lc.includes('sales') || lc.includes('market')) icon = TrendingUp;
+       else if (lc.includes('educat') || lc.includes('teach')) icon = GraduationCap;
+       else if (lc.includes('manufact') || lc.includes('factory') || lc.includes('production')) icon = Factory;
+       else if (lc.includes('logistic') || lc.includes('transport') || lc.includes('delivery')) icon = Truck;
+       else if (lc.includes('hotel') || lc.includes('hospitality') || lc.includes('restaurant')) icon = Hotel;
+
+       return {
+         id: data.id,
+         icon,
+         profilesCount: data.subcategories.size || 1
+       };
+    });
+  }, [allJobs]);
 
   return (
     <section id="categories" className={hideHeader ? "relative" : "relative bg-[#F5F8FC] py-16 sm:py-24 overflow-hidden"}>
@@ -88,9 +98,14 @@ export function PopularCategories({ limit = 8, hideHeader = false }: { limit?: n
 
         {/* Categories Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-          {realJobCategories.slice(0, limit).map((cat) => {
+          {dynamicCategories.length === 0 && (
+             <div className="col-span-full text-center py-12 text-[#5B6B7F] font-semibold">
+               सध्या कोणतीही श्रेणी उपलब्ध नाही. (No categories available at the moment.)
+             </div>
+          )}
+          {dynamicCategories.slice(0, limit).map((cat) => {
             const IconComponent = cat.icon;
-            const categoryTitle = getCategoryTitle(cat.id, lang);
+            const categoryTitle = getCategoryTitle(cat.id, lang) || cat.id;
             const categoryDesc = getCategoryDesc(cat.id, lang);
             return (
               <Link
@@ -105,7 +120,7 @@ export function PopularCategories({ limit = 8, hideHeader = false }: { limit?: n
                       <IconComponent className="size-6" />
                     </div>
                     <span className="text-xs font-black bg-[#EBF1F8] text-[#063B78] px-2.5 py-1 rounded-full group-hover:bg-[#063B78] group-hover:text-white transition-colors">
-                      {n(getSubcategoryCount(cat.id))} {lang === "mr" ? "प्रोफाईल्स" : "Profiles"}
+                      {n(cat.profilesCount)} {lang === "mr" ? "प्रोफाईल्स" : "Profiles"}
                     </span>
                   </div>
 

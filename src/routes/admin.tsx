@@ -96,7 +96,7 @@ export function AdminDashboardPage() {
   const [showJobForm, setShowJobForm] = useState(false);
   const [editingJobId, setEditingJobId] = useState<string | null>(null);
   const [jobForm, setJobForm] = useState({
-    title: "", company: "REAL JOB Platform", category: "", location: "",
+    title: "", company: "REAL JOB Platform", category: "", subcategory: "", location: "",
     salaryMin: "", salaryMax: "", salaryType: "Monthly",
     jobType: "Full Time", workMode: "On-site", vacancies: "5",
     education: "", experience: "", skills: "", description: "",
@@ -107,7 +107,7 @@ export function AdminDashboardPage() {
   const handleAddNewJobClick = () => {
     setEditingJobId(null);
     setJobForm({
-      title: "", company: "REAL JOB Platform", category: "", location: "",
+      title: "", company: "REAL JOB Platform", category: "", subcategory: "", location: "",
       salaryMin: "", salaryMax: "", salaryType: "Monthly",
       jobType: "Full Time", workMode: "On-site", vacancies: "5",
       education: "", experience: "", skills: "", description: "",
@@ -131,6 +131,7 @@ export function AdminDashboardPage() {
       title: job.title || "",
       company: job.company || "",
       category: job.category || "",
+      subcategory: job.subcategory || "",
       location: job.location || "",
       salaryMin: sMin,
       salaryMax: sMax,
@@ -160,6 +161,7 @@ export function AdminDashboardPage() {
         title: jobForm.title,
         company: jobForm.company,
         category: jobForm.category || "General",
+        subcategory: jobForm.subcategory || "",
         description: jobForm.description,
         qualification: jobForm.education,
         experience: jobForm.experience,
@@ -180,7 +182,7 @@ export function AdminDashboardPage() {
         title: jobForm.title,
         company: jobForm.company,
         category: jobForm.category || "General",
-        subcategory: "",
+        subcategory: jobForm.subcategory || "",
         description: jobForm.description,
         responsibilities: [],
         requiredSkills: [],
@@ -288,19 +290,33 @@ export function AdminDashboardPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[10px] font-black text-[#5B6B7F] uppercase mb-1.5">Category *</label>
-                    <select required value={jobForm.category} onChange={e => setJ("category", e.target.value)} className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F] focus:outline-none focus:border-[#063B78]">
-                      <option value="">Select Category</option>
-                      <option>Manufacturing & Industrial</option>
-                      <option>Construction & Building</option>
-                      <option>Healthcare & Nursing</option>
-                      <option>Logistics & Transport</option>
-                      <option>Engineering & Technical</option>
-                      <option>Retail & Sales</option>
-                      <option>Hotel & Hospitality</option>
-                      <option>Security & Services</option>
-                      <option>General Worker</option>
-                    </select>
+                    <input required list="categories-list" value={jobForm.category} onChange={e => setJ("category", e.target.value)} placeholder="Type or select category..." className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F] focus:outline-none focus:border-[#063B78]" />
+                    <datalist id="categories-list">
+                      <option value="Manufacturing & Industrial" />
+                      <option value="Construction & Building" />
+                      <option value="Healthcare & Nursing" />
+                      <option value="Logistics & Transport" />
+                      <option value="Engineering & Technical" />
+                      <option value="Retail & Sales" />
+                      <option value="Hotel & Hospitality" />
+                      <option value="Security & Services" />
+                      <option value="IT & Software" />
+                    </datalist>
                   </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-[#5B6B7F] uppercase mb-1.5">Subcategory</label>
+                    <input list="subcategories-list" value={jobForm.subcategory} onChange={e => setJ("subcategory", e.target.value)} placeholder="Type or select subcategory..." className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F] focus:outline-none focus:border-[#063B78]" />
+                    <datalist id="subcategories-list">
+                      <option value="Machine Operator" />
+                      <option value="Site Supervisor" />
+                      <option value="Nurse" />
+                      <option value="Delivery Executive" />
+                      <option value="Software Developer" />
+                    </datalist>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[10px] font-black text-[#5B6B7F] uppercase mb-1.5">Location (City/District) *</label>
                     <input required value={jobForm.location} onChange={e => setJ("location", e.target.value)} placeholder="e.g. Chakan, Pune / MIDC Kolhapur" className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F] focus:outline-none focus:border-[#063B78]" />

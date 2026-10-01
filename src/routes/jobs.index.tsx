@@ -86,152 +86,21 @@ export function JobsListingPage() {
 
   const isInitialState = (!categoryFilter || categoryFilter === "all") && !searchTerm && (!locationFilter || locationFilter === "all") && (!typeFilter || typeFilter === "all") && (!workModeFilter || workModeFilter === "all") && (!experienceFilter || experienceFilter === "all") && (!salaryFilter || salaryFilter === "all");
 
-  const subCategoryMap: Record<string, {id: string, label: string}[]> = {
-    "construction": [
-      { id: "Civil Engineer", label: "Civil Engineer" },
-      { id: "Site Engineer", label: "Site Engineer" },
-      { id: "Architect", label: "Architect" },
-      { id: "Site Supervisor", label: "Site Supervisor" },
-      { id: "Quantity Surveyor", label: "Quantity Surveyor" },
-      { id: "Project Manager", label: "Project Manager" },
-      { id: "Safety Officer", label: "Safety Officer" }
-    ],
-    "it-software": [
-      { id: "Software Developer", label: "Software Developer" },
-      { id: "Web Developer", label: "Web Developer" },
-      { id: "Full Stack Developer", label: "Full Stack Developer" },
-      { id: "Frontend Developer", label: "Frontend Developer" },
-      { id: "Backend Developer", label: "Backend Developer" },
-      { id: "UI/UX Designer", label: "UI/UX Designer" },
-      { id: "DevOps Engineer", label: "DevOps Engineer" },
-      { id: "Data Analyst", label: "Data Analyst" },
-      { id: "Cyber Security", label: "Cyber Security" }
-    ],
-    "engineering": [
-      { id: "Mechanical Engineer", label: "Mechanical Engineer" },
-      { id: "Electrical Engineer", label: "Electrical Engineer" },
-      { id: "Civil Engineer", label: "Civil Engineer" },
-      { id: "Electronics Engineer", label: "Electronics Engineer" },
-      { id: "Production Engineer", label: "Production Engineer" },
-      { id: "Automobile Engineer", label: "Automobile Engineer" },
-      { id: "Quality Engineer", label: "Quality Engineer" }
-    ],
-    "healthcare-medical": [
-      { id: "Doctor", label: "Doctor" },
-      { id: "Nurse", label: "Nurse" },
-      { id: "Pharmacist", label: "Pharmacist" },
-      { id: "Lab Technician", label: "Lab Technician" },
-      { id: "Medical Assistant", label: "Medical Assistant" },
-      { id: "Hospital Administration", label: "Hospital Administration" }
-    ],
-    "finance-accounting": [
-      { id: "Accountant", label: "Accountant" },
-      { id: "Finance Executive", label: "Finance Executive" },
-      { id: "Banking", label: "Banking" },
-      { id: "Auditor", label: "Auditor" },
-      { id: "Tax Consultant", label: "Tax Consultant" },
-      { id: "Financial Analyst", label: "Financial Analyst" }
-    ],
-    "sales-marketing": [
-      { id: "Sales Executive", label: "Sales Executive" },
-      { id: "Business Development", label: "Business Development" },
-      { id: "Digital Marketing", label: "Digital Marketing" },
-      { id: "Marketing Executive", label: "Marketing Executive" },
-      { id: "Sales Manager", label: "Sales Manager" },
-      { id: "Telecaller", label: "Telecaller" }
-    ],
-    "education": [
-      { id: "Teacher", label: "Teacher" },
-      { id: "Professor", label: "Professor" },
-      { id: "Lecturer", label: "Lecturer" },
-      { id: "Tutor", label: "Tutor" },
-      { id: "Academic Coordinator", label: "Academic Coordinator" },
-      { id: "School Administrator", label: "School Administrator" }
-    ],
-    "manufacturing": [
-      { id: "Production", label: "Production" },
-      { id: "Quality Control", label: "Quality Control" },
-      { id: "Machine Operator", label: "Machine Operator" },
-      { id: "Maintenance Engineer", label: "Maintenance Engineer" },
-      { id: "Production Manager", label: "Production Manager" }
-    ],
-    "hr-recruitment": [
-      { id: "HR Executive", label: "HR Executive" },
-      { id: "HR Manager", label: "HR Manager" },
-      { id: "Recruiter", label: "Recruiter" },
-      { id: "Talent Acquisition", label: "Talent Acquisition" },
-      { id: "Payroll Executive", label: "Payroll Executive" }
-    ],
-    "hospitality-tourism": [
-      { id: "Hotel Management", label: "Hotel Management" },
-      { id: "Chef", label: "Chef" },
-      { id: "Front Office", label: "Front Office" },
-      { id: "Housekeeping", label: "Housekeeping" },
-      { id: "Travel Executive", label: "Travel Executive" }
-    ],
-    "logistics-transport": [
-      { id: "Logistics Executive", label: "Logistics Executive" },
-      { id: "Warehouse Manager", label: "Warehouse Manager" },
-      { id: "Delivery Executive", label: "Delivery Executive" },
-      { id: "Supply Chain", label: "Supply Chain" },
-      { id: "Transport Manager", label: "Transport Manager" }
-    ],
-    "government-public": [
-      { id: "Government Jobs", label: "Government Jobs" },
-      { id: "PSU Jobs", label: "PSU Jobs" },
-      { id: "Administrative Jobs", label: "Administrative Jobs" },
-      { id: "Public Services", label: "Public Services" }
-    ],
-    "legal": [
-      { id: "Lawyer", label: "Lawyer" },
-      { id: "Legal Advisor", label: "Legal Advisor" },
-      { id: "Legal Executive", label: "Legal Executive" },
-      { id: "Compliance Officer", label: "Compliance Officer" }
-    ],
-    "architecture-design": [
-      { id: "Architect", label: "Architect" },
-      { id: "Interior Designer", label: "Interior Designer" },
-      { id: "3D Visualizer", label: "3D Visualizer" },
-      { id: "CAD Designer", label: "CAD Designer" }
-    ],
-    "retail-ecommerce": [
-      { id: "Store Manager", label: "Store Manager" },
-      { id: "Retail Executive", label: "Retail Executive" },
-      { id: "E-commerce Executive", label: "E-commerce Executive" },
-      { id: "Customer Service", label: "Customer Service" }
-    ],
-    "customer-service-bpo": [
-      { id: "Customer Support", label: "Customer Support" },
-      { id: "Call Center", label: "Call Center" },
-      { id: "BPO Executive", label: "BPO Executive" },
-      { id: "Technical Support", label: "Technical Support" }
-    ],
-    "design-creative": [
-      { id: "Graphic Designer", label: "Graphic Designer" },
-      { id: "UI/UX Designer", label: "UI/UX Designer" },
-      { id: "Video Editor", label: "Video Editor" },
-      { id: "Content Creator", label: "Content Creator" },
-      { id: "Photographer", label: "Photographer" }
-    ],
-    "media-communication": [
-      { id: "Content Writer", label: "Content Writer" },
-      { id: "Journalist", label: "Journalist" },
-      { id: "Social Media Manager", label: "Social Media Manager" },
-      { id: "PR Executive", label: "PR Executive" }
-    ],
-    "agriculture-farming": [
-      { id: "Agricultural Engineer", label: "Agricultural Engineer" },
-      { id: "Farm Manager", label: "Farm Manager" },
-      { id: "Agronomist", label: "Agronomist" },
-      { id: "Agriculture Officer", label: "Agriculture Officer" }
-    ],
-    "science-research": [
-      { id: "Research Scientist", label: "Research Scientist" },
-      { id: "Laboratory Researcher", label: "Laboratory Researcher" },
-      { id: "Biotechnologist", label: "Biotechnologist" },
-      { id: "Research Assistant", label: "Research Assistant" }
-    ]
-  };
+  const dynamicSubCategories = useMemo(() => {
+    if (!categoryFilter || categoryFilter === "all") return [];
+    
+    const jobsInCategory = dataStore.getActiveJobs().filter(j => 
+      j.category.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-') === categoryFilter.toLowerCase() ||
+      j.category.toLowerCase() === categoryFilter.toLowerCase()
+    );
+
+    const subs = new Set<string>();
+    jobsInCategory.forEach(j => {
+      if (j.subcategory) subs.add(j.subcategory);
+    });
+
+    return Array.from(subs).map(sub => ({ id: sub, label: sub }));
+  }, [categoryFilter]);
 
   const resetFilters = () => {
     setSearchTerm("");
@@ -277,14 +146,7 @@ export function JobsListingPage() {
         const normalizedFilter = categoryFilter.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-');
         const jobCatNorm = (job.category || "").toLowerCase().replace(/ & /g, '-').replace(/ /g, '-');
         
-        const subCats = subCategoryMap[normalizedFilter] || [];
-        const isMainCategoryMatch = jobCatNorm.includes(normalizedFilter) || normalizedFilter.includes(jobCatNorm);
-        const isSubCategoryMatch = subCats.some(sub => 
-          job.title.toLowerCase().includes(sub.id.toLowerCase()) || 
-          job.category.toLowerCase().includes(sub.id.toLowerCase())
-        );
-
-        matchesCategory = isMainCategoryMatch || isSubCategoryMatch;
+        matchesCategory = jobCatNorm === normalizedFilter || jobCatNorm.includes(normalizedFilter) || normalizedFilter.includes(jobCatNorm);
       }
 
       if (matchesCategory && subCategoryFilter !== "all" && subCategoryFilter) {
@@ -607,7 +469,7 @@ export function JobsListingPage() {
                   </div>
 
                   {/* Sub-Category Pills */}
-                  {subCategoryMap[categoryFilter] && (
+                  {dynamicSubCategories.length > 0 && (
                     <div className="flex flex-wrap gap-3">
                       <button
                         onClick={() => setSubCategoryFilter("all")}
@@ -619,7 +481,7 @@ export function JobsListingPage() {
                       >
                         {t("allCategories")}
                       </button>
-                      {subCategoryMap[categoryFilter].map(sub => (
+                      {dynamicSubCategories.map(sub => (
                         <button
                           key={sub.id}
                           onClick={() => setSubCategoryFilter(sub.id)}
