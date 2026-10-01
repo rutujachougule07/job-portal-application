@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import {
   ArrowLeft,
@@ -73,6 +73,17 @@ export function JobDetailPage() {
   const [saved, setSaved] = useState(false);
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [applied, setApplied] = useState(false);
+
+  useEffect(() => {
+    if (showApplyModal) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [showApplyModal]);
   const [applicantName, setApplicantName] = useState("");
   const [applicantPhone, setApplicantPhone] = useState("");
   const [applicantExp, setApplicantExp] = useState("3 Years");

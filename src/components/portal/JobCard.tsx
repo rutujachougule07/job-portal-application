@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   Building2,
@@ -277,6 +277,17 @@ export function JobCard({
   const [showCompanyModal, setShowCompanyModal] = useState(false);
   const [activeModalTab, setActiveModalTab] = useState<"company" | "job" | "openings">("company");
   const [applied, setApplied] = useState(false);
+
+  useEffect(() => {
+    if (showApplyModal || showCompanyModal) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [showApplyModal, showCompanyModal]);
 
   const [fieldValues, setFieldValues] = useState<Record<string, any>>({});
   const [customAnswers, setCustomAnswers] = useState<Record<string, any>>({});
