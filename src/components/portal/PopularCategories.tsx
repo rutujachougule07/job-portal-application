@@ -80,7 +80,7 @@ export function PopularCategories({ limit = 8, hideHeader = false }: { limit?: n
               to="/jobs"
               className="inline-flex items-center gap-2 rounded-lg bg-[#063B78] px-6 py-3 text-sm font-bold text-white shadow-md transition-all duration-200 hover:bg-[#082F63] hover:shadow-lg"
             >
-              <span>{t("viewAll")} ({n(allJobs.length)})</span>
+              <span>{t("viewAll")}</span>
               <ArrowRight className="size-4 text-[#FFC400]" />
             </Link>
           </div>
