@@ -536,6 +536,7 @@ export function AdminDashboardPage() {
             <Button
               onClick={() => {
                 window.localStorage.removeItem("realjob-user");
+                dataStore.setCurrentUser(null);
                 toast.info("Logged out from Admin Dashboard");
                 navigate({ to: "/" });
               }}

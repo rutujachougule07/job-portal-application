@@ -22,6 +22,7 @@ import { LanguageSwitcher } from "./LanguageSwitcher";
 import { Button } from "@/components/ui/button";
 import { useI18n, type TranslationKeys } from "@/lib/i18n";
 import { LanguageGate } from "./LanguageGate";
+import { dataStore } from "@/lib/data-store";
 
 type Role = "user" | "admin" | "super";
 
@@ -62,6 +63,7 @@ export function AppShell({ role, title, eyebrow, children }: { role: Role; title
 
   const signOut = () => {
     window.localStorage.removeItem("realjob-user");
+    dataStore.setCurrentUser(null);
     navigate({ to: "/", replace: true });
   };
 
