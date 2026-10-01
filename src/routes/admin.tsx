@@ -857,7 +857,6 @@ export function AdminDashboardPage() {
                     <th className="p-3.5">संपर्क पर्याय (Direct Contact)</th>
                     <th className="p-3.5">अर्जाची तारीख (Applied Date)</th>
                     <th className="p-3.5">सध्याची स्थिती (Status)</th>
-                    <th className="p-3.5">संपर्क क्र. (Mobile)</th>
                     <th className="p-3.5 text-right">तपशील (Details)</th>
                   </tr>
                 </thead>
@@ -914,9 +913,6 @@ export function AdminDashboardPage() {
                               <option value="Rejected">❌ Rejected</option>
                             </select>
                           </td>
-                          <td className="p-3.5 font-bold text-[#063B78]">
-                            {a.candidateMobile}
-                          </td>
                           <td className="p-3.5 text-right">
                             <Button
                               variant="outline"
@@ -930,7 +926,7 @@ export function AdminDashboardPage() {
                         </tr>
                         {expandedApp === a.id && (
                           <tr className="bg-[#F8FAFC]">
-                            <td colSpan={7} className="p-4 border-t border-[#DCE5F0]">
+                            <td colSpan={6} className="p-4 border-t border-[#DCE5F0]">
                               <div className="bg-white p-5 rounded-xl border border-[#E2E8F0] shadow-sm">
                                  <h4 className="font-bold text-[#10233F] mb-4 border-b pb-2 flex items-center gap-2">
                                    <FileText className="size-4 text-[#063B78]" />
@@ -961,7 +957,7 @@ export function AdminDashboardPage() {
                     ))}
                   {applications.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="p-8 text-center text-xs font-bold text-[#5B6B7F] bg-[#F8FAFF]">
+                      <td colSpan={6} className="p-8 text-center text-xs font-bold text-[#5B6B7F] bg-[#F8FAFF]">
                         अद्याप कोणत्याही कामगाराने अर्ज केलेला नाही (No job applications received yet)
                       </td>
                     </tr>
