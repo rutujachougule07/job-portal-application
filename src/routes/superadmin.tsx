@@ -13,11 +13,20 @@ import {
   LogOut,
   BarChart3,
   Search,
-  CheckCircle2
+  CheckCircle2,
+  Clock,
+  XCircle,
+  Check,
+  X,
+  Building2,
+  MapPin,
+  IndianRupee,
+  Briefcase
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { LanguageSwitcher } from "@/components/portal/LanguageSwitcher";
+import { dataStore, JobRecord } from "@/lib/data-store";
 
 export const Route = createFileRoute("/superadmin")({
   head: () => ({
@@ -79,7 +88,35 @@ function SuperAdminPage() {
     if (savedMetrics) setMetrics(JSON.parse(savedMetrics));
     if (savedAbout) setAboutData(JSON.parse(savedAbout));
     if (savedCategories) setCategories(JSON.parse(savedCategories));
+  const [allJobs, setAllJobs] = useState<JobRecord[]>([]);
+  const [approvalFilter, setApprovalFilter] = useState<"pending" | "approved" | "rejected" | "all">("pending");
+
+  useEffect(() => {
+    setAllJobs(dataStore.getAllJobs());
   }, []);
+
+  const handleApproveJob = (jobId: string) => {
+    dataStore.updateJobApprovalStatus(jobId, "approved");
+    toast.success("✅ नोकरी मंजूर झाली आहे! (Job Approved - Now visible on website)");
+    setAllJobs(dataStore.getAllJobs());
+  };
+
+  const handleRejectJob = (jobId: string) => {
+    dataStore.updateJobApprovalStatus(jobId, "rejected");
+    toast.error("❌ नोकरी अमान्य करण्यात आली आहे. (Job Rejected)");
+    setAllJobs(dataStore.getAllJobs());
+  };
+
+  const pendingJobsCount = allJobs.filter((j) => j.approvalStatus === "pending").length;
+  const approvedJobsCount = allJobs.filter((j) => j.approvalStatus === "approved" || !j.approvalStatus).length;
+  const rejectedJobsCount = allJobs.filter((j) => j.approvalStatus === "rejected").length;
+
+  const displayedJobs = allJobs.filter((j) => {
+    if (approvalFilter === "pending") return j.approvalStatus === "pending";
+    if (approvalFilter === "approved") return j.approvalStatus === "approved" || !j.approvalStatus;
+    if (approvalFilter === "rejected") return j.approvalStatus === "rejected";
+    return true;
+  });
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -326,19 +363,27 @@ function SuperAdminPage() {
         <div className="flex-1 py-6 px-4 space-y-1 overflow-y-auto">
           {[
             { id: "dashboard", label: "Dashboard Overview", icon: BarChart3 },
+            { id: "job-approvals", label: "Job Approvals", icon: CheckCircle2, count: pendingJobsCount },
             { id: "landing-page", label: "Landing Page", icon: Globe },
           ].map((item) => (
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200 ${
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200 ${
                 activeTab === item.id
                   ? "bg-[#D4AF37] text-[#021D3D] shadow-md shadow-[#D4AF37]/20"
                   : "text-[#9DAEC5] hover:bg-white/5 hover:text-white"
               }`}
             >
-              <item.icon className="size-4" />
-              {item.label}
+              <div className="flex items-center gap-3">
+                <item.icon className="size-4" />
+                {item.label}
+              </div>
+              {item.count ? (
+                <span className="px-2 py-0.5 text-[11px] font-black rounded-full bg-amber-500 text-white animate-pulse">
+                  {item.count}
+                </span>
+              ) : null}
             </button>
           ))}
         </div>
@@ -449,6 +494,158 @@ function SuperAdminPage() {
                   </div>
                   <Button className="w-full mt-6 bg-gradient-to-r from-[#063B78] to-[#0A4F9E] hover:from-[#0A4F9E] hover:to-[#063B78] text-white font-bold border-b-[3px] border-[#021D3D] transition-all active:scale-95">Manage Admins</Button>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "job-approvals" && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              {/* Stat Summary Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <button
+                  onClick={() => setApprovalFilter("pending")}
+                  className={`p-5 rounded-2xl border text-left transition-all ${
+                    approvalFilter === "pending"
+                      ? "bg-amber-500 text-white border-amber-600 shadow-lg shadow-amber-500/20"
+                      : "bg-white border-[#E0E8F5] text-[#063B78] hover:bg-[#F8FAFF]"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-black uppercase tracking-wider opacity-90">⏳ Pending Approval</span>
+                    <Clock className="size-5" />
+                  </div>
+                  <div className="text-3xl font-black">{pendingJobsCount}</div>
+                  <p className="text-xs mt-1 opacity-80">मंजुरीच्या प्रतीक्षेत असलेल्या नोकऱ्या</p>
+                </button>
+
+                <button
+                  onClick={() => setApprovalFilter("approved")}
+                  className={`p-5 rounded-2xl border text-left transition-all ${
+                    approvalFilter === "approved"
+                      ? "bg-emerald-600 text-white border-emerald-700 shadow-lg shadow-emerald-600/20"
+                      : "bg-white border-[#E0E8F5] text-[#063B78] hover:bg-[#F8FAFF]"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-black uppercase tracking-wider opacity-90">✅ Approved Jobs</span>
+                    <CheckCircle2 className="size-5" />
+                  </div>
+                  <div className="text-3xl font-black">{approvedJobsCount}</div>
+                  <p className="text-xs mt-1 opacity-80">वेबसाईटवर लाईव्ह असलेल्या नोकऱ्या</p>
+                </button>
+
+                <button
+                  onClick={() => setApprovalFilter("rejected")}
+                  className={`p-5 rounded-2xl border text-left transition-all ${
+                    approvalFilter === "rejected"
+                      ? "bg-red-600 text-white border-red-700 shadow-lg shadow-red-600/20"
+                      : "bg-white border-[#E0E8F5] text-[#063B78] hover:bg-[#F8FAFF]"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-black uppercase tracking-wider opacity-90">❌ Rejected Jobs</span>
+                    <XCircle className="size-5" />
+                  </div>
+                  <div className="text-3xl font-black">{rejectedJobsCount}</div>
+                  <p className="text-xs mt-1 opacity-80">अमान्य केलेल्या नोकऱ्या</p>
+                </button>
+              </div>
+
+              {/* Header & Filter Pills */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-white p-4 rounded-2xl border border-[#E0E8F5] shadow-sm gap-3">
+                <h3 className="text-lg font-black text-[#063B78]">Job Moderation Queue</h3>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {[
+                    { id: "pending", label: `Pending (${pendingJobsCount})` },
+                    { id: "approved", label: `Approved (${approvedJobsCount})` },
+                    { id: "rejected", label: `Rejected (${rejectedJobsCount})` },
+                    { id: "all", label: `All Jobs (${allJobs.length})` },
+                  ].map((btn) => (
+                    <button
+                      key={btn.id}
+                      onClick={() => setApprovalFilter(btn.id as any)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                        approvalFilter === btn.id
+                          ? "bg-[#063B78] text-white shadow-sm"
+                          : "bg-[#F8FAFF] text-[#5B6B7F] hover:bg-[#E0E8F5]"
+                      }`}
+                    >
+                      {btn.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Jobs List */}
+              <div className="space-y-4">
+                {displayedJobs.length === 0 ? (
+                  <div className="bg-white rounded-2xl p-12 border border-[#E0E8F5] text-center">
+                    <CheckCircle2 className="size-12 mx-auto text-[#9DAEC5] mb-3" />
+                    <h4 className="text-base font-black text-[#063B78]">कोणत्याही नोकऱ्या आढळल्या नाहीत (No jobs found)</h4>
+                    <p className="text-xs text-[#5B6B7F] mt-1">या श्रेणीमध्ये सध्या कोणत्याही नोकऱ्या उपलब्ध नाहीत.</p>
+                  </div>
+                ) : (
+                  displayedJobs.map((j) => (
+                    <div key={j.id} className="bg-white rounded-2xl border border-[#E0E8F5] shadow-sm p-6 flex flex-col md:flex-row justify-between gap-6 hover:shadow-md transition-shadow">
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <h3 className="text-lg font-black text-[#063B78]">{j.title}</h3>
+                          {j.approvalStatus === "rejected" ? (
+                            <span className="px-2.5 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-bold flex items-center gap-1">
+                              ❌ Rejected
+                            </span>
+                          ) : j.approvalStatus === "approved" || !j.approvalStatus ? (
+                            <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold flex items-center gap-1">
+                              ✅ Approved (Live on Website)
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-bold flex items-center gap-1 animate-pulse">
+                              ⏳ Pending Super Admin Approval
+                            </span>
+                          )}
+                          <span className="px-2.5 py-0.5 rounded-full bg-[#F8FAFF] border border-[#DCE5F0] text-[#063B78] text-xs font-bold">
+                            {j.category}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-4 text-xs font-bold text-[#5B6B7F] flex-wrap pt-1">
+                          <span className="flex items-center gap-1 text-[#063B78]"><Building2 className="size-3.5" /> {j.company}</span>
+                          <span className="flex items-center gap-1"><MapPin className="size-3.5" /> {j.location}</span>
+                          <span className="flex items-center gap-1 text-emerald-700"><IndianRupee className="size-3.5" /> {j.salary}</span>
+                          <span className="flex items-center gap-1"><Briefcase className="size-3.5" /> {j.jobType} ({j.vacancies} Vacancies)</span>
+                          <span className="flex items-center gap-1"><Clock className="size-3.5" /> {j.postedAgo}</span>
+                        </div>
+
+                        <p className="text-xs text-[#5B6B7F] line-clamp-2 pt-2 bg-[#F8FAFF] p-3 rounded-xl border border-[#E0E8F5]">
+                          {j.description}
+                        </p>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex flex-row md:flex-col items-center justify-center gap-3 border-t md:border-t-0 md:border-l border-[#E0E8F5] pt-4 md:pt-0 md:pl-6 min-w-[160px]">
+                        {j.approvalStatus !== "approved" && (
+                          <Button
+                            onClick={() => handleApproveJob(j.id)}
+                            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs h-10 shadow-sm"
+                          >
+                            <Check className="size-4 mr-1" />
+                            मंजूर करा (Approve)
+                          </Button>
+                        )}
+                        {j.approvalStatus !== "rejected" && (
+                          <Button
+                            variant="outline"
+                            onClick={() => handleRejectJob(j.id)}
+                            className="w-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 font-bold text-xs h-10"
+                          >
+                            <X className="size-4 mr-1" />
+                            अमान्य करा (Reject)
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           )}

@@ -212,8 +212,9 @@ function AdminDashboardPage() {
         vacancies: Number(jobForm.vacancies) || 1,
         benefits: [],
         status: jobForm.status as any,
+        approvalStatus: "pending",
       });
-      toast.success("✅ नवीन नोकरी यशस्वीरित्या प्रकाशित झाली!");
+      toast.success("⏳ नवीन नोकरी सबमिट झाली! सुपर ॲडमिन मंजुरीनंतर (Super Admin approval) ती वेबसाईटवर दिसेल.");
     }
     setShowJobForm(false);
     setEditingJobId(null);
@@ -753,6 +754,7 @@ function AdminDashboardPage() {
                     <th className="p-3.5">कंपनी (Company)</th>
                     <th className="p-3.5">ठिकाण & पगार (Location & Salary)</th>
                     <th className="p-3.5">जागा (Vacancies)</th>
+                    <th className="p-3.5">मंजुरी (Approval)</th>
                     <th className="p-3.5">स्थिती (Status)</th>
                     <th className="p-3.5 text-right">कृती (Actions)</th>
                   </tr>
@@ -770,6 +772,15 @@ function AdminDashboardPage() {
                         <div className="text-[#125BB5] font-bold">{j.salary}</div>
                       </td>
                       <td className="p-3.5 font-black text-[#063B78]">{j.vacancies || 5} Openings</td>
+                      <td className="p-3.5">
+                        {j.approvalStatus === "rejected" ? (
+                          <Badge className="bg-red-600 text-white font-bold">❌ Rejected</Badge>
+                        ) : j.approvalStatus === "approved" || !j.approvalStatus ? (
+                          <Badge className="bg-emerald-600 text-white font-bold">✅ Approved</Badge>
+                        ) : (
+                          <Badge className="bg-amber-500 text-white font-bold">⏳ Pending Approval</Badge>
+                        )}
+                      </td>
                       <td className="p-3.5">
                         <Badge
                           className={

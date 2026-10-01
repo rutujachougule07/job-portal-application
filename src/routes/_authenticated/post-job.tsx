@@ -287,12 +287,13 @@ function PostJobPage() {
       vacancies: parseInt(formData.vacancies) || 5,
       benefits: benefitsArray,
       status: "Active",
+      approvalStatus: "pending",
     });
 
-    toast.success("Job published successfully on REAL JOB!");
+    toast.success("⏳ नोकरी सबमिट झाली आहे! सुपर ॲडमिन मंजुरीनंतर (Super Admin approval) ही Job वेबसाईटवर दिसेल.");
     setTimeout(() => {
       navigate({ to: "/jobs" });
-    }, 1500);
+    }, 1800);
   };
 
   return (

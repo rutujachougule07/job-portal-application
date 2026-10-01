@@ -49,6 +49,7 @@ export type SalaryType = "Daily" | "Monthly" | "Yearly";
 export type JobType = "Full Time" | "Part Time" | "Contract" | "Internship" | "Daily Wage" | "Temporary";
 export type WorkMode = "On-site" | "Work From Home" | "Hybrid";
 export type JobStatus = "Active" | "Closed";
+export type ApprovalStatus = "pending" | "approved" | "rejected";
 
 export type JobRecord = {
   id: string;
@@ -77,6 +78,7 @@ export type JobRecord = {
   initials: string;
   featured?: boolean;
   status: JobStatus;
+  approvalStatus?: ApprovalStatus;
 };
 
 export type ApplicationStatus = "Applied" | "Viewed" | "Shortlisted" | "Interview" | "Selected" | "Rejected";
@@ -324,14 +326,26 @@ class DataStoreManager {
   }
 
   public getActiveJobs(): JobRecord[] {
-    return this.getAllJobs().filter((j) => j.status === "Active");
+    return this.getAllJobs().filter((j) => j.status === "Active" && (j.approvalStatus === "approved" || !j.approvalStatus));
+  }
+
+  public getPendingJobs(): JobRecord[] {
+    return this.getAllJobs().filter((j) => j.approvalStatus === "pending");
+  }
+
+  public getApprovedJobs(): JobRecord[] {
+    return this.getAllJobs().filter((j) => j.approvalStatus === "approved" || !j.approvalStatus);
+  }
+
+  public getRejectedJobs(): JobRecord[] {
+    return this.getAllJobs().filter((j) => j.approvalStatus === "rejected");
   }
 
   public getJobById(jobId: string): JobRecord | undefined {
     return this.getAllJobs().find((j) => j.id === jobId);
   }
 
-  public createJob(jobData: Omit<JobRecord, "id" | "postedDate" | "postedAgo" | "initials">): JobRecord {
+  public createJob(jobData: Omit<JobRecord, "id" | "postedDate" | "postedAgo" | "initials"> & { approvalStatus?: ApprovalStatus }): JobRecord {
     const jobs = this.getAllJobs();
     const initials = (jobData.company || "Company").substring(0, 2).toUpperCase();
     const newJob: JobRecord = {
@@ -340,6 +354,7 @@ class DataStoreManager {
       postedDate: new Date().toISOString(),
       postedAgo: "Just now",
       initials,
+      approvalStatus: jobData.approvalStatus || "pending",
     };
     jobs.unshift(newJob);
     if (typeof window !== "undefined") {
@@ -348,6 +363,10 @@ class DataStoreManager {
       fbSync(() => setDoc(doc(db, "jobs", newJob.id), newJob));
     }
     return newJob;
+  }
+
+  public updateJobApprovalStatus(jobId: string, approvalStatus: ApprovalStatus): JobRecord | null {
+    return this.updateJob(jobId, { approvalStatus });
   }
 
   public updateJob(jobId: string, updates: Partial<JobRecord>): JobRecord | null {
