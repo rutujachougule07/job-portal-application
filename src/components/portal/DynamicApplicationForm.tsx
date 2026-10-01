@@ -107,7 +107,7 @@ export const DynamicApplicationForm = ({
 
   let sectionCounter = 1;
 
-  const showInfo = category?.toLowerCase().includes("construct") || category?.toLowerCase().includes("mason") || category?.toLowerCase().includes("manufactur") || category?.toLowerCase().includes("helper");
+  const showInfo = (category || "").toLowerCase().includes("construct") || (category || "").toLowerCase().includes("mason") || (category || "").toLowerCase().includes("manufactur") || (category || "").toLowerCase().includes("helper");
 
   return (
     <div className="space-y-2 mt-4">

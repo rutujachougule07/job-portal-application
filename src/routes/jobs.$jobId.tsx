@@ -337,14 +337,7 @@ export function JobDetailPage() {
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
-                  {Object.keys(appConfig.fields).map(fieldKey => {
-                    const req = appConfig.fields[fieldKey];
-                    if (req === "hidden") return null;
-                    const isReq = req === "required";
-                    const label = fieldKey.replace(/([A-Z])/g, ' $1').trim().replace(/^./, str => str.toUpperCase());
-                    
-                    return (
+
                   <DynamicApplicationForm 
                     appConfig={appConfig}
                     fieldValues={fieldValues}
