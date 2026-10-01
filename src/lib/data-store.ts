@@ -228,7 +228,7 @@ class DataStoreManager {
   }
 
 
-  public getRegisteredUsers(): Array<{ id: string; email: string; mobile?: string; role: UserRole; fullName: string }> {
+  public getRegisteredUserAccounts(): Array<{ id: string; email: string; password?: string; mobile?: string; role: UserRole; fullName: string; createdAt?: string }> {
     if (typeof window === "undefined") return [];
     const raw = localStorage.getItem("realjob_db_registered_users");
     if (!raw) return [];
@@ -237,6 +237,43 @@ class DataStoreManager {
     } catch {
       return [];
     }
+  }
+
+  public getRegisteredUsers(): Array<{ id: string; email: string; mobile?: string; role: UserRole; fullName: string }> {
+    return this.getRegisteredUserAccounts();
+  }
+
+  public registerAccount(user: { email: string; password?: string; mobile?: string; role: UserRole; fullName: string }) {
+    const list = this.getRegisteredUserAccounts();
+    const cleanEmail = user.email.trim().toLowerCase();
+    const existingIndex = list.findIndex(u => u.email.toLowerCase() === cleanEmail);
+    
+    const account = {
+      id: `usr-${Date.now()}`,
+      email: cleanEmail,
+      password: user.password || "",
+      mobile: user.mobile || "",
+      role: user.role,
+      fullName: user.fullName || cleanEmail.split("@")[0],
+      createdAt: new Date().toISOString(),
+    };
+
+    if (existingIndex >= 0) {
+      list[existingIndex] = { ...list[existingIndex], ...account };
+    } else {
+      list.push(account);
+    }
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem("realjob_db_registered_users", JSON.stringify(list));
+      fbSync(() => setDoc(doc(db, "users", account.id), account));
+    }
+    return account;
+  }
+
+  public findRegisteredAccount(email: string) {
+    const cleanEmail = email.trim().toLowerCase();
+    return this.getRegisteredUserAccounts().find(u => u.email.toLowerCase() === cleanEmail);
   }
 
   // --- USER AUTHENTICATION & CURRENT SESSION ---

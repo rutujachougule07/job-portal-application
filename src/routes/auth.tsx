@@ -85,87 +85,116 @@ function AuthPage() {
         const rawName = role === "employer" || role === "admin" ? companyName : workerName;
         const nameString = (rawName && rawName.trim()) ? rawName.trim() : (email ? (email.split("@")[0] || "User") : "User");
 
-        const userObj = {
-          id: role === "employer" || role === "admin" ? (companyName ? `emp-${companyName.toLowerCase().replace(/\s+/g, '-')}` : "emp-001") : `seeker-${Date.now()}`,
-          email: email || "user@example.com",
-          role: role === "admin" ? ("employer" as const) : role,
+        const registeredAccount = dataStore.registerAccount({
+          email,
+          password,
+          role: role === "admin" ? "employer" : role,
           fullName: nameString,
+          mobile: workerPhone || "",
+        });
+
+        const userObj = {
+          id: registeredAccount.id,
+          email: registeredAccount.email,
+          role: registeredAccount.role,
+          fullName: registeredAccount.fullName,
         };
 
         window.localStorage.setItem("realjob-user", JSON.stringify(userObj));
         dataStore.setCurrentUser(userObj);
-        toast.success("Account created successfully! Welcome to REAL JOB.");
-        const nextPath = role === "admin" ? "/admin" : role === "employer" ? "/employer" : "/home";
+        toast.success("✅ खाते यशस्वीरित्या तयार झाले! Welcome to REAL JOB.");
+        const nextPath = (role === "admin" || role === "employer") ? "/admin" : "/home";
         navigate({ to: "/select-language", search: { redirectTo: nextPath } });
         setBusy(false);
         return;
       }
 
       // ── LOGIN MODE ──
-      if (role === "admin") {
-        const SUPERADMIN_EMAIL = "supera@gmail.com";
-        const enteredEmail = email.trim().toLowerCase();
+      const enteredEmail = email.trim().toLowerCase();
 
-        if (enteredEmail === SUPERADMIN_EMAIL || enteredEmail === "superadmin") {
-          // Super Admin Login via Firebase Auth
-          const { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } = await import("firebase/auth");
-          const auth = getAuth();
-          let uid = "superadmin-uid";
+      if (enteredEmail === "supera@gmail.com" || enteredEmail === "superadmin") {
+        // Super Admin Master Account
+        const { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } = await import("firebase/auth");
+        const auth = getAuth();
+        let uid = "superadmin-uid";
 
-          try {
-            const credential = await signInWithEmailAndPassword(auth, SUPERADMIN_EMAIL, password);
-            uid = credential.user.uid;
-          } catch (signInErr: any) {
-            const errCode = signInErr?.code || "";
-            if ((errCode === "auth/user-not-found" || errCode === "auth/invalid-credential") && password === "supera123") {
-              try {
-                const newCred = await createUserWithEmailAndPassword(auth, SUPERADMIN_EMAIL, password);
-                uid = newCred.user.uid;
-              } catch {
-                // fallback
-              }
-            } else if (password !== "supera123") {
-              throw signInErr;
+        try {
+          const credential = await signInWithEmailAndPassword(auth, "supera@gmail.com", password);
+          uid = credential.user.uid;
+        } catch (signInErr: any) {
+          const errCode = signInErr?.code || "";
+          if ((errCode === "auth/user-not-found" || errCode === "auth/invalid-credential") && password === "supera123") {
+            try {
+              const newCred = await createUserWithEmailAndPassword(auth, "supera@gmail.com", password);
+              uid = newCred.user.uid;
+            } catch {
+              // fallback
             }
+          } else if (password !== "supera123") {
+            toast.error("❌ चुकीचा पासवर्ड! Super Admin password is 'supera123'.");
+            setBusy(false);
+            return;
           }
-
-          const userObj = {
-            id: uid,
-            email: SUPERADMIN_EMAIL,
-            role: "admin" as const,
-            fullName: "Super Admin",
-          };
-
-          window.localStorage.setItem("realjob-user", JSON.stringify(userObj));
-          dataStore.setCurrentUser(userObj);
-          toast.success("✅ Super Admin Login Successful!");
-          navigate({ to: "/superadmin" });
-        } else {
-          // Employer / Company Admin Login
-          const userObj = {
-            id: `employer-${Date.now()}`,
-            email: enteredEmail,
-            role: "employer" as const,
-            fullName: enteredEmail.split("@")[0] || "Employer",
-          };
-
-          window.localStorage.setItem("realjob-user", JSON.stringify(userObj));
-          dataStore.setCurrentUser(userObj);
-          toast.success("✅ Employer Login Successful!");
-          navigate({ to: "/admin" });
         }
-      } else {
-        // Worker simple local login
+
         const userObj = {
-          id: `seeker-${Date.now()}`,
-          email: email || "user@example.com",
-          role: role as "worker" | "employer",
-          fullName: email ? email.split("@")[0] : "User",
+          id: uid,
+          email: "supera@gmail.com",
+          role: "admin" as const,
+          fullName: "Super Admin",
         };
+
         window.localStorage.setItem("realjob-user", JSON.stringify(userObj));
         dataStore.setCurrentUser(userObj);
-        toast.success("Successfully logged in!");
-        navigate({ to: "/select-language", search: { redirectTo: "/home" } });
+        toast.success("✅ Super Admin Login Successful!");
+        navigate({ to: "/superadmin" });
+        setBusy(false);
+        return;
+      }
+
+      // Regular Employer / Worker Login with registered Email & Password
+      const existingAccount = dataStore.findRegisteredAccount(enteredEmail);
+
+      if (existingAccount) {
+        if (existingAccount.password && existingAccount.password !== password) {
+          toast.error("❌ चुकीचा पासवर्ड! (Wrong password. Please enter correct password.)");
+          setBusy(false);
+          return;
+        }
+
+        const userObj = {
+          id: existingAccount.id,
+          email: existingAccount.email,
+          role: (role === "admin" ? "employer" : role) as any,
+          fullName: existingAccount.fullName,
+        };
+
+        window.localStorage.setItem("realjob-user", JSON.stringify(userObj));
+        dataStore.setCurrentUser(userObj);
+        toast.success(`✅ स्वागत आहे, ${existingAccount.fullName}! Welcome back.`);
+        const nextPath = (role === "admin" || role === "employer" || existingAccount.role === "employer") ? "/admin" : "/home";
+        navigate({ to: "/select-language", search: { redirectTo: nextPath } });
+      } else {
+        // Auto-register new user on first login with entered credentials
+        const newAcc = dataStore.registerAccount({
+          email: enteredEmail,
+          password: password,
+          role: role === "admin" ? "employer" : role,
+          fullName: enteredEmail.split("@")[0] || "Employer",
+        });
+
+        const userObj = {
+          id: newAcc.id,
+          email: newAcc.email,
+          role: newAcc.role,
+          fullName: newAcc.fullName,
+        };
+
+        window.localStorage.setItem("realjob-user", JSON.stringify(userObj));
+        dataStore.setCurrentUser(userObj);
+        toast.success("✅ लॉगिन यशस्वी झाले! Welcome to REAL JOB!");
+        const nextPath = (role === "admin" || role === "employer") ? "/admin" : "/home";
+        navigate({ to: "/select-language", search: { redirectTo: nextPath } });
       }
     } catch (err: any) {
       const code = err?.code || "";
