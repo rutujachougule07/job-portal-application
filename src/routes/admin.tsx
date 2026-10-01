@@ -555,7 +555,7 @@ export function AdminDashboardPage() {
               onClick={handleAddNewJobClick}
               className="btn-yellow text-xs font-black px-4 py-2"
             >
-              <Plus className="size-4 mr-1" /> + नवीन जॉब जोडा (Add New Job)
+              <Plus className="size-4 mr-1" /> नवीन जॉब जोडा (Add New Job)
             </Button>
           </div>
         </div>
