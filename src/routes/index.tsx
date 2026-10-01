@@ -24,6 +24,7 @@ import {
   Quote,
   Star,
   Monitor,
+  Sparkles,
 } from "lucide-react";
 
 const ICONS: Record<string, React.ElementType> = {
@@ -89,12 +90,61 @@ function LandingGatewayPage() {
     description: "REAL JOB is a reliable employment portal that connects job seekers with trusted companies. We focus on creating real opportunities, building successful careers, and supporting growth for individuals and businesses across India."
   });
   const [categories, setCategories] = useState([
-    { label: "Construction", jobsCount: "1.2K+ Jobs", iconName: "HardHat", theme: "yellow" },
-    { label: "Technical Staff", jobsCount: "2.5K+ Jobs", iconName: "Wrench", theme: "blue" },
-    { label: "Transport & Logistics", jobsCount: "1.8K+ Jobs", iconName: "Truck", theme: "yellow" },
-    { label: "Electrician", jobsCount: "950+ Jobs", iconName: "Zap", theme: "blue" },
-    { label: "Security Guard", jobsCount: "1.1K+ Jobs", iconName: "Shield", theme: "yellow" },
-    { label: "Office Staff", jobsCount: "2.3K+ Jobs", iconName: "Briefcase", theme: "blue" }
+    {
+      id: "construction",
+      label: "Construction",
+      jobsCount: "1.5K+ Jobs",
+      iconName: "HardHat",
+      gradient: "from-amber-500/15 via-amber-400/5 to-transparent",
+      iconBg: "bg-amber-100 text-amber-700 group-hover:bg-amber-500 group-hover:text-white",
+      hoverBorder: "group-hover:border-amber-400",
+      badgeStyle: "bg-amber-50 text-amber-700 border-amber-200",
+      btnStyle: "bg-amber-100 text-amber-700 group-hover:bg-amber-500 group-hover:text-white"
+    },
+    {
+      id: "technical",
+      label: "Technical Staff",
+      jobsCount: "2.8K+ Jobs",
+      iconName: "Wrench",
+      gradient: "from-blue-500/15 via-blue-400/5 to-transparent",
+      iconBg: "bg-blue-100 text-blue-700 group-hover:bg-blue-600 group-hover:text-white",
+      hoverBorder: "group-hover:border-blue-400",
+      badgeStyle: "bg-blue-50 text-blue-700 border-blue-200",
+      btnStyle: "bg-blue-100 text-blue-700 group-hover:bg-blue-600 group-hover:text-white"
+    },
+    {
+      id: "logistics",
+      label: "Transport & Logistics",
+      jobsCount: "1.9K+ Jobs",
+      iconName: "Truck",
+      gradient: "from-emerald-500/15 via-emerald-400/5 to-transparent",
+      iconBg: "bg-emerald-100 text-emerald-700 group-hover:bg-emerald-600 group-hover:text-white",
+      hoverBorder: "group-hover:border-emerald-400",
+      badgeStyle: "bg-emerald-50 text-emerald-700 border-emerald-200",
+      btnStyle: "bg-emerald-100 text-emerald-700 group-hover:bg-emerald-600 group-hover:text-white"
+    },
+    {
+      id: "electrician",
+      label: "Electrician",
+      jobsCount: "1.1K+ Jobs",
+      iconName: "Zap",
+      gradient: "from-purple-500/15 via-purple-400/5 to-transparent",
+      iconBg: "bg-purple-100 text-purple-700 group-hover:bg-purple-600 group-hover:text-white",
+      hoverBorder: "group-hover:border-purple-400",
+      badgeStyle: "bg-purple-50 text-purple-700 border-purple-200",
+      btnStyle: "bg-purple-100 text-purple-700 group-hover:bg-purple-600 group-hover:text-white"
+    },
+    {
+      id: "office",
+      label: "Office Staff",
+      jobsCount: "2.4K+ Jobs",
+      iconName: "Briefcase",
+      gradient: "from-rose-500/15 via-rose-400/5 to-transparent",
+      iconBg: "bg-rose-100 text-rose-700 group-hover:bg-rose-600 group-hover:text-white",
+      hoverBorder: "group-hover:border-rose-400",
+      badgeStyle: "bg-rose-50 text-rose-700 border-rose-200",
+      btnStyle: "bg-rose-100 text-rose-700 group-hover:bg-rose-600 group-hover:text-white"
+    }
   ]);
 
   useEffect(() => {
@@ -396,48 +446,39 @@ function LandingGatewayPage() {
               <div className="h-[1.5px] w-12 md:w-20 bg-[#D4AF37]/60"></div>
             </div>
 
-            {/* Category Cards Grid (Matching 2nd Screenshot) */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6 max-w-[1500px] mx-auto px-4">
+            {/* 5 Animated Category Cards Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 max-w-[1450px] mx-auto px-4">
               {categories.map((catData, i) => {
                 const IconComponent = ICONS[catData.iconName] || Briefcase;
-                const isYellow = catData.theme === "yellow";
                 return (
                   <div
-                    key={i}
+                    key={catData.id || i}
                     onClick={() => navigate({ to: '/auth', search: { mode: 'login', role: 'worker' } })}
-                    className={`group relative rounded-2xl border transition-all duration-300 p-6 flex flex-col items-center justify-between text-center cursor-pointer min-h-[220px] ${
-                      isYellow
-                        ? "bg-[#FEFDF7] border-[#FDE68A]/60 hover:bg-white hover:border-[#F59E0B] hover:shadow-xl hover:-translate-y-1.5"
-                        : "bg-[#F8FAFC] border-[#E2E8F0] hover:bg-white hover:border-[#2563EB] hover:shadow-xl hover:-translate-y-1.5"
-                    }`}
+                    className={`group relative rounded-3xl border border-[#DCE5F0] bg-white p-7 flex flex-col items-center justify-between text-center cursor-pointer transition-all duration-500 shadow-sm hover:shadow-2xl hover:-translate-y-3.5 hover:scale-[1.02] ${catData.hoverBorder || "group-hover:border-blue-400"} overflow-hidden min-h-[240px]`}
                   >
-                    {/* Top Circle Icon Container */}
-                    <div className={`size-16 rounded-full flex items-center justify-center transition-transform duration-300 group-hover:scale-110 ${
-                      isYellow
-                        ? "bg-[#FEF3C7] text-[#D97706]"
-                        : "bg-[#DBEAFE] text-[#1D4ED8]"
-                    }`}>
-                      <IconComponent className="size-8 stroke-[1.8]" />
+                    {/* Background Radial Glow */}
+                    <div className={`absolute -top-16 -left-16 size-40 rounded-full bg-gradient-to-br ${catData.gradient || "from-blue-500/15 to-transparent"} blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none`} />
+
+                    {/* Top Animated Circle Icon Container */}
+                    <div className={`relative size-20 rounded-2xl flex items-center justify-center transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-xs ${catData.iconBg || "bg-blue-100 text-blue-700"}`}>
+                      <IconComponent className="size-9 stroke-[1.9] transition-transform duration-500 group-hover:scale-110" />
                     </div>
 
-                    {/* Title & Job Count */}
-                    <div className="my-3 flex flex-col items-center">
-                      <h3 className="font-black text-sm sm:text-base text-[#10233F] group-hover:text-[#063B78] transition-colors leading-tight">
+                    {/* Title & Job Count Badge */}
+                    <div className="my-4 flex flex-col items-center">
+                      <h3 className="font-black text-base sm:text-lg text-[#10233F] group-hover:text-[#063B78] transition-colors leading-tight">
                         {catData.label}
                       </h3>
-                      <span className="text-[11px] sm:text-xs font-extrabold text-[#8695A7] mt-1">
+                      <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black border tracking-wide mt-2 shadow-2xs ${catData.badgeStyle || "bg-blue-50 text-blue-700 border-blue-200"}`}>
+                        <Sparkles className="size-3 animate-pulse" />
                         {catData.jobsCount || "1K+ Jobs"}
                       </span>
                     </div>
 
-                    {/* Bottom Arrow Circle Button */}
+                    {/* Bottom Animated Arrow Circle Button */}
                     <div className="w-full flex justify-end mt-auto">
-                      <div className={`size-8 rounded-full flex items-center justify-center transition-all duration-300 ${
-                        isYellow
-                          ? "bg-[#FEF3C7] text-[#D97706] group-hover:bg-[#FFC400] group-hover:text-[#10233F] group-hover:shadow-md"
-                          : "bg-[#DBEAFE] text-[#1E40AF] group-hover:bg-[#063B78] group-hover:text-white group-hover:shadow-md"
-                      }`}>
-                        <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+                      <div className={`size-10 rounded-full flex items-center justify-center transition-all duration-500 shadow-2xs ${catData.btnStyle || "bg-blue-100 text-blue-700"} group-hover:scale-110 group-hover:shadow-md`}>
+                        <ArrowRight className="size-5 transition-transform duration-300 group-hover:translate-x-1" />
                       </div>
                     </div>
                   </div>
