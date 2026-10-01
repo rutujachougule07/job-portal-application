@@ -171,6 +171,25 @@ class DataStoreManager {
     if (!localStorage.getItem(this.STORAGE_KEYS.JOB_ALERTS)) {
       localStorage.setItem(this.STORAGE_KEYS.JOB_ALERTS, JSON.stringify([]));
     }
+    
+    // Background sync from Firebase to LocalStorage
+    import("@/firebase").then(({ db }) => {
+      import("firebase/firestore").then(({ collection, getDocs }) => {
+         getDocs(collection(db, "jobs")).then(snapshot => {
+            if (!snapshot.empty) {
+               const fbJobs = snapshot.docs.map(doc => doc.data());
+               localStorage.setItem(this.STORAGE_KEYS.JOBS, JSON.stringify(fbJobs));
+            }
+         }).catch(console.error);
+         
+         getDocs(collection(db, "applications")).then(snapshot => {
+            if (!snapshot.empty) {
+               const fbApps = snapshot.docs.map(doc => doc.data());
+               localStorage.setItem(this.STORAGE_KEYS.APPLICATIONS, JSON.stringify(fbApps));
+            }
+         }).catch(console.error);
+      });
+    }).catch(console.error);
   }
 
   public getRegisteredUsers(): Array<{ id: string; email: string; mobile?: string; role: UserRole; fullName: string }> {
@@ -291,6 +310,12 @@ class DataStoreManager {
     jobs.unshift(newJob);
     if (typeof window !== "undefined") {
       localStorage.setItem(this.STORAGE_KEYS.JOBS, JSON.stringify(jobs));
+      
+      import("@/firebase").then(({ db }) => {
+        import("firebase/firestore").then(({ doc, setDoc }) => {
+           setDoc(doc(db, "jobs", newJob.id), newJob).catch(console.error);
+        });
+      }).catch(console.error);
     }
     return newJob;
   }
@@ -306,6 +331,12 @@ class DataStoreManager {
 
     if (typeof window !== "undefined") {
       localStorage.setItem(this.STORAGE_KEYS.JOBS, JSON.stringify(jobs));
+      
+      import("@/firebase").then(({ db }) => {
+        import("firebase/firestore").then(({ doc, setDoc }) => {
+           setDoc(doc(db, "jobs", updatedJob.id), updatedJob).catch(console.error);
+        });
+      }).catch(console.error);
     }
     return updatedJob;
   }
@@ -315,6 +346,12 @@ class DataStoreManager {
     jobs = jobs.filter((j) => j.id !== jobId);
     if (typeof window !== "undefined") {
       localStorage.setItem(this.STORAGE_KEYS.JOBS, JSON.stringify(jobs));
+      
+      import("@/firebase").then(({ db }) => {
+        import("firebase/firestore").then(({ doc, deleteDoc }) => {
+           deleteDoc(doc(db, "jobs", jobId)).catch(console.error);
+        });
+      }).catch(console.error);
     }
     return true;
   }
@@ -379,6 +416,12 @@ class DataStoreManager {
     apps.unshift(newApp);
     if (typeof window !== "undefined") {
       localStorage.setItem(this.STORAGE_KEYS.APPLICATIONS, JSON.stringify(apps));
+      
+      import("@/firebase").then(({ db }) => {
+        import("firebase/firestore").then(({ doc, setDoc }) => {
+           setDoc(doc(db, "applications", newApp.id), newApp).catch(console.error);
+        });
+      }).catch(console.error);
     }
     return newApp;
   }
@@ -417,6 +460,12 @@ class DataStoreManager {
 
     if (typeof window !== "undefined") {
       localStorage.setItem(this.STORAGE_KEYS.APPLICATIONS, JSON.stringify(apps));
+      
+      import("@/firebase").then(({ db }) => {
+        import("firebase/firestore").then(({ doc, updateDoc }) => {
+           updateDoc(doc(db, "applications", updatedApp.id), { status }).catch(console.error);
+        });
+      }).catch(console.error);
     }
     return updatedApp;
   }
