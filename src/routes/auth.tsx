@@ -97,7 +97,7 @@ function AuthPage() {
           id: registeredAccount.id,
           email: registeredAccount.email,
           role: registeredAccount.role,
-          fullName: registeredAccount.fullName,
+          fullName: registeredAccount.fullName || "User",
         };
 
         window.localStorage.setItem("realjob-user", JSON.stringify(userObj));
@@ -166,7 +166,7 @@ function AuthPage() {
           id: existingAccount.id,
           email: existingAccount.email,
           role: (role === "admin" ? "employer" : role) as any,
-          fullName: existingAccount.fullName,
+          fullName: existingAccount.fullName || "User",
         };
 
         window.localStorage.setItem("realjob-user", JSON.stringify(userObj));
@@ -187,7 +187,7 @@ function AuthPage() {
           id: newAcc.id,
           email: newAcc.email,
           role: newAcc.role,
-          fullName: newAcc.fullName,
+          fullName: newAcc.fullName || "Employer",
         };
 
         window.localStorage.setItem("realjob-user", JSON.stringify(userObj));

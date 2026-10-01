@@ -233,7 +233,11 @@ class DataStoreManager {
     const raw = localStorage.getItem("realjob_db_registered_users");
     if (!raw) return [];
     try {
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      return parsed.map((u: any) => ({
+        ...u,
+        fullName: u.fullName || u.email?.split("@")[0] || "User",
+      }));
     } catch {
       return [];
     }
@@ -243,18 +247,19 @@ class DataStoreManager {
     return this.getRegisteredUserAccounts();
   }
 
-  public registerAccount(user: { email: string; password?: string; mobile?: string; role: UserRole; fullName: string }) {
+  public registerAccount(user: { email: string; password?: string; mobile?: string; role: UserRole; fullName: string }): { id: string; email: string; password?: string; mobile?: string; role: UserRole; fullName: string; createdAt?: string } {
     const list = this.getRegisteredUserAccounts();
     const cleanEmail = user.email.trim().toLowerCase();
     const existingIndex = list.findIndex(u => u.email.toLowerCase() === cleanEmail);
+    const fallbackName = cleanEmail.split("@")[0] || "User";
     
-    const account = {
+    const account: { id: string; email: string; password?: string; mobile?: string; role: UserRole; fullName: string; createdAt?: string } = {
       id: `usr-${Date.now()}`,
       email: cleanEmail,
       password: user.password || "",
       mobile: user.mobile || "",
       role: user.role,
-      fullName: user.fullName || cleanEmail.split("@")[0],
+      fullName: user.fullName || fallbackName,
       createdAt: new Date().toISOString(),
     };
 
