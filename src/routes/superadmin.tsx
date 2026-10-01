@@ -175,16 +175,45 @@ function SuperAdminPage() {
     }
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const [loginBusy, setLoginBusy] = useState(false);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Default credentials for demo purposes
-    if (username === "superadmin" && password === "superadmin123") {
+    setLoginBusy(true);
+
+    const SUPERADMIN_EMAIL = "supera@gmail.com";
+
+    // username field is used as email here
+    const enteredEmail = username.trim().toLowerCase();
+
+    if (enteredEmail !== SUPERADMIN_EMAIL) {
+      toast.error("❌ Access Denied! Only the Super Admin can access this panel.");
+      setLoginBusy(false);
+      return;
+    }
+
+    try {
+      const { getAuth, signInWithEmailAndPassword } = await import("firebase/auth");
+      const auth = getAuth();
+      await signInWithEmailAndPassword(auth, enteredEmail, password);
       setIsAuthenticated(true);
-      toast.success("Welcome, Super Administrator!");
-    } else {
-      toast.error("Invalid credentials! Access Denied.");
+      toast.success("✅ Welcome, Super Administrator!");
+    } catch (err: any) {
+      const code = err?.code || "";
+      if (code === "auth/wrong-password" || code === "auth/invalid-credential") {
+        toast.error("❌ चुकीचा पासवर्ड! Wrong password. Please try again.");
+      } else if (code === "auth/user-not-found") {
+        toast.error("❌ User not found.");
+      } else if (code === "auth/too-many-requests") {
+        toast.error("⚠️ Too many attempts. Please try again later.");
+      } else {
+        toast.error(`Login Failed: ${err?.message || "Unknown error"}`);
+      }
+    } finally {
+      setLoginBusy(false);
     }
   };
+
 
   const handleLogout = () => {
     setIsAuthenticated(false);
@@ -226,7 +255,7 @@ function SuperAdminPage() {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="w-full h-12 pl-12 pr-4 bg-[#F8FAFF] border border-[#DCE5F0] rounded-xl text-sm font-semibold text-[#063B78] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-[#D4AF37] focus:bg-white transition-all"
-                  placeholder="Enter username"
+                  placeholder="supera@gmail.com"
                 />
               </div>
             </div>
@@ -246,8 +275,8 @@ function SuperAdminPage() {
             </div>
             
             <div className="pt-2">
-              <Button type="submit" className="w-full h-12 bg-gradient-to-r from-[#063B78] to-[#0A4F9E] hover:from-[#0A4F9E] hover:to-[#063B78] text-white font-black rounded-xl text-sm shadow-lg shadow-[#063B78]/20 transition-all active:scale-95 border-b-[3px] border-[#021D3D]">
-                Authenticate & Access
+              <Button type="submit" disabled={loginBusy} className="w-full h-12 bg-gradient-to-r from-[#063B78] to-[#0A4F9E] hover:from-[#0A4F9E] hover:to-[#063B78] text-white font-black rounded-xl text-sm shadow-lg shadow-[#063B78]/20 transition-all active:scale-95 border-b-[3px] border-[#021D3D] disabled:opacity-50">
+                {loginBusy ? "Authenticating..." : "Authenticate & Access"}
               </Button>
             </div>
           </form>
