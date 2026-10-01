@@ -25,6 +25,7 @@ import {
   FileText,
   CloudUpload,
   Info,
+  ArrowLeft,
 } from "lucide-react";
 import { DynamicApplicationForm } from "@/components/portal/DynamicApplicationForm";
 import { Button } from "@/components/ui/button";
