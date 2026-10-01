@@ -64,17 +64,11 @@ export function PublicHeader() {
           <Link to="/jobs" className="nav-link text-sm font-bold hover:text-[#063B78] transition-colors">
             {t("jobs")}
           </Link>
-          <Link to="/workers" className="nav-link text-sm font-bold hover:text-[#063B78] transition-colors">
-            {t("workers")}
-          </Link>
           <Link to="/about" className="nav-link text-sm font-bold hover:text-[#063B78] transition-colors">
             {t("aboutUs")}
           </Link>
           <Link to="/contact" className="nav-link text-sm font-bold hover:text-[#063B78] transition-colors">
             {t("contactUs")}
-          </Link>
-          <Link to="/faq" className="nav-link text-sm font-bold hover:text-[#063B78] transition-colors">
-            {t("faq")}
           </Link>
         </nav>
 
@@ -176,15 +170,6 @@ export function PublicHeader() {
                 {t("jobs")}
               </Link>
               <Link
-                to="/workers"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-3 rounded-lg px-3 py-2.5 font-bold text-[#10233F] hover:bg-[#F5F8FC]"
-              >
-                <Users className="size-5 text-[#FFC400]" />
-                {t("workers")}
-              </Link>
-
-              <Link
                 to="/about"
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center gap-3 rounded-lg px-3 py-2.5 font-bold text-[#10233F] hover:bg-[#F5F8FC]"
@@ -199,14 +184,6 @@ export function PublicHeader() {
               >
                 <Mail className="size-5 text-[#063B78]" />
                 {t("contactUs")}
-              </Link>
-              <Link
-                to="/faq"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-3 rounded-lg px-3 py-2.5 font-bold text-[#10233F] hover:bg-[#F5F8FC]"
-              >
-                <HelpCircle className="size-5 text-[#125BB5]" />
-                {t("faq")}
               </Link>
             </nav>
 
