@@ -280,13 +280,12 @@ export function JobCard({
 
   useEffect(() => {
     if (showApplyModal || showCompanyModal) {
+      const originalStyle = window.getComputedStyle(document.body).overflow;
       document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
+      return () => {
+        document.body.style.overflow = originalStyle;
+      };
     }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
   }, [showApplyModal, showCompanyModal]);
 
   const [fieldValues, setFieldValues] = useState<Record<string, any>>({});
