@@ -160,7 +160,17 @@ function LandingGatewayPage() {
     if (savedImages) setImages(JSON.parse(savedImages));
     if (savedMetrics) setMetrics(JSON.parse(savedMetrics));
     if (savedAbout) setAboutData(JSON.parse(savedAbout));
-    if (savedCategories) setCategories(JSON.parse(savedCategories));
+    if (savedCategories) {
+      try {
+        const parsed = JSON.parse(savedCategories);
+        if (Array.isArray(parsed) && parsed.length >= 5) {
+          // Keep only first 5
+          setCategories(parsed.slice(0, 5));
+        }
+      } catch (e) {
+        // use default 5
+      }
+    }
   }, []);
 
   useEffect(() => {
