@@ -21,7 +21,10 @@ import {
   Building2,
   MapPin,
   IndianRupee,
-  Briefcase
+  Briefcase,
+  ChevronDown,
+  ChevronUp,
+  Eye
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -97,15 +100,17 @@ function SuperAdminPage() {
     setAllJobs(dataStore.getAllJobs());
   }, []);
 
+  const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
+
   const handleApproveJob = (jobId: string) => {
     dataStore.updateJobApprovalStatus(jobId, "approved");
-    toast.success("✅ नोकरी मंजूर झाली आहे! (Job Approved - Now visible on website)");
+    toast.success("✅ Job Approved Successfully! Now live on portal.");
     setAllJobs(dataStore.getAllJobs());
   };
 
   const handleRejectJob = (jobId: string) => {
     dataStore.updateJobApprovalStatus(jobId, "rejected");
-    toast.error("❌ नोकरी अमान्य करण्यात आली आहे. (Job Rejected)");
+    toast.error("❌ Job Posting Rejected.");
     setAllJobs(dataStore.getAllJobs());
   };
 
@@ -517,7 +522,7 @@ function SuperAdminPage() {
                     <Clock className="size-5" />
                   </div>
                   <div className="text-3xl font-black">{pendingJobsCount}</div>
-                  <p className="text-xs mt-1 opacity-80">मंजुरीच्या प्रतीक्षेत असलेल्या नोकऱ्या</p>
+                  <p className="text-xs mt-1 opacity-80">Jobs awaiting approval</p>
                 </button>
 
                 <button
@@ -533,7 +538,7 @@ function SuperAdminPage() {
                     <CheckCircle2 className="size-5" />
                   </div>
                   <div className="text-3xl font-black">{approvedJobsCount}</div>
-                  <p className="text-xs mt-1 opacity-80">वेबसाईटवर लाईव्ह असलेल्या नोकऱ्या</p>
+                  <p className="text-xs mt-1 opacity-80">Jobs live on portal</p>
                 </button>
 
                 <button
@@ -549,7 +554,7 @@ function SuperAdminPage() {
                     <XCircle className="size-5" />
                   </div>
                   <div className="text-3xl font-black">{rejectedJobsCount}</div>
-                  <p className="text-xs mt-1 opacity-80">अमान्य केलेल्या नोकऱ्या</p>
+                  <p className="text-xs mt-1 opacity-80">Rejected job postings</p>
                 </button>
               </div>
 
@@ -583,68 +588,165 @@ function SuperAdminPage() {
                 {displayedJobs.length === 0 ? (
                   <div className="bg-white rounded-2xl p-12 border border-[#E0E8F5] text-center">
                     <CheckCircle2 className="size-12 mx-auto text-[#9DAEC5] mb-3" />
-                    <h4 className="text-base font-black text-[#063B78]">कोणत्याही नोकऱ्या आढळल्या नाहीत (No jobs found)</h4>
-                    <p className="text-xs text-[#5B6B7F] mt-1">या श्रेणीमध्ये सध्या कोणत्याही नोकऱ्या उपलब्ध नाहीत.</p>
+                    <h4 className="text-base font-black text-[#063B78]">No jobs found</h4>
+                    <p className="text-xs text-[#5B6B7F] mt-1">There are currently no job postings under this filter.</p>
                   </div>
                 ) : (
                   displayedJobs.map((j) => (
-                    <div key={j.id} className="bg-white rounded-2xl border border-[#E0E8F5] shadow-sm p-6 flex flex-col md:flex-row justify-between gap-6 hover:shadow-md transition-shadow">
-                      <div className="flex-1 space-y-2">
-                        <div className="flex items-center gap-3 flex-wrap">
-                          <h3 className="text-lg font-black text-[#063B78]">{j.title}</h3>
-                          {j.approvalStatus === "rejected" ? (
-                            <span className="px-2.5 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-bold flex items-center gap-1">
-                              ❌ Rejected
+                    <div key={j.id} className="bg-white rounded-2xl border border-[#E0E8F5] shadow-sm p-6 flex flex-col justify-between gap-4 hover:shadow-md transition-shadow">
+                      <div className="flex flex-col md:flex-row justify-between gap-6">
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center gap-3 flex-wrap">
+                            <h3 className="text-lg font-black text-[#063B78]">{j.title}</h3>
+                            {j.approvalStatus === "rejected" ? (
+                              <span className="px-2.5 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-bold flex items-center gap-1">
+                                ❌ Rejected
+                              </span>
+                            ) : j.approvalStatus === "approved" || !j.approvalStatus ? (
+                              <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold flex items-center gap-1">
+                                ✅ Approved (Live on Portal)
+                              </span>
+                            ) : (
+                              <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-bold flex items-center gap-1 animate-pulse">
+                                ⏳ Pending Super Admin Approval
+                              </span>
+                            )}
+                            <span className="px-2.5 py-0.5 rounded-full bg-[#F8FAFF] border border-[#DCE5F0] text-[#063B78] text-xs font-bold">
+                              {j.category}
                             </span>
-                          ) : j.approvalStatus === "approved" || !j.approvalStatus ? (
-                            <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold flex items-center gap-1">
-                              ✅ Approved (Live on Website)
-                            </span>
-                          ) : (
-                            <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-bold flex items-center gap-1 animate-pulse">
-                              ⏳ Pending Super Admin Approval
-                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-4 text-xs font-bold text-[#5B6B7F] flex-wrap pt-1">
+                            <span className="flex items-center gap-1 text-[#063B78]"><Building2 className="size-3.5" /> {j.company}</span>
+                            <span className="flex items-center gap-1"><MapPin className="size-3.5" /> {j.location}</span>
+                            <span className="flex items-center gap-1 text-emerald-700"><IndianRupee className="size-3.5" /> {j.salary}</span>
+                            <span className="flex items-center gap-1"><Briefcase className="size-3.5" /> {j.jobType} ({j.vacancies || 1} Vacancies)</span>
+                            <span className="flex items-center gap-1"><Clock className="size-3.5" /> {j.postedAgo}</span>
+                          </div>
+
+                          <p className="text-xs text-[#5B6B7F] line-clamp-2 pt-2 bg-[#F8FAFF] p-3 rounded-xl border border-[#E0E8F5]">
+                            {j.description}
+                          </p>
+
+                          <button
+                            onClick={() => setExpandedJobId(expandedJobId === j.id ? null : j.id)}
+                            className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-[#063B78] hover:text-[#0A4F9E] hover:underline"
+                          >
+                            <Eye className="size-3.5 text-[#063B78]" />
+                            {expandedJobId === j.id ? "Hide Submission Details" : "View All Submission Details"}
+                            {expandedJobId === j.id ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
+                          </button>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex flex-row md:flex-col items-center justify-center gap-3 border-t md:border-t-0 md:border-l border-[#E0E8F5] pt-4 md:pt-0 md:pl-6 min-w-[170px]">
+                          {j.approvalStatus !== "approved" && (
+                            <Button
+                              onClick={() => handleApproveJob(j.id)}
+                              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs h-10 shadow-sm"
+                            >
+                              <Check className="size-4 mr-1" />
+                              Approve Job
+                            </Button>
                           )}
-                          <span className="px-2.5 py-0.5 rounded-full bg-[#F8FAFF] border border-[#DCE5F0] text-[#063B78] text-xs font-bold">
-                            {j.category}
-                          </span>
+                          {j.approvalStatus !== "rejected" && (
+                            <Button
+                              variant="outline"
+                              onClick={() => handleRejectJob(j.id)}
+                              className="w-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 font-bold text-xs h-10"
+                            >
+                              <X className="size-4 mr-1" />
+                              Reject Job
+                            </Button>
+                          )}
                         </div>
-
-                        <div className="flex items-center gap-4 text-xs font-bold text-[#5B6B7F] flex-wrap pt-1">
-                          <span className="flex items-center gap-1 text-[#063B78]"><Building2 className="size-3.5" /> {j.company}</span>
-                          <span className="flex items-center gap-1"><MapPin className="size-3.5" /> {j.location}</span>
-                          <span className="flex items-center gap-1 text-emerald-700"><IndianRupee className="size-3.5" /> {j.salary}</span>
-                          <span className="flex items-center gap-1"><Briefcase className="size-3.5" /> {j.jobType} ({j.vacancies} Vacancies)</span>
-                          <span className="flex items-center gap-1"><Clock className="size-3.5" /> {j.postedAgo}</span>
-                        </div>
-
-                        <p className="text-xs text-[#5B6B7F] line-clamp-2 pt-2 bg-[#F8FAFF] p-3 rounded-xl border border-[#E0E8F5]">
-                          {j.description}
-                        </p>
                       </div>
 
-                      {/* Actions */}
-                      <div className="flex flex-row md:flex-col items-center justify-center gap-3 border-t md:border-t-0 md:border-l border-[#E0E8F5] pt-4 md:pt-0 md:pl-6 min-w-[160px]">
-                        {j.approvalStatus !== "approved" && (
-                          <Button
-                            onClick={() => handleApproveJob(j.id)}
-                            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs h-10 shadow-sm"
-                          >
-                            <Check className="size-4 mr-1" />
-                            मंजूर करा (Approve)
-                          </Button>
-                        )}
-                        {j.approvalStatus !== "rejected" && (
-                          <Button
-                            variant="outline"
-                            onClick={() => handleRejectJob(j.id)}
-                            className="w-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 font-bold text-xs h-10"
-                          >
-                            <X className="size-4 mr-1" />
-                            अमान्य करा (Reject)
-                          </Button>
-                        )}
-                      </div>
+                      {/* Expanded Full Details Drawer */}
+                      {expandedJobId === j.id && (
+                        <div className="mt-4 pt-4 border-t border-[#E0E8F5] space-y-4 animate-in fade-in duration-300">
+                          <h4 className="text-xs font-black uppercase tracking-wider text-[#063B78] flex items-center gap-1.5">
+                            <Eye className="size-4 text-[#063B78]" /> Full Job Posting Inspection Data
+                          </h4>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 bg-[#F8FAFF] p-4 rounded-xl border border-[#DCE5F0] text-xs">
+                            <div>
+                              <span className="text-[10px] font-bold text-[#5B6B7F] uppercase block">Job Title</span>
+                              <span className="font-bold text-[#063B78]">{j.title}</span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] font-bold text-[#5B6B7F] uppercase block">Company Name</span>
+                              <span className="font-bold text-[#063B78]">{j.company}</span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] font-bold text-[#5B6B7F] uppercase block">Category & Subcategory</span>
+                              <span className="font-bold text-[#063B78]">{j.category} {j.subcategory ? `• ${j.subcategory}` : ""}</span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] font-bold text-[#5B6B7F] uppercase block">Location / City</span>
+                              <span className="font-bold text-[#063B78]">{j.location}</span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] font-bold text-[#5B6B7F] uppercase block">Salary Package</span>
+                              <span className="font-bold text-emerald-700">{j.salary} ({j.salaryType || "Monthly"})</span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] font-bold text-[#5B6B7F] uppercase block">Vacancies</span>
+                              <span className="font-bold text-[#063B78]">{j.vacancies || 1} Openings</span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] font-bold text-[#5B6B7F] uppercase block">Experience Required</span>
+                              <span className="font-bold text-[#063B78]">{j.experience || "Freshers / Any"}</span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] font-bold text-[#5B6B7F] uppercase block">Qualification / Education</span>
+                              <span className="font-bold text-[#063B78]">{j.qualification || "Not specified"}</span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] font-bold text-[#5B6B7F] uppercase block">Job Type & Work Mode</span>
+                              <span className="font-bold text-[#063B78]">{j.jobType} ({j.workMode || "On-site"})</span>
+                            </div>
+                          </div>
+
+                          {/* Full Description */}
+                          <div className="bg-[#F8FAFF] p-4 rounded-xl border border-[#DCE5F0] text-xs">
+                            <span className="text-[10px] font-bold text-[#5B6B7F] uppercase block mb-1">Full Job Description</span>
+                            <p className="text-[#063B78] font-medium leading-relaxed whitespace-pre-line">{j.description || "No description provided."}</p>
+                          </div>
+
+                          {/* Skills & Benefits */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                            <div className="bg-[#F8FAFF] p-3 rounded-xl border border-[#DCE5F0]">
+                              <span className="text-[10px] font-bold text-[#5B6B7F] uppercase block mb-1.5">Required Skills</span>
+                              {j.requiredSkills && j.requiredSkills.length > 0 ? (
+                                <div className="flex flex-wrap gap-1.5">
+                                  {j.requiredSkills.map((sk, idx) => (
+                                    <span key={idx} className="bg-white px-2 py-0.5 rounded border border-[#DCE5F0] text-[11px] font-bold text-[#063B78]">
+                                      {sk}
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span className="text-gray-400 font-semibold text-[11px]">None specified</span>
+                              )}
+                            </div>
+
+                            <div className="bg-[#F8FAFF] p-3 rounded-xl border border-[#DCE5F0]">
+                              <span className="text-[10px] font-bold text-[#5B6B7F] uppercase block mb-1.5">Perks & Benefits</span>
+                              {j.benefits && j.benefits.length > 0 ? (
+                                <div className="flex flex-wrap gap-1.5">
+                                  {j.benefits.map((b, idx) => (
+                                    <span key={idx} className="bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded border border-emerald-200 text-[11px] font-bold">
+                                      {b}
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span className="text-gray-400 font-semibold text-[11px]">None specified</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))
                 )}
