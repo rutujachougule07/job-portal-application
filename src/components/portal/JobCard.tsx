@@ -326,8 +326,9 @@ export function JobCard({
   const submitApplication = (e: React.FormEvent) => {
     e.preventDefault();
     const currentUser = dataStore.getCurrentUser();
-    const seekerId = currentUser ? (currentUser.email || currentUser.id || "seeker-demo") : "candidate@realjob.com";
-    const seekerName = currentUser?.fullName || "Rutuja Pawar";
+    const seekerId = currentUser ? (currentUser.email || currentUser.id || "seeker-demo") : (fieldValues['email'] || "candidate@realjob.com");
+    const seekerName = fieldValues['fullName'] || fieldValues['candidateName'] || currentUser?.fullName || "Candidate Applicant";
+    const seekerMobile = fieldValues['mobile'] || fieldValues['phone'] || fieldValues['candidateMobile'] || (currentUser as any)?.mobile || "9822011223";
 
     // Duplicate Application Check
     if (dataStore.hasAlreadyApplied(seekerId, job.id)) {
@@ -342,8 +343,8 @@ export function JobCard({
         employerId: job.company,
         jobSeekerId: seekerId,
         candidateName: seekerName,
-        candidateEmail: seekerId,
-        candidateMobile: "+91 98220 11223",
+        candidateEmail: fieldValues['email'] || seekerId,
+        candidateMobile: seekerMobile,
         jobTitle: job.title,
         companyName: job.company,
         location: job.location,
