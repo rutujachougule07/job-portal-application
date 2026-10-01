@@ -257,11 +257,11 @@ function PostJobPage() {
 
     const cleanMin = formData.salaryMin ? formData.salaryMin.replace(/[^0-9]/g, '') : '';
     const cleanMax = formData.salaryMax ? formData.salaryMax.replace(/[^0-9]/g, '') : '';
-    const salaryString = cleanMin && cleanMax 
+    const salaryString = cleanMin && cleanMax
       ? `₹${cleanMin}–₹${cleanMax} / ${formData.salaryType === "Per Day" ? "day" : "month"}`
       : cleanMin
-      ? `₹${cleanMin} / ${formData.salaryType === "Per Day" ? "day" : "month"}`
-      : "₹25,000–40,000 / month";
+        ? `₹${cleanMin} / ${formData.salaryType === "Per Day" ? "day" : "month"}`
+        : "₹25,000–40,000 / month";
 
     const skillsArray = formData.skills ? formData.skills.split(",").map(s => s.trim()) : ["General Work"];
     const benefitsArray = formData.benefits ? formData.benefits.split(",").map(b => b.trim()) : ["Standard Allowance"];

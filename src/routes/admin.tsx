@@ -19,7 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { StatCard } from "@/components/portal/Stats";
 import { dataStore, JobRecord, ApplicationRecord } from "@/lib/data-store";
 import { toast } from "sonner";
-import { LanguageSwitcher } from "@/components/portal/LanguageSwitcher";
+
 import {
   Area,
   AreaChart,
@@ -507,9 +507,7 @@ export function AdminDashboardPage() {
 
           {/* Right: Actions */}
           <div className="flex items-center gap-2 sm:gap-3">
-            <div className="bg-white/10 border border-white/20 rounded-lg">
-              <LanguageSwitcher showCurrent={true} />
-            </div>
+
             <Button
               asChild
               variant="ghost"

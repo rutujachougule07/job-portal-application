@@ -54,6 +54,7 @@ function getJobDetails(jobId: string) {
       description: storeJob.description,
       responsibilities: storeJob.responsibilities,
       requiredSkills: storeJob.requiredSkills,
+      applicationConfig: storeJob.applicationConfig,
     };
   }
   return (jobs.find((j) => j.id === jobId) ?? jobs[0])!;
@@ -71,7 +72,70 @@ export function JobDetailPage() {
   const [applicantPhone, setApplicantPhone] = useState("");
   const [applicantExp, setApplicantExp] = useState("3 Years");
 
+  const [fieldValues, setFieldValues] = useState<Record<string, any>>({});
+  const [customAnswers, setCustomAnswers] = useState<Record<string, any>>({});
+
   const similarJobs = jobs.filter((j) => j.id !== job.id).slice(0, 3);
+
+  const getFallbackConfig = (category: string) => {
+    const cat = (category || "").toLowerCase();
+    const config = {
+      fields: {
+        fullName: "required" as any,
+        mobile: "required" as any,
+        currentLocation: "required" as any,
+        experience: "optional" as any,
+      } as Record<string, string>,
+      customQuestions: []
+    };
+
+    if (cat.includes("it") || cat.includes("software") || cat.includes("tech")) {
+      config.fields = {
+        ...config.fields,
+        email: "required",
+        education: "required",
+        skills: "required",
+        projects: "required",
+        github: "required",
+        portfolio: "optional",
+        resume: "required",
+        expectedSalary: "optional",
+        noticePeriod: "required",
+      };
+    } else if (cat.includes("health") || cat.includes("medic") || cat.includes("nurs")) {
+      config.fields = {
+        ...config.fields,
+        education: "required",
+        certifications: "required",
+        experience: "required",
+        resume: "required",
+        availability: "required",
+      };
+    } else if (cat.includes("construct") || cat.includes("mason")) {
+      config.fields = {
+        ...config.fields,
+        skills: "required",
+        relevantExperience: "optional",
+        preferredLocation: "optional",
+        availability: "required",
+        expectedSalary: "optional",
+        willingToRelocate: "optional",
+        resume: "optional",
+      };
+    } else {
+      config.fields = {
+        ...config.fields,
+        resume: "optional",
+        email: "optional",
+      };
+    }
+    return config;
+  };
+
+  const appConfig = (job as any).applicationConfig || getFallbackConfig(job.category);
+
+  const handleFieldChange = (key: string, val: any) => setFieldValues(p => ({ ...p, [key]: val }));
+  const handleCustomChange = (id: string, val: any) => setCustomAnswers(p => ({ ...p, [id]: val }));
 
   const handleApplySubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,15 +154,18 @@ export function JobDetailPage() {
         jobId: job.id,
         employerId: job.company,
         jobSeekerId: seekerId,
-        candidateName: name,
-        candidateEmail: seekerId,
-        candidateMobile: applicantPhone || "+91 98220 11223",
+        candidateName: fieldValues.fullName || name,
+        candidateEmail: fieldValues.email || seekerId,
+        candidateMobile: fieldValues.mobile || applicantPhone || "+91 98220 11223",
         jobTitle: job.title,
         companyName: job.company,
         location: job.location,
         salary: job.salary,
-        resume: `${name.replaceAll(" ", "_")}_Resume.pdf`,
-      });
+        resume: fieldValues.resume || `${name.replaceAll(" ", "_")}_Resume.pdf`,
+        fieldValues,
+        customAnswers,
+        category: job.category
+      } as any);
 
       setApplied(true);
       toast.success(`Application submitted for ${job.title}! ${job.company} will call you shortly.`);
@@ -196,9 +263,8 @@ export function JobDetailPage() {
                   <Button
                     variant="outline"
                     onClick={() => setSaved(!saved)}
-                    className={`flex-1 border-[#063B78] font-bold text-xs h-11 ${
-                      saved ? "bg-[#EBF1F8] text-[#063B78]" : "text-[#063B78]"
-                    }`}
+                    className={`flex-1 border-[#063B78] font-bold text-xs h-11 ${saved ? "bg-[#EBF1F8] text-[#063B78]" : "text-[#063B78]"
+                      }`}
                   >
                     {saved ? <BookmarkCheck className="size-4 mr-1 text-[#063B78]" /> : <Bookmark className="size-4 mr-1" />}
                     {saved ? t("save") : t("save")}
@@ -303,49 +369,72 @@ export function JobDetailPage() {
                   </p>
                 </div>
               ) : (
-                <form onSubmit={handleApplySubmit} className="space-y-4">
-                  <h3 className="text-lg font-black text-[#10233F]">{job.title}</h3>
+                <form onSubmit={handleApplySubmit} className="space-y-4 max-h-[70vh] overflow-y-auto px-2">
+                  <h3 className="text-lg font-black text-[#10233F] sticky top-0 bg-white z-10 pb-2">{job.title}</h3>
                   <p className="text-xs font-semibold text-[#5B6B7F]">{job.company} • {job.location}</p>
 
-                  <div>
-                    <label className="block text-xs font-extrabold text-[#10233F] mb-1">{t("yourName")} *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Rahul Pawar"
-                      value={applicantName}
-                      onChange={(e) => setApplicantName(e.target.value)}
-                      className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold text-[#10233F]"
-                    />
-                  </div>
+                  {Object.keys(appConfig.fields).map(fieldKey => {
+                    const req = appConfig.fields[fieldKey];
+                    if (req === "hidden") return null;
+                    const isReq = req === "required";
+                    const label = fieldKey.replace(/([A-Z])/g, ' $1').trim().replace(/^./, str => str.toUpperCase());
+                    
+                    return (
+                      <div key={fieldKey}>
+                        <label className="block text-xs font-extrabold text-[#10233F] mb-1">{label} {isReq && "*"}</label>
+                        {fieldKey === "resume" || fieldKey === "profilePhoto" ? (
+                          <input type="file" required={isReq} onChange={e => handleFieldChange(fieldKey, e.target.files?.[0]?.name)} className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 py-2 text-xs font-bold text-[#10233F]" />
+                        ) : fieldKey === "experience" || fieldKey === "relevantExperience" ? (
+                          <select required={isReq} value={fieldValues[fieldKey] || ""} onChange={e => handleFieldChange(fieldKey, e.target.value)} className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold text-[#10233F]">
+                            <option value="">Select Experience</option>
+                            <option value="Fresher">Fresher</option>
+                            <option value="1-3 Years">1 - 3 Years</option>
+                            <option value="3-5 Years">3 - 5 Years</option>
+                            <option value="5+ Years">5+ Years</option>
+                          </select>
+                        ) : fieldKey === "availability" || fieldKey === "noticePeriod" ? (
+                          <input type="date" required={isReq} value={fieldValues[fieldKey] || ""} onChange={e => handleFieldChange(fieldKey, e.target.value)} className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold text-[#10233F]" />
+                        ) : fieldKey === "willingToRelocate" ? (
+                           <select required={isReq} value={fieldValues[fieldKey] || ""} onChange={e => handleFieldChange(fieldKey, e.target.value)} className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold text-[#10233F]">
+                             <option value="">Select</option>
+                             <option value="Yes">Yes</option>
+                             <option value="No">No</option>
+                           </select>
+                        ) : (
+                          <input
+                            type={fieldKey.includes("Email") || fieldKey.includes("email") ? "email" : fieldKey.includes("mobile") || fieldKey.includes("Phone") ? "tel" : "text"}
+                            required={isReq}
+                            value={fieldValues[fieldKey] || ""}
+                            onChange={(e) => handleFieldChange(fieldKey, e.target.value)}
+                            className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold text-[#10233F]"
+                          />
+                        )}
+                      </div>
+                    )
+                  })}
 
-                  <div>
-                    <label className="block text-xs font-extrabold text-[#10233F] mb-1">{t("phoneNumber")} *</label>
-                    <input
-                      type="tel"
-                      required
-                      placeholder="+91 98220 00000"
-                      value={applicantPhone}
-                      onChange={(e) => setApplicantPhone(e.target.value)}
-                      className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold text-[#10233F]"
-                    />
-                  </div>
+                  {appConfig.customQuestions && appConfig.customQuestions.map((q: any) => (
+                    <div key={q.id}>
+                      <label className="block text-xs font-extrabold text-[#10233F] mb-1">{q.question} {q.required && "*"}</label>
+                      {q.type === "long" ? (
+                        <textarea required={q.required} value={customAnswers[q.id] || ""} onChange={e => handleCustomChange(q.id, e.target.value)} className="w-full rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] p-3 text-xs font-bold text-[#10233F]" />
+                      ) : q.type === "yesno" ? (
+                         <select required={q.required} value={customAnswers[q.id] || ""} onChange={e => handleCustomChange(q.id, e.target.value)} className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold text-[#10233F]">
+                           <option value="">Select option</option>
+                           <option value="Yes">Yes</option>
+                           <option value="No">No</option>
+                         </select>
+                      ) : q.type === "number" ? (
+                        <input type="number" required={q.required} value={customAnswers[q.id] || ""} onChange={e => handleCustomChange(q.id, e.target.value)} className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold text-[#10233F]" />
+                      ) : q.type === "date" ? (
+                        <input type="date" required={q.required} value={customAnswers[q.id] || ""} onChange={e => handleCustomChange(q.id, e.target.value)} className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold text-[#10233F]" />
+                      ) : (
+                        <input type="text" required={q.required} value={customAnswers[q.id] || ""} onChange={e => handleCustomChange(q.id, e.target.value)} className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold text-[#10233F]" />
+                      )}
+                    </div>
+                  ))}
 
-                  <div>
-                    <label className="block text-xs font-extrabold text-[#10233F] mb-1">{t("experience")}</label>
-                    <select
-                      value={applicantExp}
-                      onChange={(e) => setApplicantExp(e.target.value)}
-                      className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold text-[#10233F]"
-                    >
-                      <option value="Fresher">Fresher</option>
-                      <option value="1-3 Years">1 - 3 Years</option>
-                      <option value="3-5 Years">3 - 5 Years</option>
-                      <option value="5+ Years">5+ Years</option>
-                    </select>
-                  </div>
-
-                  <Button type="submit" className="w-full btn-yellow font-black text-xs py-3 h-11">
+                  <Button type="submit" className="w-full btn-yellow font-black text-xs py-3 h-11 sticky bottom-0">
                     {t("submitApplication")}
                   </Button>
                 </form>

@@ -19,6 +19,7 @@ import { Route as ContactRouteImport } from './routes/contact'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as SelectLanguageRouteImport } from './routes/select-language'
 import { Route as AuthenticatedApplicationsRouteImport } from './routes/_authenticated/applications'
 import { Route as AuthenticatedControlRouteImport } from './routes/_authenticated/control'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -93,6 +94,11 @@ const HomeRoute = HomeRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SelectLanguageRoute = SelectLanguageRouteImport.update({
+  id: '/select-language',
+  path: '/select-language',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedApplicationsRoute =
@@ -250,6 +256,7 @@ export interface FileRoutesByFullPath {
   '/faq': typeof FaqRoute
   '/home': typeof HomeRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/select-language': typeof SelectLanguageRoute
   '/applications': typeof AuthenticatedApplicationsRoute
   '/control': typeof AuthenticatedControlRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -287,6 +294,7 @@ export interface FileRoutesByTo {
   '/faq': typeof FaqRoute
   '/home': typeof HomeRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/select-language': typeof SelectLanguageRoute
   '/applications': typeof AuthenticatedApplicationsRoute
   '/control': typeof AuthenticatedControlRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -326,6 +334,7 @@ export interface FileRoutesById {
   '/faq': typeof FaqRoute
   '/home': typeof HomeRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/select-language': typeof SelectLanguageRoute
   '/_authenticated/applications': typeof AuthenticatedApplicationsRoute
   '/_authenticated/control': typeof AuthenticatedControlRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
@@ -365,6 +374,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/home'
     | '/reset-password'
+    | '/select-language'
     | '/applications'
     | '/control'
     | '/dashboard'
@@ -402,6 +412,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/home'
     | '/reset-password'
+    | '/select-language'
     | '/applications'
     | '/control'
     | '/dashboard'
@@ -440,6 +451,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/home'
     | '/reset-password'
+    | '/select-language'
     | '/_authenticated/applications'
     | '/_authenticated/control'
     | '/_authenticated/dashboard'
@@ -479,6 +491,7 @@ export interface RootRouteChildren {
   FaqRoute: typeof FaqRoute
   HomeRoute: typeof HomeRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  SelectLanguageRoute: typeof SelectLanguageRoute
   CompanyCompanyIdRoute: typeof CompanyCompanyIdRoute
   JobsJobIdRoute: typeof JobsJobIdRoute
   WorkersWorkerIdRoute: typeof WorkersWorkerIdRoute
@@ -556,6 +569,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/select-language': {
+      id: '/select-language'
+      path: '/select-language'
+      fullPath: '/select-language'
+      preLoaderRoute: typeof SelectLanguageRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/applications': {
@@ -825,6 +845,7 @@ const rootRouteChildren: RootRouteChildren = {
   FaqRoute: FaqRoute,
   HomeRoute: HomeRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  SelectLanguageRoute: SelectLanguageRoute,
   CompanyCompanyIdRoute: CompanyCompanyIdRoute,
   JobsJobIdRoute: JobsJobIdRoute,
   WorkersWorkerIdRoute: WorkersWorkerIdRoute,

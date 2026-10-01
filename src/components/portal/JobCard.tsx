@@ -271,6 +271,70 @@ export function JobCard({
   const [activeModalTab, setActiveModalTab] = useState<"company" | "job" | "openings">("company");
   const [applied, setApplied] = useState(false);
 
+  const [fieldValues, setFieldValues] = useState<Record<string, any>>({});
+  const [customAnswers, setCustomAnswers] = useState<Record<string, any>>({});
+
+  const getFallbackConfig = (category: string) => {
+    const cat = (category || "").toLowerCase();
+    const config = {
+      fields: {
+        fullName: "required" as any,
+        mobile: "required" as any,
+        currentLocation: "required" as any,
+        experience: "optional" as any,
+      } as Record<string, string>,
+      customQuestions: []
+    };
+
+    if (cat.includes("it") || cat.includes("software") || cat.includes("tech")) {
+      config.fields = {
+        ...config.fields,
+        email: "required",
+        education: "required",
+        skills: "required",
+        projects: "required",
+        github: "required",
+        portfolio: "optional",
+        resume: "required",
+        expectedSalary: "optional",
+        noticePeriod: "required",
+      };
+    } else if (cat.includes("health") || cat.includes("medic") || cat.includes("nurs")) {
+      config.fields = {
+        ...config.fields,
+        education: "required",
+        certifications: "required",
+        experience: "required",
+        resume: "required",
+        availability: "required",
+      };
+    } else if (cat.includes("construct") || cat.includes("mason")) {
+      config.fields = {
+        ...config.fields,
+        skills: "required",
+        relevantExperience: "optional",
+        preferredLocation: "optional",
+        availability: "required",
+        expectedSalary: "optional",
+        willingToRelocate: "optional",
+        resume: "optional",
+      };
+    } else {
+      // Default general fields
+      config.fields = {
+        ...config.fields,
+        resume: "optional",
+        email: "optional",
+      };
+    }
+    return config;
+  };
+
+  const appConfig = (job as any).applicationConfig || getFallbackConfig(job.category);
+
+  const handleFieldChange = (key: string, val: any) => setFieldValues(p => ({ ...p, [key]: val }));
+  const handleCustomChange = (id: string, val: any) => setCustomAnswers(p => ({ ...p, [id]: val }));
+
   const companyMeta = getCompanyMetadata(job);
 
   const handleApplyClick = (e: React.MouseEvent) => {
@@ -323,8 +387,11 @@ export function JobCard({
         companyName: job.company,
         location: job.location,
         salary: job.salary,
-        resume: `${seekerName.replaceAll(" ", "_")}_Resume.pdf`,
-      });
+        resume: fieldValues.resume || `${seekerName.replaceAll(" ", "_")}_Resume.pdf`,
+        fieldValues,
+        customAnswers,
+        category: job.category
+      } as any);
 
       setApplied(true);
       toast.success(lang === "mr" ? "अर्ज यशस्वीरीत्या पाठवला!" : "Application submitted successfully!");
@@ -820,8 +887,8 @@ export function JobCard({
                 </p>
               </div>
             ) : (
-              <form onSubmit={submitApplication} className="space-y-4">
-                <div className="flex items-center gap-3">
+              <form onSubmit={submitApplication} className="space-y-4 max-h-[70vh] overflow-y-auto px-2">
+                <div className="flex items-center gap-3 sticky top-0 bg-white z-10 pb-2">
                   <span className="grid size-12 place-items-center rounded-xl bg-[#063B78] font-black text-white text-lg">
                     {job.initials}
                   </span>
@@ -841,28 +908,68 @@ export function JobCard({
                   </p>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold mb-1 text-[#10233F]">
-                    {lang === "mr" ? "रेझ्युमे / बायोडेटा निवडा" : "Upload / Select Resume"}
-                  </label>
-                  <select className="w-full h-10 rounded-xl border border-[#DCE5F0] bg-white px-3 text-xs font-bold text-[#10233F] shadow-2xs">
-                    <option>Payal_Wankar_Resume_2026.pdf (Verified)</option>
-                    <option>Upload New Resume...</option>
-                  </select>
-                </div>
+                {Object.keys(appConfig.fields).map(fieldKey => {
+                  const req = appConfig.fields[fieldKey];
+                  if (req === "hidden") return null;
+                  const isReq = req === "required";
+                  const label = fieldKey.replace(/([A-Z])/g, ' $1').trim().replace(/^./, str => str.toUpperCase());
+                  
+                  return (
+                    <div key={fieldKey}>
+                      <label className="block text-xs font-extrabold text-[#10233F] mb-1">{label} {isReq && "*"}</label>
+                      {fieldKey === "resume" || fieldKey === "profilePhoto" ? (
+                        <input type="file" required={isReq} onChange={e => handleFieldChange(fieldKey, e.target.files?.[0]?.name)} className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 py-2 text-xs font-bold text-[#10233F]" />
+                      ) : fieldKey === "experience" || fieldKey === "relevantExperience" ? (
+                        <select required={isReq} value={fieldValues[fieldKey] || ""} onChange={e => handleFieldChange(fieldKey, e.target.value)} className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold text-[#10233F]">
+                          <option value="">Select Experience</option>
+                          <option value="Fresher">Fresher</option>
+                          <option value="1-3 Years">1 - 3 Years</option>
+                          <option value="3-5 Years">3 - 5 Years</option>
+                          <option value="5+ Years">5+ Years</option>
+                        </select>
+                      ) : fieldKey === "availability" || fieldKey === "noticePeriod" ? (
+                        <input type="date" required={isReq} value={fieldValues[fieldKey] || ""} onChange={e => handleFieldChange(fieldKey, e.target.value)} className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold text-[#10233F]" />
+                      ) : fieldKey === "willingToRelocate" ? (
+                         <select required={isReq} value={fieldValues[fieldKey] || ""} onChange={e => handleFieldChange(fieldKey, e.target.value)} className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold text-[#10233F]">
+                           <option value="">Select</option>
+                           <option value="Yes">Yes</option>
+                           <option value="No">No</option>
+                         </select>
+                      ) : (
+                        <input
+                          type={fieldKey.includes("Email") || fieldKey.includes("email") ? "email" : fieldKey.includes("mobile") || fieldKey.includes("Phone") ? "tel" : "text"}
+                          required={isReq}
+                          value={fieldValues[fieldKey] || ""}
+                          onChange={(e) => handleFieldChange(fieldKey, e.target.value)}
+                          className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold text-[#10233F]"
+                        />
+                      )}
+                    </div>
+                  )
+                })}
 
-                <div>
-                  <label className="block text-xs font-bold mb-1 text-[#10233F]">
-                    {lang === "mr" ? "थोडक्यात संदेश (पर्यायी)" : "Short Cover Note (Optional)"}
-                  </label>
-                  <textarea
-                    rows={3}
-                    placeholder={lang === "mr" ? "तुम्ही या कामासाठी योग्य का आहात ते थोडक्यात लिहा..." : "Briefly share why you are a great fit..."}
-                    className="w-full rounded-xl border border-[#DCE5F0] bg-white p-2.5 text-xs font-semibold shadow-2xs focus:outline-none focus:ring-1 focus:ring-[#063B78]"
-                  />
-                </div>
+                {appConfig.customQuestions && appConfig.customQuestions.map((q: any) => (
+                  <div key={q.id}>
+                    <label className="block text-xs font-extrabold text-[#10233F] mb-1">{q.question} {q.required && "*"}</label>
+                    {q.type === "long" ? (
+                      <textarea required={q.required} value={customAnswers[q.id] || ""} onChange={e => handleCustomChange(q.id, e.target.value)} className="w-full rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] p-3 text-xs font-bold text-[#10233F]" />
+                    ) : q.type === "yesno" ? (
+                       <select required={q.required} value={customAnswers[q.id] || ""} onChange={e => handleCustomChange(q.id, e.target.value)} className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold text-[#10233F]">
+                         <option value="">Select option</option>
+                         <option value="Yes">Yes</option>
+                         <option value="No">No</option>
+                       </select>
+                    ) : q.type === "number" ? (
+                      <input type="number" required={q.required} value={customAnswers[q.id] || ""} onChange={e => handleCustomChange(q.id, e.target.value)} className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold text-[#10233F]" />
+                    ) : q.type === "date" ? (
+                      <input type="date" required={q.required} value={customAnswers[q.id] || ""} onChange={e => handleCustomChange(q.id, e.target.value)} className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold text-[#10233F]" />
+                    ) : (
+                      <input type="text" required={q.required} value={customAnswers[q.id] || ""} onChange={e => handleCustomChange(q.id, e.target.value)} className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold text-[#10233F]" />
+                    )}
+                  </div>
+                ))}
 
-                <Button type="submit" className="btn-yellow w-full h-11 font-black text-xs shadow-md rounded-xl">
+                <Button type="submit" className="btn-yellow w-full h-11 font-black text-xs shadow-md rounded-xl sticky bottom-0">
                   {lang === "mr" ? "नोकरीसाठी अर्ज सादर करा" : "Submit Application"} <Send className="ml-2 size-4" />
                 </Button>
               </form>

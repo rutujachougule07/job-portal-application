@@ -42,6 +42,7 @@ import {
 } from "lucide-react";
 import { PublicHeader } from "@/components/portal/PublicHeader";
 import { PublicFooter } from "@/components/portal/PublicFooter";
+import { PopularCategories } from "@/components/portal/PopularCategories";
 import { JobCard, jobs, Job } from "@/components/portal/JobCard";
 import { JobCardImage } from "@/components/portal/JobCardImage";
 import { Input } from "@/components/ui/input";
@@ -82,6 +83,8 @@ export function JobsListingPage() {
     setCategoryFilter(searchParams.category || "all");
     setSubCategoryFilter("all");
   }, [searchParams.category]);
+
+  const isInitialState = (!categoryFilter || categoryFilter === "all") && !searchTerm && (!locationFilter || locationFilter === "all") && (!typeFilter || typeFilter === "all") && (!workModeFilter || workModeFilter === "all") && (!experienceFilter || experienceFilter === "all") && (!salaryFilter || salaryFilter === "all");
 
   const subCategoryMap: Record<string, {id: string, label: string}[]> = {
     "construction": [
@@ -392,9 +395,20 @@ export function JobsListingPage() {
             </div>
           </div>
 
+          {(!categoryFilter || categoryFilter === "all") && (
+            <div className="mb-8 bg-white p-6 rounded-2xl border border-[#DCE5F0] shadow-xs">
+              <h2 className="text-xl font-black text-[#10233F] mb-6 flex items-center gap-2">
+                <LayoutGrid className="size-5 text-[#063B78]" />
+                {t("popularCategories")}
+              </h2>
+              <PopularCategories limit={20} hideHeader={true} />
+            </div>
+          )}
+
           {/* Main Grid Layout */}
-          <div className={`grid grid-cols-1 ${categoryFilter !== "all" && categoryFilter ? "lg:grid-cols-[280px_1fr]" : ""} gap-8 items-start`}>
-            {/* Desktop Filters Sidebar */}
+          {!isInitialState && (
+            <div className={`grid grid-cols-1 ${categoryFilter !== "all" && categoryFilter ? "lg:grid-cols-[280px_1fr]" : ""} gap-8 items-start`}>
+              {/* Desktop Filters Sidebar */}
             {(categoryFilter !== "all" && categoryFilter) && (
               <aside className="hidden lg:block bg-white p-6 rounded-2xl border border-[#DCE5F0] shadow-xs sticky top-24">
               <div className="flex items-center justify-between pb-4 border-b border-[#DCE5F0] mb-5">
@@ -605,6 +619,7 @@ export function JobsListingPage() {
               )}
             </div>
           </div>
+          )}
         </div>
 
         {/* Mobile Filter Modal */}

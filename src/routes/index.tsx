@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import careerTeam from "@/assets/career-team.jpg";
 import { Brand } from "@/components/portal/Brand";
-import { LanguageSwitcher } from "@/components/portal/LanguageSwitcher";
+
 import { PublicFooter } from "@/components/portal/PublicFooter";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
@@ -42,6 +42,14 @@ export const Route = createFileRoute("/")({
 export function LandingGatewayPage() {
   const { t } = useI18n();
   const navigate = useNavigate();
+  const [currentUser, setCurrentUser] = useState(() => dataStore.getCurrentUser());
+
+  const handleLogout = () => {
+    window.localStorage.removeItem("realjob-user");
+    dataStore.setCurrentUser(null);
+    setCurrentUser(null);
+    toast.info("Logged out successfully!");
+  };
 
   const handleQuickUserEntry = () => {
     const userObj = {
@@ -52,6 +60,7 @@ export function LandingGatewayPage() {
     };
     window.localStorage.setItem("realjob-user", JSON.stringify(userObj));
     dataStore.setCurrentUser(userObj);
+    setCurrentUser(userObj);
     toast.success("User Portal Ready! Redirecting to main website...");
     navigate({ to: "/home" });
   };
@@ -65,6 +74,7 @@ export function LandingGatewayPage() {
     };
     window.localStorage.setItem("realjob-user", JSON.stringify(adminObj));
     dataStore.setCurrentUser(adminObj);
+    setCurrentUser(adminObj);
     toast.success("Admin Portal Ready! Opening Admin Control Dashboard...");
     navigate({ to: "/admin" });
   };
@@ -77,28 +87,45 @@ export function LandingGatewayPage() {
           <Brand className="h-14 sm:h-16 scale-105 origin-left" />
 
           <div className="flex items-center gap-2 sm:gap-3">
-            <LanguageSwitcher label={t("languageLabel")} showCurrent={true} />
 
-            <Button
-              asChild
-              variant="outline"
-              className="border-[#063B78] text-[#063B78] font-extrabold hover:bg-[#063B78] hover:text-white text-xs px-3 sm:px-4 h-9.5 rounded-lg shadow-2xs"
-            >
-              <Link to="/auth" search={{ mode: "login", role: "worker" }}>
-                <UserCheck className="size-4 mr-1.5" />
-                {t("userLogin")}
-              </Link>
-            </Button>
 
-            <Button
-              asChild
-              className="bg-[#063B78] hover:bg-[#082F63] text-white font-extrabold text-xs px-3 sm:px-4 h-9.5 rounded-lg shadow-xs"
-            >
-              <Link to="/auth" search={{ mode: "login", role: "admin" }}>
-                <ShieldCheck className="size-4 mr-1.5 text-[#FFC400]" />
-                {t("adminLogin")}
-              </Link>
-            </Button>
+            {currentUser ? (
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#EBF1F8] border border-[#B8D3F2] text-xs font-black text-[#063B78]">
+                  <span>👤 {currentUser.fullName || currentUser.email?.split("@")[0]}</span>
+                </div>
+                <Button
+                  onClick={handleLogout}
+                  size="sm"
+                  className="bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs px-3 h-9.5 rounded-lg shadow-xs"
+                >
+                  Logout (लॉग आउट)
+                </Button>
+              </div>
+            ) : (
+              <>
+                <Button
+                  asChild
+                  variant="outline"
+                  className="border-[#063B78] text-[#063B78] font-extrabold hover:bg-[#063B78] hover:text-white text-xs px-3 sm:px-4 h-9.5 rounded-lg shadow-2xs"
+                >
+                  <Link to="/auth" search={{ mode: "login", role: "worker" }}>
+                    <UserCheck className="size-4 mr-1.5" />
+                    {t("userLogin")}
+                  </Link>
+                </Button>
+
+                <Button
+                  asChild
+                  className="bg-[#063B78] hover:bg-[#082F63] text-white font-extrabold text-xs px-3 sm:px-4 h-9.5 rounded-lg shadow-xs"
+                >
+                  <Link to="/auth" search={{ mode: "login", role: "admin" }}>
+                    <ShieldCheck className="size-4 mr-1.5 text-[#FFC400]" />
+                    {t("adminLogin")}
+                  </Link>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </header>

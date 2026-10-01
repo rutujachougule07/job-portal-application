@@ -557,7 +557,7 @@ class DataStoreManager {
       if (typeof window !== "undefined") {
         localStorage.setItem(this.STORAGE_KEYS.RESUMES, JSON.stringify(existing));
       }
-    } catch {}
+    } catch { }
     return true;
   }
 }
