@@ -39,7 +39,7 @@ export const Route = createFileRoute("/company/$companyId")({
   component: CompanyPage,
 });
 
-export function CompanyPage() {
+function CompanyPage() {
   const { t, n, lang } = useI18n();
   const { companyId } = useParams({ from: "/company/$companyId" });
   const defaultJob: Job = {

@@ -47,7 +47,7 @@ export const Route = createFileRoute("/home")({
   component: HomePage,
 });
 
-export function HomePage() {
+function HomePage() {
   const { t, lang } = useI18n();
 
   // Search tab state: 'job' or 'worker'

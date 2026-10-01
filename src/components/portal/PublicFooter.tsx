@@ -50,7 +50,7 @@ export function PublicFooter() {
             </Link>
 
             <p className="text-xs leading-relaxed text-slate-300 pr-2">
-              {t("heroSubtitle")} — {t("trustVerified")}
+              Right Person • Right Job • Right Opportunity — Connecting Workers and Employers
             </p>
 
             {/* Social Icons */}
@@ -76,17 +76,17 @@ export function PublicFooter() {
           {/* Col 2: For Workers */}
           <div>
             <h3 className="text-sm font-black text-white tracking-wide">
-              {t("seeker")}
+              I Want a Job
             </h3>
             <div className="mt-1.5 h-[2px] w-8 bg-[#FFC400] rounded-full mb-4" />
 
             <ul className="space-y-2 text-xs font-semibold text-slate-300">
               {[
-                { label: t("jobs"), to: "/jobs" },
-                { label: t("applications"), to: "/auth" },
-                { label: t("profile"), to: "/auth" },
-                { label: t("aboutUs"), to: "/about" },
-                { label: t("faq"), to: "/faq" },
+                { label: "Find Jobs", to: "/jobs" },
+                { label: "My Applications", to: "/auth" },
+                { label: "My Profile", to: "/auth" },
+                { label: "About Us", to: "/about" },
+                { label: "FAQ", to: "/faq" },
               ].map(({ label, to }) => (
                 <li key={label}>
                   <Link
@@ -104,17 +104,17 @@ export function PublicFooter() {
           {/* Col 3: For Employers */}
           <div>
             <h3 className="text-sm font-black text-white tracking-wide">
-              {t("employer")}
+              I Need Workers
             </h3>
             <div className="mt-1.5 h-[2px] w-8 bg-[#FFC400] rounded-full mb-4" />
 
             <ul className="space-y-2 text-xs font-semibold text-slate-300">
               {[
-                { label: t("hireTalent"), to: "/auth" },
-                { label: t("workers"), to: "/workers" },
-                { label: t("viewProfile"), to: "/workers" },
-                { label: t("contactUs"), to: "/contact" },
-                { label: t("register"), to: "/auth" },
+                { label: "Hire Talent", to: "/auth" },
+                { label: "Search Workers", to: "/workers" },
+                { label: "View Profiles", to: "/workers" },
+                { label: "Contact Us", to: "/contact" },
+                { label: "Register", to: "/auth" },
               ].map(({ label, to }) => (
                 <li key={label}>
                   <Link
@@ -132,7 +132,7 @@ export function PublicFooter() {
           {/* Col 4: Categories */}
           <div>
             <h3 className="text-sm font-black text-white tracking-wide">
-              {t("categories")}
+              Categories
             </h3>
             <div className="mt-1.5 h-[2px] w-8 bg-[#FFC400] rounded-full mb-4" />
 
@@ -145,7 +145,7 @@ export function PublicFooter() {
                 { id: "electricians", to: "/jobs" },
                 { id: "security", to: "/jobs" },
               ].map(({ id, to }) => {
-                const label = getCategoryTitle(id, lang);
+                const label = getCategoryTitle(id, "en");
                 return (
                   <li key={id}>
                     <Link
@@ -164,15 +164,15 @@ export function PublicFooter() {
           {/* Col 5: Company */}
           <div>
             <h3 className="text-sm font-black text-white tracking-wide">
-              {t("brand")}
+              REAL JOB
             </h3>
             <div className="mt-1.5 h-[2px] w-8 bg-[#FFC400] rounded-full mb-4" />
 
             <ul className="space-y-2 text-xs font-semibold text-slate-300">
               {[
-                { label: t("aboutUs"), to: "/about" },
-                { label: t("contactUs"), to: "/contact" },
-                { label: t("faq"), to: "/faq" },
+                { label: "About Us", to: "/about" },
+                { label: "Contact Us", to: "/contact" },
+                { label: "FAQ", to: "/faq" },
               ].map(({ label, to }) => (
                 <li key={label}>
                   <Link
@@ -191,10 +191,10 @@ export function PublicFooter() {
           <div className="lg:border-l lg:border-white/10 lg:pl-6 space-y-5">
             <div>
               <h3 className="text-lg font-black text-white tracking-wide">
-                {t("downloadTitle")}
+                Download the REAL JOB App
               </h3>
               <p className="mt-1.5 text-xs font-medium text-slate-300">
-                {t("downloadSubtitle")}
+                Find jobs from your mobile and talk directly to employers.
               </p>
 
               <form onSubmit={handleSubscribe} className="mt-3.5 flex items-center rounded-xl border border-white/20 bg-white/10 p-1 focus-within:border-[#FFC400] transition-all">
@@ -203,7 +203,7 @@ export function PublicFooter() {
                   <input
                     type="email"
                     required
-                    placeholder={t("email")}
+                    placeholder="Email or Mobile No."
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full h-9 bg-transparent px-3 text-xs text-white placeholder-slate-300 focus:outline-none"
@@ -213,7 +213,7 @@ export function PublicFooter() {
                   type="submit"
                   className="h-9 px-4 rounded-lg bg-[#FFC400] text-[#082F63] font-black text-xs transition-colors shrink-0 shadow-sm hover:bg-[#FFD21F]"
                 >
-                  {subscribed ? "..." : t("continue")}
+                  {subscribed ? "..." : "Continue"}
                 </button>
               </form>
             </div>
@@ -236,9 +236,9 @@ export function PublicFooter() {
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 text-xs font-bold text-slate-300 sm:flex-row sm:px-6 lg:px-8">
           
           <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center sm:text-left">
-            <span>© {n(2026)} REAL JOB. {t("copyright")}</span>
+            <span>© 2026 REAL JOB. All rights reserved.</span>
             <span className="hidden text-slate-400 sm:inline">|</span>
-            <span>{t("tagline")}</span>
+            <span>Find Workers | Get Jobs</span>
           </div>
 
           <div className="flex items-center gap-4">

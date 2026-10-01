@@ -48,7 +48,7 @@ const monthlyAnalytics = [
   { month: "Sep", workers: 0, jobs: 0, hires: 0 },
 ];
 
-export function AdminDashboardPage() {
+function AdminDashboardPage() {
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState<"overview" | "jobs" | "applications">("overview");

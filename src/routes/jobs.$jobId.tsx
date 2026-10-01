@@ -59,7 +59,7 @@ function getJobDetails(jobId: string) {
   return (jobs.find((j) => j.id === jobId) ?? jobs[0])!;
 }
 
-export function JobDetailPage() {
+function JobDetailPage() {
   const { t, n, lang } = useI18n();
   const { jobId } = useParams({ from: "/jobs/$jobId" });
   const job = getJobDetails(jobId);

@@ -173,7 +173,7 @@ const faqList: FAQItem[] = [
   },
 ];
 
-export function FAQPage() {
+function FAQPage() {
   const { t, lang } = useI18n();
   const [selectedCategory, setSelectedCategory] = useState<"all" | "worker" | "employer" | "job" | "account">("all");
   const [searchQuery, setSearchQuery] = useState("");

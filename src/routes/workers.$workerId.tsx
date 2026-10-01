@@ -28,7 +28,7 @@ export const Route = createFileRoute("/workers/$workerId")({
   component: WorkerProfilePage,
 });
 
-export function WorkerProfilePage() {
+function WorkerProfilePage() {
   const { t, n, lang } = useI18n();
   const { workerId } = useParams({ from: "/workers/$workerId" });
   const worker = (workersList.find((w) => w.id === workerId) ?? workersList[0])!;

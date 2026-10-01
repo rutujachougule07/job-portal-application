@@ -64,7 +64,7 @@ export const Route = createFileRoute("/jobs/")({
   component: JobsListingPage,
 });
 
-export function JobsListingPage() {
+function JobsListingPage() {
   const { t, n, lang } = useI18n();
   const searchParams = Route.useSearch();
   const [searchTerm, setSearchTerm] = useState("");

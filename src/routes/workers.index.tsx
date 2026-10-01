@@ -33,7 +33,7 @@ export const Route = createFileRoute("/workers/")({
   component: WorkersListingPage,
 });
 
-export function WorkersListingPage() {
+function WorkersListingPage() {
   const { t, n, lang } = useI18n();
   const [searchQuery, setSearchQuery] = useState("");
   const [locationFilter, setLocationFilter] = useState("");
