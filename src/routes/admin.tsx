@@ -538,7 +538,7 @@ export function AdminDashboardPage() {
                 window.localStorage.removeItem("realjob-user");
                 dataStore.setCurrentUser(null);
                 toast.info("Logged out from Admin Dashboard");
-                navigate({ to: "/" });
+                window.location.href = "/";
               }}
               size="sm"
               className="bg-red-500 hover:bg-red-600 text-white font-extrabold text-xs h-8 px-3 rounded-lg shadow-md"

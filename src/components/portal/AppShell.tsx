@@ -64,7 +64,7 @@ export function AppShell({ role, title, eyebrow, children }: { role: Role; title
   const signOut = () => {
     window.localStorage.removeItem("realjob-user");
     dataStore.setCurrentUser(null);
-    navigate({ to: "/", replace: true });
+    window.location.href = "/";
   };
 
   return (
