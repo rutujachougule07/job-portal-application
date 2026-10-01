@@ -103,49 +103,59 @@ function AuthPage() {
 
       // ── LOGIN MODE ──
       if (role === "admin") {
-        // Admin: must authenticate via Firebase + must be the superadmin email
         const SUPERADMIN_EMAIL = "supera@gmail.com";
         const enteredEmail = email.trim().toLowerCase();
-        if (enteredEmail !== SUPERADMIN_EMAIL && enteredEmail !== "superadmin") {
-          toast.error("❌ Access Denied! Only the Super Admin can access this panel.");
-          setBusy(false);
-          return;
-        }
 
-        const { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } = await import("firebase/auth");
-        const auth = getAuth();
-        let uid = "superadmin-uid";
+        if (enteredEmail === SUPERADMIN_EMAIL || enteredEmail === "superadmin") {
+          // Super Admin Login via Firebase Auth
+          const { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } = await import("firebase/auth");
+          const auth = getAuth();
+          let uid = "superadmin-uid";
 
-        try {
-          const credential = await signInWithEmailAndPassword(auth, SUPERADMIN_EMAIL, password);
-          uid = credential.user.uid;
-        } catch (signInErr: any) {
-          const errCode = signInErr?.code || "";
-          if ((errCode === "auth/user-not-found" || errCode === "auth/invalid-credential") && password === "supera123") {
-            try {
-              const newCred = await createUserWithEmailAndPassword(auth, SUPERADMIN_EMAIL, password);
-              uid = newCred.user.uid;
-            } catch {
-              // fallback
+          try {
+            const credential = await signInWithEmailAndPassword(auth, SUPERADMIN_EMAIL, password);
+            uid = credential.user.uid;
+          } catch (signInErr: any) {
+            const errCode = signInErr?.code || "";
+            if ((errCode === "auth/user-not-found" || errCode === "auth/invalid-credential") && password === "supera123") {
+              try {
+                const newCred = await createUserWithEmailAndPassword(auth, SUPERADMIN_EMAIL, password);
+                uid = newCred.user.uid;
+              } catch {
+                // fallback
+              }
+            } else if (password !== "supera123") {
+              throw signInErr;
             }
-          } else if (password !== "supera123") {
-            throw signInErr;
           }
+
+          const userObj = {
+            id: uid,
+            email: SUPERADMIN_EMAIL,
+            role: "admin" as const,
+            fullName: "Super Admin",
+          };
+
+          window.localStorage.setItem("realjob-user", JSON.stringify(userObj));
+          dataStore.setCurrentUser(userObj);
+          toast.success("✅ Super Admin Login Successful!");
+          navigate({ to: "/superadmin" });
+        } else {
+          // Employer / Company Admin Login
+          const userObj = {
+            id: `employer-${Date.now()}`,
+            email: enteredEmail,
+            role: "employer" as const,
+            fullName: enteredEmail.split("@")[0] || "Employer",
+          };
+
+          window.localStorage.setItem("realjob-user", JSON.stringify(userObj));
+          dataStore.setCurrentUser(userObj);
+          toast.success("✅ Employer Login Successful!");
+          navigate({ to: "/admin" });
         }
-
-        const userObj = {
-          id: uid,
-          email: SUPERADMIN_EMAIL,
-          role: "admin" as const,
-          fullName: "Super Admin",
-        };
-
-        window.localStorage.setItem("realjob-user", JSON.stringify(userObj));
-        dataStore.setCurrentUser(userObj);
-        toast.success("✅ Super Admin Login Successful!");
-        navigate({ to: "/admin" });
       } else {
-        // Worker / Employer: simple local login (no Firebase auth required for now)
+        // Worker simple local login
         const userObj = {
           id: `seeker-${Date.now()}`,
           email: email || "user@example.com",
