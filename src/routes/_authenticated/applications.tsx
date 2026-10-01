@@ -1,0 +1,2 @@
+import { createFileRoute } from "@tanstack/react-router";import { ApplicationsPage } from "@/components/portal/Dashboards";
+export const Route=createFileRoute("/_authenticated/applications")({head:()=>({meta:[{title:"My Applications — Karyam"},{name:"description",content:"Track every job application and interview milestone."},{property:"og:title",content:"My Applications — Karyam"},{property:"og:description",content:"Track your application progress."},{property:"og:type",content:"website"},{name:"twitter:card",content:"summary"}]}),component:ApplicationsPage});
