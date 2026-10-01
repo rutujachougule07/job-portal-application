@@ -88,6 +88,8 @@ export type ApplicationRecord = {
   resume: string;
   appliedDate: string;
   status: ApplicationStatus;
+  fieldValues?: Record<string, string>;
+  customAnswers?: Record<string, string>;
 };
 
 export type SavedJobRecord = {
