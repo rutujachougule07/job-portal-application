@@ -99,7 +99,7 @@ export const DynamicApplicationForm = ({
           <h3 className="text-[#125BB5] font-extrabold text-sm">{number}. {title}</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
-          {Object.keys(fieldsObj).map(k => renderField(k, fieldsObj[k]))}
+          {Object.keys(fieldsObj).map(k => renderField(k, fieldsObj[k] || ""))}
         </div>
       </div>
     );
