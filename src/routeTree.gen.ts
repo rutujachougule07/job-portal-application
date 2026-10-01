@@ -20,6 +20,7 @@ import { Route as FaqRouteImport } from './routes/faq'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SelectLanguageRouteImport } from './routes/select-language'
+import { Route as SuperadminRouteImport } from './routes/superadmin'
 import { Route as AuthenticatedApplicationsRouteImport } from './routes/_authenticated/applications'
 import { Route as AuthenticatedControlRouteImport } from './routes/_authenticated/control'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -99,6 +100,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const SelectLanguageRoute = SelectLanguageRouteImport.update({
   id: '/select-language',
   path: '/select-language',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SuperadminRoute = SuperadminRouteImport.update({
+  id: '/superadmin',
+  path: '/superadmin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedApplicationsRoute =
@@ -257,6 +263,7 @@ export interface FileRoutesByFullPath {
   '/home': typeof HomeRoute
   '/reset-password': typeof ResetPasswordRoute
   '/select-language': typeof SelectLanguageRoute
+  '/superadmin': typeof SuperadminRoute
   '/applications': typeof AuthenticatedApplicationsRoute
   '/control': typeof AuthenticatedControlRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -295,6 +302,7 @@ export interface FileRoutesByTo {
   '/home': typeof HomeRoute
   '/reset-password': typeof ResetPasswordRoute
   '/select-language': typeof SelectLanguageRoute
+  '/superadmin': typeof SuperadminRoute
   '/applications': typeof AuthenticatedApplicationsRoute
   '/control': typeof AuthenticatedControlRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -335,6 +343,7 @@ export interface FileRoutesById {
   '/home': typeof HomeRoute
   '/reset-password': typeof ResetPasswordRoute
   '/select-language': typeof SelectLanguageRoute
+  '/superadmin': typeof SuperadminRoute
   '/_authenticated/applications': typeof AuthenticatedApplicationsRoute
   '/_authenticated/control': typeof AuthenticatedControlRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
@@ -375,6 +384,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/reset-password'
     | '/select-language'
+    | '/superadmin'
     | '/applications'
     | '/control'
     | '/dashboard'
@@ -413,6 +423,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/reset-password'
     | '/select-language'
+    | '/superadmin'
     | '/applications'
     | '/control'
     | '/dashboard'
@@ -452,6 +463,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/reset-password'
     | '/select-language'
+    | '/superadmin'
     | '/_authenticated/applications'
     | '/_authenticated/control'
     | '/_authenticated/dashboard'
@@ -492,6 +504,7 @@ export interface RootRouteChildren {
   HomeRoute: typeof HomeRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SelectLanguageRoute: typeof SelectLanguageRoute
+  SuperadminRoute: typeof SuperadminRoute
   CompanyCompanyIdRoute: typeof CompanyCompanyIdRoute
   JobsJobIdRoute: typeof JobsJobIdRoute
   WorkersWorkerIdRoute: typeof WorkersWorkerIdRoute
@@ -576,6 +589,13 @@ declare module '@tanstack/react-router' {
       path: '/select-language'
       fullPath: '/select-language'
       preLoaderRoute: typeof SelectLanguageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/superadmin': {
+      id: '/superadmin'
+      path: '/superadmin'
+      fullPath: '/superadmin'
+      preLoaderRoute: typeof SuperadminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/applications': {
@@ -846,6 +866,7 @@ const rootRouteChildren: RootRouteChildren = {
   HomeRoute: HomeRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SelectLanguageRoute: SelectLanguageRoute,
+  SuperadminRoute: SuperadminRoute,
   CompanyCompanyIdRoute: CompanyCompanyIdRoute,
   JobsJobIdRoute: JobsJobIdRoute,
   WorkersWorkerIdRoute: WorkersWorkerIdRoute,

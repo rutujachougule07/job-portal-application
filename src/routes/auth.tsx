@@ -65,16 +65,19 @@ function AuthPage() {
   // Employer registration extra fields
   const [companyName, setCompanyName] = useState("");
 
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
 
-    setTimeout(() => {
-      setBusy(false);
-
+    try {
       if (mode === "forgot") {
+        const { getAuth, sendPasswordResetEmail } = await import("firebase/auth");
+        const auth = getAuth();
+        await sendPasswordResetEmail(auth, email);
         toast.success("Password reset email sent! Check your inbox.");
         setMode("login");
+        setBusy(false);
         return;
       }
 
@@ -91,29 +94,69 @@ function AuthPage() {
 
         window.localStorage.setItem("realjob-user", JSON.stringify(userObj));
         dataStore.setCurrentUser(userObj);
-
         toast.success("Account created successfully! Welcome to REAL JOB.");
         const nextPath = role === "admin" ? "/admin" : role === "employer" ? "/employer" : "/home";
         navigate({ to: "/select-language", search: { redirectTo: nextPath } });
+        setBusy(false);
         return;
       }
 
-      // Login Mode
-      const userObj = {
-        id: role === "admin" ? "admin-001" : role === "employer" ? "emp-tcs" : "seeker-rutuja",
-        email: email || "user@example.com",
-        role: role === "admin" ? ("admin" as const) : role,
-        fullName: (email ? email.split("@")[0] : "") || (role === "admin" ? "System Admin" : "User"),
-      };
+      // ── LOGIN MODE ──
+      if (role === "admin") {
+        // Admin: must authenticate via Firebase + must be the superadmin email
+        const SUPERADMIN_EMAIL = "supera@gmail.com";
+        if (email.trim().toLowerCase() !== SUPERADMIN_EMAIL) {
+          toast.error("❌ Access Denied! Only the Super Admin can access this panel.");
+          setBusy(false);
+          return;
+        }
 
-      window.localStorage.setItem("realjob-user", JSON.stringify(userObj));
-      dataStore.setCurrentUser(userObj);
+        const { getAuth, signInWithEmailAndPassword } = await import("firebase/auth");
+        const auth = getAuth();
+        const credential = await signInWithEmailAndPassword(auth, email.trim(), password);
+        const fbUser = credential.user;
 
-      toast.success("Successfully logged in!");
-      const nextPath = role === "admin" ? "/admin" : role === "employer" ? "/employer" : "/home";
-      navigate({ to: "/select-language", search: { redirectTo: nextPath } });
-    }, 1000);
+        const userObj = {
+          id: fbUser.uid,
+          email: fbUser.email || SUPERADMIN_EMAIL,
+          role: "admin" as const,
+          fullName: "Super Admin",
+        };
+
+        window.localStorage.setItem("realjob-user", JSON.stringify(userObj));
+        dataStore.setCurrentUser(userObj);
+        toast.success("✅ Super Admin Login Successful!");
+        navigate({ to: "/admin" });
+      } else {
+        // Worker / Employer: simple local login (no Firebase auth required for now)
+        const userObj = {
+          id: `seeker-${Date.now()}`,
+          email: email || "user@example.com",
+          role: role as "worker" | "employer",
+          fullName: email ? email.split("@")[0] : "User",
+        };
+        window.localStorage.setItem("realjob-user", JSON.stringify(userObj));
+        dataStore.setCurrentUser(userObj);
+        toast.success("Successfully logged in!");
+        navigate({ to: "/select-language", search: { redirectTo: "/home" } });
+      }
+    } catch (err: any) {
+      const code = err?.code || "";
+      if (code === "auth/wrong-password" || code === "auth/invalid-credential") {
+        toast.error("❌ चुकीचा पासवर्ड! Wrong password. Please try again.");
+      } else if (code === "auth/user-not-found") {
+        toast.error("❌ हा यूझर सापडला नाही. User not found.");
+      } else if (code === "auth/too-many-requests") {
+        toast.error("⚠️ जास्त प्रयत्न झाले. Too many attempts. Try later.");
+      } else {
+        toast.error(`Login Failed: ${err?.message || "Unknown error"}`);
+      }
+    } finally {
+      setBusy(false);
+    }
   };
+
+
 
   return (
     <div
