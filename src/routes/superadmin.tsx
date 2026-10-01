@@ -617,53 +617,11 @@ function SuperAdminPage() {
                             }}
                           />
                         </div>
-                        <div className="flex-1 w-full">
-                          <label className="block text-[10px] font-black text-[#5B6B7F] uppercase tracking-wider mb-1">Icon</label>
-                          <select 
-                            className="w-full h-9 px-3 bg-white border border-[#DCE5F0] rounded-lg text-sm font-bold text-[#063B78]" 
-                            value={cat.iconName}
-                            onChange={(e) => {
-                              const newCat = [...categories];
-                              newCat[i]!.iconName = e.target.value;
-                              setCategories(newCat);
-                            }}
-                          >
-                            <option value="Factory">Factory</option>
-                            <option value="HardHat">HardHat</option>
-                            <option value="Wrench">Wrench</option>
-                            <option value="Truck">Truck</option>
-                            <option value="Zap">Zap</option>
-                            <option value="Shield">Shield</option>
-                            <option value="Briefcase">Briefcase</option>
-                            <option value="Users">Users</option>
-                            <option value="Monitor">Monitor</option>
-                          </select>
-                        </div>
-                        <div className="flex-1 w-full">
-                          <label className="block text-[10px] font-black text-[#5B6B7F] uppercase tracking-wider mb-1">Theme Color</label>
-                          <select 
-                            className="w-full h-9 px-3 bg-white border border-[#DCE5F0] rounded-lg text-sm font-bold text-[#063B78]" 
-                            value={cat.theme}
-                            onChange={(e) => {
-                              const newCat = [...categories];
-                              newCat[i]!.theme = e.target.value;
-                              setCategories(newCat);
-                            }}
-                          >
-                            <option value="blue">Blue</option>
-                            <option value="yellow">Yellow</option>
-                            <option value="purple">Purple</option>
-                            <option value="green">Green</option>
-                            <option value="orange">Orange</option>
-                            <option value="red">Red</option>
-                            <option value="pink">Pink</option>
-                          </select>
-                        </div>
-                        <div className="flex items-end h-[56px]">
+                        <div className="flex items-end pt-1 sm:pt-4">
                           <Button 
                             variant="destructive" 
                             size="sm" 
-                            className="h-9 text-xs"
+                            className="h-9 text-xs font-bold"
                             onClick={() => {
                               const newCat = [...categories];
                               newCat.splice(i, 1);
