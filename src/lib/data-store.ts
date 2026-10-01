@@ -3,6 +3,14 @@
  * Handles Users, Employers, Jobs, Applications, SavedJobs, JobAlerts & Recommendations
  */
 
+import { db } from "@/firebase";
+import { collection, doc, getDocs, setDoc, deleteDoc, updateDoc } from "firebase/firestore";
+
+// Helper: fire-and-forget sync to Firebase
+function fbSync(fn: () => Promise<unknown>) {
+  if (typeof window !== "undefined") fn().catch(console.error);
+}
+
 export type UserRole = "worker" | "employer" | "admin";
 
 export type JobSeekerProfile = {
@@ -175,23 +183,18 @@ class DataStoreManager {
     }
     
     // Background sync from Firebase to LocalStorage
-    import("@/firebase").then(({ db }) => {
-      import("firebase/firestore").then(({ collection, getDocs }) => {
-         getDocs(collection(db, "jobs")).then(snapshot => {
-            if (!snapshot.empty) {
-               const fbJobs = snapshot.docs.map(doc => doc.data());
-               localStorage.setItem(this.STORAGE_KEYS.JOBS, JSON.stringify(fbJobs));
-            }
-         }).catch(console.error);
-         
-         getDocs(collection(db, "applications")).then(snapshot => {
-            if (!snapshot.empty) {
-               const fbApps = snapshot.docs.map(doc => doc.data());
-               localStorage.setItem(this.STORAGE_KEYS.APPLICATIONS, JSON.stringify(fbApps));
-            }
-         }).catch(console.error);
-      });
-    }).catch(console.error);
+    fbSync(async () => {
+      const jobsSnap = await getDocs(collection(db, "jobs"));
+      if (!jobsSnap.empty) {
+        const fbJobs = jobsSnap.docs.map(d => d.data());
+        localStorage.setItem(this.STORAGE_KEYS.JOBS, JSON.stringify(fbJobs));
+      }
+      const appsSnap = await getDocs(collection(db, "applications"));
+      if (!appsSnap.empty) {
+        const fbApps = appsSnap.docs.map(d => d.data());
+        localStorage.setItem(this.STORAGE_KEYS.APPLICATIONS, JSON.stringify(fbApps));
+      }
+    });
   }
 
   public getRegisteredUsers(): Array<{ id: string; email: string; mobile?: string; role: UserRole; fullName: string }> {
@@ -313,11 +316,7 @@ class DataStoreManager {
     if (typeof window !== "undefined") {
       localStorage.setItem(this.STORAGE_KEYS.JOBS, JSON.stringify(jobs));
       
-      import("@/firebase").then(({ db }) => {
-        import("firebase/firestore").then(({ doc, setDoc }) => {
-           setDoc(doc(db, "jobs", newJob.id), newJob).catch(console.error);
-        });
-      }).catch(console.error);
+      fbSync(() => setDoc(doc(db, "jobs", newJob.id), newJob));
     }
     return newJob;
   }
@@ -334,11 +333,7 @@ class DataStoreManager {
     if (typeof window !== "undefined") {
       localStorage.setItem(this.STORAGE_KEYS.JOBS, JSON.stringify(jobs));
       
-      import("@/firebase").then(({ db }) => {
-        import("firebase/firestore").then(({ doc, setDoc }) => {
-           setDoc(doc(db, "jobs", updatedJob.id), updatedJob).catch(console.error);
-        });
-      }).catch(console.error);
+      fbSync(() => setDoc(doc(db, "jobs", updatedJob.id), updatedJob));
     }
     return updatedJob;
   }
@@ -349,11 +344,7 @@ class DataStoreManager {
     if (typeof window !== "undefined") {
       localStorage.setItem(this.STORAGE_KEYS.JOBS, JSON.stringify(jobs));
       
-      import("@/firebase").then(({ db }) => {
-        import("firebase/firestore").then(({ doc, deleteDoc }) => {
-           deleteDoc(doc(db, "jobs", jobId)).catch(console.error);
-        });
-      }).catch(console.error);
+      fbSync(() => deleteDoc(doc(db, "jobs", jobId)));
     }
     return true;
   }
@@ -419,11 +410,7 @@ class DataStoreManager {
     if (typeof window !== "undefined") {
       localStorage.setItem(this.STORAGE_KEYS.APPLICATIONS, JSON.stringify(apps));
       
-      import("@/firebase").then(({ db }) => {
-        import("firebase/firestore").then(({ doc, setDoc }) => {
-           setDoc(doc(db, "applications", newApp.id), newApp).catch(console.error);
-        });
-      }).catch(console.error);
+      fbSync(() => setDoc(doc(db, "applications", newApp.id), newApp));
     }
     return newApp;
   }
@@ -463,11 +450,7 @@ class DataStoreManager {
     if (typeof window !== "undefined") {
       localStorage.setItem(this.STORAGE_KEYS.APPLICATIONS, JSON.stringify(apps));
       
-      import("@/firebase").then(({ db }) => {
-        import("firebase/firestore").then(({ doc, updateDoc }) => {
-           updateDoc(doc(db, "applications", updatedApp.id), { status }).catch(console.error);
-        });
-      }).catch(console.error);
+      fbSync(() => updateDoc(doc(db, "applications", updatedApp.id), { status }));
     }
     return updatedApp;
   }
