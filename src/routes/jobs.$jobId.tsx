@@ -334,10 +334,6 @@ export function JobDetailPage() {
             </div>
 
             <div className="flex-1 w-full max-w-7xl mx-auto px-4 py-8">
-              <button onClick={() => setShowApplyModal(false)} className="flex items-center text-[#125BB5] font-bold text-sm mb-6 hover:underline">
-                <ArrowLeft className="size-4 mr-1.5" /> {lang === "mr" ? "मागे जा" : "Back to Jobs"}
-              </button>
-
               <div className="flex flex-col lg:flex-row gap-8 items-start">
                 {/* Left Form Area */}
                 <div className="flex-1 w-full bg-white rounded-3xl border border-[#DCE5F0] p-6 sm:p-10 shadow-sm">
@@ -432,12 +428,6 @@ export function JobDetailPage() {
                         <p className="text-sm font-black text-[#10233F]">{job.vacancies || 1}</p>
                       </div>
                     </div>
-                  </div>
-                  
-                  <div className="mt-8 border-t border-[#DCE5F0] pt-6">
-                     <Button className="w-full bg-[#063B78] hover:bg-[#082F63] h-12 rounded-xl font-bold">
-                       Apply Now
-                     </Button>
                   </div>
                 </div>
               </div>
