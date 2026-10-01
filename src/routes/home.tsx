@@ -221,7 +221,7 @@ function HomePage() {
         </section>
 
         {/* POPULAR JOB CATEGORIES */}
-        <PopularCategories />
+        <PopularCategories limit={4} />
 
         {/* FEATURED JOBS SECTION */}
         <PopularJobs />

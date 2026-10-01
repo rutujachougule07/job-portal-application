@@ -3,6 +3,14 @@
  * Handles Users, Employers, Jobs, Applications, SavedJobs, JobAlerts & Recommendations
  */
 
+import { db } from "@/firebase";
+import { collection, doc, getDocs, setDoc, deleteDoc, updateDoc } from "firebase/firestore";
+
+// Helper: fire-and-forget sync to Firebase
+function fbSync(fn: () => Promise<unknown>) {
+  if (typeof window !== "undefined") fn().catch(console.error);
+}
+
 export type UserRole = "worker" | "employer" | "admin";
 
 export type JobSeekerProfile = {
@@ -58,6 +66,7 @@ export type JobRecord = {
   salaryMin?: number | undefined;
   salaryMax?: number | undefined;
   salaryType: SalaryType;
+  applicationConfig?: any;
   location: string;
   jobType: JobType;
   workMode: WorkMode;
@@ -87,6 +96,8 @@ export type ApplicationRecord = {
   resume: string;
   appliedDate: string;
   status: ApplicationStatus;
+  fieldValues?: Record<string, string>;
+  customAnswers?: Record<string, string>;
 };
 
 export type SavedJobRecord = {
@@ -170,7 +181,50 @@ class DataStoreManager {
     if (!localStorage.getItem(this.STORAGE_KEYS.JOB_ALERTS)) {
       localStorage.setItem(this.STORAGE_KEYS.JOB_ALERTS, JSON.stringify([]));
     }
+    
+    // Bidirectional sync with Firebase
+    fbSync(async () => {
+      const jobsSnap = await getDocs(collection(db, "jobs"));
+      const appsSnap = await getDocs(collection(db, "applications"));
+
+      if (!jobsSnap.empty) {
+        // Firebase has jobs → use Firebase as source of truth
+        const fbJobs = jobsSnap.docs.map(d => d.data());
+        localStorage.setItem(this.STORAGE_KEYS.JOBS, JSON.stringify(fbJobs));
+      } else {
+        // Firebase empty → push local jobs to Firebase
+        const localJobs: JobRecord[] = JSON.parse(localStorage.getItem(this.STORAGE_KEYS.JOBS) || "[]");
+        for (const job of localJobs) {
+          await setDoc(doc(db, "jobs", job.id), job);
+        }
+      }
+
+      if (!appsSnap.empty) {
+        const fbApps = appsSnap.docs.map(d => d.data());
+        localStorage.setItem(this.STORAGE_KEYS.APPLICATIONS, JSON.stringify(fbApps));
+      } else {
+        const localApps: ApplicationRecord[] = JSON.parse(localStorage.getItem(this.STORAGE_KEYS.APPLICATIONS) || "[]");
+        for (const app of localApps) {
+          await setDoc(doc(db, "applications", app.id), app);
+        }
+      }
+    });
   }
+
+  /** Force-push all local data to Firebase (use from Admin panel) */
+  public async pushAllToFirebase(): Promise<{ jobs: number; applications: number }> {
+    const jobs: JobRecord[] = JSON.parse(localStorage.getItem(this.STORAGE_KEYS.JOBS) || "[]");
+    const apps: ApplicationRecord[] = JSON.parse(localStorage.getItem(this.STORAGE_KEYS.APPLICATIONS) || "[]");
+
+    for (const job of jobs) {
+      await setDoc(doc(db, "jobs", job.id), job);
+    }
+    for (const app of apps) {
+      await setDoc(doc(db, "applications", app.id), app);
+    }
+    return { jobs: jobs.length, applications: apps.length };
+  }
+
 
   public getRegisteredUsers(): Array<{ id: string; email: string; mobile?: string; role: UserRole; fullName: string }> {
     if (typeof window === "undefined") return [];
@@ -290,6 +344,8 @@ class DataStoreManager {
     jobs.unshift(newJob);
     if (typeof window !== "undefined") {
       localStorage.setItem(this.STORAGE_KEYS.JOBS, JSON.stringify(jobs));
+      
+      fbSync(() => setDoc(doc(db, "jobs", newJob.id), newJob));
     }
     return newJob;
   }
@@ -305,6 +361,8 @@ class DataStoreManager {
 
     if (typeof window !== "undefined") {
       localStorage.setItem(this.STORAGE_KEYS.JOBS, JSON.stringify(jobs));
+      
+      fbSync(() => setDoc(doc(db, "jobs", updatedJob.id), updatedJob));
     }
     return updatedJob;
   }
@@ -314,6 +372,8 @@ class DataStoreManager {
     jobs = jobs.filter((j) => j.id !== jobId);
     if (typeof window !== "undefined") {
       localStorage.setItem(this.STORAGE_KEYS.JOBS, JSON.stringify(jobs));
+      
+      fbSync(() => deleteDoc(doc(db, "jobs", jobId)));
     }
     return true;
   }
@@ -378,6 +438,8 @@ class DataStoreManager {
     apps.unshift(newApp);
     if (typeof window !== "undefined") {
       localStorage.setItem(this.STORAGE_KEYS.APPLICATIONS, JSON.stringify(apps));
+      
+      fbSync(() => setDoc(doc(db, "applications", newApp.id), newApp));
     }
     return newApp;
   }
@@ -416,6 +478,8 @@ class DataStoreManager {
 
     if (typeof window !== "undefined") {
       localStorage.setItem(this.STORAGE_KEYS.APPLICATIONS, JSON.stringify(apps));
+      
+      fbSync(() => updateDoc(doc(db, "applications", updatedApp.id), { status }));
     }
     return updatedApp;
   }
@@ -557,7 +621,7 @@ class DataStoreManager {
       if (typeof window !== "undefined") {
         localStorage.setItem(this.STORAGE_KEYS.RESUMES, JSON.stringify(existing));
       }
-    } catch {}
+    } catch { }
     return true;
   }
 }

@@ -42,6 +42,7 @@ import {
 } from "lucide-react";
 import { PublicHeader } from "@/components/portal/PublicHeader";
 import { PublicFooter } from "@/components/portal/PublicFooter";
+import { PopularCategories } from "@/components/portal/PopularCategories";
 import { JobCard, jobs, Job } from "@/components/portal/JobCard";
 import { JobCardImage } from "@/components/portal/JobCardImage";
 import { Input } from "@/components/ui/input";
@@ -83,152 +84,23 @@ function JobsListingPage() {
     setSubCategoryFilter("all");
   }, [searchParams.category]);
 
-  const subCategoryMap: Record<string, {id: string, label: string}[]> = {
-    "construction": [
-      { id: "Civil Engineer", label: "Civil Engineer" },
-      { id: "Site Engineer", label: "Site Engineer" },
-      { id: "Architect", label: "Architect" },
-      { id: "Site Supervisor", label: "Site Supervisor" },
-      { id: "Quantity Surveyor", label: "Quantity Surveyor" },
-      { id: "Project Manager", label: "Project Manager" },
-      { id: "Safety Officer", label: "Safety Officer" }
-    ],
-    "it-software": [
-      { id: "Software Developer", label: "Software Developer" },
-      { id: "Web Developer", label: "Web Developer" },
-      { id: "Full Stack Developer", label: "Full Stack Developer" },
-      { id: "Frontend Developer", label: "Frontend Developer" },
-      { id: "Backend Developer", label: "Backend Developer" },
-      { id: "UI/UX Designer", label: "UI/UX Designer" },
-      { id: "DevOps Engineer", label: "DevOps Engineer" },
-      { id: "Data Analyst", label: "Data Analyst" },
-      { id: "Cyber Security", label: "Cyber Security" }
-    ],
-    "engineering": [
-      { id: "Mechanical Engineer", label: "Mechanical Engineer" },
-      { id: "Electrical Engineer", label: "Electrical Engineer" },
-      { id: "Civil Engineer", label: "Civil Engineer" },
-      { id: "Electronics Engineer", label: "Electronics Engineer" },
-      { id: "Production Engineer", label: "Production Engineer" },
-      { id: "Automobile Engineer", label: "Automobile Engineer" },
-      { id: "Quality Engineer", label: "Quality Engineer" }
-    ],
-    "healthcare-medical": [
-      { id: "Doctor", label: "Doctor" },
-      { id: "Nurse", label: "Nurse" },
-      { id: "Pharmacist", label: "Pharmacist" },
-      { id: "Lab Technician", label: "Lab Technician" },
-      { id: "Medical Assistant", label: "Medical Assistant" },
-      { id: "Hospital Administration", label: "Hospital Administration" }
-    ],
-    "finance-accounting": [
-      { id: "Accountant", label: "Accountant" },
-      { id: "Finance Executive", label: "Finance Executive" },
-      { id: "Banking", label: "Banking" },
-      { id: "Auditor", label: "Auditor" },
-      { id: "Tax Consultant", label: "Tax Consultant" },
-      { id: "Financial Analyst", label: "Financial Analyst" }
-    ],
-    "sales-marketing": [
-      { id: "Sales Executive", label: "Sales Executive" },
-      { id: "Business Development", label: "Business Development" },
-      { id: "Digital Marketing", label: "Digital Marketing" },
-      { id: "Marketing Executive", label: "Marketing Executive" },
-      { id: "Sales Manager", label: "Sales Manager" },
-      { id: "Telecaller", label: "Telecaller" }
-    ],
-    "education": [
-      { id: "Teacher", label: "Teacher" },
-      { id: "Professor", label: "Professor" },
-      { id: "Lecturer", label: "Lecturer" },
-      { id: "Tutor", label: "Tutor" },
-      { id: "Academic Coordinator", label: "Academic Coordinator" },
-      { id: "School Administrator", label: "School Administrator" }
-    ],
-    "manufacturing": [
-      { id: "Production", label: "Production" },
-      { id: "Quality Control", label: "Quality Control" },
-      { id: "Machine Operator", label: "Machine Operator" },
-      { id: "Maintenance Engineer", label: "Maintenance Engineer" },
-      { id: "Production Manager", label: "Production Manager" }
-    ],
-    "hr-recruitment": [
-      { id: "HR Executive", label: "HR Executive" },
-      { id: "HR Manager", label: "HR Manager" },
-      { id: "Recruiter", label: "Recruiter" },
-      { id: "Talent Acquisition", label: "Talent Acquisition" },
-      { id: "Payroll Executive", label: "Payroll Executive" }
-    ],
-    "hospitality-tourism": [
-      { id: "Hotel Management", label: "Hotel Management" },
-      { id: "Chef", label: "Chef" },
-      { id: "Front Office", label: "Front Office" },
-      { id: "Housekeeping", label: "Housekeeping" },
-      { id: "Travel Executive", label: "Travel Executive" }
-    ],
-    "logistics-transport": [
-      { id: "Logistics Executive", label: "Logistics Executive" },
-      { id: "Warehouse Manager", label: "Warehouse Manager" },
-      { id: "Delivery Executive", label: "Delivery Executive" },
-      { id: "Supply Chain", label: "Supply Chain" },
-      { id: "Transport Manager", label: "Transport Manager" }
-    ],
-    "government-public": [
-      { id: "Government Jobs", label: "Government Jobs" },
-      { id: "PSU Jobs", label: "PSU Jobs" },
-      { id: "Administrative Jobs", label: "Administrative Jobs" },
-      { id: "Public Services", label: "Public Services" }
-    ],
-    "legal": [
-      { id: "Lawyer", label: "Lawyer" },
-      { id: "Legal Advisor", label: "Legal Advisor" },
-      { id: "Legal Executive", label: "Legal Executive" },
-      { id: "Compliance Officer", label: "Compliance Officer" }
-    ],
-    "architecture-design": [
-      { id: "Architect", label: "Architect" },
-      { id: "Interior Designer", label: "Interior Designer" },
-      { id: "3D Visualizer", label: "3D Visualizer" },
-      { id: "CAD Designer", label: "CAD Designer" }
-    ],
-    "retail-ecommerce": [
-      { id: "Store Manager", label: "Store Manager" },
-      { id: "Retail Executive", label: "Retail Executive" },
-      { id: "E-commerce Executive", label: "E-commerce Executive" },
-      { id: "Customer Service", label: "Customer Service" }
-    ],
-    "customer-service-bpo": [
-      { id: "Customer Support", label: "Customer Support" },
-      { id: "Call Center", label: "Call Center" },
-      { id: "BPO Executive", label: "BPO Executive" },
-      { id: "Technical Support", label: "Technical Support" }
-    ],
-    "design-creative": [
-      { id: "Graphic Designer", label: "Graphic Designer" },
-      { id: "UI/UX Designer", label: "UI/UX Designer" },
-      { id: "Video Editor", label: "Video Editor" },
-      { id: "Content Creator", label: "Content Creator" },
-      { id: "Photographer", label: "Photographer" }
-    ],
-    "media-communication": [
-      { id: "Content Writer", label: "Content Writer" },
-      { id: "Journalist", label: "Journalist" },
-      { id: "Social Media Manager", label: "Social Media Manager" },
-      { id: "PR Executive", label: "PR Executive" }
-    ],
-    "agriculture-farming": [
-      { id: "Agricultural Engineer", label: "Agricultural Engineer" },
-      { id: "Farm Manager", label: "Farm Manager" },
-      { id: "Agronomist", label: "Agronomist" },
-      { id: "Agriculture Officer", label: "Agriculture Officer" }
-    ],
-    "science-research": [
-      { id: "Research Scientist", label: "Research Scientist" },
-      { id: "Laboratory Researcher", label: "Laboratory Researcher" },
-      { id: "Biotechnologist", label: "Biotechnologist" },
-      { id: "Research Assistant", label: "Research Assistant" }
-    ]
-  };
+  const isInitialState = (!categoryFilter || categoryFilter === "all") && !searchTerm && (!locationFilter || locationFilter === "all") && (!typeFilter || typeFilter === "all") && (!workModeFilter || workModeFilter === "all") && (!experienceFilter || experienceFilter === "all") && (!salaryFilter || salaryFilter === "all");
+
+  const dynamicSubCategories = useMemo(() => {
+    if (!categoryFilter || categoryFilter === "all") return [];
+    
+    const jobsInCategory = dataStore.getActiveJobs().filter(j => 
+      j.category.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-') === categoryFilter.toLowerCase() ||
+      j.category.toLowerCase() === categoryFilter.toLowerCase()
+    );
+
+    const subs = new Set<string>();
+    jobsInCategory.forEach(j => {
+      if (j.subcategory) subs.add(j.subcategory);
+    });
+
+    return Array.from(subs).map(sub => ({ id: sub, label: sub }));
+  }, [categoryFilter]);
 
   const resetFilters = () => {
     setSearchTerm("");
@@ -274,14 +146,7 @@ function JobsListingPage() {
         const normalizedFilter = categoryFilter.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-');
         const jobCatNorm = (job.category || "").toLowerCase().replace(/ & /g, '-').replace(/ /g, '-');
         
-        const subCats = subCategoryMap[normalizedFilter] || [];
-        const isMainCategoryMatch = jobCatNorm.includes(normalizedFilter) || normalizedFilter.includes(jobCatNorm);
-        const isSubCategoryMatch = subCats.some(sub => 
-          job.title.toLowerCase().includes(sub.id.toLowerCase()) || 
-          job.category.toLowerCase().includes(sub.id.toLowerCase())
-        );
-
-        matchesCategory = isMainCategoryMatch || isSubCategoryMatch;
+        matchesCategory = jobCatNorm === normalizedFilter || jobCatNorm.includes(normalizedFilter) || normalizedFilter.includes(jobCatNorm);
       }
 
       if (matchesCategory && subCategoryFilter !== "all" && subCategoryFilter) {
@@ -344,57 +209,108 @@ function JobsListingPage() {
       <main className="bg-[#F5F8FC] min-h-screen py-8">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Hero Banner */}
-          <div className="bg-hero-overlay p-8 rounded-2xl text-white mb-8 shadow-lg relative overflow-hidden">
-            <div className="relative z-10 max-w-3xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#FFC400] backdrop-blur mb-3">
-                <Briefcase className="size-3.5" />
-                {t("jobs")}
-              </div>
-
-              <h1 className="text-3xl sm:text-4xl font-black text-white">
-                {t("jobsInRegion")} <br />
-                <span className="text-[#FFC400]">{t("directCompanyContact")}</span>
-              </h1>
-
-              <p className="mt-2 text-sm text-white/90 font-medium">
-                {t("jobsSubtext")}
-              </p>
-
-              {/* Inline Search Bar */}
-              <div className="mt-6 grid sm:grid-cols-[1fr_0.8fr_auto] gap-3 bg-white p-2.5 rounded-xl shadow-md border border-[#DCE5F0]">
-                <div className="relative flex items-center">
-                  <Search className="absolute left-3 size-4 text-[#5B6B7F]" />
-                  <Input
-                    placeholder={t("searchJobPlaceholder")}
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-9 h-11 border-0 bg-transparent text-xs text-[#10233F] font-bold focus-visible:ring-0"
-                  />
+          {/* Hero Banner or Category Header */}
+          {(!categoryFilter || categoryFilter === "all") ? (
+            <div className="bg-hero-overlay p-8 rounded-2xl text-white mb-8 shadow-lg relative overflow-hidden">
+              <div className="relative z-10 max-w-3xl">
+                <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#FFC400] backdrop-blur mb-3">
+                  <Briefcase className="size-3.5" />
+                  {t("jobs")}
                 </div>
-                <div className="relative flex items-center">
-                  <MapPin className="absolute left-3 size-4 text-[#125BB5]" />
-                  <select
-                    value={locationFilter}
-                    onChange={(e) => setLocationFilter(e.target.value)}
-                    className="w-full h-11 border-0 bg-transparent text-xs font-bold text-[#10233F] pl-9 pr-3 focus:outline-none"
-                  >
-                    <option value="all">{t("allLocations")}</option>
-                    <option value="mumbai">Mumbai</option>
-                    <option value="pune">Pune</option>
-                    <option value="chakan">Chakan</option>
-                    <option value="bengaluru">Bengaluru</option>
-                  </select>
+
+                <h1 className="text-3xl sm:text-4xl font-black text-white">
+                  {t("jobsInRegion")} <br />
+                  <span className="text-[#FFC400]">{t("directCompanyContact")}</span>
+                </h1>
+
+                <p className="mt-2 text-sm text-white/90 font-medium">
+                  {t("jobsSubtext")}
+                </p>
+
+                {/* Inline Search Bar */}
+                <div className="mt-6 grid sm:grid-cols-[1fr_0.8fr_auto] gap-3 bg-white p-2.5 rounded-xl shadow-md border border-[#DCE5F0]">
+                  <div className="relative flex items-center">
+                    <Search className="absolute left-3 size-4 text-[#5B6B7F]" />
+                    <Input
+                      placeholder={t("searchJobPlaceholder")}
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-9 h-11 border-0 bg-transparent text-xs text-[#10233F] font-bold focus-visible:ring-0"
+                    />
+                  </div>
+                  <div className="relative flex items-center">
+                    <MapPin className="absolute left-3 size-4 text-[#125BB5]" />
+                    <select
+                      value={locationFilter}
+                      onChange={(e) => setLocationFilter(e.target.value)}
+                      className="w-full h-11 border-0 bg-transparent text-xs font-bold text-[#10233F] pl-9 pr-3 focus:outline-none"
+                    >
+                      <option value="all">{t("allLocations")}</option>
+                      <option value="mumbai">Mumbai</option>
+                      <option value="pune">Pune</option>
+                      <option value="chakan">Chakan</option>
+                      <option value="bengaluru">Bengaluru</option>
+                    </select>
+                  </div>
+                  <Button className="btn-yellow h-11 font-black text-xs px-6">
+                    {t("search")}
+                  </Button>
                 </div>
-                <Button className="btn-yellow h-11 font-black text-xs px-6">
-                  {t("search")}
-                </Button>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="mb-8 flex flex-col md:flex-row gap-6 justify-between items-start md:items-center bg-white p-6 rounded-2xl border border-[#DCE5F0] shadow-sm">
+              <div>
+                <button 
+                  onClick={() => { setCategoryFilter("all"); setSubCategoryFilter("all"); }} 
+                  className="text-xs font-bold text-[#125BB5] mb-3 flex items-center gap-1 hover:underline"
+                >
+                  <ArrowLeft className="size-3" /> {lang === "mr" ? "सर्व नोकऱ्या पहा" : "All Jobs"}
+                </button>
+                <div className="flex items-center gap-4">
+                  <div className="size-14 rounded-2xl bg-gradient-to-br from-[#EBF1F8] to-[#DCE5F0] flex items-center justify-center text-[#063B78] shadow-inner">
+                    <Briefcase className="size-6" />
+                  </div>
+                  <div>
+                    <h1 className="text-2xl sm:text-3xl font-black text-[#082F63] capitalize">
+                      {getCategoryTitle(categoryFilter, lang)}
+                    </h1>
+                    <p className="text-sm font-bold text-[#5B6B7F] mt-1">
+                      {filteredJobs.length} {lang === "mr" ? "नोकऱ्या उपलब्ध" : "Jobs Available"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Smaller Search Bar for Category Page */}
+              <div className="w-full md:w-auto grid grid-cols-[1fr] gap-3">
+                <div className="relative flex items-center w-full md:w-[280px]">
+                  <Search className="absolute left-3 size-4 text-[#5B6B7F]" />
+                  <Input
+                    placeholder={lang === "mr" ? "नोकरी शोधा..." : "Search in category..."}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-9 h-12 border border-[#DCE5F0] bg-[#F5F8FC] rounded-xl text-xs text-[#10233F] font-bold focus-visible:ring-1 focus-visible:ring-[#125BB5]"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {(!categoryFilter || categoryFilter === "all") && (
+            <div className="mb-8 bg-white p-6 rounded-2xl border border-[#DCE5F0] shadow-xs">
+              <h2 className="text-xl font-black text-[#10233F] mb-6 flex items-center gap-2">
+                <LayoutGrid className="size-5 text-[#063B78]" />
+                {t("popularCategories")}
+              </h2>
+              <PopularCategories limit={20} hideHeader={true} />
+            </div>
+          )}
 
           {/* Main Grid Layout */}
-          <div className={`grid grid-cols-1 ${categoryFilter !== "all" && categoryFilter ? "lg:grid-cols-[280px_1fr]" : ""} gap-8 items-start`}>
-            {/* Desktop Filters Sidebar */}
+          {!isInitialState && (
+            <div className={`grid grid-cols-1 ${categoryFilter !== "all" && categoryFilter ? "lg:grid-cols-[280px_1fr]" : ""} gap-8 items-start`}>
+              {/* Desktop Filters Sidebar */}
             {(categoryFilter !== "all" && categoryFilter) && (
               <aside className="hidden lg:block bg-white p-6 rounded-2xl border border-[#DCE5F0] shadow-xs sticky top-24">
               <div className="flex items-center justify-between pb-4 border-b border-[#DCE5F0] mb-5">
@@ -553,7 +469,7 @@ function JobsListingPage() {
                   </div>
 
                   {/* Sub-Category Pills */}
-                  {subCategoryMap[categoryFilter] && (
+                  {dynamicSubCategories.length > 0 && (
                     <div className="flex flex-wrap gap-3">
                       <button
                         onClick={() => setSubCategoryFilter("all")}
@@ -565,7 +481,7 @@ function JobsListingPage() {
                       >
                         {t("allCategories")}
                       </button>
-                      {subCategoryMap[categoryFilter].map(sub => (
+                      {dynamicSubCategories.map(sub => (
                         <button
                           key={sub.id}
                           onClick={() => setSubCategoryFilter(sub.id)}
@@ -605,6 +521,7 @@ function JobsListingPage() {
               )}
             </div>
           </div>
+          )}
         </div>
 
         {/* Mobile Filter Modal */}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import {
   ArrowLeft,
@@ -10,8 +10,12 @@ import {
   MapPin,
   Send,
   Share2,
+  ShieldCheck,
   Wallet,
   X,
+  Briefcase,
+  User,
+  Building,
 } from "lucide-react";
 import { PublicHeader } from "@/components/portal/PublicHeader";
 import { PublicFooter } from "@/components/portal/PublicFooter";
@@ -21,8 +25,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
-
+import { DynamicApplicationForm } from "@/components/portal/DynamicApplicationForm";
 import { dataStore } from "@/lib/data-store";
+import { getFallbackConfig } from "@/lib/applicationConfig";
 
 export const Route = createFileRoute("/jobs/$jobId")({
   head: ({ params }) => ({
@@ -54,6 +59,7 @@ function getJobDetails(jobId: string) {
       description: storeJob.description,
       responsibilities: storeJob.responsibilities,
       requiredSkills: storeJob.requiredSkills,
+      applicationConfig: storeJob.applicationConfig,
     };
   }
   return (jobs.find((j) => j.id === jobId) ?? jobs[0])!;
@@ -67,11 +73,29 @@ function JobDetailPage() {
   const [saved, setSaved] = useState(false);
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [applied, setApplied] = useState(false);
+
+  useEffect(() => {
+    if (showApplyModal) {
+      const originalStyle = window.getComputedStyle(document.body).overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = originalStyle;
+      };
+    }
+  }, [showApplyModal]);
   const [applicantName, setApplicantName] = useState("");
   const [applicantPhone, setApplicantPhone] = useState("");
   const [applicantExp, setApplicantExp] = useState("3 Years");
 
+  const [fieldValues, setFieldValues] = useState<Record<string, any>>({});
+  const [customAnswers, setCustomAnswers] = useState<Record<string, any>>({});
+
   const similarJobs = jobs.filter((j) => j.id !== job.id).slice(0, 3);
+
+  const appConfig = (job as any).applicationConfig || getFallbackConfig(job.category);
+
+  const handleFieldChange = (key: string, val: any) => setFieldValues(p => ({ ...p, [key]: val }));
+  const handleCustomChange = (id: string, val: any) => setCustomAnswers(p => ({ ...p, [id]: val }));
 
   const handleApplySubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,15 +114,18 @@ function JobDetailPage() {
         jobId: job.id,
         employerId: job.company,
         jobSeekerId: seekerId,
-        candidateName: name,
-        candidateEmail: seekerId,
-        candidateMobile: applicantPhone || "+91 98220 11223",
+        candidateName: fieldValues['fullName'] || name,
+        candidateEmail: fieldValues['email'] || seekerId,
+        candidateMobile: fieldValues['mobile'] || applicantPhone || "+91 98220 11223",
         jobTitle: job.title,
         companyName: job.company,
         location: job.location,
         salary: job.salary,
-        resume: `${name.replaceAll(" ", "_")}_Resume.pdf`,
-      });
+        resume: fieldValues['resume'] || `${name.replaceAll(" ", "_")}_Resume.pdf`,
+        fieldValues,
+        customAnswers,
+        category: job.category
+      } as any);
 
       setApplied(true);
       toast.success(`Application submitted for ${job.title}! ${job.company} will call you shortly.`);
@@ -196,9 +223,8 @@ function JobDetailPage() {
                   <Button
                     variant="outline"
                     onClick={() => setSaved(!saved)}
-                    className={`flex-1 border-[#063B78] font-bold text-xs h-11 ${
-                      saved ? "bg-[#EBF1F8] text-[#063B78]" : "text-[#063B78]"
-                    }`}
+                    className={`flex-1 border-[#063B78] font-bold text-xs h-11 ${saved ? "bg-[#EBF1F8] text-[#063B78]" : "text-[#063B78]"
+                      }`}
                   >
                     {saved ? <BookmarkCheck className="size-4 mr-1 text-[#063B78]" /> : <Bookmark className="size-4 mr-1" />}
                     {saved ? t("save") : t("save")}
@@ -286,70 +312,124 @@ function JobDetailPage() {
           </div>
         </div>
 
-        {/* Apply Modal */}
+        {/* Interactive Apply Full Page */}
         {showApplyModal && (
-          <div className="fixed inset-0 z-50 bg-[#082F63]/60 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl relative">
-              <button onClick={() => setShowApplyModal(false)} className="absolute right-4 top-4 text-[#5B6B7F]">
-                <X className="size-5" />
-              </button>
-
-              {applied ? (
-                <div className="text-center py-8">
-                  <CheckCircle2 className="size-16 text-[#063B78] mx-auto mb-3 animate-bounce" />
-                  <h3 className="text-xl font-black text-[#10233F]">{t("applicationSubmitted")}</h3>
-                  <p className="text-xs font-semibold text-[#5B6B7F] mt-2">
-                    {t("applicationSubmittedDesc")}
-                  </p>
+          <div className="fixed inset-0 z-[100] flex flex-col bg-[#F5F8FC] overflow-y-auto animate-in fade-in duration-200">
+            <div className="bg-white border-b border-[#DCE5F0] sticky top-0 z-10 px-4 sm:px-8 py-3 flex items-center justify-between shadow-sm">
+              <div className="flex items-center gap-2">
+                <div className="size-8 rounded-xl bg-gradient-to-br from-[#125BB5] to-[#063B78] flex items-center justify-center text-white font-black shadow-md">
+                  J
                 </div>
-              ) : (
-                <form onSubmit={handleApplySubmit} className="space-y-4">
-                  <h3 className="text-lg font-black text-[#10233F]">{job.title}</h3>
-                  <p className="text-xs font-semibold text-[#5B6B7F]">{job.company} • {job.location}</p>
+                <span className="font-black text-[#082F63] text-xl tracking-tight hidden sm:block">
+                  JobPortal
+                </span>
+              </div>
+              <button
+                onClick={() => setShowApplyModal(false)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#F5F8FC] text-[#5B6B7F] hover:text-[#10233F] hover:bg-[#EBF1F8] font-bold text-sm transition-colors"
+              >
+                <X className="size-4" /> {lang === "mr" ? "बंद करा" : "Close"}
+              </button>
+            </div>
 
-                  <div>
-                    <label className="block text-xs font-extrabold text-[#10233F] mb-1">{t("yourName")} *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Rahul Pawar"
-                      value={applicantName}
-                      onChange={(e) => setApplicantName(e.target.value)}
-                      className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold text-[#10233F]"
-                    />
+            <div className="flex-1 w-full max-w-7xl mx-auto px-4 py-8">
+              <div className="flex flex-col lg:flex-row gap-8 items-start">
+                {/* Left Form Area */}
+                <div className="flex-1 w-full bg-white rounded-3xl border border-[#DCE5F0] p-6 sm:p-10 shadow-sm">
+                  <h2 className="text-3xl font-black text-[#082F63] mb-2">{lang === "mr" ? "नोकरीसाठी अर्ज करा" : "Apply for Job"}</h2>
+                  <p className="text-[#5B6B7F] font-semibold text-sm mb-8">{lang === "mr" ? "खालील माहिती काळजीपूर्वक भरा." : "Fill in the details below to apply for this job. Make sure all information is correct."}</p>
+
+                  {applied ? (
+                    <div className="text-center py-12">
+                      <CheckCircle2 className="size-20 text-[#063B78] mx-auto mb-4 animate-bounce" />
+                      <h3 className="text-2xl font-black text-[#10233F]">{lang === "mr" ? "अर्ज यशस्वीरीत्या पाठवला!" : "Application Submitted!"}</h3>
+                      <p className="text-sm font-semibold text-[#5B6B7F] mt-2 max-w-md mx-auto">
+                        {lang === "mr" ? "तुमचा अर्ज कंपनीला पाठवण्यात आला आहे. ते लवकरच तुमच्याशी संपर्क साधतील." : "Your application has been sent to the employer. They will contact you shortly."}
+                      </p>
+                      <Button onClick={() => setShowApplyModal(false)} className="btn-yellow h-12 px-8 font-black text-sm mt-8 rounded-xl">
+                        {lang === "mr" ? "मागे जा" : "Go Back"}
+                      </Button>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleApplySubmit} className="space-y-6">
+                      <DynamicApplicationForm 
+                        appConfig={appConfig}
+                        fieldValues={fieldValues}
+                        setFieldValues={setFieldValues}
+                        customAnswers={customAnswers}
+                        setCustomAnswers={setCustomAnswers}
+                        lang={lang}
+                        category={job.category}
+                      />
+
+                      <div className="pt-8 flex justify-end gap-4 mt-8">
+                        <Button type="button" onClick={() => setShowApplyModal(false)} variant="outline" className="h-12 px-8 font-bold text-sm rounded-xl border-[#DCE5F0] text-[#5B6B7F]">
+                          {lang === "mr" ? "रद्द करा" : "Cancel"}
+                        </Button>
+                        <Button type="submit" className="btn-yellow h-12 px-8 font-black text-sm shadow-md rounded-xl">
+                          {lang === "mr" ? "अंतिम अर्ज सादर करा" : "Submit Application"} <Send className="ml-2 size-4" />
+                        </Button>
+                      </div>
+                    </form>
+                  )}
+                </div>
+
+                {/* Right Job Summary Card */}
+                <div className="w-full lg:w-[400px] shrink-0 bg-white rounded-3xl border border-[#DCE5F0] p-6 shadow-sm sticky top-24 hidden lg:block">
+                  <div className="flex items-start justify-between mb-4">
+                    <span className="grid size-14 place-items-center rounded-2xl bg-[#063B78] font-black text-white text-xl shadow-md">
+                      {job.initials}
+                    </span>
+                    <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 font-bold px-3 py-1 flex items-center gap-1.5">
+                      <CheckCircle2 className="size-3.5" />
+                      Active
+                    </Badge>
+                  </div>
+                  <h3 className="font-display text-2xl font-black text-[#10233F] mb-2">{job.title}</h3>
+                  <div className="space-y-2 mb-4">
+                    <p className="text-sm font-bold text-[#125BB5] flex items-center gap-2">
+                      <Building className="size-4" /> {job.company}
+                    </p>
+                    <p className="text-sm font-semibold text-[#5B6B7F] flex items-center gap-2">
+                      <MapPin className="size-4" /> {job.location}
+                    </p>
+                  </div>
+                  
+                  <div className="inline-block px-3 py-1 bg-[#EBF1F8] text-[#125BB5] text-xs font-bold rounded-lg mb-6">
+                    {job.category || "General"}
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-extrabold text-[#10233F] mb-1">{t("phoneNumber")} *</label>
-                    <input
-                      type="tel"
-                      required
-                      placeholder="+91 98220 00000"
-                      value={applicantPhone}
-                      onChange={(e) => setApplicantPhone(e.target.value)}
-                      className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold text-[#10233F]"
-                    />
+                  <div className="space-y-5">
+                    <div className="flex gap-3 items-start">
+                      <div className="size-8 rounded-full bg-[#F5F8FC] flex items-center justify-center shrink-0">
+                        <Briefcase className="size-4 text-[#5B6B7F]" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-[#5B6B7F]">Experience Required</p>
+                        <p className="text-sm font-black text-[#10233F]">{job.experience}</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-3 items-start">
+                      <div className="size-8 rounded-full bg-[#F5F8FC] flex items-center justify-center shrink-0">
+                        <Wallet className="size-4 text-[#5B6B7F]" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-[#5B6B7F]">Salary</p>
+                        <p className="text-sm font-black text-[#10233F]">{job.salary}</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-3 items-start">
+                      <div className="size-8 rounded-full bg-[#F5F8FC] flex items-center justify-center shrink-0">
+                        <User className="size-4 text-[#5B6B7F]" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-[#5B6B7F]">Vacancies</p>
+                        <p className="text-sm font-black text-[#10233F]">{job.vacancies || 1}</p>
+                      </div>
+                    </div>
                   </div>
-
-                  <div>
-                    <label className="block text-xs font-extrabold text-[#10233F] mb-1">{t("experience")}</label>
-                    <select
-                      value={applicantExp}
-                      onChange={(e) => setApplicantExp(e.target.value)}
-                      className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold text-[#10233F]"
-                    >
-                      <option value="Fresher">Fresher</option>
-                      <option value="1-3 Years">1 - 3 Years</option>
-                      <option value="3-5 Years">3 - 5 Years</option>
-                      <option value="5+ Years">5+ Years</option>
-                    </select>
-                  </div>
-
-                  <Button type="submit" className="w-full btn-yellow font-black text-xs py-3 h-11">
-                    {t("submitApplication")}
-                  </Button>
-                </form>
-              )}
+                </div>
+              </div>
             </div>
           </div>
         )}

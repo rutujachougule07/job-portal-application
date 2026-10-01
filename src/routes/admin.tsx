@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   ShieldCheck,
@@ -11,7 +11,8 @@ import {
   Edit,
   Search,
   BarChart3,
-  FileText
+  FileText,
+  UploadCloud
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { StatCard } from "@/components/portal/Stats";
 import { dataStore, JobRecord, ApplicationRecord } from "@/lib/data-store";
 import { toast } from "sonner";
-import { LanguageSwitcher } from "@/components/portal/LanguageSwitcher";
+
 import {
   Area,
   AreaChart,
@@ -60,6 +61,20 @@ function AdminDashboardPage() {
   const [jobSearch, setJobSearch] = useState("");
   const [appSearch, setAppSearch] = useState("");
   const [filterJobId, setFilterJobId] = useState<string | null>(null);
+  const [expandedApp, setExpandedApp] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
+
+  const handleFirebaseSync = async () => {
+    setSyncing(true);
+    try {
+      const result = await dataStore.pushAllToFirebase();
+      toast.success(`✅ Firebase Sync Done! Jobs: ${result.jobs}, Applications: ${result.applications}`);
+    } catch (e: any) {
+      toast.error(`Firebase Sync Failed: ${e?.message || e}`);
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   // User Accounts for Admin View (Live Dynamic Data)
   const [registeredUsers, setRegisteredUsers] = useState<
@@ -95,7 +110,7 @@ function AdminDashboardPage() {
   const [showJobForm, setShowJobForm] = useState(false);
   const [editingJobId, setEditingJobId] = useState<string | null>(null);
   const [jobForm, setJobForm] = useState({
-    title: "", company: "REAL JOB Platform", category: "", location: "",
+    title: "", company: "REAL JOB Platform", category: "", subcategory: "", location: "",
     salaryMin: "", salaryMax: "", salaryType: "Monthly",
     jobType: "Full Time", workMode: "On-site", vacancies: "5",
     education: "", experience: "", skills: "", description: "",
@@ -106,7 +121,7 @@ function AdminDashboardPage() {
   const handleAddNewJobClick = () => {
     setEditingJobId(null);
     setJobForm({
-      title: "", company: "REAL JOB Platform", category: "", location: "",
+      title: "", company: "REAL JOB Platform", category: "", subcategory: "", location: "",
       salaryMin: "", salaryMax: "", salaryType: "Monthly",
       jobType: "Full Time", workMode: "On-site", vacancies: "5",
       education: "", experience: "", skills: "", description: "",
@@ -130,6 +145,7 @@ function AdminDashboardPage() {
       title: job.title || "",
       company: job.company || "",
       category: job.category || "",
+      subcategory: job.subcategory || "",
       location: job.location || "",
       salaryMin: sMin,
       salaryMax: sMax,
@@ -159,6 +175,7 @@ function AdminDashboardPage() {
         title: jobForm.title,
         company: jobForm.company,
         category: jobForm.category || "General",
+        subcategory: jobForm.subcategory || "",
         description: jobForm.description,
         qualification: jobForm.education,
         experience: jobForm.experience,
@@ -179,7 +196,7 @@ function AdminDashboardPage() {
         title: jobForm.title,
         company: jobForm.company,
         category: jobForm.category || "General",
-        subcategory: "",
+        subcategory: jobForm.subcategory || "",
         description: jobForm.description,
         responsibilities: [],
         requiredSkills: [],
@@ -287,19 +304,33 @@ function AdminDashboardPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[10px] font-black text-[#5B6B7F] uppercase mb-1.5">Category *</label>
-                    <select required value={jobForm.category} onChange={e => setJ("category", e.target.value)} className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F] focus:outline-none focus:border-[#063B78]">
-                      <option value="">Select Category</option>
-                      <option>Manufacturing & Industrial</option>
-                      <option>Construction & Building</option>
-                      <option>Healthcare & Nursing</option>
-                      <option>Logistics & Transport</option>
-                      <option>Engineering & Technical</option>
-                      <option>Retail & Sales</option>
-                      <option>Hotel & Hospitality</option>
-                      <option>Security & Services</option>
-                      <option>General Worker</option>
-                    </select>
+                    <input required list="categories-list" value={jobForm.category} onChange={e => setJ("category", e.target.value)} placeholder="Type or select category..." className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F] focus:outline-none focus:border-[#063B78]" />
+                    <datalist id="categories-list">
+                      <option value="Manufacturing & Industrial" />
+                      <option value="Construction & Building" />
+                      <option value="Healthcare & Nursing" />
+                      <option value="Logistics & Transport" />
+                      <option value="Engineering & Technical" />
+                      <option value="Retail & Sales" />
+                      <option value="Hotel & Hospitality" />
+                      <option value="Security & Services" />
+                      <option value="IT & Software" />
+                    </datalist>
                   </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-[#5B6B7F] uppercase mb-1.5">Subcategory</label>
+                    <input list="subcategories-list" value={jobForm.subcategory} onChange={e => setJ("subcategory", e.target.value)} placeholder="Type or select subcategory..." className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F] focus:outline-none focus:border-[#063B78]" />
+                    <datalist id="subcategories-list">
+                      <option value="Machine Operator" />
+                      <option value="Site Supervisor" />
+                      <option value="Nurse" />
+                      <option value="Delivery Executive" />
+                      <option value="Software Developer" />
+                    </datalist>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[10px] font-black text-[#5B6B7F] uppercase mb-1.5">Location (City/District) *</label>
                     <input required value={jobForm.location} onChange={e => setJ("location", e.target.value)} placeholder="e.g. Chakan, Pune / MIDC Kolhapur" className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F] focus:outline-none focus:border-[#063B78]" />
@@ -507,9 +538,7 @@ function AdminDashboardPage() {
 
           {/* Right: Actions */}
           <div className="flex items-center gap-2 sm:gap-3">
-            <div className="bg-white/10 border border-white/20 rounded-lg">
-              <LanguageSwitcher showCurrent={true} />
-            </div>
+
             <Button
               asChild
               variant="ghost"
@@ -521,8 +550,9 @@ function AdminDashboardPage() {
             <Button
               onClick={() => {
                 window.localStorage.removeItem("realjob-user");
+                dataStore.setCurrentUser(null);
                 toast.info("Logged out from Admin Dashboard");
-                navigate({ to: "/" });
+                window.location.href = "/";
               }}
               size="sm"
               className="bg-red-500 hover:bg-red-600 text-white font-extrabold text-xs h-8 px-3 rounded-lg shadow-md"
@@ -552,10 +582,18 @@ function AdminDashboardPage() {
 
           <div className="flex flex-wrap gap-2">
             <Button
+              onClick={handleFirebaseSync}
+              disabled={syncing}
+              className="bg-orange-500 hover:bg-orange-600 text-white text-xs font-black px-4 py-2 disabled:opacity-60"
+            >
+              <UploadCloud className="size-4 mr-1" />
+              {syncing ? "Syncing..." : "🔥 Firebase Sync"}
+            </Button>
+            <Button
               onClick={handleAddNewJobClick}
               className="btn-yellow text-xs font-black px-4 py-2"
             >
-              <Plus className="size-4 mr-1" /> + नवीन जॉब जोडा (Add New Job)
+              <Plus className="size-4 mr-1" /> नवीन जॉब जोडा (Add New Job)
             </Button>
           </div>
         </div>
@@ -842,7 +880,7 @@ function AdminDashboardPage() {
                     <th className="p-3.5">संपर्क पर्याय (Direct Contact)</th>
                     <th className="p-3.5">अर्जाची तारीख (Applied Date)</th>
                     <th className="p-3.5">सध्याची स्थिती (Status)</th>
-                    <th className="p-3.5 text-right">संपर्क क्र. (Mobile)</th>
+                    <th className="p-3.5 text-right">तपशील (Details)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#DCE5F0] font-semibold text-[#10233F]">
@@ -855,52 +893,90 @@ function AdminDashboardPage() {
                         a.candidateMobile.toLowerCase().includes(appSearch.toLowerCase())
                     )
                     .map((a) => (
-                      <tr key={a.id} className="hover:bg-[#F5F8FC]">
-                        <td className="p-3.5 font-black text-[#063B78]">
-                          <div>{a.candidateName}</div>
-                          <div className="text-[11px] text-[#5B6B7F] font-normal">{a.candidateEmail}</div>
-                        </td>
-                        <td className="p-3.5">
-                          <div className="font-bold text-[#10233F]">{a.jobTitle}</div>
-                          <div className="text-[11px] text-[#125BB5]">{a.companyName || "Company"} • {a.location}</div>
-                        </td>
-                        <td className="p-3.5">
-                          <div className="flex items-center gap-2">
-                            <a
-                              href={`tel:${a.candidateMobile}`}
-                              className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-bold text-[10px] hover:bg-emerald-700 transition-all flex items-center gap-1"
+                      <Fragment key={a.id}>
+                        <tr className="hover:bg-[#F5F8FC]">
+                          <td className="p-3.5 font-black text-[#063B78]">
+                            <div>{a.candidateName}</div>
+                            <div className="text-[11px] text-[#5B6B7F] font-normal">{a.candidateEmail}</div>
+                          </td>
+                          <td className="p-3.5">
+                            <div className="font-bold text-[#10233F]">{a.jobTitle}</div>
+                            <div className="text-[11px] text-[#125BB5]">{a.companyName || "Company"} • {a.location}</div>
+                          </td>
+                          <td className="p-3.5">
+                            <div className="flex items-center gap-2">
+                              <a
+                                href={`tel:${a.candidateMobile}`}
+                                className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-bold text-[10px] hover:bg-emerald-700 transition-all flex items-center gap-1"
+                              >
+                                📞 कॉल करा
+                              </a>
+                              <a
+                                href={`https://wa.me/${a.candidateMobile.replace(/\D/g, "")}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="px-2.5 py-1 rounded-lg bg-green-600 text-white font-bold text-[10px] hover:bg-green-700 transition-all flex items-center gap-1"
+                              >
+                                💬 WhatsApp
+                              </a>
+                            </div>
+                          </td>
+                          <td className="p-3.5 text-[#5B6B7F] font-bold">{a.appliedDate}</td>
+                          <td className="p-3.5">
+                            <select
+                              value={a.status}
+                              onChange={(e) => handleUpdateAppStatus(a.id, e.target.value as any)}
+                              className="h-8 px-2 rounded-lg border border-[#DCE5F0] text-xs font-black focus:outline-none focus:border-[#063B78]"
                             >
-                              📞 कॉल करा
-                            </a>
-                            <a
-                              href={`https://wa.me/${a.candidateMobile.replace(/\D/g, "")}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="px-2.5 py-1 rounded-lg bg-green-600 text-white font-bold text-[10px] hover:bg-green-700 transition-all flex items-center gap-1"
+                              <option value="Applied">📝 Applied</option>
+                              <option value="Viewed">👀 Viewed</option>
+                              <option value="Shortlisted">⭐ Shortlisted</option>
+                              <option value="Interview">📅 Interview Scheduled</option>
+                              <option value="Selected">✅ Selected / Hired</option>
+                              <option value="Rejected">❌ Rejected</option>
+                            </select>
+                          </td>
+                          <td className="p-3.5 text-right">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setExpandedApp(expandedApp === a.id ? null : a.id)}
+                              className="text-[10px] h-7 px-3 border-[#063B78] text-[#063B78] hover:bg-[#063B78] hover:text-white"
                             >
-                              💬 WhatsApp
-                            </a>
-                          </div>
-                        </td>
-                        <td className="p-3.5 text-[#5B6B7F] font-bold">{a.appliedDate}</td>
-                        <td className="p-3.5">
-                          <select
-                            value={a.status}
-                            onChange={(e) => handleUpdateAppStatus(a.id, e.target.value as any)}
-                            className="h-8 px-2 rounded-lg border border-[#DCE5F0] text-xs font-black focus:outline-none focus:border-[#063B78]"
-                          >
-                            <option value="Applied">📝 Applied</option>
-                            <option value="Viewed">👀 Viewed</option>
-                            <option value="Shortlisted">⭐ Shortlisted</option>
-                            <option value="Interview">📅 Interview Scheduled</option>
-                            <option value="Selected">✅ Selected / Hired</option>
-                            <option value="Rejected">❌ Rejected</option>
-                          </select>
-                        </td>
-                        <td className="p-3.5 text-right font-bold text-[#063B78]">
-                          {a.candidateMobile}
-                        </td>
-                      </tr>
+                              {expandedApp === a.id ? "बंद करा" : "सविस्तर पहा"}
+                            </Button>
+                          </td>
+                        </tr>
+                        {expandedApp === a.id && (
+                          <tr className="bg-[#F8FAFC]">
+                            <td colSpan={6} className="p-4 border-t border-[#DCE5F0]">
+                              <div className="bg-white p-5 rounded-xl border border-[#E2E8F0] shadow-sm">
+                                 <h4 className="font-bold text-[#10233F] mb-4 border-b pb-2 flex items-center gap-2">
+                                   <FileText className="size-4 text-[#063B78]" />
+                                   उमेदवाराची सविस्तर माहिती (Candidate Details)
+                                 </h4>
+                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                                   {a.fieldValues && Object.entries(a.fieldValues).map(([key, value]) => (
+                                      <div key={key} className="text-xs bg-[#F5F8FC] p-3 rounded-lg border border-[#DCE5F0]">
+                                        <div className="font-bold text-[#5B6B7F] capitalize mb-1">{key.replace(/([A-Z])/g, ' $1').trim()}</div> 
+                                        <div className="font-black text-[#10233F]">{value as string}</div>
+                                      </div>
+                                   ))}
+                                   {a.customAnswers && Object.entries(a.customAnswers).map(([key, value]) => (
+                                      <div key={key} className="text-xs bg-[#F5F8FC] p-3 rounded-lg border border-[#DCE5F0]">
+                                        <div className="font-bold text-[#5B6B7F] capitalize mb-1">{key}</div> 
+                                        <div className="font-black text-[#10233F]">{value as string}</div>
+                                      </div>
+                                   ))}
+                                   {(!a.fieldValues && !a.customAnswers) && (
+                                     <div className="text-sm font-semibold text-[#5B6B7F]">अधिक माहिती उपलब्ध नाही.</div>
+                                   )}
+                                 </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
                     ))}
                   {applications.length === 0 && (
                     <tr>

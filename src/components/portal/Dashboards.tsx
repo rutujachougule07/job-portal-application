@@ -392,7 +392,7 @@ function RecentCandidates({ employerName }: { employerName: string }) {
             <span className="grid size-12 place-items-center rounded-2xl bg-[#063B78] font-black text-white text-base">
               {app.candidateName.substring(0, 2).toUpperCase()}
             </span>
-            
+
             <div className="min-w-44 flex-1">
               <strong className="block text-sm font-black text-[#10233F]">{app.candidateName}</strong>
               <span className="text-xs font-bold text-[#125BB5] block">{app.jobTitle}</span>

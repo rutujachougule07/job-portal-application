@@ -1,37 +1,30 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 import {
   ArrowLeft,
-  BadgeCheck,
-  Briefcase,
   Building2,
-  Check,
   Eye,
   EyeOff,
-  HardHat,
   Loader2,
   Lock,
+  LogIn,
   Mail,
-  MapPin,
   Phone,
-  Shield,
   User,
-  Wallet,
+  UserPlus,
 } from "lucide-react";
-import { lovable } from "@/integrations/lovable";
-import { Brand } from "@/components/portal/Brand";
-import { LanguageSwitcher } from "@/components/portal/LanguageSwitcher";
+import { LogoIcon } from "@/components/portal/Brand";
+
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 import { dataStore } from "@/lib/data-store";
 
 const searchSchema = z.object({
-  mode: z.enum(["login", "register", "forgot"]).optional().default("login"),
-  role: z.enum(["worker", "employer", "admin"]).optional().default("worker"),
+  mode: z.string().optional().catch("login"),
+  role: z.string().optional().catch("worker"),
 });
 
 export const Route = createFileRoute("/auth")({
@@ -48,10 +41,9 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const search = Route.useSearch();
   const navigate = useNavigate();
-  const { t, lang } = useI18n();
 
-  const [mode, setMode] = useState<"login" | "register" | "forgot">(search.mode || "login");
-  const [role, setRole] = useState<"worker" | "employer" | "admin">(search.role || "worker");
+  const [mode, setMode] = useState<"login" | "register" | "forgot">((search.mode as any) || "login");
+  const [role, setRole] = useState<"worker" | "employer" | "admin">((search.role as any) || "worker");
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
@@ -60,22 +52,18 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  // Clear inputs on mode or role change
+  useEffect(() => {
+    setEmail("");
+    setPassword("");
+  }, [mode, role]);
+
   // Worker registration extra fields
   const [workerName, setWorkerName] = useState("");
   const [workerPhone, setWorkerPhone] = useState("");
-  const [workerProfession, setWorkerProfession] = useState("Senior Electrician");
-  const [workerLocation, setWorkerLocation] = useState("");
-  const [workerExperience, setWorkerExperience] = useState("3-5 Years");
-  const [workerSalary, setWorkerSalary] = useState("₹25,000 / month");
-  const [workerAvailability, setWorkerAvailability] = useState("Available Now");
 
   // Employer registration extra fields
   const [companyName, setCompanyName] = useState("");
-  const [contactPerson, setContactPerson] = useState("");
-  const [employerPhone, setEmployerPhone] = useState("");
-  const [employerLocation, setEmployerLocation] = useState("");
-  const [companyIndustry, setCompanyIndustry] = useState("Manufacturing & Engineering");
-  const [companySize, setCompanySize] = useState("10-50 Employees");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,6 +74,7 @@ function AuthPage() {
 
       if (mode === "forgot") {
         toast.success("Password reset email sent! Check your inbox.");
+        setMode("login");
         return;
       }
 
@@ -95,7 +84,7 @@ function AuthPage() {
 
         const userObj = {
           id: role === "employer" || role === "admin" ? (companyName ? `emp-${companyName.toLowerCase().replace(/\s+/g, '-')}` : "emp-001") : `seeker-${Date.now()}`,
-          email,
+          email: email || "user@example.com",
           role: role === "admin" ? ("employer" as const) : role,
           fullName: nameString,
         };
@@ -104,415 +93,289 @@ function AuthPage() {
         dataStore.setCurrentUser(userObj);
 
         toast.success("Account created successfully! Welcome to REAL JOB.");
-        navigate({ to: role === "admin" ? "/admin" : role === "employer" ? "/employer" : "/home" });
+        const nextPath = role === "admin" ? "/admin" : role === "employer" ? "/employer" : "/home";
+        navigate({ to: "/select-language", search: { redirectTo: nextPath } });
         return;
       }
 
       // Login Mode
       const userObj = {
         id: role === "admin" ? "admin-001" : role === "employer" ? "emp-tcs" : "seeker-rutuja",
-        email,
+        email: email || "user@example.com",
         role: role === "admin" ? ("admin" as const) : role,
-        fullName: email.split("@")[0] || (role === "admin" ? "System Admin" : "User"),
+        fullName: (email ? email.split("@")[0] : "") || (role === "admin" ? "System Admin" : "User"),
       };
 
       window.localStorage.setItem("realjob-user", JSON.stringify(userObj));
       dataStore.setCurrentUser(userObj);
 
       toast.success("Successfully logged in!");
-      navigate({ to: role === "admin" ? "/admin" : role === "employer" ? "/employer" : "/home" });
+      const nextPath = role === "admin" ? "/admin" : role === "employer" ? "/employer" : "/home";
+      navigate({ to: "/select-language", search: { redirectTo: nextPath } });
     }, 1000);
   };
 
-  const handleGoogleAuth = async () => {
-    setBusy(true);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-      extraParams: { prompt: "select_account" },
-    });
-    if (result.error) {
-      toast.error(result.error.message);
-      setBusy(false);
-    } else if (!result.redirected) {
-      navigate({ to: "/dashboard" });
-    }
-  };
-
   return (
-    <main className="grid min-h-screen lg:grid-cols-[0.85fr_1.15fr] bg-[#F5F8FC]">
-      {/* Left Branding Column */}
-      <section className="hidden bg-hero-overlay p-10 text-white lg:flex lg:flex-col justify-between relative overflow-hidden">
-        <Brand showTagline={true} />
+    <div
+      className="h-screen w-full overflow-hidden relative flex items-center justify-center bg-cover bg-center bg-no-repeat p-3 sm:p-4"
+      style={{
+        backgroundImage: `url('/office_desk_bg.png')`,
+      }}
+    >
+      {/* Background Soft Dark Overlay */}
+      <div className="absolute inset-0 bg-black/15 backdrop-blur-[2px] pointer-events-none" />
 
-        <div className="my-auto max-w-md space-y-6">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#FFC400] backdrop-blur">
-            ★ योग्य माणूस • योग्य काम • योग्य संधी
-          </div>
+      {/* Top Left Floating Home Button */}
+      <div className="absolute left-4 top-3.5 z-20">
+        <Button
+          asChild
+          variant="ghost"
+          size="sm"
+          className="bg-white/85 hover:bg-white text-[#0A3B7B] font-bold text-xs rounded-full shadow-md backdrop-blur-md px-3.5 py-1.5 h-8 border border-white/70"
+        >
+          <Link to="/">
+            <ArrowLeft className="mr-1 size-3.5" /> Home
+          </Link>
+        </Button>
+      </div>
 
-          <h1 className="font-display text-4xl font-black leading-tight text-white">
-            भारतातील १ नंबर कामगार व नोकरी मंच
+
+
+      {/* Centered Frosted Glassmorphism Card */}
+      <div className="relative z-10 w-full max-w-md sm:max-w-[430px] bg-white/80 backdrop-blur-xl rounded-2xl border border-white/80 shadow-2xl px-6 py-5 sm:px-8 sm:py-6 transition-all duration-300">
+        
+        {/* Top Logo */}
+        <div className="flex justify-center mb-2">
+          <LogoIcon className="h-11 sm:h-12 object-contain" />
+        </div>
+
+        {/* Title Header (Strictly English) */}
+        <div className="text-center space-y-0.5 mb-3">
+          <h1 className="text-xl sm:text-2xl font-black text-[#0A3B7B] tracking-tight leading-tight">
+            {role === "admin"
+              ? mode === "register"
+                ? "Employer / Admin Registration"
+                : mode === "forgot"
+                ? "Reset Password"
+                : "Employer / Admin Login"
+              : mode === "register"
+              ? "Worker / User Registration"
+              : mode === "forgot"
+              ? "Reset Password"
+              : "Worker / User Login"}
           </h1>
 
-          <p className="text-sm font-semibold text-white/90 leading-relaxed">
-            हजारो कारखाने, बांधकाम कंपन्या आणि कामगारांशी थेट संपर्क साधा. कोणतेही कमिशन नाही.
+          <p className="text-[11px] font-semibold text-gray-600 mt-1 px-2 leading-tight">
+            {role === "admin"
+              ? mode === "register"
+                ? "For employers & companies: Register an account to find workers."
+                : "For employers & admins: Login to post jobs and search candidates."
+              : mode === "register"
+              ? "For job seekers: Create a new profile and start finding jobs."
+              : "Please enter your email and password to log in and find jobs."}
           </p>
-
-          <div className="space-y-3 pt-2">
-            {[
-              "१००% सत्यापित कामगार व मालक प्रोफाईल",
-              "थेट फोन किंवा व्हॉट्सॲपवर संपर्क",
-              "मराठी, हिंदी व इंग्रजी भाषेत उपलब्ध",
-            ].map((text, i) => (
-              <div key={i} className="flex items-center gap-3 text-xs font-bold text-white">
-                <span className="grid size-5 place-items-center rounded-full bg-[#FFC400] text-[#082F63]">
-                  <Check className="size-3 stroke-[3]" />
-                </span>
-                {text}
-              </div>
-            ))}
-          </div>
         </div>
 
-        <div className="text-xs font-bold text-white/70">
-          © 2026 REAL JOB. All rights reserved.
-        </div>
-      </section>
-
-      {/* Right Form Column */}
-      <section className="relative flex items-center justify-center px-4 py-10 sm:px-8">
-        <div className="absolute left-4 top-4">
-          <Button asChild variant="ghost" size="sm" className="font-bold text-[#063B78]">
-            <Link to="/"><ArrowLeft className="mr-1.5 size-4" /> मुख्य पृष्ठ (Home)</Link>
-          </Button>
-        </div>
-
-        <div className="absolute right-4 top-4">
-          <LanguageSwitcher />
-        </div>
-
-        <div className="w-full max-w-lg bg-white p-8 rounded-2xl border border-[#DCE5F0] shadow-md my-8">
-          <div className="mb-6 lg:hidden">
-            <Brand />
+        {/* Mode Pill Toggle (Login / Register) */}
+        {mode !== "forgot" && (
+          <div className="bg-gray-200/80 backdrop-blur-md p-1 rounded-full border border-white/70 flex items-center shadow-inner mb-3">
+            <button
+              type="button"
+              onClick={() => setMode("login")}
+              className={`flex-1 py-1.5 rounded-full text-xs font-black transition-all duration-200 flex items-center justify-center gap-1.5 ${
+                mode === "login"
+                  ? "bg-[#0A3B7B] text-white shadow-md shadow-[#0A3B7B]/30"
+                  : "text-gray-700 hover:text-black font-bold"
+              }`}
+            >
+              <User className="size-3.5" /> Login
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("register")}
+              className={`flex-1 py-1.5 rounded-full text-xs font-black transition-all duration-200 flex items-center justify-center gap-1.5 ${
+                mode === "register"
+                  ? "bg-[#0A3B7B] text-white shadow-md shadow-[#0A3B7B]/30"
+                  : "text-gray-700 hover:text-black font-bold"
+              }`}
+            >
+              <UserPlus className="size-3.5" /> Register
+            </button>
           </div>
+        )}
 
-          {/* Role & Form Identification Badge */}
-          <div className="mb-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-black bg-[#EBF1F8] text-[#063B78] border border-[#B8D3F2]">
-            {role === "admin" ? (
-              <>
-                <Shield className="size-3.5 text-[#063B78]" />
-                <span>ॲडमिन व मालक फॉर्म (Employer & Admin Form)</span>
-              </>
-            ) : (
-              <>
-                <HardHat className="size-3.5 text-[#D99B00]" />
-                <span>कामगार / युझर फॉर्म (Worker / User Form)</span>
-              </>
-            )}
-          </div>
-
-          {/* Title Header */}
-          <div className="mb-6">
-            <h1 className="text-2xl font-black text-[#10233F]">
-              {role === "admin"
-                ? mode === "register"
-                  ? "ॲडमिन / मालक नोंदणी (Employer Register)"
-                  : mode === "forgot"
-                  ? "पासवर्ड रीसेट करा"
-                  : "ॲडमिन व मालक लॉगिन (Employer & Admin Login)"
-                : mode === "register"
-                ? "कामगार नोंदणी (Worker Register)"
-                : mode === "forgot"
-                ? "पासवर्ड रीसेट करा"
-                : "कामगार / युझर लॉगिन (Worker / User Login)"}
-            </h1>
-            <p className="mt-1 text-xs font-semibold text-[#5B6B7F]">
-              {role === "admin"
-                ? mode === "register"
-                  ? "कंपनी व मालकांसाठी: कामगार शोधण्यासाठी नवीन खाते नोंदवा."
-                  : "कंपनी, मालक व ॲडमिनसाठी: कामगार शोधण्यासाठी व जॉब पोस्ट करण्यासाठी लॉगिन करा."
-                : mode === "register"
-                ? "कामगारांसाठी: नवीन प्रोफाईल नोंदवा व नोकरी शोधण्यास सुरुवात करा."
-                : "कामगारांसाठी: तुमचा ईमेल व पासवर्ड प्रविष्ट करून नोकरी शोधण्यासाठी लॉगिन करा."}
-            </p>
-          </div>
-
-          {/* Mode & Role Switchers */}
-          {mode !== "forgot" && (
-            <div className="mb-6 space-y-3">
-              {/* Login / Register Toggle */}
-              <div className="grid grid-cols-2 gap-1 rounded-xl bg-[#F5F8FC] p-1 border border-[#DCE5F0]">
-                <button
-                  type="button"
-                  onClick={() => setMode("login")}
-                  className={`py-2 text-xs font-black rounded-lg transition-all ${
-                    mode === "login" ? "bg-[#063B78] text-white shadow-xs" : "text-[#5B6B7F]"
-                  }`}
-                >
-                  लॉगिन (Login)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMode("register")}
-                  className={`py-2 text-xs font-black rounded-lg transition-all ${
-                    mode === "register" ? "bg-[#063B78] text-white shadow-xs" : "text-[#5B6B7F]"
-                  }`}
-                >
-                  रजिस्टर (Register)
-                </button>
+        {/* Form Container */}
+        <form onSubmit={handleSubmit} autoComplete="off" className="space-y-3">
+          
+          {/* WORKER REGISTRATION FIELDS */}
+          {mode === "register" && role === "worker" && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div>
+                <Label className="text-[11px] font-extrabold text-gray-800 mb-0.5 block">Full Name *</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-gray-400" />
+                  <input
+                    required
+                    type="text"
+                    autoComplete="off"
+                    placeholder="e.g. Rahul Sharma"
+                    value={workerName}
+                    onChange={(e) => setWorkerName(e.target.value)}
+                    className="w-full h-9 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B]"
+                  />
+                </div>
               </div>
 
+              <div>
+                <Label className="text-[11px] font-extrabold text-gray-800 mb-0.5 block">Mobile Number *</Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-gray-400" />
+                  <input
+                    required
+                    type="tel"
+                    autoComplete="off"
+                    placeholder="+91 98220 00000"
+                    value={workerPhone}
+                    onChange={(e) => setWorkerPhone(e.target.value)}
+                    className="w-full h-9 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B]"
+                  />
+                </div>
+              </div>
             </div>
           )}
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* WORKER REGISTRATION FIELDS */}
-            {mode === "register" && role === "worker" && (
-              <>
-                <div>
-                  <Label className="text-xs font-extrabold text-[#10233F]">पूर्ण नाव (Full Name) *</Label>
-                  <Input
-                    required
-                    placeholder="उदा. रमेश मारुती पवार"
-                    value={workerName}
-                    onChange={(e) => setWorkerName(e.target.value)}
-                    className="mt-1 h-11 border-[#DCE5F0] text-xs font-bold text-[#10233F]"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label className="text-xs font-extrabold text-[#10233F]">मोबाईल नंबर (Mobile) *</Label>
-                    <Input
-                      required
-                      type="tel"
-                      placeholder="+91 98220 00000"
-                      value={workerPhone}
-                      onChange={(e) => setWorkerPhone(e.target.value)}
-                      className="mt-1 h-11 border-[#DCE5F0] text-xs font-bold text-[#10233F]"
-                    />
-                  </div>
-
-                  <div>
-                    <Label className="text-xs font-extrabold text-[#10233F]">व्यवसाय (Profession) *</Label>
-                    <select
-                      value={workerProfession}
-                      onChange={(e) => setWorkerProfession(e.target.value)}
-                      className="mt-1 w-full h-11 rounded-lg border border-[#DCE5F0] bg-white px-3 text-xs font-bold text-[#10233F]"
-                    >
-                      <option value="Senior Electrician">Electrician (इलेक्ट्रीशियन)</option>
-                      <option value="CNC Operator">CNC / VMC Operator</option>
-                      <option value="Welder">Welder (वेल्डर)</option>
-                      <option value="Driver">Heavy Commercial Driver</option>
-                      <option value="Mason">Mason / गवंडी</option>
-                      <option value="Factory Helper">Factory Helper / मजूर</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label className="text-xs font-extrabold text-[#10233F]">ठिकाण (City / Location) *</Label>
-                    <Input
-                      required
-                      placeholder="उदा. चाकण, पुणे"
-                      value={workerLocation}
-                      onChange={(e) => setWorkerLocation(e.target.value)}
-                      className="mt-1 h-11 border-[#DCE5F0] text-xs font-bold text-[#10233F]"
-                    />
-                  </div>
-
-                  <div>
-                    <Label className="text-xs font-extrabold text-[#10233F]">कामाचा अनुभव (Experience)</Label>
-                    <select
-                      value={workerExperience}
-                      onChange={(e) => setWorkerExperience(e.target.value)}
-                      className="mt-1 w-full h-11 rounded-lg border border-[#DCE5F0] bg-white px-3 text-xs font-bold text-[#10233F]"
-                    >
-                      <option value="Fresher">नवीन (Fresher)</option>
-                      <option value="1-3 Years">1-3 वर्षे</option>
-                      <option value="3-5 Years">3-5 वर्षे</option>
-                      <option value="5+ Years">5+ वर्षे</option>
-                    </select>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* EMPLOYER & ADMIN REGISTRATION FIELDS */}
-            {mode === "register" && (role === "employer" || role === "admin") && (
-              <>
-                <div>
-                  <Label className="text-xs font-extrabold text-[#10233F]">कंपनी / संस्थेचे नाव (Company Name) *</Label>
-                  <Input
-                    required
-                    placeholder="उदा. ओम साई इंडस्ट्रियल सर्व्हिसेस लि."
-                    value={companyName}
-                    onChange={(e) => setCompanyName(e.target.value)}
-                    className="mt-1 h-11 border-[#DCE5F0] text-xs font-bold text-[#10233F]"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label className="text-xs font-extrabold text-[#10233F]">संपर्क मोबाईल नंबर (Contact Mobile) *</Label>
-                    <Input
-                      required
-                      type="tel"
-                      placeholder="+91 98900 11223"
-                      value={employerPhone}
-                      onChange={(e) => setEmployerPhone(e.target.value)}
-                      className="mt-1 h-11 border-[#DCE5F0] text-xs font-bold text-[#10233F]"
-                    />
-                  </div>
-
-                  <div>
-                    <Label className="text-xs font-extrabold text-[#10233F]">कंपनीचे ठिकाण (Company Location) *</Label>
-                    <Input
-                      required
-                      placeholder="उदा. एमआयडीसी चाकण, पुणे"
-                      value={employerLocation}
-                      onChange={(e) => setEmployerLocation(e.target.value)}
-                      className="mt-1 h-11 border-[#DCE5F0] text-xs font-bold text-[#10233F]"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label className="text-xs font-extrabold text-[#10233F]">उद्योगाचा प्रकार (Industry Type)</Label>
-                  <select
-                    value={companyIndustry}
-                    onChange={(e) => setCompanyIndustry(e.target.value)}
-                    className="mt-1 w-full h-11 rounded-lg border border-[#DCE5F0] bg-white px-3 text-xs font-bold text-[#10233F]"
-                  >
-                    <option value="Manufacturing & Engineering">ऑटो व मॅन्युफॅक्चरिंग</option>
-                    <option value="Construction & Real Estate">बांधकाम (Construction)</option>
-                    <option value="Logistics & Warehousing">लॉजिस्टिक्स व गोदामा</option>
-                    <option value="Textiles & Garments">टेक्स्टाईल व गारमेंट्स</option>
-                    <option value="Services & Hospitality">सर्व्हिसेस व हॉटेल</option>
-                  </select>
-                </div>
-              </>
-            )}
-
-            {/* COMMON EMAIL FIELD */}
+          {/* EMPLOYER REGISTRATION FIELDS */}
+          {mode === "register" && (role === "employer" || role === "admin") && (
             <div>
-              <Label htmlFor="email" className="text-xs font-extrabold text-[#10233F]">ईमेल (Email Address) *</Label>
-              <Input
+              <Label className="text-[11px] font-extrabold text-gray-800 mb-0.5 block">Company Name *</Label>
+              <div className="relative">
+                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-gray-400" />
+                <input
+                  required
+                  type="text"
+                  autoComplete="off"
+                  placeholder="e.g. Tata Motors / L&T"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  className="w-full h-9 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B]"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* EMAIL FIELD */}
+          <div>
+            <Label htmlFor="email" className="text-[11px] font-extrabold text-gray-800 mb-0.5 block">
+              Email Address *
+            </Label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-gray-400" />
+              <input
                 id="email"
                 type="email"
                 required
+                autoComplete="off"
                 placeholder="name@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 h-11 border-[#DCE5F0] text-xs font-bold text-[#10233F]"
+                className="w-full h-9.5 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B] shadow-xs"
               />
             </div>
+          </div>
 
-            {/* COMMON PASSWORD FIELD */}
-            {mode !== "forgot" && (
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <Label htmlFor="password" className="text-xs font-extrabold text-[#10233F]">पासवर्ड (Password) *</Label>
-                  {mode === "login" && (
-                    <button
-                      type="button"
-                      onClick={() => setMode("forgot")}
-                      className="text-xs font-bold text-[#125BB5] hover:underline"
-                    >
-                      पासवर्ड विसरलात? (Forgot?)
-                    </button>
-                  )}
-                </div>
-
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    required
-                    placeholder="••••••••"
-                    minLength={6}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="h-11 pr-10 border-[#DCE5F0] text-xs font-bold text-[#10233F]"
-                  />
+          {/* PASSWORD FIELD */}
+          {mode !== "forgot" && (
+            <div>
+              <div className="flex justify-between items-center mb-0.5">
+                <Label htmlFor="password" className="text-[11px] font-extrabold text-gray-800">
+                  Password *
+                </Label>
+                {mode === "login" && (
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5B6B7F]"
+                    onClick={() => setMode("forgot")}
+                    className="text-[11px] font-bold text-[#0A3B7B] hover:underline"
                   >
-                    {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    Forgot Password?
                   </button>
-                </div>
+                )}
               </div>
-            )}
 
-            {/* Remember Me Checkbox */}
-            {mode === "login" && (
-              <div className="flex items-center gap-2 pt-1">
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-gray-400" />
                 <input
-                  type="checkbox"
-                  id="remember"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="rounded border-[#DCE5F0] text-[#063B78] accent-[#063B78]"
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  autoComplete="new-password"
+                  placeholder="••••••••"
+                  minLength={6}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full h-9.5 pl-9 pr-9 bg-white rounded-lg border border-gray-200 text-xs font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B] shadow-xs"
                 />
-                <label htmlFor="remember" className="text-xs font-bold text-[#5B6B7F]">
-                  माझी माहिती लक्षात ठेवा (Remember me)
-                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+                </button>
               </div>
-            )}
-
-            {/* SUBMIT BUTTON */}
-            <Button
-              disabled={busy}
-              type="submit"
-              className="w-full btn-yellow font-black text-xs h-12 mt-2 shadow-sm"
-            >
-              {busy ? (
-                <Loader2 className="animate-spin size-4" />
-              ) : mode === "register" ? (
-                "नोंदणी करा (Register Account)"
-              ) : mode === "forgot" ? (
-                "रीसेट लिंक पाठवा (Send Reset Link)"
-              ) : (
-                "लॉगिन करा (Sign In)"
-              )}
-            </Button>
-          </form>
-
-          {/* Social Auth */}
-          {mode !== "forgot" && (
-            <>
-              <div className="my-5 flex items-center gap-3 text-xs text-[#5B6B7F]">
-                <span className="h-px flex-1 bg-[#DCE5F0]" />
-                किंवा (or)
-                <span className="h-px flex-1 bg-[#DCE5F0]" />
-              </div>
-
-              <Button
-                disabled={busy}
-                onClick={handleGoogleAuth}
-                variant="outline"
-                className="w-full h-11 border-[#063B78] text-[#063B78] font-bold text-xs hover:bg-[#EBF1F8]"
-              >
-                <span className="font-black text-[#FFC400] text-sm mr-2">G</span> Google द्वारे सुरू ठेवा
-              </Button>
-            </>
+            </div>
           )}
 
-          {/* Bottom Switcher */}
-          <div className="mt-6 text-center text-xs font-bold text-[#5B6B7F]">
-            {mode === "register" ? "आधीच खाते आहे का?" : "नवीन अकाऊंट तयार करायचे आहे का?"}{" "}
-            <button
-              onClick={() => setMode(mode === "register" ? "login" : "register")}
-              className="text-[#063B78] font-black hover:underline ml-1"
-            >
-              {mode === "register" ? "येथे लॉगिन करा" : "येथे रजिस्टर करा"}
-            </button>
-          </div>
+          {/* REMEMBER ME CHECKBOX */}
+          {mode === "login" && (
+            <div className="flex items-center gap-2 pt-0.5">
+              <input
+                type="checkbox"
+                id="remember"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="size-3.5 rounded border-gray-300 text-[#0A3B7B] focus:ring-[#0A3B7B] accent-[#0A3B7B] cursor-pointer"
+              />
+              <label htmlFor="remember" className="text-[11px] font-bold text-gray-700 cursor-pointer select-none">
+                Remember me
+              </label>
+            </div>
+          )}
+
+          {/* SUBMIT BUTTON */}
+          <Button
+            disabled={busy}
+            type="submit"
+            className="w-full h-10 bg-[#0A3B7B] hover:bg-[#072B5B] text-white font-black text-xs rounded-lg shadow-md shadow-[#0A3B7B]/20 hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 mt-1"
+          >
+            {busy ? (
+              <Loader2 className="animate-spin size-4" />
+            ) : mode === "register" ? (
+              <>
+                <UserPlus className="size-3.5" /> Register Account
+              </>
+            ) : mode === "forgot" ? (
+              "Send Reset Link"
+            ) : (
+              <>
+                <LogIn className="size-3.5" /> Sign In
+              </>
+            )}
+          </Button>
+        </form>
+
+        {/* BOTTOM REGISTER LINK */}
+        <div className="mt-3 text-center text-[11px] font-bold text-gray-600">
+          {mode === "register" ? "Already have an account?" : "Don't have an account?"}{" "}
+          <button
+            type="button"
+            onClick={() => setMode(mode === "register" ? "login" : "register")}
+            className="text-[#0A3B7B] font-black hover:underline ml-1"
+          >
+            {mode === "register" ? "Sign In" : "Register"}
+          </button>
         </div>
-      </section>
-    </main>
+
+      </div>
+    </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   Building2,
@@ -21,12 +21,19 @@ import {
   Building,
   Share2,
   Check,
+  User,
+  FileText,
+  CloudUpload,
+  Info,
+  ArrowLeft,
 } from "lucide-react";
+import { DynamicApplicationForm } from "@/components/portal/DynamicApplicationForm";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/lib/i18n";
 import { dataStore } from "@/lib/data-store";
 import { toast } from "sonner";
+import { getFallbackConfig, groupFieldsBySection } from "@/lib/applicationConfig";
 
 export type Job = {
   id: string;
@@ -271,6 +278,24 @@ export function JobCard({
   const [activeModalTab, setActiveModalTab] = useState<"company" | "job" | "openings">("company");
   const [applied, setApplied] = useState(false);
 
+  useEffect(() => {
+    if (showApplyModal || showCompanyModal) {
+      const originalStyle = window.getComputedStyle(document.body).overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = originalStyle;
+      };
+    }
+  }, [showApplyModal, showCompanyModal]);
+
+  const [fieldValues, setFieldValues] = useState<Record<string, any>>({});
+  const [customAnswers, setCustomAnswers] = useState<Record<string, any>>({});
+
+  const appConfig = (job as any).applicationConfig || getFallbackConfig(job.category);
+
+  const handleFieldChange = (key: string, val: any) => setFieldValues(p => ({ ...p, [key]: val }));
+  const handleCustomChange = (id: string, val: any) => setCustomAnswers(p => ({ ...p, [id]: val }));
+
   const companyMeta = getCompanyMetadata(job);
 
   const handleApplyClick = (e: React.MouseEvent) => {
@@ -323,8 +348,11 @@ export function JobCard({
         companyName: job.company,
         location: job.location,
         salary: job.salary,
-        resume: `${seekerName.replaceAll(" ", "_")}_Resume.pdf`,
-      });
+        resume: fieldValues['resume'] || `${seekerName.replaceAll(" ", "_")}_Resume.pdf`,
+        fieldValues,
+        customAnswers,
+        category: job.category
+      } as any);
 
       setApplied(true);
       toast.success(lang === "mr" ? "अर्ज यशस्वीरीत्या पाठवला!" : "Application submitted successfully!");
@@ -798,75 +826,124 @@ export function JobCard({
         </div>
       )}
 
-      {/* Interactive Apply Modal */}
+      {/* Interactive Apply Full Page */}
       {showApplyModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#082F63]/70 backdrop-blur-md p-4 animate-in fade-in duration-200">
-          <div className="relative w-full max-w-lg rounded-3xl border border-[#DCE5F0] bg-white p-6 shadow-2xl">
+        <div className="fixed inset-0 z-[100] flex flex-col bg-[#F5F8FC] overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-white border-b border-[#DCE5F0] sticky top-0 z-10 px-4 sm:px-8 py-3 flex items-center justify-between shadow-sm">
+            <div className="flex items-center gap-2">
+              <div className="size-8 rounded-xl bg-gradient-to-br from-[#125BB5] to-[#063B78] flex items-center justify-center text-white font-black shadow-md">
+                J
+              </div>
+              <span className="font-black text-[#082F63] text-xl tracking-tight hidden sm:block">
+                JobPortal
+              </span>
+            </div>
             <button
               onClick={() => setShowApplyModal(false)}
-              className="absolute right-4 top-4 grid size-8 place-items-center rounded-full bg-[#F5F8FC] text-[#5B6B7F] hover:text-[#10233F]"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#F5F8FC] text-[#5B6B7F] hover:text-[#10233F] hover:bg-[#EBF1F8] font-bold text-sm transition-colors"
             >
-              <X className="size-4" />
+              <X className="size-4" /> {lang === "mr" ? "बंद करा" : "Close"}
             </button>
+          </div>
 
-            {applied ? (
-              <div className="py-8 text-center space-y-3">
-                <CheckCircle2 className="mx-auto size-14 text-emerald-600 animate-bounce" />
-                <h3 className="font-display text-2xl font-black text-[#10233F]">
-                  {lang === "mr" ? "अर्ज यशस्वीरीत्या पाठवला!" : "Application Submitted!"}
-                </h3>
-                <p className="text-xs font-semibold text-[#5B6B7F]">
-                  {job.company} {lang === "mr" ? "कंपनीच्या HR विभागाकडे तुमचा अर्ज व प्रोफाइल पाठवले आहे." : "HR team will review your application soon."}
-                </p>
+          <div className="flex-1 w-full max-w-7xl mx-auto px-4 py-8">
+            <div className="flex flex-col lg:flex-row gap-8 items-start">
+              {/* Left Form Area */}
+              <div className="flex-1 w-full bg-white rounded-3xl border border-[#DCE5F0] p-6 sm:p-10 shadow-sm">
+                <h2 className="text-3xl font-black text-[#082F63] mb-2">{lang === "mr" ? "नोकरीसाठी अर्ज करा" : "Apply for Job"}</h2>
+                <p className="text-[#5B6B7F] font-semibold text-sm mb-8">{lang === "mr" ? "खालील माहिती काळजीपूर्वक भरा." : "Fill in the details below to apply for this job. Make sure all information is correct."}</p>
+
+                {applied ? (
+                  <div className="text-center py-12">
+                    <CheckCircle2 className="size-20 text-[#063B78] mx-auto mb-4 animate-bounce" />
+                    <h3 className="text-2xl font-black text-[#10233F]">{lang === "mr" ? "अर्ज यशस्वीरीत्या पाठवला!" : "Application Submitted!"}</h3>
+                    <p className="text-sm font-semibold text-[#5B6B7F] mt-2 max-w-md mx-auto">
+                      {lang === "mr" ? "तुमचा अर्ज कंपनीला पाठवण्यात आला आहे. ते लवकरच तुमच्याशी संपर्क साधतील." : "Your application has been sent to the employer. They will contact you shortly."}
+                    </p>
+                    <Button onClick={() => setShowApplyModal(false)} className="btn-yellow h-12 px-8 font-black text-sm mt-8 rounded-xl">
+                      {lang === "mr" ? "मागे जा" : "Go Back"}
+                    </Button>
+                  </div>
+                ) : (
+                  <form onSubmit={submitApplication} className="space-y-6">
+                    <DynamicApplicationForm 
+                      appConfig={appConfig}
+                      fieldValues={fieldValues}
+                      setFieldValues={setFieldValues}
+                      customAnswers={customAnswers}
+                      setCustomAnswers={setCustomAnswers}
+                      lang={lang}
+                      category={job.category}
+                    />
+
+                    <div className="pt-8 flex justify-end gap-4 mt-8">
+                      <Button type="button" onClick={() => setShowApplyModal(false)} variant="outline" className="h-12 px-8 font-bold text-sm rounded-xl border-[#DCE5F0] text-[#5B6B7F]">
+                        {lang === "mr" ? "रद्द करा" : "Cancel"}
+                      </Button>
+                      <Button type="submit" className="btn-yellow h-12 px-8 font-black text-sm shadow-md rounded-xl">
+                        {lang === "mr" ? "अंतिम अर्ज सादर करा" : "Submit Application"} <Send className="ml-2 size-4" />
+                      </Button>
+                    </div>
+                  </form>
+                )}
               </div>
-            ) : (
-              <form onSubmit={submitApplication} className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <span className="grid size-12 place-items-center rounded-xl bg-[#063B78] font-black text-white text-lg">
+
+              {/* Right Job Summary Card */}
+              <div className="w-full lg:w-[400px] shrink-0 bg-white rounded-3xl border border-[#DCE5F0] p-6 shadow-sm sticky top-24 hidden lg:block">
+                <div className="flex items-start justify-between mb-4">
+                  <span className="grid size-14 place-items-center rounded-2xl bg-[#063B78] font-black text-white text-xl shadow-md">
                     {job.initials}
                   </span>
-                  <div>
-                    <h3 className="font-display text-base font-black text-[#10233F]">{job.title}</h3>
-                    <p className="text-xs font-bold text-[#125BB5]">{job.company} · {job.location}</p>
-                  </div>
+                  <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 font-bold px-3 py-1 flex items-center gap-1.5">
+                    <CheckCircle2 className="size-3.5" />
+                    Active
+                  </Badge>
                 </div>
-
-                <div className="rounded-xl bg-[#F5F8FC] p-3 text-xs space-y-1 border border-[#DCE5F0]">
-                  <span className="font-black text-[#063B78] flex items-center gap-1">
-                    <ShieldCheck className="size-3.5 text-emerald-600" />
-                    {lang === "mr" ? "शासकीय/GST नोंदणीकृत मालक" : "Verified Direct Employer"}
-                  </span>
-                  <p className="text-[#5B6B7F] font-semibold">
-                    {lang === "mr" ? "पगार अंदाज:" : "Salary:"} {job.salary} | Mode: {job.workMode}
+                <h3 className="font-display text-2xl font-black text-[#10233F] mb-2">{job.title}</h3>
+                <div className="space-y-2 mb-4">
+                  <p className="text-sm font-bold text-[#125BB5] flex items-center gap-2">
+                    <Building className="size-4" /> {job.company}
+                  </p>
+                  <p className="text-sm font-semibold text-[#5B6B7F] flex items-center gap-2">
+                    <MapPin className="size-4" /> {job.location}
                   </p>
                 </div>
-
-                <div>
-                  <label className="block text-xs font-bold mb-1 text-[#10233F]">
-                    {lang === "mr" ? "रेझ्युमे / बायोडेटा निवडा" : "Upload / Select Resume"}
-                  </label>
-                  <select className="w-full h-10 rounded-xl border border-[#DCE5F0] bg-white px-3 text-xs font-bold text-[#10233F] shadow-2xs">
-                    <option>Payal_Wankar_Resume_2026.pdf (Verified)</option>
-                    <option>Upload New Resume...</option>
-                  </select>
+                
+                <div className="inline-block px-3 py-1 bg-[#EBF1F8] text-[#125BB5] text-xs font-bold rounded-lg mb-6">
+                  {job.category || "General"}
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold mb-1 text-[#10233F]">
-                    {lang === "mr" ? "थोडक्यात संदेश (पर्यायी)" : "Short Cover Note (Optional)"}
-                  </label>
-                  <textarea
-                    rows={3}
-                    placeholder={lang === "mr" ? "तुम्ही या कामासाठी योग्य का आहात ते थोडक्यात लिहा..." : "Briefly share why you are a great fit..."}
-                    className="w-full rounded-xl border border-[#DCE5F0] bg-white p-2.5 text-xs font-semibold shadow-2xs focus:outline-none focus:ring-1 focus:ring-[#063B78]"
-                  />
+                <div className="space-y-5">
+                  <div className="flex gap-3 items-start">
+                    <div className="size-8 rounded-full bg-[#F5F8FC] flex items-center justify-center shrink-0">
+                      <Briefcase className="size-4 text-[#5B6B7F]" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-[#5B6B7F]">Experience Required</p>
+                      <p className="text-sm font-black text-[#10233F]">{job.experience}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3 items-start">
+                    <div className="size-8 rounded-full bg-[#F5F8FC] flex items-center justify-center shrink-0">
+                      <Wallet className="size-4 text-[#5B6B7F]" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-[#5B6B7F]">Salary</p>
+                      <p className="text-sm font-black text-[#10233F]">{job.salary}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3 items-start">
+                    <div className="size-8 rounded-full bg-[#F5F8FC] flex items-center justify-center shrink-0">
+                      <User className="size-4 text-[#5B6B7F]" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-[#5B6B7F]">Vacancies</p>
+                      <p className="text-sm font-black text-[#10233F]">{job.vacancies || 1}</p>
+                    </div>
+                  </div>
                 </div>
-
-                <Button type="submit" className="btn-yellow w-full h-11 font-black text-xs shadow-md rounded-xl">
-                  {lang === "mr" ? "नोकरीसाठी अर्ज सादर करा" : "Submit Application"} <Send className="ml-2 size-4" />
-                </Button>
-              </form>
-            )}
+              </div>
+            </div>
           </div>
         </div>
       )}
