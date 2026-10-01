@@ -89,13 +89,12 @@ function LandingGatewayPage() {
     description: "REAL JOB is a reliable employment portal that connects job seekers with trusted companies. We focus on creating real opportunities, building successful careers, and supporting growth for individuals and businesses across India."
   });
   const [categories, setCategories] = useState([
-    { label: "Factory Worker", iconName: "Factory", theme: "blue" },
-    { label: "Construction", iconName: "HardHat", theme: "yellow" },
-    { label: "Technical Staff", iconName: "Wrench", theme: "purple" },
-    { label: "Transport & Logistics", iconName: "Truck", theme: "green" },
-    { label: "Electrician", iconName: "Zap", theme: "orange" },
-    { label: "Security Guard", iconName: "Shield", theme: "red" },
-    { label: "Office Staff", iconName: "Briefcase", theme: "blue" }
+    { label: "Construction", jobsCount: "1.2K+ Jobs", iconName: "HardHat", theme: "yellow" },
+    { label: "Technical Staff", jobsCount: "2.5K+ Jobs", iconName: "Wrench", theme: "blue" },
+    { label: "Transport & Logistics", jobsCount: "1.8K+ Jobs", iconName: "Truck", theme: "yellow" },
+    { label: "Electrician", jobsCount: "950+ Jobs", iconName: "Zap", theme: "blue" },
+    { label: "Security Guard", jobsCount: "1.1K+ Jobs", iconName: "Shield", theme: "yellow" },
+    { label: "Office Staff", jobsCount: "2.3K+ Jobs", iconName: "Briefcase", theme: "blue" }
   ]);
 
   useEffect(() => {
@@ -376,59 +375,76 @@ function LandingGatewayPage() {
         </section>
 
         {/* POPULAR JOB CATEGORIES */}
-        <section className="relative py-24 bg-white overflow-hidden">
+        <section className="relative py-20 bg-white overflow-hidden">
           <div className="relative z-10 mx-auto max-w-[1600px] px-4 text-center">
-            <h2 className="text-3xl md:text-4xl font-black text-[#082F63] mb-3">
+            
+            {/* Eyebrow Pill */}
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#FEF9E7] border border-[#FDE68A] text-[#B45309] font-black text-xs uppercase tracking-wider mb-4 shadow-2xs">
+              <Briefcase className="size-4 text-[#D97706]" />
+              EXPLORE BY CATEGORY
+            </div>
+
+            {/* Main Section Heading */}
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#082F63] mb-3 tracking-tight">
               Popular Job <span className="text-[#D4AF37]">Categories</span>
             </h2>
-            <div className="flex items-center justify-center gap-4 mb-16">
-              <div className="h-[1px] w-12 md:w-24 bg-[#D4AF37]/50"></div>
-              <p className="text-xs md:text-sm font-bold text-gray-500">Right opportunity for you - in your field!</p>
-              <div className="h-[1px] w-12 md:w-24 bg-[#D4AF37]/50"></div>
+
+            {/* Subtitle with accent lines */}
+            <div className="flex items-center justify-center gap-3 mb-12">
+              <div className="h-[1.5px] w-12 md:w-20 bg-[#D4AF37]/60"></div>
+              <p className="text-xs md:text-sm font-extrabold text-[#5B6B7F]">Right opportunity for you - in your field!</p>
+              <div className="h-[1.5px] w-12 md:w-20 bg-[#D4AF37]/60"></div>
             </div>
-            
-            <div className="flex flex-wrap lg:flex-nowrap justify-center gap-6 xl:gap-10 w-full mt-16 px-4">
+
+            {/* Category Cards Grid (Matching 2nd Screenshot) */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6 max-w-[1500px] mx-auto px-4">
               {categories.map((catData, i) => {
                 const IconComponent = ICONS[catData.iconName] || Briefcase;
-                const cat = THEMES[catData.theme] || THEMES['blue'];
+                const isYellow = catData.theme === "yellow";
                 return (
-                <div 
-                  key={i} 
-                  className="relative flex flex-col items-center w-[160px] group cursor-pointer mt-10"
-                  onClick={() => navigate({ to: '/auth', search: { mode: 'login', role: 'worker' } })}
-                >
-                  
-                  {/* Background Glow Circle */}
-                  <div className={`absolute top-[-30px] w-[140px] h-[140px] rounded-full ${cat.glowColor} opacity-50 blur-[20px] z-0 transition-opacity duration-500 group-hover:opacity-80`}></div>
-                  
-                  {/* Icon resting on pedestal */}
-                  <div className="relative z-30 mb-[-15px] transform group-hover:-translate-y-4 transition-transform duration-500 drop-shadow-[0_15px_15px_rgba(0,0,0,0.2)]">
-                    <IconComponent className={`size-[80px] ${cat.iconColor}`} strokeWidth={1.5} />
-                  </div>
+                  <div
+                    key={i}
+                    onClick={() => navigate({ to: '/auth', search: { mode: 'login', role: 'worker' } })}
+                    className={`group relative rounded-2xl border transition-all duration-300 p-6 flex flex-col items-center justify-between text-center cursor-pointer min-h-[220px] ${
+                      isYellow
+                        ? "bg-[#FEFDF7] border-[#FDE68A]/60 hover:bg-white hover:border-[#F59E0B] hover:shadow-xl hover:-translate-y-1.5"
+                        : "bg-[#F8FAFC] border-[#E2E8F0] hover:bg-white hover:border-[#2563EB] hover:shadow-xl hover:-translate-y-1.5"
+                    }`}
+                  >
+                    {/* Top Circle Icon Container */}
+                    <div className={`size-16 rounded-full flex items-center justify-center transition-transform duration-300 group-hover:scale-110 ${
+                      isYellow
+                        ? "bg-[#FEF3C7] text-[#D97706]"
+                        : "bg-[#DBEAFE] text-[#1D4ED8]"
+                    }`}>
+                      <IconComponent className="size-8 stroke-[1.8]" />
+                    </div>
 
-                  {/* Pedestal Container */}
-                  <div className="relative w-full h-[150px] z-10">
-                    {/* Pedestal Top (Ellipse) */}
-                    <div className={`absolute top-0 left-0 w-full h-[35px] rounded-[50%] z-20 ${cat.topColor} shadow-[inset_0_-4px_10px_rgba(255,255,255,0.7),0_5px_15px_rgba(0,0,0,0.05)] border border-white/60`}></div>
-                    
-                    {/* Pedestal Body */}
-                    <div 
-                      className={`absolute top-[17.5px] left-0 w-full h-[130px] z-10 bg-gradient-to-b ${cat.bodyGradient} flex flex-col items-center justify-end pb-5 shadow-[0_15px_30px_rgba(0,0,0,0.08)] border-x border-white/30 transition-colors duration-500`}
-                      style={{ borderBottomLeftRadius: '50% 20px', borderBottomRightRadius: '50% 20px' }}
-                    >
-                       <h4 className={`font-black text-[14px] text-center leading-[1.1] mb-3 px-3 ${cat.textColor}`}>
-                         {catData.label.split(' ').map((word: string, idx: number) => (
-                           <span key={idx} className="block">{word}</span>
-                         ))}
-                       </h4>
-                       <div className={`size-7 rounded-full flex items-center justify-center text-white shadow-lg ${cat.btnColor} group-hover:scale-110 transition-transform`}>
-                          <ArrowRight className="size-3.5" />
-                       </div>
+                    {/* Title & Job Count */}
+                    <div className="my-3 flex flex-col items-center">
+                      <h3 className="font-black text-sm sm:text-base text-[#10233F] group-hover:text-[#063B78] transition-colors leading-tight">
+                        {catData.label}
+                      </h3>
+                      <span className="text-[11px] sm:text-xs font-extrabold text-[#8695A7] mt-1">
+                        {catData.jobsCount || "1K+ Jobs"}
+                      </span>
+                    </div>
+
+                    {/* Bottom Arrow Circle Button */}
+                    <div className="w-full flex justify-end mt-auto">
+                      <div className={`size-8 rounded-full flex items-center justify-center transition-all duration-300 ${
+                        isYellow
+                          ? "bg-[#FEF3C7] text-[#D97706] group-hover:bg-[#FFC400] group-hover:text-[#10233F] group-hover:shadow-md"
+                          : "bg-[#DBEAFE] text-[#1E40AF] group-hover:bg-[#063B78] group-hover:text-white group-hover:shadow-md"
+                      }`}>
+                        <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+                      </div>
                     </div>
                   </div>
-                </div>
-              )})}
+                );
+              })}
             </div>
+
           </div>
         </section>
       </main>
