@@ -30,22 +30,18 @@ export function PopularCategories({ limit = 8, hideHeader = false }: { limit?: n
 
   const allJobs = dataStore.getAllJobs();
 
-  const getCategoryJobCount = (catId: string) => {
-    return allJobs.filter((j) => {
-      const cat = (j.category || "").toLowerCase();
-      const title = (j.title || "").toLowerCase();
-      const query = catId.toLowerCase();
-      if (cat.includes(query)) return true;
-      if (catId === "construction") return cat.includes("construction") || cat.includes("building") || title.includes("construction") || title.includes("civil");
-      if (catId === "it-software") return cat.includes("it") || cat.includes("software") || title.includes("developer") || title.includes("software");
-      if (catId === "engineering") return cat.includes("engineering") || cat.includes("technical") || title.includes("engineer");
-      if (catId === "healthcare-medical") return cat.includes("health") || cat.includes("medical") || cat.includes("nursing");
-      if (catId === "finance-accounting") return cat.includes("finance") || cat.includes("accounting") || cat.includes("account");
-      if (catId === "sales-marketing") return cat.includes("sales") || cat.includes("marketing");
-      if (catId === "education") return cat.includes("education") || cat.includes("teaching");
-      if (catId === "manufacturing") return cat.includes("manufacturing") || cat.includes("industrial") || cat.includes("factory") || title.includes("operator") || title.includes("mfg");
-      return false;
-    }).length;
+  const getSubcategoryCount = (catId: string) => {
+    const counts: Record<string, number> = {
+      "construction": 9,
+      "it-software": 9,
+      "engineering": 7,
+      "healthcare-medical": 6,
+      "finance-accounting": 6,
+      "sales-marketing": 6,
+      "education": 6,
+      "manufacturing": 5,
+    };
+    return counts[catId] || 0;
   };
 
   const realJobCategories = [
@@ -109,7 +105,7 @@ export function PopularCategories({ limit = 8, hideHeader = false }: { limit?: n
                       <IconComponent className="size-6" />
                     </div>
                     <span className="text-xs font-black bg-[#EBF1F8] text-[#063B78] px-2.5 py-1 rounded-full group-hover:bg-[#063B78] group-hover:text-white transition-colors">
-                      {n(getCategoryJobCount(cat.id))} {t("jobsCountText")}
+                      {n(getSubcategoryCount(cat.id))} {lang === "mr" ? "प्रोफाईल्स" : "Profiles"}
                     </span>
                   </div>
 
