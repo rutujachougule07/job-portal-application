@@ -126,7 +126,24 @@ export function LandingGatewayPage() {
               पुढील पर्यायांमधून आपले पोर्टल निवडा — युजर लॉगिन द्वारे वेबसाईट वापरा किंवा ॲडमिन लॉगिन द्वारे डॅशबोर्ड नियंत्रित करा.
             </p>
 
-
+            {/* QUICK ONE-CLICK ACCESS BAR */}
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-4 bg-white/10 p-3 rounded-2xl border border-white/20 max-w-xl mx-auto backdrop-blur-md">
+              <span className="text-xs font-black uppercase text-[#FFC400] w-full sm:w-auto">
+                ⚡ झटपट चाचणी (Quick Access):
+              </span>
+              <Button
+                onClick={handleQuickUserEntry}
+                className="btn-yellow text-xs font-black h-9 px-4 shadow-sm"
+              >
+                👤 युजर पोर्टलवर जा (User Portal)
+              </Button>
+              <Button
+                onClick={handleQuickAdminEntry}
+                className="bg-white hover:bg-gray-100 text-[#063B78] text-xs font-black h-9 px-4 shadow-sm"
+              >
+                🛡️ ॲडमिन डॅशबोर्ड पहा (Admin Panel)
+              </Button>
+            </div>
           </div>
         </section>
 
