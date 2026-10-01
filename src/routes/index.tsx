@@ -225,32 +225,6 @@ function LandingGatewayPage() {
             ))}
 
           </div>
-
-
-
-
-
-          {/* Search Bar - Floating */}
-          <div className="absolute bottom-4 lg:bottom-6 left-1/2 -translate-x-1/2 z-20 w-full max-w-5xl px-4">
-            <div className="flex flex-col md:flex-row items-center bg-white rounded-2xl md:rounded-full p-2 shadow-xl border border-gray-100 gap-2">
-              <div className="flex-1 flex items-center px-4 w-full border-b md:border-b-0 md:border-r border-gray-200 py-3 md:py-0">
-                <Search className="size-5 text-gray-500 mr-3 shrink-0" />
-                <input type="text" placeholder="Search job title, keyword..." className="w-full outline-none text-sm font-semibold bg-transparent placeholder:text-gray-400" />
-              </div>
-              <div className="flex-1 flex items-center px-4 w-full border-b md:border-b-0 md:border-r border-gray-200 py-3 md:py-0">
-                <MapPin className="size-5 text-gray-500 mr-3 shrink-0" />
-                <input type="text" placeholder="Select location" className="w-full outline-none text-sm font-semibold bg-transparent placeholder:text-gray-400" />
-              </div>
-              <div className="flex-1 flex items-center px-4 w-full py-3 md:py-0">
-                <Briefcase className="size-5 text-gray-500 mr-3 shrink-0" />
-                <input type="text" placeholder="Job Type" className="w-full outline-none text-sm font-semibold bg-transparent placeholder:text-gray-400" />
-              </div>
-              <Button className="w-full md:w-auto bg-[#FFC400] hover:bg-[#e6b000] text-[#10233F] font-black rounded-xl md:rounded-full px-10 py-6 md:py-7 shadow-md text-sm sm:text-base">
-                <Search className="size-4 mr-2" />
-                Search
-              </Button>
-            </div>
-          </div>
         </section>
 
         {/* METRICS & ADVANTAGES */}
