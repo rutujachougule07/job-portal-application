@@ -1,5 +1,5 @@
 import React from "react";
-import { User, Briefcase, Wallet, FileText, CloudUpload, Info } from "lucide-react";
+import { User, Briefcase, Wallet, FileText, CloudUpload, Info, CheckCircle2 } from "lucide-react";
 import { groupFieldsBySection } from "@/lib/applicationConfig";
 
 export const DynamicApplicationForm = ({
@@ -30,14 +30,27 @@ export const DynamicApplicationForm = ({
     
     // Check for file inputs
     if (fieldKey === "resume" || fieldKey === "profilePhoto" || fieldKey.toLowerCase().includes("certificate") || fieldKey.toLowerCase().includes("proof") || fieldKey.toLowerCase().includes("portfolio")) {
+      const fileName = fieldValues[fieldKey];
       return (
         <div key={fieldKey} className="space-y-1.5">
           <label className="block text-sm font-extrabold text-[#10233F]">{label} {isReq && <span className="text-red-500">*</span>} {req === "optional" && <span className="text-gray-400 font-normal text-xs">(Optional)</span>}</label>
-          <div className="border-2 border-dashed border-[#DCE5F0] rounded-xl p-4 flex flex-col items-center justify-center text-center hover:border-[#125BB5] hover:bg-[#F5F8FC] transition-colors relative h-28">
-            {fieldKey === "profilePhoto" ? <User className="size-6 text-[#125BB5] mb-1" /> : <CloudUpload className="size-6 text-[#125BB5] mb-1" />}
-            <span className="text-[11px] font-semibold text-[#5B6B7F]">Click to upload or drag and drop</span>
-            <span className="text-[9px] text-[#8695A7] mt-0.5">{fieldKey === "profilePhoto" ? "JPG, PNG (Max 2MB)" : "PDF, DOC, DOCX (Max 5MB)"}</span>
-            <input type="file" required={isReq} onChange={e => handleFieldChange(fieldKey, e.target.files?.[0]?.name)} className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
+          <div className={`border-2 border-dashed ${fileName ? 'border-emerald-500 bg-emerald-50' : 'border-[#DCE5F0] hover:border-[#125BB5] hover:bg-[#F5F8FC]'} rounded-xl p-4 flex flex-col items-center justify-center text-center transition-colors relative h-28`}>
+            {fileName ? (
+               <>
+                  <div className="size-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 mb-2">
+                    <CheckCircle2 className="size-5" />
+                  </div>
+                  <span className="text-xs font-black text-emerald-700 truncate max-w-[90%]">{fileName}</span>
+                  <span className="text-[10px] font-bold text-emerald-600/70 mt-0.5">Click to change file</span>
+               </>
+            ) : (
+               <>
+                  {fieldKey === "profilePhoto" ? <User className="size-6 text-[#125BB5] mb-1" /> : <CloudUpload className="size-6 text-[#125BB5] mb-1" />}
+                  <span className="text-[11px] font-semibold text-[#5B6B7F]">Click to upload or drag and drop</span>
+                  <span className="text-[9px] text-[#8695A7] mt-0.5">{fieldKey === "profilePhoto" ? "JPG, PNG (Max 2MB)" : "PDF, DOC, DOCX (Max 5MB)"}</span>
+               </>
+            )}
+            <input type="file" required={isReq && !fileName} onChange={e => handleFieldChange(fieldKey, e.target.files?.[0]?.name)} className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" title={fileName || "Upload file"} />
           </div>
         </div>
       );
