@@ -49,6 +49,7 @@ export type SalaryType = "Daily" | "Monthly" | "Yearly";
 export type JobType = "Full Time" | "Part Time" | "Contract" | "Internship" | "Daily Wage" | "Temporary";
 export type WorkMode = "On-site" | "Work From Home" | "Hybrid";
 export type JobStatus = "Active" | "Closed";
+export type ApprovalStatus = "pending" | "approved" | "rejected";
 
 export type JobRecord = {
   id: string;
@@ -77,6 +78,7 @@ export type JobRecord = {
   initials: string;
   featured?: boolean;
   status: JobStatus;
+  approvalStatus?: ApprovalStatus;
 };
 
 export type ApplicationStatus = "Applied" | "Viewed" | "Shortlisted" | "Interview" | "Selected" | "Rejected";
@@ -226,15 +228,57 @@ class DataStoreManager {
   }
 
 
-  public getRegisteredUsers(): Array<{ id: string; email: string; mobile?: string; role: UserRole; fullName: string }> {
+  public getRegisteredUserAccounts(): Array<{ id: string; email: string; password?: string; mobile?: string; role: UserRole; fullName: string; createdAt?: string }> {
     if (typeof window === "undefined") return [];
     const raw = localStorage.getItem("realjob_db_registered_users");
     if (!raw) return [];
     try {
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      return parsed.map((u: any) => ({
+        ...u,
+        fullName: u.fullName || u.email?.split("@")[0] || "User",
+      }));
     } catch {
       return [];
     }
+  }
+
+  public getRegisteredUsers(): Array<{ id: string; email: string; mobile?: string; role: UserRole; fullName: string }> {
+    return this.getRegisteredUserAccounts();
+  }
+
+  public registerAccount(user: { email: string; password?: string; mobile?: string; role: UserRole; fullName: string }): { id: string; email: string; password?: string; mobile?: string; role: UserRole; fullName: string; createdAt?: string } {
+    const list = this.getRegisteredUserAccounts();
+    const cleanEmail = user.email.trim().toLowerCase();
+    const existingIndex = list.findIndex(u => u.email.toLowerCase() === cleanEmail);
+    const fallbackName = cleanEmail.split("@")[0] || "User";
+    
+    const account: { id: string; email: string; password?: string; mobile?: string; role: UserRole; fullName: string; createdAt?: string } = {
+      id: `usr-${Date.now()}`,
+      email: cleanEmail,
+      password: user.password || "",
+      mobile: user.mobile || "",
+      role: user.role,
+      fullName: user.fullName || fallbackName,
+      createdAt: new Date().toISOString(),
+    };
+
+    if (existingIndex >= 0) {
+      list[existingIndex] = { ...list[existingIndex], ...account };
+    } else {
+      list.push(account);
+    }
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem("realjob_db_registered_users", JSON.stringify(list));
+      fbSync(() => setDoc(doc(db, "users", account.id), account));
+    }
+    return account;
+  }
+
+  public findRegisteredAccount(email: string) {
+    const cleanEmail = email.trim().toLowerCase();
+    return this.getRegisteredUserAccounts().find(u => u.email.toLowerCase() === cleanEmail);
   }
 
   // --- USER AUTHENTICATION & CURRENT SESSION ---
@@ -324,14 +368,26 @@ class DataStoreManager {
   }
 
   public getActiveJobs(): JobRecord[] {
-    return this.getAllJobs().filter((j) => j.status === "Active");
+    return this.getAllJobs().filter((j) => j.status === "Active" && (j.approvalStatus === "approved" || !j.approvalStatus));
+  }
+
+  public getPendingJobs(): JobRecord[] {
+    return this.getAllJobs().filter((j) => j.approvalStatus === "pending");
+  }
+
+  public getApprovedJobs(): JobRecord[] {
+    return this.getAllJobs().filter((j) => j.approvalStatus === "approved" || !j.approvalStatus);
+  }
+
+  public getRejectedJobs(): JobRecord[] {
+    return this.getAllJobs().filter((j) => j.approvalStatus === "rejected");
   }
 
   public getJobById(jobId: string): JobRecord | undefined {
     return this.getAllJobs().find((j) => j.id === jobId);
   }
 
-  public createJob(jobData: Omit<JobRecord, "id" | "postedDate" | "postedAgo" | "initials">): JobRecord {
+  public createJob(jobData: Omit<JobRecord, "id" | "postedDate" | "postedAgo" | "initials"> & { approvalStatus?: ApprovalStatus }): JobRecord {
     const jobs = this.getAllJobs();
     const initials = (jobData.company || "Company").substring(0, 2).toUpperCase();
     const newJob: JobRecord = {
@@ -340,6 +396,7 @@ class DataStoreManager {
       postedDate: new Date().toISOString(),
       postedAgo: "Just now",
       initials,
+      approvalStatus: jobData.approvalStatus || "pending",
     };
     jobs.unshift(newJob);
     if (typeof window !== "undefined") {
@@ -348,6 +405,10 @@ class DataStoreManager {
       fbSync(() => setDoc(doc(db, "jobs", newJob.id), newJob));
     }
     return newJob;
+  }
+
+  public updateJobApprovalStatus(jobId: string, approvalStatus: ApprovalStatus): JobRecord | null {
+    return this.updateJob(jobId, { approvalStatus });
   }
 
   public updateJob(jobId: string, updates: Partial<JobRecord>): JobRecord | null {
@@ -387,18 +448,16 @@ class DataStoreManager {
 
   public getEmployerJobs(identifier: string): JobRecord[] {
     const jobs = this.getAllJobs();
-    if (!identifier) return [];
+    if (!identifier || !identifier.trim()) return [];
     const q = identifier.toLowerCase().trim();
     return jobs.filter((j) => {
-      const empId = (j.employerId || "").toLowerCase();
-      const comp = (j.company || "").toLowerCase();
+      const empId = (j.employerId || "").toLowerCase().trim();
+      const comp = (j.company || "").toLowerCase().trim();
+      if (!empId && !comp) return false;
       return (
         empId === q ||
         comp === q ||
-        (empId && empId.includes(q)) ||
-        (q && q.includes(empId)) ||
-        (comp && comp.includes(q)) ||
-        (q && q.includes(comp))
+        (q.length >= 4 && (empId.includes(q) || comp.includes(q)))
       );
     });
   }
@@ -409,7 +468,22 @@ class DataStoreManager {
     const raw = localStorage.getItem(this.STORAGE_KEYS.APPLICATIONS);
     if (!raw) return [];
     try {
-      return JSON.parse(raw);
+      const apps: ApplicationRecord[] = JSON.parse(raw);
+      let modified = false;
+      const updated = apps.map((app) => {
+        if (!app.candidateMobile || app.candidateMobile === "9822011223" || app.candidateMobile === "+91 98220 11223") {
+          const reg = this.findRegisteredAccount(app.candidateEmail || app.jobSeekerId);
+          if (reg?.mobile) {
+            modified = true;
+            return { ...app, candidateMobile: reg.mobile };
+          }
+        }
+        return app;
+      });
+      if (modified) {
+        localStorage.setItem(this.STORAGE_KEYS.APPLICATIONS, JSON.stringify(updated));
+      }
+      return updated;
     } catch {
       return [];
     }
@@ -446,18 +520,16 @@ class DataStoreManager {
 
   public getEmployerApplications(identifier: string): ApplicationRecord[] {
     const apps = this.getAllApplications();
-    if (!identifier) return [];
+    if (!identifier || !identifier.trim()) return [];
     const q = identifier.toLowerCase().trim();
     return apps.filter((a) => {
-      const empId = (a.employerId || "").toLowerCase();
-      const comp = (a.companyName || "").toLowerCase();
+      const empId = (a.employerId || "").toLowerCase().trim();
+      const comp = (a.companyName || "").toLowerCase().trim();
+      if (!empId && !comp) return false;
       return (
         empId === q ||
         comp === q ||
-        (empId && empId.includes(q)) ||
-        (q && q.includes(empId)) ||
-        (comp && comp.includes(q)) ||
-        (q && q.includes(comp))
+        (q.length >= 4 && (empId.includes(q) || comp.includes(q)))
       );
     });
   }

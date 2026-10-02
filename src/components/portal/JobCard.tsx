@@ -49,6 +49,7 @@ export type Job = {
   category: string;
   featured?: boolean;
   openings?: number;
+  vacancies?: number;
 };
 
 export type CompanyMetadata = {
@@ -279,13 +280,12 @@ export function JobCard({
   const [applied, setApplied] = useState(false);
 
   useEffect(() => {
-    if (showApplyModal || showCompanyModal) {
-      const originalStyle = window.getComputedStyle(document.body).overflow;
-      document.body.style.overflow = "hidden";
-      return () => {
-        document.body.style.overflow = originalStyle;
-      };
-    }
+    if (!showApplyModal && !showCompanyModal) return;
+    const originalStyle = window.getComputedStyle(document.body).overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = originalStyle;
+    };
   }, [showApplyModal, showCompanyModal]);
 
   const [fieldValues, setFieldValues] = useState<Record<string, any>>({});
@@ -326,8 +326,19 @@ export function JobCard({
   const submitApplication = (e: React.FormEvent) => {
     e.preventDefault();
     const currentUser = dataStore.getCurrentUser();
-    const seekerId = currentUser ? (currentUser.email || currentUser.id || "seeker-demo") : "candidate@realjob.com";
-    const seekerName = currentUser?.fullName || "Rutuja Pawar";
+    const seekerId = currentUser ? (currentUser.email || currentUser.id || "seeker-demo") : (fieldValues['email'] || "candidate@realjob.com");
+    const seekerName = fieldValues['fullName'] || fieldValues['candidateName'] || currentUser?.fullName || "Candidate Applicant";
+    const userAcc = seekerId ? dataStore.findRegisteredAccount(seekerId) : null;
+    const userMobile = userAcc?.mobile || (currentUser as any)?.mobile || "";
+    const seekerMobile =
+      fieldValues['mobile'] ||
+      fieldValues['phone'] ||
+      fieldValues['candidateMobile'] ||
+      fieldValues['mobileNumber'] ||
+      fieldValues['contactNumber'] ||
+      fieldValues['phoneNo'] ||
+      fieldValues['mobileNo'] ||
+      userMobile;
 
     // Duplicate Application Check
     if (dataStore.hasAlreadyApplied(seekerId, job.id)) {
@@ -342,8 +353,8 @@ export function JobCard({
         employerId: job.company,
         jobSeekerId: seekerId,
         candidateName: seekerName,
-        candidateEmail: seekerId,
-        candidateMobile: "+91 98220 11223",
+        candidateEmail: fieldValues['email'] || seekerId,
+        candidateMobile: seekerMobile,
         jobTitle: job.title,
         companyName: job.company,
         location: job.location,
@@ -938,7 +949,7 @@ export function JobCard({
                     </div>
                     <div>
                       <p className="text-xs font-bold text-[#5B6B7F]">Vacancies</p>
-                      <p className="text-sm font-black text-[#10233F]">{job.vacancies || 1}</p>
+                      <p className="text-sm font-black text-[#10233F]">{(job as any).vacancies || 1}</p>
                     </div>
                   </div>
                 </div>

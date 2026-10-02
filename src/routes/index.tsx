@@ -24,6 +24,7 @@ import {
   Quote,
   Star,
   Monitor,
+  Sparkles,
 } from "lucide-react";
 
 const ICONS: Record<string, React.ElementType> = {
@@ -89,13 +90,61 @@ function LandingGatewayPage() {
     description: "REAL JOB is a reliable employment portal that connects job seekers with trusted companies. We focus on creating real opportunities, building successful careers, and supporting growth for individuals and businesses across India."
   });
   const [categories, setCategories] = useState([
-    { label: "Factory Worker", iconName: "Factory", theme: "blue" },
-    { label: "Construction", iconName: "HardHat", theme: "yellow" },
-    { label: "Technical Staff", iconName: "Wrench", theme: "purple" },
-    { label: "Transport & Logistics", iconName: "Truck", theme: "green" },
-    { label: "Electrician", iconName: "Zap", theme: "orange" },
-    { label: "Security Guard", iconName: "Shield", theme: "red" },
-    { label: "Office Staff", iconName: "Briefcase", theme: "blue" }
+    {
+      id: "construction",
+      label: "Construction",
+      jobsCount: "1.5K+ Jobs",
+      iconName: "HardHat",
+      gradient: "from-amber-500/15 via-amber-400/5 to-transparent",
+      iconBg: "bg-amber-100 text-amber-700 group-hover:bg-amber-500 group-hover:text-white",
+      hoverBorder: "group-hover:border-amber-400",
+      badgeStyle: "bg-amber-50 text-amber-700 border-amber-200",
+      btnStyle: "bg-amber-100 text-amber-700 group-hover:bg-amber-500 group-hover:text-white"
+    },
+    {
+      id: "technical",
+      label: "Technical Staff",
+      jobsCount: "2.8K+ Jobs",
+      iconName: "Wrench",
+      gradient: "from-blue-500/15 via-blue-400/5 to-transparent",
+      iconBg: "bg-blue-100 text-blue-700 group-hover:bg-blue-600 group-hover:text-white",
+      hoverBorder: "group-hover:border-blue-400",
+      badgeStyle: "bg-blue-50 text-blue-700 border-blue-200",
+      btnStyle: "bg-blue-100 text-blue-700 group-hover:bg-blue-600 group-hover:text-white"
+    },
+    {
+      id: "logistics",
+      label: "Transport & Logistics",
+      jobsCount: "1.9K+ Jobs",
+      iconName: "Truck",
+      gradient: "from-emerald-500/15 via-emerald-400/5 to-transparent",
+      iconBg: "bg-emerald-100 text-emerald-700 group-hover:bg-emerald-600 group-hover:text-white",
+      hoverBorder: "group-hover:border-emerald-400",
+      badgeStyle: "bg-emerald-50 text-emerald-700 border-emerald-200",
+      btnStyle: "bg-emerald-100 text-emerald-700 group-hover:bg-emerald-600 group-hover:text-white"
+    },
+    {
+      id: "electrician",
+      label: "Electrician",
+      jobsCount: "1.1K+ Jobs",
+      iconName: "Zap",
+      gradient: "from-purple-500/15 via-purple-400/5 to-transparent",
+      iconBg: "bg-purple-100 text-purple-700 group-hover:bg-purple-600 group-hover:text-white",
+      hoverBorder: "group-hover:border-purple-400",
+      badgeStyle: "bg-purple-50 text-purple-700 border-purple-200",
+      btnStyle: "bg-purple-100 text-purple-700 group-hover:bg-purple-600 group-hover:text-white"
+    },
+    {
+      id: "office",
+      label: "Office Staff",
+      jobsCount: "2.4K+ Jobs",
+      iconName: "Briefcase",
+      gradient: "from-rose-500/15 via-rose-400/5 to-transparent",
+      iconBg: "bg-rose-100 text-rose-700 group-hover:bg-rose-600 group-hover:text-white",
+      hoverBorder: "group-hover:border-rose-400",
+      badgeStyle: "bg-rose-50 text-rose-700 border-rose-200",
+      btnStyle: "bg-rose-100 text-rose-700 group-hover:bg-rose-600 group-hover:text-white"
+    }
   ]);
 
   useEffect(() => {
@@ -111,7 +160,17 @@ function LandingGatewayPage() {
     if (savedImages) setImages(JSON.parse(savedImages));
     if (savedMetrics) setMetrics(JSON.parse(savedMetrics));
     if (savedAbout) setAboutData(JSON.parse(savedAbout));
-    if (savedCategories) setCategories(JSON.parse(savedCategories));
+    if (savedCategories) {
+      try {
+        const parsed = JSON.parse(savedCategories);
+        if (Array.isArray(parsed) && parsed.length >= 5) {
+          // Keep only first 5
+          setCategories(parsed.slice(0, 5));
+        }
+      } catch (e) {
+        // use default 5
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -224,32 +283,6 @@ function LandingGatewayPage() {
               />
             ))}
 
-          </div>
-
-
-
-
-
-          {/* Search Bar - Floating */}
-          <div className="absolute bottom-4 lg:bottom-6 left-1/2 -translate-x-1/2 z-20 w-full max-w-5xl px-4">
-            <div className="flex flex-col md:flex-row items-center bg-white rounded-2xl md:rounded-full p-2 shadow-xl border border-gray-100 gap-2">
-              <div className="flex-1 flex items-center px-4 w-full border-b md:border-b-0 md:border-r border-gray-200 py-3 md:py-0">
-                <Search className="size-5 text-gray-500 mr-3 shrink-0" />
-                <input type="text" placeholder="Search job title, keyword..." className="w-full outline-none text-sm font-semibold bg-transparent placeholder:text-gray-400" />
-              </div>
-              <div className="flex-1 flex items-center px-4 w-full border-b md:border-b-0 md:border-r border-gray-200 py-3 md:py-0">
-                <MapPin className="size-5 text-gray-500 mr-3 shrink-0" />
-                <input type="text" placeholder="Select location" className="w-full outline-none text-sm font-semibold bg-transparent placeholder:text-gray-400" />
-              </div>
-              <div className="flex-1 flex items-center px-4 w-full py-3 md:py-0">
-                <Briefcase className="size-5 text-gray-500 mr-3 shrink-0" />
-                <input type="text" placeholder="Job Type" className="w-full outline-none text-sm font-semibold bg-transparent placeholder:text-gray-400" />
-              </div>
-              <Button className="w-full md:w-auto bg-[#FFC400] hover:bg-[#e6b000] text-[#10233F] font-black rounded-xl md:rounded-full px-10 py-6 md:py-7 shadow-md text-sm sm:text-base">
-                <Search className="size-4 mr-2" />
-                Search
-              </Button>
-            </div>
           </div>
         </section>
 
@@ -402,59 +435,67 @@ function LandingGatewayPage() {
         </section>
 
         {/* POPULAR JOB CATEGORIES */}
-        <section className="relative py-24 bg-white overflow-hidden">
+        <section className="relative py-20 bg-white overflow-hidden">
           <div className="relative z-10 mx-auto max-w-[1600px] px-4 text-center">
-            <h2 className="text-3xl md:text-4xl font-black text-[#082F63] mb-3">
+            
+            {/* Eyebrow Pill */}
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#FEF9E7] border border-[#FDE68A] text-[#B45309] font-black text-xs uppercase tracking-wider mb-4 shadow-2xs">
+              <Briefcase className="size-4 text-[#D97706]" />
+              EXPLORE BY CATEGORY
+            </div>
+
+            {/* Main Section Heading */}
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#082F63] mb-3 tracking-tight">
               Popular Job <span className="text-[#D4AF37]">Categories</span>
             </h2>
-            <div className="flex items-center justify-center gap-4 mb-16">
-              <div className="h-[1px] w-12 md:w-24 bg-[#D4AF37]/50"></div>
-              <p className="text-xs md:text-sm font-bold text-gray-500">Right opportunity for you - in your field!</p>
-              <div className="h-[1px] w-12 md:w-24 bg-[#D4AF37]/50"></div>
+
+            {/* Subtitle with accent lines */}
+            <div className="flex items-center justify-center gap-3 mb-12">
+              <div className="h-[1.5px] w-12 md:w-20 bg-[#D4AF37]/60"></div>
+              <p className="text-xs md:text-sm font-extrabold text-[#5B6B7F]">Right opportunity for you - in your field!</p>
+              <div className="h-[1.5px] w-12 md:w-20 bg-[#D4AF37]/60"></div>
             </div>
-            
-            <div className="flex flex-wrap lg:flex-nowrap justify-center gap-6 xl:gap-10 w-full mt-16 px-4">
+
+            {/* 5 Animated Category Cards Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 max-w-[1450px] mx-auto px-4">
               {categories.map((catData, i) => {
                 const IconComponent = ICONS[catData.iconName] || Briefcase;
-                const cat = THEMES[catData.theme] || THEMES['blue'];
                 return (
-                <div 
-                  key={i} 
-                  className="relative flex flex-col items-center w-[160px] group cursor-pointer mt-10"
-                  onClick={() => navigate({ to: '/auth', search: { mode: 'login', role: 'worker' } })}
-                >
-                  
-                  {/* Background Glow Circle */}
-                  <div className={`absolute top-[-30px] w-[140px] h-[140px] rounded-full ${cat.glowColor} opacity-50 blur-[20px] z-0 transition-opacity duration-500 group-hover:opacity-80`}></div>
-                  
-                  {/* Icon resting on pedestal */}
-                  <div className="relative z-30 mb-[-15px] transform group-hover:-translate-y-4 transition-transform duration-500 drop-shadow-[0_15px_15px_rgba(0,0,0,0.2)]">
-                    <IconComponent className={`size-[80px] ${cat.iconColor}`} strokeWidth={1.5} />
-                  </div>
+                  <div
+                    key={catData.id || i}
+                    onClick={() => navigate({ to: '/auth', search: { mode: 'login', role: 'worker' } })}
+                    className={`group relative rounded-3xl border border-[#DCE5F0] bg-white p-7 flex flex-col items-center justify-between text-center cursor-pointer transition-all duration-500 shadow-sm hover:shadow-2xl hover:-translate-y-3.5 hover:scale-[1.02] ${catData.hoverBorder || "group-hover:border-blue-400"} overflow-hidden min-h-[240px]`}
+                  >
+                    {/* Background Radial Glow */}
+                    <div className={`absolute -top-16 -left-16 size-40 rounded-full bg-gradient-to-br ${catData.gradient || "from-blue-500/15 to-transparent"} blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none`} />
 
-                  {/* Pedestal Container */}
-                  <div className="relative w-full h-[150px] z-10">
-                    {/* Pedestal Top (Ellipse) */}
-                    <div className={`absolute top-0 left-0 w-full h-[35px] rounded-[50%] z-20 ${cat.topColor} shadow-[inset_0_-4px_10px_rgba(255,255,255,0.7),0_5px_15px_rgba(0,0,0,0.05)] border border-white/60`}></div>
-                    
-                    {/* Pedestal Body */}
-                    <div 
-                      className={`absolute top-[17.5px] left-0 w-full h-[130px] z-10 bg-gradient-to-b ${cat.bodyGradient} flex flex-col items-center justify-end pb-5 shadow-[0_15px_30px_rgba(0,0,0,0.08)] border-x border-white/30 transition-colors duration-500`}
-                      style={{ borderBottomLeftRadius: '50% 20px', borderBottomRightRadius: '50% 20px' }}
-                    >
-                       <h4 className={`font-black text-[14px] text-center leading-[1.1] mb-3 px-3 ${cat.textColor}`}>
-                         {catData.label.split(' ').map((word: string, idx: number) => (
-                           <span key={idx} className="block">{word}</span>
-                         ))}
-                       </h4>
-                       <div className={`size-7 rounded-full flex items-center justify-center text-white shadow-lg ${cat.btnColor} group-hover:scale-110 transition-transform`}>
-                          <ArrowRight className="size-3.5" />
-                       </div>
+                    {/* Top Animated Circle Icon Container */}
+                    <div className={`relative size-20 rounded-2xl flex items-center justify-center transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-xs ${catData.iconBg || "bg-blue-100 text-blue-700"}`}>
+                      <IconComponent className="size-9 stroke-[1.9] transition-transform duration-500 group-hover:scale-110" />
+                    </div>
+
+                    {/* Title & Job Count Badge */}
+                    <div className="my-4 flex flex-col items-center">
+                      <h3 className="font-black text-base sm:text-lg text-[#10233F] group-hover:text-[#063B78] transition-colors leading-tight">
+                        {catData.label}
+                      </h3>
+                      <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black border tracking-wide mt-2 shadow-2xs ${catData.badgeStyle || "bg-blue-50 text-blue-700 border-blue-200"}`}>
+                        <Sparkles className="size-3 animate-pulse" />
+                        {catData.jobsCount || "1K+ Jobs"}
+                      </span>
+                    </div>
+
+                    {/* Bottom Animated Arrow Circle Button */}
+                    <div className="w-full flex justify-end mt-auto">
+                      <div className={`size-10 rounded-full flex items-center justify-center transition-all duration-500 shadow-2xs ${catData.btnStyle || "bg-blue-100 text-blue-700"} group-hover:scale-110 group-hover:shadow-md`}>
+                        <ArrowRight className="size-5 transition-transform duration-300 group-hover:translate-x-1" />
+                      </div>
                     </div>
                   </div>
-                </div>
-              )})}
+                );
+              })}
             </div>
+
           </div>
         </section>
       </main>

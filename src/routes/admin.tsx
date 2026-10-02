@@ -49,6 +49,26 @@ const monthlyAnalytics = [
   { month: "Sep", workers: 0, jobs: 0, hires: 0 },
 ];
 
+function formatWaNumber(phone: string): string {
+  const raw = (phone || "").trim();
+  const digits = raw.replace(/\D/g, "");
+  if (!digits) return "919822011223";
+  if (digits.length === 10) return `91${digits}`;
+  if (digits.length === 12 && digits.startsWith("91")) return digits;
+  if (digits.length === 11 && digits.startsWith("0")) return `91${digits.slice(1)}`;
+  return digits.length >= 10 ? digits : `91${digits}`;
+}
+
+function formatCallNumber(phone: string): string {
+  const raw = (phone || "").trim();
+  const digits = raw.replace(/\D/g, "");
+  if (!digits) return "+919822011223";
+  if (digits.length === 10) return `+91${digits}`;
+  if (digits.length === 12 && digits.startsWith("91")) return `+${digits}`;
+  if (digits.length === 11 && digits.startsWith("0")) return `+91${digits.slice(1)}`;
+  return raw.startsWith("+") ? raw : `+${digits}`;
+}
+
 function AdminDashboardPage() {
   const navigate = useNavigate();
 
@@ -80,10 +100,18 @@ function AdminDashboardPage() {
   const [registeredUsers, setRegisteredUsers] = useState<
     Array<{ id: string; name: string; role: string; mobile: string; city: string; trade: string; status: string }>
   >([]);
+  const currentUser = dataStore.getCurrentUser();
+  const isSuperAdmin = currentUser?.email?.toLowerCase() === "supera@gmail.com" || currentUser?.email?.toLowerCase() === "superadmin";
+  const empIdentifier = currentUser?.fullName || currentUser?.email || "admin-001";
 
   const loadAllData = () => {
-    setJobs(dataStore.getAllJobs());
-    setApplications(dataStore.getAllApplications());
+    if (isSuperAdmin) {
+      setJobs(dataStore.getAllJobs());
+      setApplications(dataStore.getAllApplications());
+    } else {
+      setJobs(dataStore.getEmployerJobs(empIdentifier));
+      setApplications(dataStore.getEmployerApplications(empIdentifier));
+    }
     const reg = dataStore.getRegisteredUsers();
     setRegisteredUsers(reg.map(u => ({
       id: u.id,
@@ -98,11 +126,11 @@ function AdminDashboardPage() {
 
   useEffect(() => {
     loadAllData();
-  }, []);
+  }, [empIdentifier]);
 
   const handleUpdateAppStatus = (appId: string, status: any) => {
     dataStore.updateApplicationStatus(appId, status);
-    setApplications(dataStore.getAllApplications());
+    loadAllData();
     toast.success(`अर्जाची स्थिती '${status}' वर बदलली!`);
   };
 
@@ -173,7 +201,7 @@ function AdminDashboardPage() {
     if (editingJobId) {
       dataStore.updateJob(editingJobId, {
         title: jobForm.title,
-        company: jobForm.company,
+        company: jobForm.company || currentUser?.fullName || "Company",
         category: jobForm.category || "General",
         subcategory: jobForm.subcategory || "",
         description: jobForm.description,
@@ -191,10 +219,12 @@ function AdminDashboardPage() {
       });
       toast.success("✅ नोकरीची माहिती यशस्वीरित्या अद्ययावत (Updated) झाली!");
     } else {
+      const empId = currentUser?.email || currentUser?.fullName || currentUser?.id || "admin-001";
+      const compName = jobForm.company || currentUser?.fullName || "Company";
       dataStore.createJob({
-        employerId: "admin-001",
+        employerId: empId,
         title: jobForm.title,
-        company: jobForm.company,
+        company: compName,
         category: jobForm.category || "General",
         subcategory: jobForm.subcategory || "",
         description: jobForm.description,
@@ -212,26 +242,25 @@ function AdminDashboardPage() {
         vacancies: Number(jobForm.vacancies) || 1,
         benefits: [],
         status: jobForm.status as any,
+        approvalStatus: "pending",
       });
-      toast.success("✅ नवीन नोकरी यशस्वीरित्या प्रकाशित झाली!");
+      toast.success("⏳ नवीन नोकरी सबमिट झाली! सुपर ॲडमिन मंजुरीनंतर (Super Admin approval) ती वेबसाईटवर दिसेल.");
     }
     setShowJobForm(false);
     setEditingJobId(null);
-    setJobs(dataStore.getAllJobs());
+    loadAllData();
   };
 
   const handleToggleJobStatus = (jobId: string, currentStatus: string) => {
     const nextStatus = currentStatus === "Active" ? "Closed" : "Active";
     dataStore.updateJob(jobId, { status: nextStatus as any });
-    setJobs((prev) =>
-      prev.map((j) => (j.id === jobId ? { ...j, status: nextStatus as any } : j))
-    );
+    loadAllData();
     toast.success(`Job status updated to ${nextStatus}!`);
   };
 
   const handleDeleteJob = (jobId: string) => {
     dataStore.deleteJob(jobId);
-    setJobs((prev) => prev.filter((j) => j.id !== jobId));
+    loadAllData();
     toast.success("Job posting removed by Admin!");
   };
 
@@ -753,6 +782,7 @@ function AdminDashboardPage() {
                     <th className="p-3.5">कंपनी (Company)</th>
                     <th className="p-3.5">ठिकाण & पगार (Location & Salary)</th>
                     <th className="p-3.5">जागा (Vacancies)</th>
+                    <th className="p-3.5">मंजुरी (Approval)</th>
                     <th className="p-3.5">स्थिती (Status)</th>
                     <th className="p-3.5 text-right">कृती (Actions)</th>
                   </tr>
@@ -770,6 +800,15 @@ function AdminDashboardPage() {
                         <div className="text-[#125BB5] font-bold">{j.salary}</div>
                       </td>
                       <td className="p-3.5 font-black text-[#063B78]">{j.vacancies || 5} Openings</td>
+                      <td className="p-3.5">
+                        {j.approvalStatus === "rejected" ? (
+                          <Badge className="bg-red-600 text-white font-bold">❌ Rejected</Badge>
+                        ) : j.approvalStatus === "approved" || !j.approvalStatus ? (
+                          <Badge className="bg-emerald-600 text-white font-bold">✅ Approved</Badge>
+                        ) : (
+                          <Badge className="bg-amber-500 text-white font-bold">⏳ Pending Approval</Badge>
+                        )}
+                      </td>
                       <td className="p-3.5">
                         <Badge
                           className={
@@ -906,13 +945,13 @@ function AdminDashboardPage() {
                           <td className="p-3.5">
                             <div className="flex items-center gap-2">
                               <a
-                                href={`tel:${a.candidateMobile}`}
+                                href={`tel:${formatCallNumber(a.candidateMobile)}`}
                                 className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-bold text-[10px] hover:bg-emerald-700 transition-all flex items-center gap-1"
                               >
                                 📞 कॉल करा
                               </a>
                               <a
-                                href={`https://wa.me/${a.candidateMobile.replace(/\D/g, "")}`}
+                                href={`https://wa.me/${formatWaNumber(a.candidateMobile)}?text=${encodeURIComponent(`नमस्कार ${a.candidateName}, तुम्ही ${a.jobTitle} या नोकरीसाठी अर्ज केला होता. त्यासंदर्भात संपर्क करत आहोत.`)}`}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="px-2.5 py-1 rounded-lg bg-green-600 text-white font-bold text-[10px] hover:bg-green-700 transition-all flex items-center gap-1"

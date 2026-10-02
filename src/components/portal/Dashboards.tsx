@@ -273,10 +273,11 @@ export function SalaryPage({ role = "user" }: { role?: "user" | "admin" }) {
 
 export function EmployerDashboard() {
   const currentUser = dataStore.getCurrentUser();
-  const empName = currentUser?.fullName || currentUser?.email || "L&T Construction";
+  const isSuperAdmin = currentUser?.email?.toLowerCase() === "supera@gmail.com" || currentUser?.email?.toLowerCase() === "superadmin";
+  const empName = currentUser?.fullName || currentUser?.email || "Employer";
 
-  const empJobs = dataStore.getEmployerJobs(empName);
-  const empApps = dataStore.getEmployerApplications(empName);
+  const empJobs = isSuperAdmin ? dataStore.getAllJobs() : dataStore.getEmployerJobs(empName);
+  const empApps = isSuperAdmin ? dataStore.getAllApplications() : dataStore.getEmployerApplications(empName);
 
   const shortlistedCount = empApps.filter((a) => a.status === "Shortlisted" || a.status === "Selected").length;
 

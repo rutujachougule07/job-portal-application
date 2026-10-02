@@ -56,6 +56,7 @@ function getJobDetails(jobId: string) {
       category: storeJob.category,
       featured: storeJob.featured,
       openings: storeJob.vacancies,
+      vacancies: storeJob.vacancies,
       description: storeJob.description,
       responsibilities: storeJob.responsibilities,
       requiredSkills: storeJob.requiredSkills,
@@ -75,13 +76,12 @@ function JobDetailPage() {
   const [applied, setApplied] = useState(false);
 
   useEffect(() => {
-    if (showApplyModal) {
-      const originalStyle = window.getComputedStyle(document.body).overflow;
-      document.body.style.overflow = "hidden";
-      return () => {
-        document.body.style.overflow = originalStyle;
-      };
-    }
+    if (!showApplyModal) return;
+    const originalStyle = window.getComputedStyle(document.body).overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = originalStyle;
+    };
   }, [showApplyModal]);
   const [applicantName, setApplicantName] = useState("");
   const [applicantPhone, setApplicantPhone] = useState("");
@@ -102,12 +102,25 @@ function JobDetailPage() {
     const currentUser = dataStore.getCurrentUser();
     const seekerId = currentUser ? (currentUser.email || currentUser.id || "seeker-demo") : (applicantName ? `seeker-${applicantName}` : "candidate@realjob.com");
     const name = applicantName || currentUser?.fullName || "Candidate";
+    const userAcc = seekerId ? dataStore.findRegisteredAccount(seekerId) : null;
+    const userMobile = userAcc?.mobile || (currentUser as any)?.mobile || "";
 
     if (dataStore.hasAlreadyApplied(seekerId, job.id)) {
       toast.error(lang === "mr" ? "तुम्ही या नोकरीसाठी आधीच अर्ज भरला आहे!" : "You have already applied to this job!");
       setShowApplyModal(false);
       return;
     }
+
+    const resolvedMobile =
+      fieldValues['mobile'] ||
+      fieldValues['phone'] ||
+      fieldValues['candidateMobile'] ||
+      fieldValues['mobileNumber'] ||
+      fieldValues['contactNumber'] ||
+      fieldValues['phoneNo'] ||
+      fieldValues['mobileNo'] ||
+      applicantPhone ||
+      userMobile;
 
     try {
       dataStore.createApplication({
@@ -116,7 +129,7 @@ function JobDetailPage() {
         jobSeekerId: seekerId,
         candidateName: fieldValues['fullName'] || name,
         candidateEmail: fieldValues['email'] || seekerId,
-        candidateMobile: fieldValues['mobile'] || applicantPhone || "+91 98220 11223",
+        candidateMobile: resolvedMobile,
         jobTitle: job.title,
         companyName: job.company,
         location: job.location,
@@ -424,7 +437,7 @@ function JobDetailPage() {
                       </div>
                       <div>
                         <p className="text-xs font-bold text-[#5B6B7F]">Vacancies</p>
-                        <p className="text-sm font-black text-[#10233F]">{job.vacancies || 1}</p>
+                        <p className="text-sm font-black text-[#10233F]">{job.vacancies || job.openings || 1}</p>
                       </div>
                     </div>
                   </div>
