@@ -176,7 +176,7 @@ function UserDashboard() {
                 <div className="relative z-10 flex items-end justify-between mt-2">
                   <div>
                     <h3 className="text-xs font-bold text-[#5B6B7F] mb-1">Applied Jobs</h3>
-                    <p className="text-3xl font-black text-[#10233F]">{applications.length || 1}</p>
+                    <p className="text-3xl font-black text-[#10233F]">{applications.length}</p>
                   </div>
                   <Link to="/dashboard" search={{ tab: "applied" }} className="size-8 rounded-full border border-blue-200 text-[#125BB5] hover:bg-[#125BB5] hover:text-white flex items-center justify-center transition-all">
                     <ChevronRight className="size-4" />
@@ -201,7 +201,7 @@ function UserDashboard() {
                 <div className="relative z-10 flex items-end justify-between mt-2">
                   <div>
                     <h3 className="text-xs font-bold text-[#5B6B7F] mb-1">Saved Jobs</h3>
-                    <p className="text-3xl font-black text-[#10233F]">{savedJobRecords.length || 1}</p>
+                    <p className="text-3xl font-black text-[#10233F]">{savedJobRecords.length}</p>
                   </div>
                   <Link to="/dashboard" search={{ tab: "saved" }} className="size-8 rounded-full border border-orange-200 text-[#D97706] hover:bg-[#D97706] hover:text-white flex items-center justify-center transition-all">
                     <ChevronRight className="size-4" />
@@ -227,7 +227,7 @@ function UserDashboard() {
                   <div>
                     <h3 className="text-xs font-bold text-[#5B6B7F] mb-1">Profile Views</h3>
                     <div className="flex items-center gap-3">
-                      <p className="text-3xl font-black text-[#10233F]">12</p>
+                      <p className="text-3xl font-black text-[#10233F]">{applications.length > 0 ? applications.length * 2 : 0}</p>
                       {/* Micro Bar Chart Graphic */}
                       <div className="flex items-end gap-1 h-6">
                         <div className="w-1.5 h-2 bg-emerald-200 rounded-full"></div>
@@ -261,8 +261,8 @@ function UserDashboard() {
                 <span className="flex-1 text-xs font-black text-[#10233F] truncate">Pune, Maharashtra</span>
                 <ChevronDown className="size-3.5 text-gray-400 shrink-0" />
               </div>
-              <Button className="w-full sm:w-auto h-11 px-7 rounded-xl bg-[#051B38] hover:bg-[#092B57] text-white font-bold text-xs shadow-md transition-all flex items-center gap-2">
-                <Search className="size-3.5" /> Search Jobs
+              <Button asChild className="w-full sm:w-auto h-11 px-7 rounded-xl bg-[#051B38] hover:bg-[#092B57] text-white font-bold text-xs shadow-md transition-all flex items-center gap-2">
+                <Link to="/jobs"><Search className="size-3.5" /> Search Jobs</Link>
               </Button>
             </div>
 
@@ -278,40 +278,48 @@ function UserDashboard() {
                 </Link>
               </div>
               
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead>
-                    <tr className="border-b border-gray-100 text-gray-400 font-bold bg-gray-50/50">
-                      <th className="py-3 px-6">Job Title</th>
-                      <th className="py-3 px-6">Company</th>
-                      <th className="py-3 px-6">Applied Date</th>
-                      <th className="py-3 px-6">Status</th>
-                      <th className="py-3 px-4 text-right"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {(applications.length > 0 ? applications : [
-                      { id: "app-1", jobTitle: "Web Developer", companyName: "ITPL Sangli", appliedDate: "28 Sep 2026", status: "Applied" }
-                    ]).map((app) => (
-                      <tr key={app.id} className="hover:bg-gray-50/60 transition-colors font-bold text-[#10233F]">
-                        <td className="py-4 px-6 font-black">{app.jobTitle}</td>
-                        <td className="py-4 px-6 text-gray-600">{app.companyName}</td>
-                        <td className="py-4 px-6 text-gray-500">{app.appliedDate}</td>
-                        <td className="py-4 px-6">
-                          <span className="inline-flex items-center px-3 py-1 rounded-lg text-[11px] font-black bg-[#EBF3FF] text-[#125BB5]">
-                            {app.status}
-                          </span>
-                        </td>
-                        <td className="py-4 px-4 text-right">
-                          <button className="text-gray-400 hover:text-gray-600 p-1">
-                            ⋮
-                          </button>
-                        </td>
+              {applications.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-gray-100 text-gray-400 font-bold bg-gray-50/50">
+                        <th className="py-3 px-6">Job Title</th>
+                        <th className="py-3 px-6">Company</th>
+                        <th className="py-3 px-6">Applied Date</th>
+                        <th className="py-3 px-6">Status</th>
+                        <th className="py-3 px-4 text-right"></th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {applications.map((app) => (
+                        <tr key={app.id} className="hover:bg-gray-50/60 transition-colors font-bold text-[#10233F]">
+                          <td className="py-4 px-6 font-black">{app.jobTitle}</td>
+                          <td className="py-4 px-6 text-gray-600">{app.companyName}</td>
+                          <td className="py-4 px-6 text-gray-500">{app.appliedDate}</td>
+                          <td className="py-4 px-6">
+                            <span className="inline-flex items-center px-3 py-1 rounded-lg text-[11px] font-black bg-[#EBF3FF] text-[#125BB5]">
+                              {app.status}
+                            </span>
+                          </td>
+                          <td className="py-4 px-4 text-right">
+                            <button className="text-gray-400 hover:text-gray-600 p-1">
+                              ⋮
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="p-8 text-center">
+                  <p className="text-sm font-bold text-[#5B6B7F]">अद्याप कोणत्याही नोकरीसाठी अर्ज केलेला नाही (No Applications Yet)</p>
+                  <p className="text-xs text-gray-400 mt-1">तुम्ही नोकरीसाठी अर्ज केल्यावर येथे अर्जाची स्थिती दिसेल.</p>
+                  <Button asChild className="mt-4 bg-[#063B78] hover:bg-[#082F63] text-white font-bold text-xs px-6 h-9 rounded-xl">
+                    <Link to="/jobs">नोकऱ्या शोधा (Find Jobs)</Link>
+                  </Button>
+                </div>
+              )}
             </div>
 
           </div>
