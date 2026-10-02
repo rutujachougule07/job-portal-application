@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
-  Building2,
   CheckCircle2,
   Mail,
   MapPin,
   MessageSquare,
   Phone,
+  Send,
   Sparkles,
 } from "lucide-react";
 import { PublicHeader } from "@/components/portal/PublicHeader";
@@ -111,13 +111,12 @@ function ContactPage() {
             </div>
           </div>
 
-          {/* Main Form & Office Locations */}
-          <div className="grid gap-10 lg:grid-cols-12 items-start">
-            {/* Form */}
-            <div className="lg:col-span-7 bg-white p-8 rounded-2xl border border-[#DCE5F0] shadow-sm">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="size-10 rounded-xl bg-[#063B78] text-white flex items-center justify-center font-black">
-                  <MessageSquare className="size-5" />
+          {/* Main Form */}
+          <div className="max-w-3xl mx-auto">
+            <div className="bg-white p-8 sm:p-10 rounded-3xl border border-[#DCE5F0] shadow-sm">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="size-12 rounded-2xl bg-[#063B78]/10 text-[#063B78] flex items-center justify-center font-black">
+                  <MessageSquare className="size-6 text-[#063B78]" />
                 </div>
                 <div>
                   <h2 className="text-2xl font-black text-[#10233F]">{t("sendMessageTitle")}</h2>
@@ -201,35 +200,12 @@ function ContactPage() {
                     />
                   </div>
 
-                  <Button disabled={loading} type="submit" className="w-full btn-yellow font-black text-xs h-12">
+                  <Button disabled={loading} type="submit" className="w-full bg-[#10233F] hover:bg-[#10233F]/90 text-white font-bold h-12 flex items-center justify-center gap-2 rounded-xl text-sm">
+                    <Send className="size-4" />
                     {loading ? t("sending") : t("sendMessage")}
                   </Button>
                 </form>
               )}
-            </div>
-
-            {/* Regional Offices */}
-            <div className="lg:col-span-5 space-y-6">
-              <div className="bg-white p-6 rounded-2xl border border-[#DCE5F0] shadow-xs">
-                <h3 className="text-lg font-black text-[#10233F] mb-4 flex items-center gap-2">
-                  <Building2 className="size-5 text-[#063B78]" /> {t("regionalOffices")}
-                </h3>
-
-                <div className="space-y-4 text-xs font-bold text-[#10233F]">
-                  <div className="p-3 bg-[#F5F8FC] rounded-xl border border-[#DCE5F0]">
-                    <span className="text-xs font-extrabold text-[#063B78] block">Pune (Chakan Office)</span>
-                    <span className="text-[#5B6B7F]">Industrial Hub, Chakan MIDC, Pune.</span>
-                  </div>
-                  <div className="p-3 bg-[#F5F8FC] rounded-xl border border-[#DCE5F0]">
-                    <span className="text-xs font-extrabold text-[#063B78] block">Mumbai (Thane / Navi Mumbai)</span>
-                    <span className="text-[#5B6B7F]">Vashi Sector 17, Navi Mumbai.</span>
-                  </div>
-                  <div className="p-3 bg-[#F5F8FC] rounded-xl border border-[#DCE5F0]">
-                    <span className="text-xs font-extrabold text-[#063B78] block">Chhatrapati Sambhajinagar (Aurangabad)</span>
-                    <span className="text-[#5B6B7F]">Waluj MIDC Area, Chhatrapati Sambhajinagar.</span>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
