@@ -244,20 +244,21 @@ function LandingGatewayPage() {
                 <Button
                   asChild
                   variant="outline"
-                  className="border-[#063B78] text-[#063B78] font-extrabold hover:bg-[#063B78] hover:text-white text-xs px-3 sm:px-4 h-9.5 rounded-lg shadow-2xs"
+                  className="bg-white border-[#063B78] text-[#063B78] font-extrabold hover:bg-[#063B78] hover:text-white text-xs px-3 sm:px-4 h-9.5 rounded-lg shadow-xs"
                 >
                   <Link to="/auth" search={{ mode: "login", role: "worker" }}>
-                    <UserCheck className="size-4 mr-1.5" />
+                    <UserCheck className="size-4 mr-1.5 text-[#063B78]" />
                     {t("userLogin")}
                   </Link>
                 </Button>
 
                 <Button
                   asChild
-                  className="bg-[#063B78] hover:bg-[#082F63] text-white font-extrabold text-xs px-3 sm:px-4 h-9.5 rounded-lg shadow-xs"
+                  variant="outline"
+                  className="bg-white border-[#063B78] text-[#063B78] font-extrabold hover:bg-[#063B78] hover:text-white text-xs px-3 sm:px-4 h-9.5 rounded-lg shadow-xs"
                 >
                   <Link to="/auth" search={{ mode: "login", role: "admin" }}>
-                    <ShieldCheck className="size-4 mr-1.5 text-[#FFC400]" />
+                    <ShieldCheck className="size-4 mr-1.5 text-[#063B78]" />
                     {t("adminLogin")}
                   </Link>
                 </Button>

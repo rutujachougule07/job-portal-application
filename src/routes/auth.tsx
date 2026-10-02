@@ -64,6 +64,7 @@ function AuthPage() {
 
   // Employer registration extra fields
   const [companyName, setCompanyName] = useState("");
+  const [employerPhone, setEmployerPhone] = useState("");
 
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -83,14 +84,19 @@ function AuthPage() {
 
       if (mode === "register") {
         const rawName = role === "employer" || role === "admin" ? companyName : workerName;
-        const nameString = (rawName && rawName.trim()) ? rawName.trim() : (email ? (email.split("@")[0] || "User") : "User");
+        const userMobile = (role === "employer" || role === "admin") ? employerPhone : workerPhone;
+        let finalEmail = email.trim().toLowerCase();
+        if (!finalEmail && userMobile) {
+          finalEmail = `${userMobile.replace(/\D/g, "")}@realjob.com`;
+        }
+        const nameString = (rawName && rawName.trim()) ? rawName.trim() : (finalEmail ? (finalEmail.split("@")[0] || "User") : "User");
 
         const registeredAccount = dataStore.registerAccount({
-          email,
+          email: finalEmail,
           password,
           role: role === "admin" ? "employer" : role,
           fullName: nameString,
-          mobile: workerPhone || "",
+          mobile: userMobile || "",
         });
 
         const userObj = {
@@ -98,7 +104,7 @@ function AuthPage() {
           email: registeredAccount.email,
           role: registeredAccount.role,
           fullName: registeredAccount.fullName || "User",
-          mobile: registeredAccount.mobile || workerPhone || "",
+          mobile: registeredAccount.mobile || userMobile || "",
         };
 
         window.localStorage.setItem("realjob-user", JSON.stringify(userObj));
@@ -360,36 +366,58 @@ function AuthPage() {
 
           {/* EMPLOYER REGISTRATION FIELDS */}
           {mode === "register" && (role === "employer" || role === "admin") && (
-            <div>
-              <Label className="text-[11px] font-extrabold text-gray-800 mb-0.5 block">Company Name *</Label>
-              <div className="relative">
-                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-gray-400" />
-                <input
-                  required
-                  type="text"
-                  autoComplete="off"
-                  placeholder="e.g. Tata Motors / L&T"
-                  value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
-                  className="w-full h-9 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B]"
-                />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div>
+                <Label className="text-[11px] font-extrabold text-gray-800 mb-0.5 block">Company Name *</Label>
+                <div className="relative">
+                  <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-gray-400" />
+                  <input
+                    required
+                    type="text"
+                    autoComplete="off"
+                    placeholder="e.g. Tata Motors / L&T"
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    className="w-full h-9 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-[11px] font-extrabold text-gray-800 mb-0.5 block">Mobile Number *</Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-gray-400" />
+                  <input
+                    required
+                    type="tel"
+                    autoComplete="off"
+                    placeholder="+91 98220 00000"
+                    value={employerPhone}
+                    onChange={(e) => setEmployerPhone(e.target.value)}
+                    className="w-full h-9 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B]"
+                  />
+                </div>
               </div>
             </div>
           )}
 
-          {/* EMAIL FIELD */}
+          {/* EMAIL OR MOBILE FIELD */}
           <div>
             <Label htmlFor="email" className="text-[11px] font-extrabold text-gray-800 mb-0.5 block">
-              Email Address *
+              {mode === "login" ? "Email Address or Mobile Number *" : "Email Address *"}
             </Label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-gray-400" />
+              {mode === "login" && /^\d+$/.test(email.replace(/\D/g, "")) && email.length >= 5 ? (
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-[#0A3B7B]" />
+              ) : (
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-gray-400" />
+              )}
               <input
                 id="email"
-                type="email"
+                type={mode === "login" ? "text" : "email"}
                 required
                 autoComplete="off"
-                placeholder="name@example.com"
+                placeholder={mode === "login" ? "Email or Mobile (e.g. 98220 00000 / user@gmail.com)" : "name@example.com"}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full h-9.5 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B] shadow-xs"

@@ -34,7 +34,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { LanguageSwitcher } from "@/components/portal/LanguageSwitcher";
-import { dataStore, JobRecord, ApplicationRecord } from "@/lib/data-store";
+import { dataStore, JobRecord, ApplicationRecord, JobPackagePlan, PackageTransaction } from "@/lib/data-store";
 
 export const Route = createFileRoute("/superadmin")({
   head: () => ({
@@ -52,6 +52,15 @@ function SuperAdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+
+  // Dynamic Packages & Purchases State
+  const [dynamicPackages, setDynamicPackages] = useState<JobPackagePlan[]>(() => dataStore.getJobPackages());
+  const [packagePurchases, setPackagePurchases] = useState<PackageTransaction[]>(() => dataStore.getAllPackagePurchases());
+
+  const handleSavePackages = () => {
+    dataStore.saveJobPackages(dynamicPackages);
+    toast.success("✅ Job Packages updated! Employer dashboard now uses your live pricing.");
+  };
 
   // CMS State
   const [heroTitle, setHeroTitle] = useState("Welcome to the\nREAL JOB Portal!");
@@ -390,6 +399,7 @@ function SuperAdminPage() {
             { id: "job-approvals", label: "Job Approvals", icon: CheckCircle2, count: pendingJobsCount },
             { id: "users-directory", label: "Registered Users", icon: Users, count: allUsers.length },
             { id: "job-applications", label: "Job Applications", icon: FileText, count: allApplications.length },
+            { id: "packages", label: "Job Packages & Pricing", icon: IndianRupee },
             { id: "landing-page", label: "Landing Page", icon: Globe },
           ].map((item) => (
             <button
@@ -1307,7 +1317,193 @@ function SuperAdminPage() {
             </div>
           )}
 
-          {activeTab !== "dashboard" && activeTab !== "landing-page" && activeTab !== "job-approvals" && activeTab !== "users-directory" && activeTab !== "job-applications" && (
+          {/* TAB: JOB PACKAGES & PRICING */}
+          {activeTab === "packages" && (
+            <div className="space-y-8 animate-in fade-in duration-500">
+              {/* Top Header */}
+              <div className="bg-white rounded-2xl p-6 border border-[#E0E8F5] shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-black text-[#063B78] flex items-center gap-2">
+                    <span>💼 Dynamic Job Packages & Pricing Control</span>
+                    <span className="text-xs bg-amber-100 text-amber-800 border border-amber-300 font-extrabold px-3 py-1 rounded-full">
+                      Live Pricing Engine
+                    </span>
+                  </h2>
+                  <p className="text-xs font-semibold text-[#5B6B7F] mt-1">
+                    Super Admin can dynamically update prices, job credits, features, or add new packages for all employers.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <Button
+                    onClick={() => {
+                      const newPkg: JobPackagePlan = {
+                        id: `plan-${Date.now()}`,
+                        name: "Custom Corporate Plan",
+                        price: 500,
+                        jobCount: 10,
+                        badge: "PRO",
+                        features: ["10 Active Job Listings", "Priority Listing", "Direct Candidates Contact"],
+                      };
+                      setDynamicPackages([...dynamicPackages, newPkg]);
+                      toast.info("New package draft created. Click 'Save Packages' to apply.");
+                    }}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs px-4 py-2.5 rounded-xl shadow-sm"
+                  >
+                    + Add New Package
+                  </Button>
+                  <Button
+                    onClick={handleSavePackages}
+                    className="bg-[#063B78] hover:bg-[#082F63] text-white font-black text-xs px-5 py-2.5 rounded-xl shadow-md"
+                  >
+                    💾 Save Package Updates
+                  </Button>
+                </div>
+              </div>
+
+              {/* Packages Cards Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {dynamicPackages.map((pkg, idx) => (
+                  <div key={pkg.id} className="bg-white rounded-2xl border-2 border-[#E0E8F5] shadow-sm p-5 space-y-4 flex flex-col justify-between hover:border-[#063B78] transition-all">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black uppercase text-[#063B78] tracking-widest">Plan #{idx + 1}</span>
+                        <button
+                          onClick={() => {
+                            const filtered = dynamicPackages.filter(p => p.id !== pkg.id);
+                            setDynamicPackages(filtered);
+                            toast.info(`Removed ${pkg.name}`);
+                          }}
+                          className="text-xs text-red-500 hover:text-red-700 font-bold"
+                        >
+                          ✕ Delete
+                        </button>
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-bold text-[#5B6B7F] mb-1">Package Name</label>
+                        <input
+                          type="text"
+                          value={pkg.name}
+                          onChange={(e) => {
+                            const updated = [...dynamicPackages];
+                            updated[idx]!.name = e.target.value;
+                            setDynamicPackages(updated);
+                          }}
+                          className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-bold text-[#10233F]"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[10px] font-bold text-[#5B6B7F] mb-1">Price (₹)</label>
+                          <input
+                            type="number"
+                            value={pkg.price}
+                            onChange={(e) => {
+                              const updated = [...dynamicPackages];
+                              updated[idx]!.price = Number(e.target.value) || 0;
+                              setDynamicPackages(updated);
+                            }}
+                            className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-black text-[#063B78]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-bold text-[#5B6B7F] mb-1">Job Credits</label>
+                          <input
+                            type="number"
+                            value={pkg.jobCount}
+                            onChange={(e) => {
+                              const updated = [...dynamicPackages];
+                              updated[idx]!.jobCount = Number(e.target.value) || 1;
+                              setDynamicPackages(updated);
+                            }}
+                            className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-black text-amber-600"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-bold text-[#5B6B7F] mb-1">Badge Tag</label>
+                        <input
+                          type="text"
+                          value={pkg.badge || ""}
+                          placeholder="e.g. BEST VALUE / UNLIMITED"
+                          onChange={(e) => {
+                            const updated = [...dynamicPackages];
+                            updated[idx]!.badge = e.target.value;
+                            setDynamicPackages(updated);
+                          }}
+                          className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-bold text-[#5B6B7F]"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-[#E0E8F5]">
+                      <span className="text-[11px] font-bold text-[#063B78]">
+                        ⚡ ₹{pkg.price} for {pkg.jobCount >= 999 ? "Unlimited" : `${pkg.jobCount} Job Credits`}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Employer Package Purchases History */}
+              <div className="bg-white rounded-2xl border border-[#E0E8F5] shadow-sm p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-black text-[#063B78]">Employer Package Purchases History</h3>
+                    <p className="text-xs font-semibold text-[#5B6B7F]">
+                      All transactions and active package purchases made by registered employers.
+                    </p>
+                  </div>
+                  <span className="text-xs font-black bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full border border-emerald-300">
+                    {packagePurchases.length} Total Transactions
+                  </span>
+                </div>
+
+                {packagePurchases.length === 0 ? (
+                  <div className="py-8 text-center border-2 border-dashed border-[#E0E8F5] rounded-xl bg-[#F8FAFF]">
+                    <IndianRupee className="size-10 text-[#9DAEC5] mx-auto mb-2" />
+                    <p className="text-sm font-bold text-[#10233F]">No package purchases recorded yet</p>
+                    <p className="text-xs text-[#5B6B7F] mt-1">Purchases completed by employers will appear here in real-time.</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead>
+                        <tr className="bg-[#F8FAFF] border-b border-[#E0E8F5] text-[#5B6B7F] font-black uppercase tracking-wider">
+                          <th className="p-3">Transaction ID</th>
+                          <th className="p-3">Employer / User</th>
+                          <th className="p-3">Package Name</th>
+                          <th className="p-3">Amount (₹)</th>
+                          <th className="p-3">Credits Granted</th>
+                          <th className="p-3">Payment Method</th>
+                          <th className="p-3">Date</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#E0E8F5] font-semibold text-[#10233F]">
+                        {packagePurchases.map((tx) => (
+                          <tr key={tx.id} className="hover:bg-[#F8FAFF] transition-colors">
+                            <td className="p-3 font-mono text-[11px] text-[#063B78]">{tx.id}</td>
+                            <td className="p-3 font-bold">{tx.userId}</td>
+                            <td className="p-3">{tx.planName}</td>
+                            <td className="p-3 font-black text-emerald-600">₹{tx.price}</td>
+                            <td className="p-3 font-extrabold text-amber-600">{tx.jobCount >= 999 ? "Unlimited" : tx.jobCount}</td>
+                            <td className="p-3 font-bold uppercase">{tx.paymentMethod}</td>
+                            <td className="p-3 text-[#5B6B7F]">{tx.purchaseDate}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeTab !== "dashboard" && activeTab !== "landing-page" && activeTab !== "job-approvals" && activeTab !== "users-directory" && activeTab !== "job-applications" && activeTab !== "packages" && (
             <div className="h-full flex flex-col items-center justify-center text-[#9DAEC5] animate-in fade-in duration-500">
               <Settings className="size-16 mb-4 text-[#DCE5F0]" />
               <h2 className="text-xl font-black text-[#063B78] mb-2">{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Module</h2>

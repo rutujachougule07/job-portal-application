@@ -160,6 +160,51 @@ export type PackageTransaction = {
   status: "Completed" | "Pending";
 };
 
+export type JobPackagePlan = {
+  id: string;
+  name: string;
+  price: number;
+  jobCount: number;
+  description?: string;
+  popular?: boolean;
+  features: string[];
+  badge?: string;
+};
+
+export const DEFAULT_JOB_PACKAGES: JobPackagePlan[] = [
+  {
+    id: "plan-100",
+    name: "Starter Package",
+    price: 100,
+    jobCount: 1,
+    features: ["1 Active Job Posting", "Direct Candidate Contacts", "Zero Commission", "Instant Activation"],
+  },
+  {
+    id: "plan-200",
+    name: "Growth Package",
+    price: 200,
+    jobCount: 2,
+    popular: true,
+    badge: "BEST VALUE",
+    features: ["2 Active Job Postings", "Featured Badge on Listings", "Direct Candidate Calls", "Priority Support"],
+  },
+  {
+    id: "plan-400",
+    name: "Business Package",
+    price: 400,
+    jobCount: 5,
+    features: ["5 Active Job Postings", "Highlighted Listings", "Direct WhatsApp & Call Connect", "Candidate Resume Access"],
+  },
+  {
+    id: "plan-999",
+    name: "Enterprise Unlimited",
+    price: 999,
+    jobCount: 999,
+    badge: "UNLIMITED",
+    features: ["Unlimited Job Postings", "Top Priority Ranking", "Dedicated Hiring Account Manager", "Unlimited Contact Access"],
+  },
+];
+
 // INITIAL SEED DATA FOR REAL JOBS (Initially 100% empty; populated when employers post real jobs)
 const INITIAL_JOBS: JobRecord[] = [];
 
@@ -289,9 +334,17 @@ export class DataStoreManager {
     return account;
   }
 
-  public findRegisteredAccount(email: string) {
-    const cleanEmail = email.trim().toLowerCase();
-    return this.getRegisteredUserAccounts().find(u => u.email.toLowerCase() === cleanEmail);
+  public findRegisteredAccount(identifier: string) {
+    const clean = identifier.trim().toLowerCase();
+    const cleanDigits = clean.replace(/\D/g, "");
+    const list = this.getRegisteredUserAccounts();
+    return list.find((u) => {
+      const emailMatch = u.email.toLowerCase() === clean;
+      const mobileMatch =
+        (u.mobile && cleanDigits && cleanDigits.length >= 7 && u.mobile.replace(/\D/g, "").includes(cleanDigits)) ||
+        (u.email && cleanDigits && cleanDigits.length >= 7 && u.email.replace(/\D/g, "").includes(cleanDigits));
+      return emailMatch || mobileMatch;
+    });
   }
 
   // --- USER AUTHENTICATION & CURRENT SESSION ---
@@ -747,6 +800,43 @@ export class DataStoreManager {
   public getUserJobCredits(userId: string): number {
     const packages = this.getUserPackages(userId);
     return packages.reduce((acc, p) => acc + (p.jobCount || 0), 0);
+  }
+
+  /**
+   * Get dynamic job packages
+   */
+  public getJobPackages(): JobPackagePlan[] {
+    if (typeof window === "undefined") return DEFAULT_JOB_PACKAGES;
+    const raw = localStorage.getItem("realjob_db_dynamic_packages");
+    if (!raw) return DEFAULT_JOB_PACKAGES;
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_JOB_PACKAGES;
+    } catch {
+      return DEFAULT_JOB_PACKAGES;
+    }
+  }
+
+  /**
+   * Save dynamic job packages (SuperAdmin control)
+   */
+  public saveJobPackages(packages: JobPackagePlan[]): void {
+    if (typeof window === "undefined") return;
+    localStorage.setItem("realjob_db_dynamic_packages", JSON.stringify(packages));
+  }
+
+  /**
+   * Get all package purchases across platform (SuperAdmin view)
+   */
+  public getAllPackagePurchases(): PackageTransaction[] {
+    if (typeof window === "undefined") return [];
+    const raw = localStorage.getItem(this.STORAGE_KEYS.PACKAGES);
+    if (!raw) return [];
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return [];
+    }
   }
 
   /**

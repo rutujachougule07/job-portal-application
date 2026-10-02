@@ -56,41 +56,7 @@ const monthlyAnalytics = [
   { month: "Sep", workers: 0, jobs: 0, hires: 0 },
 ];
 
-const JOB_PACKAGES = [
-  {
-    id: "plan-100",
-    name: "1 Job Starter Plan",
-    price: 100,
-    jobCount: 1,
-    description: "1 Job Posting Credit for ₹100",
-    badge: "Basic Plan",
-  },
-  {
-    id: "plan-200",
-    name: "2 Jobs Standard Plan",
-    price: 200,
-    jobCount: 2,
-    description: "2 Job Posting Credits for ₹200",
-    badge: "Most Popular",
-    popular: true,
-  },
-  {
-    id: "plan-400",
-    name: "5 Jobs Pro Growth Plan",
-    price: 400,
-    jobCount: 5,
-    description: "5 Job Posting Credits for ₹400 (Save ₹100)",
-    badge: "Save ₹100",
-  },
-  {
-    id: "plan-999",
-    name: "Enterprise Unlimited Plan",
-    price: 999,
-    jobCount: 999,
-    description: "Unlimited Job Postings for 30 Days",
-    badge: "Unlimited",
-  },
-];
+
 
 function formatWaNumber(phone: string): string {
   const raw = (phone || "").trim();
@@ -212,12 +178,14 @@ function AdminDashboardPage() {
     setShowJobForm(true);
   };
 
+  const activeJobPackages = dataStore.getJobPackages();
+
   const handleActivatePackage = () => {
     if (!currentUser) {
       toast.error("User session expired. Please login again.");
       return;
     }
-    const selectedPlan = JOB_PACKAGES.find((p) => p.id === selectedPlanId) || JOB_PACKAGES[0]!;
+    const selectedPlan = activeJobPackages.find((p) => p.id === selectedPlanId) || activeJobPackages[0]!;
     const userId = currentUser.id || currentUser.email || "admin-001";
 
     setIsProcessingPackage(true);
@@ -369,7 +337,7 @@ function AdminDashboardPage() {
       j.location.toLowerCase().includes(jobSearch.toLowerCase())
   );
 
-  const activeSelectedPlan = JOB_PACKAGES.find((p) => p.id === selectedPlanId) || JOB_PACKAGES[0]!;
+  const activeSelectedPlan = activeJobPackages.find((p) => p.id === selectedPlanId) || activeJobPackages[0]!;
 
   // ── FULL PAGE: Add / Edit Job Form ──
   if (showJobForm) {
@@ -1111,7 +1079,7 @@ function AdminDashboardPage() {
 
             {/* Package Selector Cards */}
             <div className="space-y-3 my-5">
-              {JOB_PACKAGES.map((pkg) => (
+              {activeJobPackages.map((pkg) => (
                 <div
                   key={pkg.id}
                   onClick={() => setSelectedPlanId(pkg.id)}
@@ -1138,7 +1106,7 @@ function AdminDashboardPage() {
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-slate-500 font-medium mt-0.5">{pkg.description}</p>
+                      <p className="text-xs text-slate-500 font-medium mt-0.5">{pkg.description || `${pkg.jobCount >= 999 ? "Unlimited Job Postings" : `${pkg.jobCount} Job Posting Credits`}`}</p>
                     </div>
                   </div>
 
