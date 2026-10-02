@@ -273,11 +273,36 @@ export function JobCard({
   onApply?: (job: Job) => void;
 }) {
   const { t, n, lang } = useI18n();
-  const [saved, setSaved] = useState(false);
+  const currentUser = dataStore.getCurrentUser();
+  const [saved, setSaved] = useState(() => {
+    if (!currentUser || !currentUser.id) return false;
+    const allSaved = dataStore.getSavedJobs(currentUser.id);
+    return allSaved.some(s => s.jobId === job.id);
+  });
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [showCompanyModal, setShowCompanyModal] = useState(false);
   const [activeModalTab, setActiveModalTab] = useState<"company" | "job" | "openings">("company");
-  const [applied, setApplied] = useState(false);
+  const [applied, setApplied] = useState(() => {
+    if (!currentUser || !currentUser.id) return false;
+    const applications = dataStore.getJobSeekerApplications(currentUser.id);
+    return applications.some(a => a.jobId === job.id);
+  });
+
+  const handleSaveToggle = () => {
+    if (!currentUser || !currentUser.id) {
+      toast.error(lang === "mr" ? "नोकरी सेव्ह करण्यासाठी लॉग इन करा" : "Please log in to save jobs");
+      return;
+    }
+    if (saved) {
+      dataStore.removeSavedJob(currentUser.id, job.id);
+      setSaved(false);
+      toast.success(lang === "mr" ? "नोकरी सेव्हड लिस्टमधून काढली" : "Job removed from saved list");
+    } else {
+      dataStore.saveJob(currentUser.id, job.id);
+      setSaved(true);
+      toast.success(lang === "mr" ? "नोकरी सेव्ह केली" : "Job saved successfully");
+    }
+  };
 
   useEffect(() => {
     if (!showApplyModal && !showCompanyModal) return;
@@ -326,7 +351,7 @@ export function JobCard({
   const submitApplication = (e: React.FormEvent) => {
     e.preventDefault();
     const currentUser = dataStore.getCurrentUser();
-    const seekerId = currentUser ? (currentUser.email || currentUser.id || "seeker-demo") : (fieldValues['email'] || "candidate@realjob.com");
+    const seekerId = currentUser ? (currentUser.id || currentUser.email || "seeker-demo") : (fieldValues['email'] || "candidate@realjob.com");
     const seekerName = fieldValues['fullName'] || fieldValues['candidateName'] || currentUser?.fullName || "Candidate Applicant";
     const userAcc = seekerId ? dataStore.findRegisteredAccount(seekerId) : null;
     const userMobile = userAcc?.mobile || (currentUser as any)?.mobile || "";
@@ -368,7 +393,6 @@ export function JobCard({
       setApplied(true);
       toast.success(lang === "mr" ? "अर्ज यशस्वीरीत्या पाठवला!" : "Application submitted successfully!");
       setTimeout(() => {
-        setApplied(false);
         setShowApplyModal(false);
       }, 2000);
     } catch (err: any) {
@@ -413,7 +437,7 @@ export function JobCard({
 
             {/* Save / Bookmark Button */}
             <button
-              onClick={() => setSaved(!saved)}
+              onClick={(e) => { e.stopPropagation(); handleSaveToggle(); }}
               aria-label="Save Job"
               title={lang === "mr" ? "नोकरी सेव्ह करा" : "Save Job"}
               className="text-[#5B6B7F] hover:text-[#063B78] p-1.5 rounded-full hover:bg-[#F5F8FC] transition-colors"

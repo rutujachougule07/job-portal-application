@@ -104,7 +104,7 @@ function AuthPage() {
         window.localStorage.setItem("realjob-user", JSON.stringify(userObj));
         dataStore.setCurrentUser(userObj);
         toast.success("✅ खाते यशस्वीरित्या तयार झाले! Welcome to REAL JOB.");
-        const nextPath = (role === "admin" || role === "employer") ? "/admin" : "/home";
+        const nextPath = (role === "admin" || role === "employer") ? "/admin" : "/dashboard";
         navigate({ to: "/select-language", search: { redirectTo: nextPath } });
         setBusy(false);
         return;
@@ -174,7 +174,7 @@ function AuthPage() {
         window.localStorage.setItem("realjob-user", JSON.stringify(userObj));
         dataStore.setCurrentUser(userObj);
         toast.success(`✅ स्वागत आहे, ${existingAccount.fullName}! Welcome back.`);
-        const nextPath = (role === "admin" || role === "employer" || existingAccount.role === "employer") ? "/admin" : "/home";
+        const nextPath = (role === "admin" || role === "employer" || existingAccount.role === "employer") ? "/admin" : "/dashboard";
         navigate({ to: "/select-language", search: { redirectTo: nextPath } });
       } else {
         // Auto-register new user on first login with entered credentials
@@ -196,7 +196,7 @@ function AuthPage() {
         window.localStorage.setItem("realjob-user", JSON.stringify(userObj));
         dataStore.setCurrentUser(userObj);
         toast.success("✅ लॉगिन यशस्वी झाले! Welcome to REAL JOB!");
-        const nextPath = (role === "admin" || role === "employer") ? "/admin" : "/home";
+        const nextPath = (role === "admin" || role === "employer") ? "/admin" : "/dashboard";
         navigate({ to: "/select-language", search: { redirectTo: nextPath } });
       }
     } catch (err: any) {

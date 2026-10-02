@@ -57,20 +57,22 @@ export function PublicHeader() {
         <Brand className="h-14 sm:h-16 scale-105 sm:scale-110 origin-left" />
 
         {/* Desktop Navigation */}
-        <nav className="hidden items-center gap-6 xl:gap-8 lg:flex">
-          <Link to="/home" className="nav-link text-sm font-bold hover:text-[#063B78] transition-colors">
-            {t("home")}
-          </Link>
-          <Link to="/jobs" className="nav-link text-sm font-bold hover:text-[#063B78] transition-colors">
-            {t("jobs")}
-          </Link>
-          <Link to="/about" className="nav-link text-sm font-bold hover:text-[#063B78] transition-colors">
-            {t("aboutUs")}
-          </Link>
-          <Link to="/contact" className="nav-link text-sm font-bold hover:text-[#063B78] transition-colors">
-            {t("contactUs")}
-          </Link>
-        </nav>
+        {!user && (
+          <nav className="hidden items-center gap-6 xl:gap-8 lg:flex">
+            <Link to="/home" className="nav-link text-sm font-bold hover:text-[#063B78] transition-colors">
+              {t("home")}
+            </Link>
+            <Link to="/jobs" className="nav-link text-sm font-bold hover:text-[#063B78] transition-colors">
+              {t("jobs")}
+            </Link>
+            <Link to="/about" className="nav-link text-sm font-bold hover:text-[#063B78] transition-colors">
+              {t("aboutUs")}
+            </Link>
+            <Link to="/contact" className="nav-link text-sm font-bold hover:text-[#063B78] transition-colors">
+              {t("contactUs")}
+            </Link>
+          </nav>
+        )}
 
         {/* Action Buttons & Utilities */}
         <div className="flex items-center gap-2 sm:gap-2.5">
@@ -83,15 +85,13 @@ export function PublicHeader() {
                 <span>{user.fullName || user.email?.split("@")[0] || "User"}</span>
               </div>
 
-              {/* Dashboard Link (Hidden for workers) */}
-              {user.role !== "worker" && (
-                <Button asChild size="sm" className="bg-[#063B78] hover:bg-[#082F63] text-white font-extrabold text-xs h-9 px-3 rounded-lg shadow-xs">
-                  <Link to={user.role === "admin" ? "/admin" : "/employer"}>
-                    <LayoutDashboard className="size-3.5 mr-1" />
-                    Dashboard
-                  </Link>
-                </Button>
-              )}
+              {/* Dashboard Link */}
+              <Button asChild size="sm" className="bg-[#063B78] hover:bg-[#082F63] text-white font-extrabold text-xs h-9 px-3 rounded-lg shadow-xs">
+                <Link to={user.role === "admin" || user.role === "employer" ? "/admin" : "/dashboard"}>
+                  <LayoutDashboard className="size-3.5 mr-1" />
+                  Dashboard
+                </Link>
+              </Button>
 
               {/* Logout Button */}
               <Button
@@ -152,40 +152,42 @@ export function PublicHeader() {
               </div>
             )}
 
-            <nav className="grid gap-2">
-              <Link
-                to="/home"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-3 rounded-lg px-3 py-2.5 font-bold text-[#10233F] hover:bg-[#F5F8FC]"
-              >
-                <Briefcase className="size-5 text-[#063B78]" />
-                {t("home")}
-              </Link>
-              <Link
-                to="/jobs"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-3 rounded-lg px-3 py-2.5 font-bold text-[#10233F] hover:bg-[#F5F8FC]"
-              >
-                <Briefcase className="size-5 text-[#125BB5]" />
-                {t("jobs")}
-              </Link>
-              <Link
-                to="/about"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-3 rounded-lg px-3 py-2.5 font-bold text-[#10233F] hover:bg-[#F5F8FC]"
-              >
-                <Info className="size-5 text-[#125BB5]" />
-                {t("aboutUs")}
-              </Link>
-              <Link
-                to="/contact"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-3 rounded-lg px-3 py-2.5 font-bold text-[#10233F] hover:bg-[#F5F8FC]"
-              >
-                <Mail className="size-5 text-[#063B78]" />
-                {t("contactUs")}
-              </Link>
-            </nav>
+            {!user && (
+              <nav className="grid gap-2">
+                <Link
+                  to="/home"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 font-bold text-[#10233F] hover:bg-[#F5F8FC]"
+                >
+                  <Briefcase className="size-5 text-[#063B78]" />
+                  {t("home")}
+                </Link>
+                <Link
+                  to="/jobs"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 font-bold text-[#10233F] hover:bg-[#F5F8FC]"
+                >
+                  <Briefcase className="size-5 text-[#125BB5]" />
+                  {t("jobs")}
+                </Link>
+                <Link
+                  to="/about"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 font-bold text-[#10233F] hover:bg-[#F5F8FC]"
+                >
+                  <Info className="size-5 text-[#125BB5]" />
+                  {t("aboutUs")}
+                </Link>
+                <Link
+                  to="/contact"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 font-bold text-[#10233F] hover:bg-[#F5F8FC]"
+                >
+                  <Mail className="size-5 text-[#063B78]" />
+                  {t("contactUs")}
+                </Link>
+              </nav>
+            )}
 
             <div className="pt-4 border-t border-[#DCE5F0]">
               {user ? (

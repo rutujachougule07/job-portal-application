@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { dataStore } from "@/lib/data-store";
 import {
   CheckCircle2,
   Mail,
@@ -28,6 +29,21 @@ export const Route = createFileRoute("/contact")({
 
 function ContactPage() {
   const { t } = useI18n();
+  const navigate = useNavigate();
+  const user = dataStore.getCurrentUser();
+
+  useEffect(() => {
+    if (user) {
+      if (user.role === 'admin' || user.role === 'employer') {
+        navigate({ to: '/admin' });
+      } else {
+        // @ts-ignore
+        navigate({ to: '/dashboard' });
+      }
+    }
+  }, [user, navigate]);
+
+  if (user) return null; // Prevents flashing the page content before redirect
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 

@@ -1,4 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { dataStore } from "@/lib/data-store";
 import {
   ArrowRight,
   BadgeCheck,
@@ -33,6 +35,21 @@ export const Route = createFileRoute("/about")({
 
 function AboutPage() {
   const { t, n } = useI18n();
+  const navigate = useNavigate();
+  const user = dataStore.getCurrentUser();
+
+  useEffect(() => {
+    if (user) {
+      if (user.role === 'admin' || user.role === 'employer') {
+        navigate({ to: '/admin' });
+      } else {
+        // @ts-ignore
+        navigate({ to: '/dashboard' });
+      }
+    }
+  }, [user, navigate]);
+
+  if (user) return null; // Prevents flashing the page content before redirect
 
   return (
     <>
