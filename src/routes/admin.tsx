@@ -12,7 +12,6 @@ import {
   Search,
   BarChart3,
   FileText,
-  UploadCloud
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,8 +33,8 @@ import {
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
-      { title: "Admin Portal & Control Dashboard — REAL JOB" },
-      { name: "description", content: "Platform administration, user management, employer verification and job control panel." },
+      { title: "Employer Portal & Control Dashboard — REAL JOB" },
+      { name: "description", content: "Employer dashboard, job control panel, candidate application manager, and hiring portal." },
     ],
   }),
   component: AdminDashboardPage,
@@ -82,19 +81,6 @@ function AdminDashboardPage() {
   const [appSearch, setAppSearch] = useState("");
   const [filterJobId, setFilterJobId] = useState<string | null>(null);
   const [expandedApp, setExpandedApp] = useState<string | null>(null);
-  const [syncing, setSyncing] = useState(false);
-
-  const handleFirebaseSync = async () => {
-    setSyncing(true);
-    try {
-      const result = await dataStore.pushAllToFirebase();
-      toast.success(`✅ Firebase Sync Done! Jobs: ${result.jobs}, Applications: ${result.applications}`);
-    } catch (e: any) {
-      toast.error(`Firebase Sync Failed: ${e?.message || e}`);
-    } finally {
-      setSyncing(false);
-    }
-  };
 
   // User Accounts for Admin View (Live Dynamic Data)
   const [registeredUsers, setRegisteredUsers] = useState<
@@ -131,7 +117,7 @@ function AdminDashboardPage() {
   const handleUpdateAppStatus = (appId: string, status: any) => {
     dataStore.updateApplicationStatus(appId, status);
     loadAllData();
-    toast.success(`अर्जाची स्थिती '${status}' वर बदलली!`);
+    toast.success(`Application status updated to '${status}'!`);
   };
 
   // Job creation and edit form state
@@ -149,7 +135,7 @@ function AdminDashboardPage() {
   const handleAddNewJobClick = () => {
     setEditingJobId(null);
     setJobForm({
-      title: "", company: "REAL JOB Platform", category: "", subcategory: "", location: "",
+      title: "", company: currentUser?.fullName || "REAL JOB Platform", category: "", subcategory: "", location: "",
       salaryMin: "", salaryMax: "", salaryType: "Monthly",
       jobType: "Full Time", workMode: "On-site", vacancies: "5",
       education: "", experience: "", skills: "", description: "",
@@ -217,7 +203,7 @@ function AdminDashboardPage() {
         vacancies: Number(jobForm.vacancies) || 1,
         status: jobForm.status as any,
       });
-      toast.success("✅ नोकरीची माहिती यशस्वीरित्या अद्ययावत (Updated) झाली!");
+      toast.success("✅ Job posting updated successfully!");
     } else {
       const empId = currentUser?.email || currentUser?.fullName || currentUser?.id || "admin-001";
       const compName = jobForm.company || currentUser?.fullName || "Company";
@@ -244,7 +230,7 @@ function AdminDashboardPage() {
         status: jobForm.status as any,
         approvalStatus: "pending",
       });
-      toast.success("⏳ नवीन नोकरी सबमिट झाली! सुपर ॲडमिन मंजुरीनंतर (Super Admin approval) ती वेबसाईटवर दिसेल.");
+      toast.success("🎉 New job posted successfully!");
     }
     setShowJobForm(false);
     setEditingJobId(null);
@@ -261,7 +247,7 @@ function AdminDashboardPage() {
   const handleDeleteJob = (jobId: string) => {
     dataStore.deleteJob(jobId);
     loadAllData();
-    toast.success("Job posting removed by Admin!");
+    toast.success("Job posting removed!");
   };
 
   const filteredJobs = jobs.filter(
@@ -273,9 +259,8 @@ function AdminDashboardPage() {
 
   // ── FULL PAGE: Add / Edit Job Form ──
   if (showJobForm) {
-    const today = new Date().toISOString().split("T")[0];
     return (
-      <div className="fixed inset-0 z-50 bg-[#F0F4FA] overflow-y-auto flex flex-col">
+      <div className="fixed inset-0 z-50 bg-[#F0F4FA] overflow-y-auto flex flex-col font-sans">
         {/* Top Sticky Bar */}
         <div className="bg-[#021D3D] text-white px-6 py-4 flex items-center justify-between border-b border-[#0A4F9E] sticky top-0 z-10 shadow-md">
           <div className="flex items-center gap-3">
@@ -283,34 +268,19 @@ function AdminDashboardPage() {
               onClick={() => setShowJobForm(false)}
               className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-bold transition-all flex items-center gap-1"
             >
-              ← मागे जा (Back)
+              ← Back to Dashboard
             </button>
             <h1 className="text-base font-black text-white">
-              {editingJobId ? "✏️ नोकरीची माहिती संपादीत करा (Edit Job Posting)" : "💼 नवीन नोकरी पोस्ट करा (Post New Job)"}
+              {editingJobId ? "✏️ Edit Job Posting" : "💼 Post New Job"}
             </h1>
           </div>
           <span className="text-xs font-bold text-[#FFC400] bg-white/10 px-3 py-1 rounded-full">
-            100% नि:शुल्क व थेट नोकरी (Zero Commission)
+            Direct Hiring (Zero Commission)
           </span>
         </div>
 
         {/* Form Container */}
         <div className="max-w-5xl w-full mx-auto p-4 sm:p-8 flex-1">
-          {/* Form Header Steps Bar */}
-          <div className="bg-white rounded-2xl p-4 border border-[#E0E8F5] shadow-sm mb-6">
-            <div className="flex items-center justify-between text-xs font-black text-[#063B78]">
-              <span className="flex items-center gap-1.5"><span className="size-5 rounded-full bg-[#063B78] text-white flex items-center justify-center text-[10px]">1</span> Basic Details</span>
-              <span className="text-[#9DAEC5]">—</span>
-              <span className="flex items-center gap-1.5"><span className="size-5 rounded-full bg-[#063B78] text-white flex items-center justify-center text-[10px]">2</span> Requirements</span>
-              <span className="text-[#9DAEC5]">—</span>
-              <span className="flex items-center gap-1.5"><span className="size-5 rounded-full bg-[#063B78] text-white flex items-center justify-center text-[10px]">3</span> Salary & Work</span>
-              <span className="text-[#9DAEC5]">—</span>
-              <span className="flex items-center gap-1.5"><span className="size-5 rounded-full bg-[#063B78] text-white flex items-center justify-center text-[10px]">4</span> Preferences</span>
-              <span className="text-[#9DAEC5]">—</span>
-              <span className="flex items-center gap-1.5"><span className="size-5 rounded-full bg-[#063B78] text-white flex items-center justify-center text-[10px]">5</span> Application</span>
-            </div>
-          </div>
-
           <form onSubmit={handlePublishJob} className="space-y-6 pb-12">
             {/* Section 1 */}
             <div className="bg-white rounded-2xl border border-[#E0E8F5] shadow-sm overflow-hidden">
@@ -318,57 +288,46 @@ function AdminDashboardPage() {
                 <span className="size-7 rounded-xl bg-[#063B78] text-white flex items-center justify-center text-xs font-black">1</span>
                 <h2 className="text-sm font-black text-[#10233F]">Basic Job Details</h2>
               </div>
-              <div className="p-5 space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[10px] font-black text-[#5B6B7F] uppercase mb-1.5">Company Name *</label>
-                    <input required value={jobForm.company} onChange={e => setJ("company", e.target.value)} placeholder="e.g. Tata Motors / Real Job Platform" className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F] focus:outline-none focus:border-[#063B78]" />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-[#5B6B7F] uppercase mb-1.5">Job Title *</label>
-                    <input required value={jobForm.title} onChange={e => setJ("title", e.target.value)} placeholder="e.g. Senior CNC Machine Operator" className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F] focus:outline-none focus:border-[#063B78]" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[10px] font-black text-[#5B6B7F] uppercase mb-1.5">Category *</label>
-                    <input required list="categories-list" value={jobForm.category} onChange={e => setJ("category", e.target.value)} placeholder="Type or select category..." className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F] focus:outline-none focus:border-[#063B78]" />
-                    <datalist id="categories-list">
-                      <option value="Manufacturing & Industrial" />
-                      <option value="Construction & Building" />
-                      <option value="Healthcare & Nursing" />
-                      <option value="Logistics & Transport" />
-                      <option value="Engineering & Technical" />
-                      <option value="Retail & Sales" />
-                      <option value="Hotel & Hospitality" />
-                      <option value="Security & Services" />
-                      <option value="IT & Software" />
-                    </datalist>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-[#5B6B7F] uppercase mb-1.5">Subcategory</label>
-                    <input list="subcategories-list" value={jobForm.subcategory} onChange={e => setJ("subcategory", e.target.value)} placeholder="Type or select subcategory..." className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F] focus:outline-none focus:border-[#063B78]" />
-                    <datalist id="subcategories-list">
-                      <option value="Machine Operator" />
-                      <option value="Site Supervisor" />
-                      <option value="Nurse" />
-                      <option value="Delivery Executive" />
-                      <option value="Software Developer" />
-                    </datalist>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[10px] font-black text-[#5B6B7F] uppercase mb-1.5">Location (City/District) *</label>
-                    <input required value={jobForm.location} onChange={e => setJ("location", e.target.value)} placeholder="e.g. Chakan, Pune / MIDC Kolhapur" className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F] focus:outline-none focus:border-[#063B78]" />
-                  </div>
-                </div>
-
+              <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] font-black text-[#5B6B7F] uppercase mb-1.5">Job Description *</label>
-                  <textarea required rows={3} value={jobForm.description} onChange={e => setJ("description", e.target.value)} placeholder="Describe main duties, responsibilities, work schedule, shift timings..." className="w-full p-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F] focus:outline-none focus:border-[#063B78]" />
+                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Job Title *</label>
+                  <Input
+                    required
+                    value={jobForm.title}
+                    onChange={(e) => setJ("title", e.target.value)}
+                    placeholder="e.g. Senior Software Engineer / Store Manager"
+                    className="text-xs font-semibold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Company Name *</label>
+                  <Input
+                    required
+                    value={jobForm.company}
+                    onChange={(e) => setJ("company", e.target.value)}
+                    placeholder="e.g. Acme Corporation"
+                    className="text-xs font-semibold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Category *</label>
+                  <Input
+                    required
+                    value={jobForm.category}
+                    onChange={(e) => setJ("category", e.target.value)}
+                    placeholder="e.g. Information Technology / Retail"
+                    className="text-xs font-semibold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Location *</label>
+                  <Input
+                    required
+                    value={jobForm.location}
+                    onChange={(e) => setJ("location", e.target.value)}
+                    placeholder="e.g. Mumbai, Pune, Hybrid"
+                    className="text-xs font-semibold"
+                  />
                 </div>
               </div>
             </div>
@@ -377,27 +336,75 @@ function AdminDashboardPage() {
             <div className="bg-white rounded-2xl border border-[#E0E8F5] shadow-sm overflow-hidden">
               <div className="flex items-center gap-3 px-5 py-3 bg-[#F8FAFF] border-b border-[#E0E8F5]">
                 <span className="size-7 rounded-xl bg-[#063B78] text-white flex items-center justify-center text-xs font-black">2</span>
-                <h2 className="text-sm font-black text-[#10233F]">Candidate Requirements</h2>
+                <h2 className="text-sm font-black text-[#10233F]">Salary & Work Mode</h2>
               </div>
-              <div className="p-5 space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[10px] font-black text-[#5B6B7F] uppercase mb-1.5">Education Required *</label>
-                    <select value={jobForm.education} onChange={e => setJ("education", e.target.value)} className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F] focus:outline-none focus:border-[#063B78]">
-                      <option value="">Select Education</option>
-                      <option>10th Pass</option><option>12th Pass</option><option>ITI Diploma</option>
-                      <option>Polytechnic Diploma</option><option>Graduate / BE / B.Tech</option><option>Post Graduate</option>
-                      <option>No Formal Education Required</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-[#5B6B7F] uppercase mb-1.5">Experience Required *</label>
-                    <select value={jobForm.experience} onChange={e => setJ("experience", e.target.value)} className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F] focus:outline-none focus:border-[#063B78]">
-                      <option value="">Select Experience</option>
-                      <option>Fresher (0 Years)</option><option>1 - 2 Years</option><option>3 - 5 Years</option>
-                      <option>5 - 8 Years</option><option>8+ Years</option>
-                    </select>
-                  </div>
+              <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Min Salary (₹)</label>
+                  <Input
+                    type="number"
+                    value={jobForm.salaryMin}
+                    onChange={(e) => setJ("salaryMin", e.target.value)}
+                    placeholder="e.g. 25000"
+                    className="text-xs font-semibold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Max Salary (₹)</label>
+                  <Input
+                    type="number"
+                    value={jobForm.salaryMax}
+                    onChange={(e) => setJ("salaryMax", e.target.value)}
+                    placeholder="e.g. 45000"
+                    className="text-xs font-semibold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Salary Period</label>
+                  <select
+                    value={jobForm.salaryType}
+                    onChange={(e) => setJ("salaryType", e.target.value)}
+                    className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F]"
+                  >
+                    <option value="Monthly">Monthly</option>
+                    <option value="Yearly">Yearly</option>
+                    <option value="Daily">Daily Wage</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Job Type</label>
+                  <select
+                    value={jobForm.jobType}
+                    onChange={(e) => setJ("jobType", e.target.value)}
+                    className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F]"
+                  >
+                    <option value="Full Time">Full Time</option>
+                    <option value="Part Time">Part Time</option>
+                    <option value="Contract">Contract</option>
+                    <option value="Internship">Internship</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Work Mode</label>
+                  <select
+                    value={jobForm.workMode}
+                    onChange={(e) => setJ("workMode", e.target.value)}
+                    className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F]"
+                  >
+                    <option value="On-site">On-site</option>
+                    <option value="Work From Home">Work From Home</option>
+                    <option value="Hybrid">Hybrid</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Vacancies</label>
+                  <Input
+                    type="number"
+                    value={jobForm.vacancies}
+                    onChange={(e) => setJ("vacancies", e.target.value)}
+                    placeholder="5"
+                    className="text-xs font-semibold"
+                  />
                 </div>
               </div>
             </div>
@@ -406,109 +413,38 @@ function AdminDashboardPage() {
             <div className="bg-white rounded-2xl border border-[#E0E8F5] shadow-sm overflow-hidden">
               <div className="flex items-center gap-3 px-5 py-3 bg-[#F8FAFF] border-b border-[#E0E8F5]">
                 <span className="size-7 rounded-xl bg-[#063B78] text-white flex items-center justify-center text-xs font-black">3</span>
-                <h2 className="text-sm font-black text-[#10233F]">Salary & Work Details</h2>
+                <h2 className="text-sm font-black text-[#10233F]">Job Description & Requirements</h2>
               </div>
               <div className="p-5 space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-[10px] font-black text-[#5B6B7F] uppercase mb-1.5">Min Salary (₹)</label>
-                    <input type="number" value={jobForm.salaryMin} onChange={e => setJ("salaryMin", e.target.value)} placeholder="e.g. 18000" className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F] focus:outline-none focus:border-[#063B78]" />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-[#5B6B7F] uppercase mb-1.5">Max Salary (₹)</label>
-                    <input type="number" value={jobForm.salaryMax} onChange={e => setJ("salaryMax", e.target.value)} placeholder="e.g. 25000" className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F] focus:outline-none focus:border-[#063B78]" />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-[#5B6B7F] uppercase mb-1.5">Salary Period</label>
-                    <select value={jobForm.salaryType} onChange={e => setJ("salaryType", e.target.value)} className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F] focus:outline-none focus:border-[#063B78]">
-                      <option value="Monthly">Per Month (दरमहा)</option>
-                      <option value="Daily">Per Day (दररोज)</option>
-                      <option value="Yearly">Per Year (वार्षिक)</option>
-                    </select>
-                  </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Job Description *</label>
+                  <textarea
+                    required
+                    rows={4}
+                    value={jobForm.description}
+                    onChange={(e) => setJ("description", e.target.value)}
+                    placeholder="Enter detailed job description, duties, and candidate expectations..."
+                    className="w-full p-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F] focus:outline-none focus:border-[#063B78]"
+                  />
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[10px] font-black text-[#5B6B7F] uppercase mb-1.5">Job Type *</label>
-                    <select value={jobForm.jobType} onChange={e => setJ("jobType", e.target.value)} className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F] focus:outline-none focus:border-[#063B78]">
-                      <option>Full Time</option><option>Part Time</option><option>Contract</option>
-                      <option>Daily Wage</option><option>Internship</option>
-                    </select>
+                    <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Required Qualification</label>
+                    <Input
+                      value={jobForm.education}
+                      onChange={(e) => setJ("education", e.target.value)}
+                      placeholder="e.g. Graduate / B.E. / Any Degree"
+                      className="text-xs font-semibold"
+                    />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-[#5B6B7F] uppercase mb-1.5">Work Mode *</label>
-                    <select value={jobForm.workMode} onChange={e => setJ("workMode", e.target.value)} className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F] focus:outline-none focus:border-[#063B78]">
-                      <option>On-site</option><option>Work From Home</option><option>Hybrid</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-[#5B6B7F] uppercase mb-1.5">No. of Openings *</label>
-                    <input required type="number" min="1" value={jobForm.vacancies} onChange={e => setJ("vacancies", e.target.value)} className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F] focus:outline-none focus:border-[#063B78]" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Section 4 */}
-            <div className="bg-white rounded-2xl border border-[#E0E8F5] shadow-sm overflow-hidden">
-              <div className="flex items-center gap-3 px-5 py-3 bg-[#F8FAFF] border-b border-[#E0E8F5]">
-                <span className="size-7 rounded-xl bg-[#063B78] text-white flex items-center justify-center text-xs font-black">4</span>
-                <h2 className="text-sm font-black text-[#10233F]">Preferences & Benefits</h2>
-              </div>
-              <div className="p-5 space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-[10px] font-black text-[#5B6B7F] uppercase mb-1.5">Gender Preference</label>
-                    <select value={(jobForm as any).genderPreference || "Any"} onChange={e => setJ("genderPreference", e.target.value)} className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F] focus:outline-none focus:border-[#063B78]">
-                      <option value="Any">Any (पुरुष व महिला दोन्ही)</option>
-                      <option value="Male">Male Only (केवळ पुरुष)</option>
-                      <option value="Female">Female Only (केवळ महिला)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-[#5B6B7F] uppercase mb-1.5">Age Limit (Optional)</label>
-                    <div className="flex items-center gap-2">
-                      <input type="number" value={(jobForm as any).ageMin || ""} onChange={e => setJ("ageMin", e.target.value)} placeholder="Min Age" className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold focus:outline-none focus:border-[#063B78]" />
-                      <span className="text-[#9DAEC5] font-bold shrink-0">–</span>
-                      <input type="number" value={(jobForm as any).ageMax || ""} onChange={e => setJ("ageMax", e.target.value)} placeholder="Max Age" className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold focus:outline-none focus:border-[#063B78]" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-[#5B6B7F] uppercase mb-1.5">Languages Required</label>
-                    <input value={(jobForm as any).languages || ""} onChange={e => setJ("languages", e.target.value)} placeholder="e.g. English, Hindi, Marathi" className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F] focus:outline-none focus:border-[#063B78]" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Section 5 */}
-            <div className="bg-white rounded-2xl border border-[#E0E8F5] shadow-sm overflow-hidden">
-              <div className="flex items-center gap-3 px-5 py-3 bg-[#F8FAFF] border-b border-[#E0E8F5]">
-                <span className="size-7 rounded-xl bg-[#063B78] text-white flex items-center justify-center text-xs font-black">5</span>
-                <h2 className="text-sm font-black text-[#10233F]">Application Details</h2>
-              </div>
-              <div className="p-5 space-y-4">
-                <div className="grid grid-cols-4 gap-4">
-                  <div>
-                    <label className="block text-[10px] font-black text-[#5B6B7F] uppercase mb-1.5">Application Deadline *</label>
-                    <input required type="date" min={today} value={(jobForm as any).deadline || ""} onChange={e => setJ("deadline", e.target.value)} className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F] focus:outline-none focus:border-[#063B78]" />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-[#5B6B7F] uppercase mb-1.5">Application Method *</label>
-                    <select value={(jobForm as any).applicationMethod || ""} onChange={e => setJ("applicationMethod", e.target.value)} className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F] focus:outline-none focus:border-[#063B78]">
-                      <option value="">Select Method</option>
-                      <option>Apply via Portal</option><option>Apply via WhatsApp</option>
-                      <option>Walk-in Interview</option><option>Call to Apply</option><option>Email CV</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-[#5B6B7F] uppercase mb-1.5">Recruiter Email *</label>
-                    <input type="email" value={(jobForm as any).recruiterEmail || ""} onChange={e => setJ("recruiterEmail", e.target.value)} placeholder="e.g. recruiter@company.com" className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F] focus:outline-none focus:border-[#063B78]" />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-[#5B6B7F] uppercase mb-1.5">Recruiter Phone (Optional)</label>
-                    <input type="tel" value={(jobForm as any).recruiterPhone || ""} onChange={e => setJ("recruiterPhone", e.target.value)} placeholder="e.g. 98765 43210" className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F] focus:outline-none focus:border-[#063B78]" />
+                    <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Required Experience</label>
+                    <Input
+                      value={jobForm.experience}
+                      onChange={(e) => setJ("experience", e.target.value)}
+                      placeholder="e.g. 1 - 3 Years"
+                      className="text-xs font-semibold"
+                    />
                   </div>
                 </div>
               </div>
@@ -519,10 +455,10 @@ function AdminDashboardPage() {
               <p className="text-[10px] text-[#9DAEC5] font-semibold">* Required fields must be filled before submitting</p>
               <div className="flex gap-3">
                 <button type="button" onClick={() => setShowJobForm(false)} className="px-5 py-2.5 rounded-xl border border-[#DCE5F0] text-xs font-bold text-[#5B6B7F] hover:bg-[#F5F8FC] transition-all">
-                  रद्द करा (Cancel)
+                  Cancel
                 </button>
                 <button type="submit" className="px-7 py-2.5 rounded-xl bg-gradient-to-r from-[#063B78] to-[#0A4F9E] text-white font-black text-xs hover:opacity-90 transition-all shadow-md shadow-[#063B78]/20 flex items-center gap-1.5">
-                  {editingJobId ? "✦ माहिती अद्ययावत करा (Update Job)" : "✦ नोकरी प्रकाशित करा (Publish Job)"}
+                  {editingJobId ? "✦ Update Job Posting" : "✦ Publish Job"}
                 </button>
               </div>
             </div>
@@ -533,16 +469,14 @@ function AdminDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F0F4FA]">
+    <div className="min-h-screen bg-[#F0F4FA] font-sans">
 
       {/* Top Admin Navigation Header */}
       <header className="sticky top-0 z-40 bg-gradient-to-r from-[#021D3D] via-[#063B78] to-[#0A4F9E] text-white shadow-xl">
-        {/* Gold accent top line */}
         <div className="h-0.5 w-full bg-gradient-to-r from-[#FFC400] via-[#FFD84D] to-[#FFA500]" />
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
           {/* Left: Logo + Title */}
           <div className="flex items-center gap-3">
-            {/* Logo box */}
             <div className="flex flex-col items-center justify-center size-10 rounded-xl bg-white shadow-md shrink-0">
               <span className="text-[9px] font-black text-[#063B78] leading-none">REAL</span>
               <span className="text-[9px] font-black text-[#FFC400] leading-none">JOB</span>
@@ -551,42 +485,39 @@ function AdminDashboardPage() {
               <div className="text-sm font-black text-white leading-tight">REAL JOB</div>
               <div className="flex items-center gap-1.5 text-[10px] font-bold text-[#FFC400]">
                 <ShieldCheck className="size-3" />
-                ॲडमिन कंट्रोल पोर्टल
+                Employer Control Portal
               </div>
             </div>
 
-            {/* Separator */}
             <div className="hidden md:block w-px h-8 bg-white/20 mx-2" />
 
-            {/* Platform status badge */}
             <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 border border-white/20 text-[10px] font-black text-white">
               <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
-              Super Admin Control
+              Verified Employer Account
             </div>
           </div>
 
           {/* Right: Actions */}
           <div className="flex items-center gap-2 sm:gap-3">
-
             <Button
               asChild
               variant="ghost"
               size="sm"
               className="hidden sm:flex border border-white/30 text-white hover:bg-white/15 font-bold text-xs h-8 px-3 rounded-lg"
             >
-              <Link to="/home">🌐 मुख्य साईट</Link>
+              <Link to="/home">🌐 Main Website</Link>
             </Button>
             <Button
               onClick={() => {
                 window.localStorage.removeItem("realjob-user");
                 dataStore.setCurrentUser(null);
-                toast.info("Logged out from Admin Dashboard");
+                toast.info("Logged out from Dashboard");
                 window.location.href = "/";
               }}
               size="sm"
               className="bg-red-500 hover:bg-red-600 text-white font-extrabold text-xs h-8 px-3 rounded-lg shadow-md"
             >
-              लॉग आउट
+              Logout
             </Button>
           </div>
         </div>
@@ -597,42 +528,34 @@ function AdminDashboardPage() {
         {/* Admin Header Title */}
         <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-[#DCE5F0] shadow-sm">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-[#063B78]/10 px-3 py-1 text-xs font-black text-[#063B78] mb-2">
+            <div className="inline-flex items-center gap-2 rounded-full bg-[#063B78]/10 px-3.5 py-1 text-xs font-black text-[#063B78] mb-2">
               <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-              {currentUser?.fullName ? `कंपनी / ॲडमिन खाते: ${currentUser.fullName}` : `REAL JOB PLATFORM SYSTEM ONLINE`}
+              {currentUser?.fullName ? `Employer Account: ${currentUser.fullName}` : `REAL JOB PLATFORM ONLINE`}
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-[#10233F]">
-              {currentUser?.fullName ? `${currentUser.fullName} - डॅशबोर्ड` : "ॲडमिन कंट्रोल सेंटर (Admin Control Dashboard)"}
+              {currentUser?.fullName ? `${currentUser.fullName} - Dashboard` : "Employer Control Dashboard"}
             </h1>
             <p className="text-xs sm:text-sm font-semibold text-[#5B6B7F] mt-1">
-              ई-मेल: <span className="font-bold text-[#063B78]">{currentUser?.email}</span> | पोस्ट केलेल्या नोकऱ्या, कामगार पडताळणी आणि अर्ज व्यवस्थापन.
+              Email: <span className="font-bold text-[#063B78]">{currentUser?.email}</span> | Manage job postings, candidate verification, and applications.
             </p>
           </div>
 
           <div className="flex flex-wrap gap-2">
             <Button
-              onClick={handleFirebaseSync}
-              disabled={syncing}
-              className="bg-orange-500 hover:bg-orange-600 text-white text-xs font-black px-4 py-2 disabled:opacity-60"
-            >
-              <UploadCloud className="size-4 mr-1" />
-              {syncing ? "Syncing..." : "🔥 Firebase Sync"}
-            </Button>
-            <Button
               onClick={handleAddNewJobClick}
-              className="btn-yellow text-xs font-black px-4 py-2"
+              className="btn-yellow text-xs font-black px-5 py-2.5 shadow-md"
             >
-              <Plus className="size-4 mr-1" /> नवीन जॉब जोडा (Add New Job)
+              <Plus className="size-4 mr-1.5" /> + Post New Job
             </Button>
           </div>
         </div>
 
-        {/* Tab Buttons Navigation - ONLY 3 TABS */}
+        {/* Tab Buttons Navigation */}
         <div className="flex flex-wrap items-center gap-2 mb-8 pb-3 border-b border-[#DCE5F0]">
           {[
-            { id: "overview", label: "सारांश (Overview)", icon: BarChart3 },
-            { id: "jobs", label: "नोकरी पोस्टिंग्स (Jobs)", icon: BriefcaseBusiness },
-            { id: "applications", label: `अर्ज आलेले कामगार (${applications.length})`, icon: FileText },
+            { id: "overview", label: "Overview", icon: BarChart3 },
+            { id: "jobs", label: "Job Listings", icon: BriefcaseBusiness },
+            { id: "applications", label: `Job Applications (${applications.length})`, icon: FileText },
           ].map((t) => (
             <button
               key={t.id}
@@ -654,21 +577,21 @@ function AdminDashboardPage() {
             {/* Top Stat Cards Grid */}
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <StatCard
-                label="एकूण नोंदणीकृत कामगार (Total Registered Workers)"
+                label="Total Registered Candidates"
                 value={registeredUsers.filter((u) => u.role === "worker").length.toString()}
-                change="थेट नोंदणीकृत कामगार"
+                change="Verified Candidates"
                 icon={Users}
               />
               <StatCard
-                label="सक्रिय नोकऱ्या (Active Jobs)"
+                label="Active Job Listings"
                 value={jobs.filter((j) => j.status === "Active").length.toString()}
-                change="थेट प्लॅटफॉर्मवर"
+                change="Live on Platform"
                 icon={BriefcaseBusiness}
               />
               <StatCard
-                label="एकूण आलेले अर्ज (Total Applications)"
+                label="Total Applications Received"
                 value={applications.length.toString()}
-                change="थेट कामगारांचे अर्ज"
+                change="Candidate Applications"
                 icon={FileText}
               />
             </div>
@@ -679,10 +602,10 @@ function AdminDashboardPage() {
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h2 className="text-lg font-black text-[#10233F]">
-                      प्लॅटफॉर्म वाढ आणि नोकरी अर्ज (Platform Growth & Applications)
+                      Platform Growth & Applications
                     </h2>
                     <p className="text-xs font-semibold text-[#5B6B7F]">
-                      महिनानिहाय कामगार नोंदणी आणि भरती डेटा
+                      Monthly candidate registration and hiring metrics
                     </p>
                   </div>
                   <Badge className="bg-[#063B78] text-white font-bold">2026 Live</Badge>
@@ -715,10 +638,10 @@ function AdminDashboardPage() {
               <div className="rounded-2xl border border-[#DCE5F0] bg-white p-6 shadow-sm space-y-6 flex flex-col justify-between">
                 <div>
                   <h2 className="text-lg font-black text-[#10233F]">
-                    त्वरित कृती (Quick Controls)
+                    Quick Actions
                   </h2>
                   <p className="text-xs font-semibold text-[#5B6B7F] mt-1">
-                    जॉब लिस्ट व अर्जांचे नियंत्रण करण्यासाठी खालील बटन्स वापरा.
+                    Manage job listings and candidate applications using quick controls.
                   </p>
                 </div>
 
@@ -727,21 +650,21 @@ function AdminDashboardPage() {
                     onClick={handleAddNewJobClick}
                     className="w-full btn-yellow text-xs font-black py-3"
                   >
-                    + नवीन जॉब पोस्ट करा (Post New Job)
+                    + Post New Job
                   </Button>
                   <Button
                     onClick={() => setActiveTab("jobs")}
                     variant="outline"
                     className="w-full border-[#063B78] text-[#063B78] font-bold text-xs py-3"
                   >
-                    💼 सर्व जॉब पोस्टिंग्स नियंत्रण
+                    💼 Manage All Job Listings
                   </Button>
                   <Button
                     onClick={() => setActiveTab("applications")}
                     variant="outline"
                     className="w-full border-[#063B78] text-[#063B78] font-bold text-xs py-3"
                   >
-                    📄 आलेले सर्व कामगार अर्ज पहा ({applications.length})
+                    📄 View All Applications ({applications.length})
                   </Button>
                 </div>
               </div>
@@ -755,17 +678,17 @@ function AdminDashboardPage() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
                 <h2 className="text-xl font-black text-[#10233F]">
-                  नोकरी पोस्टिंग्स नियंत्रण (All Platform Job Listings)
+                  All Platform Job Listings
                 </h2>
                 <p className="text-xs font-semibold text-[#5B6B7F]">
-                  एकूण {jobs.length} नोकऱ्या उपलब्ध आहेत. माहिती अपडेट करा किंवा डिलीट करा.
+                  Total {jobs.length} job listings available. Manage or update job posts.
                 </p>
               </div>
 
               <div className="w-full sm:w-72 relative">
                 <Search className="absolute left-3 top-3 size-4 text-[#5B6B7F]" />
                 <Input
-                  placeholder="नोकरी / कंपनी / शहर शोधा..."
+                  placeholder="Search job title, company, or location..."
                   value={jobSearch}
                   onChange={(e) => setJobSearch(e.target.value)}
                   className="pl-9 text-xs font-bold"
@@ -777,13 +700,13 @@ function AdminDashboardPage() {
               <table className="w-full text-left text-xs">
                 <thead className="bg-[#063B78] text-white font-black uppercase">
                   <tr>
-                    <th className="p-3.5">नोकरी शीर्षक (Title)</th>
-                    <th className="p-3.5">कंपनी (Company)</th>
-                    <th className="p-3.5">ठिकाण & पगार (Location & Salary)</th>
-                    <th className="p-3.5">जागा (Vacancies)</th>
-                    <th className="p-3.5">मंजुरी (Approval)</th>
-                    <th className="p-3.5">स्थिती (Status)</th>
-                    <th className="p-3.5 text-right">कृती (Actions)</th>
+                    <th className="p-3.5">Job Title</th>
+                    <th className="p-3.5">Company</th>
+                    <th className="p-3.5">Location & Salary</th>
+                    <th className="p-3.5">Vacancies</th>
+                    <th className="p-3.5">Approval</th>
+                    <th className="p-3.5">Status</th>
+                    <th className="p-3.5 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#DCE5F0] font-semibold text-[#10233F]">
@@ -830,7 +753,7 @@ function AdminDashboardPage() {
                             className="bg-[#063B78] text-white font-extrabold text-[11px] hover:bg-[#0A4F9E]"
                           >
                             <Users className="size-3.5 mr-1" />
-                            अर्ज पहा ({applications.filter((a) => a.jobId === j.id).length})
+                            View Applications ({applications.filter((a) => a.jobId === j.id).length})
                           </Button>
                           <Button
                             size="sm"
@@ -838,7 +761,7 @@ function AdminDashboardPage() {
                             onClick={() => handleEditJobClick(j)}
                             className="font-extrabold text-[11px] border-[#063B78] text-[#063B78] hover:bg-[#F0F5FF]"
                           >
-                            <Edit className="size-3.5 mr-1" /> एडिट (Edit)
+                            <Edit className="size-3.5 mr-1" /> Edit
                           </Button>
                           <Button
                             size="sm"
@@ -846,7 +769,7 @@ function AdminDashboardPage() {
                             onClick={() => handleToggleJobStatus(j.id, j.status)}
                             className="font-extrabold text-[11px] border-gray-400 text-gray-700"
                           >
-                            {j.status === "Active" ? "बंद करा (Close)" : "सुरू करा (Activate)"}
+                            {j.status === "Active" ? "Close Job" : "Activate Job"}
                           </Button>
                           <Button
                             size="sm"
@@ -862,8 +785,8 @@ function AdminDashboardPage() {
                   ))}
                   {filteredJobs.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="p-8 text-center text-xs font-bold text-[#5B6B7F] bg-[#F8FAFF]">
-                        अद्याप एकही नोकरी पोस्ट केलेली नाही. (No jobs posted yet)
+                      <td colSpan={7} className="p-8 text-center text-xs font-bold text-[#5B6B7F] bg-[#F8FAFF]">
+                        No job listings posted yet.
                       </td>
                     </tr>
                   )}
@@ -879,10 +802,10 @@ function AdminDashboardPage() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
                 <h2 className="text-xl font-black text-[#10233F]">
-                  नोकरीसाठी आलेले अर्ज (Job Applications & Applicants)
+                  Job Applications & Applicants
                 </h2>
                 <p className="text-xs font-semibold text-[#5B6B7F]">
-                  एकूण {applications.length} कामगारांनी नोकरीसाठी अर्ज केले आहेत. थेट संपर्क करा किंवा स्थिती बदला.
+                  Total {applications.length} candidates applied. Contact candidates directly or update application status.
                 </p>
               </div>
 
@@ -894,13 +817,13 @@ function AdminDashboardPage() {
                     onClick={() => setFilterJobId(null)}
                     className="text-xs font-bold border-[#063B78] text-[#063B78]"
                   >
-                    ✕ सर्व जॉब्जचे अर्ज दाखवा
+                    ✕ Show All Applications
                   </Button>
                 )}
                 <div className="w-full sm:w-64 relative">
                   <Search className="absolute left-3 top-3 size-4 text-[#5B6B7F]" />
                   <Input
-                    placeholder="उमेदवार नाव / नोकरी / संपर्क शोधा..."
+                    placeholder="Search candidate name, job, or phone..."
                     value={appSearch}
                     onChange={(e) => setAppSearch(e.target.value)}
                     className="pl-9 text-xs font-bold"
@@ -913,12 +836,12 @@ function AdminDashboardPage() {
               <table className="w-full text-left text-xs">
                 <thead className="bg-[#063B78] text-white font-black uppercase">
                   <tr>
-                    <th className="p-3.5">उमेदवार नाव (Applicant Name)</th>
-                    <th className="p-3.5">अर्ज केलेली नोकरी (Applied Job)</th>
-                    <th className="p-3.5">संपर्क पर्याय (Direct Contact)</th>
-                    <th className="p-3.5">अर्जाची तारीख (Applied Date)</th>
-                    <th className="p-3.5">सध्याची स्थिती (Status)</th>
-                    <th className="p-3.5 text-right">तपशील (Details)</th>
+                    <th className="p-3.5">Candidate Name</th>
+                    <th className="p-3.5">Applied Job</th>
+                    <th className="p-3.5">Direct Contact</th>
+                    <th className="p-3.5">Applied Date</th>
+                    <th className="p-3.5">Status</th>
+                    <th className="p-3.5 text-right">Details</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#DCE5F0] font-semibold text-[#10233F]">
@@ -947,10 +870,10 @@ function AdminDashboardPage() {
                                 href={`tel:${formatCallNumber(a.candidateMobile)}`}
                                 className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-bold text-[10px] hover:bg-emerald-700 transition-all flex items-center gap-1"
                               >
-                                📞 कॉल करा
+                                📞 Call Candidate
                               </a>
                               <a
-                                href={`https://wa.me/${formatWaNumber(a.candidateMobile)}?text=${encodeURIComponent(`नमस्कार ${a.candidateName}, तुम्ही ${a.jobTitle} या नोकरीसाठी अर्ज केला होता. त्यासंदर्भात संपर्क करत आहोत.`)}`}
+                                href={`https://wa.me/${formatWaNumber(a.candidateMobile)}?text=${encodeURIComponent(`Hello ${a.candidateName}, regarding your application for ${a.jobTitle}.`)}`}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="px-2.5 py-1 rounded-lg bg-green-600 text-white font-bold text-[10px] hover:bg-green-700 transition-all flex items-center gap-1"
@@ -981,7 +904,7 @@ function AdminDashboardPage() {
                               onClick={() => setExpandedApp(expandedApp === a.id ? null : a.id)}
                               className="text-[10px] h-7 px-3 border-[#063B78] text-[#063B78] hover:bg-[#063B78] hover:text-white"
                             >
-                              {expandedApp === a.id ? "बंद करा" : "सविस्तर पहा"}
+                              {expandedApp === a.id ? "Hide Details" : "View Details"}
                             </Button>
                           </td>
                         </tr>
@@ -991,7 +914,7 @@ function AdminDashboardPage() {
                               <div className="bg-white p-5 rounded-xl border border-[#E2E8F0] shadow-sm">
                                 <h4 className="font-bold text-[#10233F] mb-4 border-b pb-2 flex items-center gap-2">
                                   <FileText className="size-4 text-[#063B78]" />
-                                  उमेदवाराची सविस्तर माहिती (Candidate Details)
+                                  Candidate Application Details
                                 </h4>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                                   {a.fieldValues && Object.entries(a.fieldValues).map(([key, value]) => (
@@ -1007,7 +930,7 @@ function AdminDashboardPage() {
                                     </div>
                                   ))}
                                   {(!a.fieldValues && !a.customAnswers) && (
-                                    <div className="text-sm font-semibold text-[#5B6B7F]">अधिक माहिती उपलब्ध नाही.</div>
+                                    <div className="text-sm font-semibold text-[#5B6B7F]">No additional application details provided.</div>
                                   )}
                                 </div>
                               </div>
@@ -1019,7 +942,7 @@ function AdminDashboardPage() {
                   {applications.length === 0 && (
                     <tr>
                       <td colSpan={6} className="p-8 text-center text-xs font-bold text-[#5B6B7F] bg-[#F8FAFF]">
-                        अद्याप कोणत्याही कामगाराने अर्ज केलेला नाही (No job applications received yet)
+                        No job applications received yet.
                       </td>
                     </tr>
                   )}
