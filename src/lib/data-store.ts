@@ -148,6 +148,18 @@ export type UserResumeRecord = {
   status: string;
 };
 
+export type PackageTransaction = {
+  id: string;
+  userId: string;
+  planId: string;
+  planName: string;
+  price: number;
+  jobCount: number;
+  purchaseDate: string;
+  paymentMethod: string;
+  status: "Completed" | "Pending";
+};
+
 // INITIAL SEED DATA FOR REAL JOBS (Initially 100% empty; populated when employers post real jobs)
 const INITIAL_JOBS: JobRecord[] = [];
 
@@ -162,6 +174,7 @@ class DataStoreManager {
     EMPLOYERS: "realjob_db_employers",
     INTERVIEWS: "realjob_db_interviews",
     RESUMES: "realjob_db_resumes",
+    PACKAGES: "realjob_db_packages",
   };
 
   constructor() {
@@ -695,6 +708,39 @@ class DataStoreManager {
       }
     } catch { }
     return true;
+  }
+
+  public getUserPackages(userId: string): PackageTransaction[] {
+    if (typeof window === "undefined") return [];
+    const raw = localStorage.getItem(this.STORAGE_KEYS.PACKAGES);
+    if (!raw) return [];
+    try {
+      const all: PackageTransaction[] = JSON.parse(raw);
+      return all.filter((p) => p.userId === userId);
+    } catch {
+      return [];
+    }
+  }
+
+  public addPackagePurchase(data: Omit<PackageTransaction, "id" | "purchaseDate" | "status">): PackageTransaction {
+    const raw = localStorage.getItem(this.STORAGE_KEYS.PACKAGES);
+    const existing: PackageTransaction[] = raw ? JSON.parse(raw) : [];
+    const newTx: PackageTransaction = {
+      ...data,
+      id: `pkg-${Date.now()}`,
+      purchaseDate: new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }),
+      status: "Completed",
+    };
+    existing.unshift(newTx);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(this.STORAGE_KEYS.PACKAGES, JSON.stringify(existing));
+    }
+    return newTx;
+  }
+
+  public getUserJobCredits(userId: string): number {
+    const packages = this.getUserPackages(userId);
+    return packages.reduce((acc, p) => acc + (p.jobCount || 0), 0);
   }
 }
 
