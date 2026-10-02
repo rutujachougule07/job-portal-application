@@ -104,8 +104,11 @@ function AuthPage() {
         window.localStorage.setItem("realjob-user", JSON.stringify(userObj));
         dataStore.setCurrentUser(userObj);
         toast.success("✅ खाते यशस्वीरित्या तयार झाले! Welcome to REAL JOB.");
-        const nextPath = (role === "admin" || role === "employer") ? "/admin" : "/dashboard";
-        navigate({ to: "/select-language", search: { redirectTo: nextPath } });
+        if (role === "admin" || role === "employer") {
+          navigate({ to: "/admin" });
+        } else {
+          navigate({ to: "/home" });
+        }
         setBusy(false);
         return;
       }
@@ -174,30 +177,38 @@ function AuthPage() {
         window.localStorage.setItem("realjob-user", JSON.stringify(userObj));
         dataStore.setCurrentUser(userObj);
         toast.success(`✅ स्वागत आहे, ${existingAccount.fullName}! Welcome back.`);
-        const nextPath = (role === "admin" || role === "employer" || existingAccount.role === "employer") ? "/admin" : "/dashboard";
-        navigate({ to: "/select-language", search: { redirectTo: nextPath } });
+        const isEmpOrAdmin = userObj.role === "employer" || userObj.role === "admin" || role === "admin" || role === "employer";
+        if (isEmpOrAdmin) {
+          navigate({ to: "/admin" });
+        } else {
+          navigate({ to: "/home" });
+        }
       } else {
         // Auto-register new user on first login with entered credentials
         const newAcc = dataStore.registerAccount({
           email: enteredEmail,
           password: password,
           role: role === "admin" ? "employer" : role,
-          fullName: enteredEmail.split("@")[0] || "Employer",
+          fullName: enteredEmail.split("@")[0] || "Company Admin",
         });
 
         const userObj = {
           id: newAcc.id,
           email: newAcc.email,
           role: newAcc.role,
-          fullName: newAcc.fullName || "Employer",
+          fullName: newAcc.fullName || "Company Admin",
           mobile: newAcc.mobile || "",
         };
 
         window.localStorage.setItem("realjob-user", JSON.stringify(userObj));
         dataStore.setCurrentUser(userObj);
         toast.success("✅ लॉगिन यशस्वी झाले! Welcome to REAL JOB!");
-        const nextPath = (role === "admin" || role === "employer") ? "/admin" : "/dashboard";
-        navigate({ to: "/select-language", search: { redirectTo: nextPath } });
+        const isEmpOrAdmin = userObj.role === "employer" || userObj.role === "admin" || role === "admin" || role === "employer";
+        if (isEmpOrAdmin) {
+          navigate({ to: "/admin" });
+        } else {
+          navigate({ to: "/home" });
+        }
       }
     } catch (err: any) {
       const code = err?.code || "";
@@ -245,7 +256,7 @@ function AuthPage() {
 
       {/* Centered Frosted Glassmorphism Card */}
       <div className="relative z-10 w-full max-w-md sm:max-w-[430px] bg-white/80 backdrop-blur-xl rounded-2xl border border-white/80 shadow-2xl px-6 py-5 sm:px-8 sm:py-6 transition-all duration-300">
-        
+
         {/* Top Logo */}
         <div className="flex justify-center mb-2">
           <LogoIcon className="h-11 sm:h-12 object-contain" />
@@ -258,13 +269,13 @@ function AuthPage() {
               ? mode === "register"
                 ? "Employer / Admin Registration"
                 : mode === "forgot"
-                ? "Reset Password"
-                : "Employer / Admin Login"
+                  ? "Reset Password"
+                  : "Employer / Admin Login"
               : mode === "register"
-              ? "Worker / User Registration"
-              : mode === "forgot"
-              ? "Reset Password"
-              : "Worker / User Login"}
+                ? "Worker / User Registration"
+                : mode === "forgot"
+                  ? "Reset Password"
+                  : "Worker / User Login"}
           </h1>
 
           <p className="text-[11px] font-semibold text-gray-600 mt-1 px-2 leading-tight">
@@ -273,8 +284,8 @@ function AuthPage() {
                 ? "For employers & companies: Register an account to find workers."
                 : "For employers & admins: Login to post jobs and search candidates."
               : mode === "register"
-              ? "For job seekers: Create a new profile and start finding jobs."
-              : "Please enter your email and password to log in and find jobs."}
+                ? "For job seekers: Create a new profile and start finding jobs."
+                : "Please enter your email and password to log in and find jobs."}
           </p>
         </div>
 
@@ -284,22 +295,20 @@ function AuthPage() {
             <button
               type="button"
               onClick={() => setMode("login")}
-              className={`flex-1 py-1.5 rounded-full text-xs font-black transition-all duration-200 flex items-center justify-center gap-1.5 ${
-                mode === "login"
+              className={`flex-1 py-1.5 rounded-full text-xs font-black transition-all duration-200 flex items-center justify-center gap-1.5 ${mode === "login"
                   ? "bg-[#0A3B7B] text-white shadow-md shadow-[#0A3B7B]/30"
                   : "text-gray-700 hover:text-black font-bold"
-              }`}
+                }`}
             >
               <User className="size-3.5" /> Login
             </button>
             <button
               type="button"
               onClick={() => setMode("register")}
-              className={`flex-1 py-1.5 rounded-full text-xs font-black transition-all duration-200 flex items-center justify-center gap-1.5 ${
-                mode === "register"
+              className={`flex-1 py-1.5 rounded-full text-xs font-black transition-all duration-200 flex items-center justify-center gap-1.5 ${mode === "register"
                   ? "bg-[#0A3B7B] text-white shadow-md shadow-[#0A3B7B]/30"
                   : "text-gray-700 hover:text-black font-bold"
-              }`}
+                }`}
             >
               <UserPlus className="size-3.5" /> Register
             </button>
@@ -308,7 +317,7 @@ function AuthPage() {
 
         {/* Form Container */}
         <form onSubmit={handleSubmit} autoComplete="off" className="space-y-3">
-          
+
           {/* WORKER REGISTRATION FIELDS */}
           {mode === "register" && role === "worker" && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
