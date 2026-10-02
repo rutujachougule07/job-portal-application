@@ -125,20 +125,8 @@ function AdminDashboardPage() {
   };
 
   useEffect(() => {
-    if (!currentUser) {
-      navigate({ to: "/auth", search: { mode: "login", role: "employer" } });
-      return;
-    }
-    if (!isSuperAdmin) {
-      const credits = dataStore.getUserJobCredits(currentUser.id || "");
-      if (credits <= 0) {
-        toast.info("डॅशबोर्ड उघडण्यासाठी कृपया प्रथम तुमचे जॉब पॅकेज (₹100 / ₹200) खरेदी करा.");
-        navigate({ to: "/packages", search: { redirectTo: "/admin" } });
-        return;
-      }
-    }
     loadAllData();
-  }, [empIdentifier, currentUser]);
+  }, [empIdentifier]);
 
   const handleUpdateAppStatus = (appId: string, status: any) => {
     dataStore.updateApplicationStatus(appId, status);
@@ -611,13 +599,13 @@ function AdminDashboardPage() {
           <div>
             <div className="inline-flex items-center gap-2 rounded-full bg-[#063B78]/10 px-3 py-1 text-xs font-black text-[#063B78] mb-2">
               <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-              REAL JOB PLATFORM SYSTEM ONLINE
+              {currentUser?.fullName ? `कंपनी / ॲडमिन खाते: ${currentUser.fullName}` : `REAL JOB PLATFORM SYSTEM ONLINE`}
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-[#10233F]">
-              ॲडमिन कंट्रोल सेंटर (Admin Control Dashboard)
+              {currentUser?.fullName ? `${currentUser.fullName} - डॅशबोर्ड` : "ॲडमिन कंट्रोल सेंटर (Admin Control Dashboard)"}
             </h1>
             <p className="text-xs sm:text-sm font-semibold text-[#5B6B7F] mt-1">
-              कामकूट, नवीन नोकऱ्या, कामगार पडताळणी आणि अर्ज व्यवस्थापन नियंत्रण करा.
+              ई-मेल: <span className="font-bold text-[#063B78]">{currentUser?.email}</span> | पोस्ट केलेल्या नोकऱ्या, कामगार पडताळणी आणि अर्ज व्यवस्थापन.
             </p>
           </div>
 
@@ -649,11 +637,10 @@ function AdminDashboardPage() {
             <button
               key={t.id}
               onClick={() => setActiveTab(t.id as any)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-extrabold text-xs transition-all ${
-                activeTab === t.id
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-extrabold text-xs transition-all ${activeTab === t.id
                   ? "bg-[#063B78] text-white shadow-md shadow-[#063B78]/20"
                   : "bg-white text-[#5B6B7F] border border-[#DCE5F0] hover:bg-[#EBF1F8] hover:text-[#063B78]"
-              }`}
+                }`}
             >
               <t.icon className="size-4 shrink-0" />
               {t.label}
@@ -705,12 +692,12 @@ function AdminDashboardPage() {
                     <AreaChart data={monthlyAnalytics}>
                       <defs>
                         <linearGradient id="colorWorkers" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#063B78" stopOpacity={0.8}/>
-                          <stop offset="95%" stopColor="#063B78" stopOpacity={0}/>
+                          <stop offset="5%" stopColor="#063B78" stopOpacity={0.8} />
+                          <stop offset="95%" stopColor="#063B78" stopOpacity={0} />
                         </linearGradient>
                         <linearGradient id="colorJobs" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#FFC400" stopOpacity={0.8}/>
-                          <stop offset="95%" stopColor="#FFC400" stopOpacity={0}/>
+                          <stop offset="5%" stopColor="#FFC400" stopOpacity={0.8} />
+                          <stop offset="95%" stopColor="#FFC400" stopOpacity={0} />
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -1002,27 +989,27 @@ function AdminDashboardPage() {
                           <tr className="bg-[#F8FAFC]">
                             <td colSpan={6} className="p-4 border-t border-[#DCE5F0]">
                               <div className="bg-white p-5 rounded-xl border border-[#E2E8F0] shadow-sm">
-                                 <h4 className="font-bold text-[#10233F] mb-4 border-b pb-2 flex items-center gap-2">
-                                   <FileText className="size-4 text-[#063B78]" />
-                                   उमेदवाराची सविस्तर माहिती (Candidate Details)
-                                 </h4>
-                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                                   {a.fieldValues && Object.entries(a.fieldValues).map(([key, value]) => (
-                                      <div key={key} className="text-xs bg-[#F5F8FC] p-3 rounded-lg border border-[#DCE5F0]">
-                                        <div className="font-bold text-[#5B6B7F] capitalize mb-1">{key.replace(/([A-Z])/g, ' $1').trim()}</div> 
-                                        <div className="font-black text-[#10233F]">{value as string}</div>
-                                      </div>
-                                   ))}
-                                   {a.customAnswers && Object.entries(a.customAnswers).map(([key, value]) => (
-                                      <div key={key} className="text-xs bg-[#F5F8FC] p-3 rounded-lg border border-[#DCE5F0]">
-                                        <div className="font-bold text-[#5B6B7F] capitalize mb-1">{key}</div> 
-                                        <div className="font-black text-[#10233F]">{value as string}</div>
-                                      </div>
-                                   ))}
-                                   {(!a.fieldValues && !a.customAnswers) && (
-                                     <div className="text-sm font-semibold text-[#5B6B7F]">अधिक माहिती उपलब्ध नाही.</div>
-                                   )}
-                                 </div>
+                                <h4 className="font-bold text-[#10233F] mb-4 border-b pb-2 flex items-center gap-2">
+                                  <FileText className="size-4 text-[#063B78]" />
+                                  उमेदवाराची सविस्तर माहिती (Candidate Details)
+                                </h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                                  {a.fieldValues && Object.entries(a.fieldValues).map(([key, value]) => (
+                                    <div key={key} className="text-xs bg-[#F5F8FC] p-3 rounded-lg border border-[#DCE5F0]">
+                                      <div className="font-bold text-[#5B6B7F] capitalize mb-1">{key.replace(/([A-Z])/g, ' $1').trim()}</div>
+                                      <div className="font-black text-[#10233F]">{value as string}</div>
+                                    </div>
+                                  ))}
+                                  {a.customAnswers && Object.entries(a.customAnswers).map(([key, value]) => (
+                                    <div key={key} className="text-xs bg-[#F5F8FC] p-3 rounded-lg border border-[#DCE5F0]">
+                                      <div className="font-bold text-[#5B6B7F] capitalize mb-1">{key}</div>
+                                      <div className="font-black text-[#10233F]">{value as string}</div>
+                                    </div>
+                                  ))}
+                                  {(!a.fieldValues && !a.customAnswers) && (
+                                    <div className="text-sm font-semibold text-[#5B6B7F]">अधिक माहिती उपलब्ध नाही.</div>
+                                  )}
+                                </div>
                               </div>
                             </td>
                           </tr>

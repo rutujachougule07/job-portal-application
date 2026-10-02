@@ -8,7 +8,6 @@ import {
   LogOut,
   Mail,
   Menu,
-  Package,
   ShieldCheck,
   User,
   UserRound,
@@ -23,7 +22,7 @@ import { dataStore } from "@/lib/data-store";
 import { toast } from "sonner";
 
 export function PublicHeader() {
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<{ email: string; role: any; fullName?: string; id?: string } | null>(null);
 
@@ -64,14 +63,6 @@ export function PublicHeader() {
           </Link>
           <Link to="/jobs" className="nav-link text-sm font-bold hover:text-[#063B78] transition-colors">
             {t("jobs")}
-          </Link>
-          <Link
-            to="/packages"
-            className="nav-link text-sm font-bold text-[#063B78] hover:text-[#082F63] transition-colors flex items-center gap-1 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200"
-          >
-            <Package className="size-4 text-amber-600" />
-            <span>{lang === "mr" ? "पॅकेजेस (Plans)" : "Packages"}</span>
-            <span className="bg-[#063B78] text-white text-[10px] font-black px-1.5 py-0.5 rounded-md">₹100</span>
           </Link>
           <Link to="/about" className="nav-link text-sm font-bold hover:text-[#063B78] transition-colors">
             {t("aboutUs")}
@@ -177,17 +168,6 @@ export function PublicHeader() {
               >
                 <Briefcase className="size-5 text-[#125BB5]" />
                 {t("jobs")}
-              </Link>
-              <Link
-                to="/packages"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-between rounded-lg px-3 py-2.5 font-bold text-[#063B78] bg-amber-50 border border-amber-200"
-              >
-                <div className="flex items-center gap-3">
-                  <Package className="size-5 text-amber-600" />
-                  <span>{lang === "mr" ? "पॅकेजेस (Job Packages)" : "Job Packages"}</span>
-                </div>
-                <span className="bg-[#063B78] text-white text-xs font-black px-2 py-0.5 rounded-md">₹100/₹200</span>
               </Link>
               <Link
                 to="/about"
