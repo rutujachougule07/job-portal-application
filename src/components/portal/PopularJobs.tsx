@@ -37,7 +37,7 @@ export function PopularJobs() {
     { id: "mkt", labelKey: "marketingTab" as const, icon: Briefcase },
   ];
 
-  const allJobsFromStore = dataStore.getAllJobs();
+  const allJobsFromStore = dataStore.getActiveJobs();
 
   const jobsList = allJobsFromStore.map((j) => ({
     id: j.id,

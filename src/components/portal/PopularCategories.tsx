@@ -28,7 +28,7 @@ import { dataStore } from "@/lib/data-store";
 export function PopularCategories({ limit = 8, hideHeader = false }: { limit?: number; hideHeader?: boolean }) {
   const { t, n, lang } = useI18n();
 
-  const allJobs = dataStore.getAllJobs();
+  const allJobs = dataStore.getActiveJobs();
 
   const dynamicCategories = useMemo(() => {
     const catData = new Map<string, { id: string, subcategories: Set<string> }>();

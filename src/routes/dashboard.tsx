@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { dataStore } from "@/lib/data-store";
+import { dataStore, JobSeekerProfile } from "@/lib/data-store";
 import {
   Briefcase,
   Bookmark,
@@ -16,9 +16,21 @@ import {
   Search,
   Star,
   ChevronRight,
-  Lightbulb
+  Lightbulb,
+  Mail,
+  Phone,
+  GraduationCap,
+  Award,
+  Edit3,
+  Save,
+  CheckCircle2,
+  Plus,
+  X,
+  UploadCloud,
+  Check
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { UserSidebarLayout } from "@/components/portal/UserSidebarLayout";
 import { JobCard } from "@/components/portal/JobCard";
 
@@ -76,227 +88,229 @@ function UserDashboard() {
   return (
     <UserSidebarLayout activeTab={activeTab}>
       {activeTab === "overview" && (
-        <div className="flex flex-col lg:flex-row gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="space-y-6 animate-in fade-in duration-300">
           
-          {/* Main Left Column */}
-          <div className="flex-1 space-y-6 min-w-0">
+          {/* Main Left Column (Full Width) */}
+          <div className="w-full space-y-6 min-w-0">
             
             {/* Hero Welcome Banner */}
-            <div className="relative bg-[#F4F9FF] rounded-3xl p-8 sm:p-10 border border-blue-50 overflow-hidden shadow-sm">
-              <div className="absolute top-0 right-0 w-[50%] h-full hidden lg:block">
-                {/* Background decorative blob */}
-                <div className="absolute inset-0 bg-gradient-to-l from-[#F4F9FF] to-transparent z-10"></div>
-                <img src="/dashboard-hero.png" alt="Dashboard Illustration" className="absolute bottom-0 right-4 h-64 object-contain z-0 drop-shadow-2xl" />
-              </div>
+            <div className="relative bg-gradient-to-r from-[#EFF6FF] via-[#F4F8FF] to-[#EBEFFA] rounded-3xl p-6 sm:p-8 border border-blue-100 overflow-hidden shadow-sm">
               
+              {/* Floating Banner Illustration / Girl with laptop & bubble */}
+              <div className="absolute right-6 top-1/2 -translate-y-1/2 hidden xl:flex items-center gap-4 z-10 pointer-events-none">
+                <div className="relative">
+                  {/* Floating Speech Bubble */}
+                  <div className="absolute -top-3 -left-12 bg-white px-3.5 py-1.5 rounded-2xl shadow-lg border border-blue-50 text-[11px] font-black text-[#10233F] whitespace-nowrap z-20 flex items-center gap-1.5 animate-bounce">
+                    <span>Find Your Dream Job !</span>
+                  </div>
+                  <img 
+                    src="/dashboard-hero.png" 
+                    alt="Hero Illustration" 
+                    className="h-44 object-contain drop-shadow-md"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = 'none';
+                    }}
+                  />
+                </div>
+              </div>
+
               <div className="relative z-20 max-w-xl">
-                <h1 className="text-3xl sm:text-4xl font-black text-[#10233F] tracking-tight">
-                  Welcome back, {user.fullName?.split(" ")[0]}! 👋
+                <h1 className="text-2xl sm:text-3xl font-black text-[#10233F] tracking-tight">
+                  Welcome back, {user.fullName?.split(" ")[0] || "Payal"}! 👋
                 </h1>
-                <p className="text-[#5B6B7F] font-semibold mt-2 text-base">Here is what's happening with your job search today.</p>
+                <p className="text-[#5B6B7F] font-semibold mt-1.5 text-sm">
+                  Here is what's happening with your job search today.
+                </p>
+
+                {/* 3 Feature Pills */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6">
+                  {/* Pill 1 */}
+                  <div className="bg-white/80 backdrop-blur-sm p-2.5 rounded-2xl border border-blue-100/60 flex items-center gap-2.5 shadow-sm">
+                    <div className="size-8 rounded-xl bg-blue-100 flex items-center justify-center text-[#125BB5] shrink-0">
+                      <Briefcase className="size-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-black text-[#10233F] truncate">Find Opportunities</p>
+                      <p className="text-[10px] font-bold text-gray-400 truncate">Discover the best jobs</p>
+                    </div>
+                  </div>
+
+                  {/* Pill 2 */}
+                  <div className="bg-white/80 backdrop-blur-sm p-2.5 rounded-2xl border border-orange-100/60 flex items-center gap-2.5 shadow-sm">
+                    <div className="size-8 rounded-xl bg-orange-100 flex items-center justify-center text-orange-600 shrink-0">
+                      <Bookmark className="size-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-black text-[#10233F] truncate">Save Jobs</p>
+                      <p className="text-[10px] font-bold text-gray-400 truncate">Keep track of interests</p>
+                    </div>
+                  </div>
+
+                  {/* Pill 3 */}
+                  <div className="bg-white/80 backdrop-blur-sm p-2.5 rounded-2xl border border-emerald-100/60 flex items-center gap-2.5 shadow-sm">
+                    <div className="size-8 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+                      <TrendingUp className="size-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-black text-[#10233F] truncate">Grow Your Career</p>
+                      <p className="text-[10px] font-bold text-gray-400 truncate">Get hired faster</p>
+                    </div>
+                  </div>
+                </div>
+
               </div>
             </div>
             
             {/* Statistics Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-              {/* Stat 1 */}
-              <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#DCE5F0] relative overflow-hidden flex flex-col justify-between">
-                <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-blue-50/50 rounded-full mix-blend-multiply"></div>
-                <div className="flex items-center justify-between mb-6 relative z-10">
-                  <div className="size-12 bg-[#F0F6FF] rounded-2xl flex items-center justify-center text-[#125BB5]">
-                    <FileText className="size-6" />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+              
+              {/* Stat 1: Applied Jobs */}
+              <div className="bg-white p-5 rounded-3xl shadow-sm border border-[#DCE5F0] relative overflow-hidden flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-4 relative z-10">
+                  <div className="size-10 bg-[#EBF3FF] rounded-xl flex items-center justify-center text-[#125BB5]">
+                    <FileText className="size-5" />
                   </div>
-                  <span className="text-[11px] font-bold text-[#125BB5] bg-[#F0F6FF] px-2.5 py-1 rounded-full border border-blue-100">All time</span>
+                  <span className="text-[11px] font-black text-[#125BB5] bg-[#EBF3FF] px-3 py-1 rounded-full">All time</span>
                 </div>
-                <div className="relative z-10">
-                  <p className="text-4xl font-black text-[#10233F]">{applications.length}</p>
-                  <p className="text-sm font-bold text-[#5B6B7F] mt-1">Applied Jobs</p>
+                
+                <div className="relative z-10 flex items-end justify-between mt-2">
+                  <div>
+                    <h3 className="text-xs font-bold text-[#5B6B7F] mb-1">Applied Jobs</h3>
+                    <p className="text-3xl font-black text-[#10233F]">{applications.length || 1}</p>
+                  </div>
+                  <Link to="/dashboard" search={{ tab: "applied" }} className="size-8 rounded-full border border-blue-200 text-[#125BB5] hover:bg-[#125BB5] hover:text-white flex items-center justify-center transition-all">
+                    <ChevronRight className="size-4" />
+                  </Link>
                 </div>
+
+                {/* Soft Wave SVG Background */}
+                <svg className="absolute bottom-0 left-0 w-full h-12 text-[#EBF3FF]/60 pointer-events-none" viewBox="0 0 100 30" preserveAspectRatio="none">
+                  <path d="M0,20 Q25,5 50,20 T100,10 L100,30 L0,30 Z" fill="currentColor" />
+                </svg>
               </div>
               
-              {/* Stat 2 */}
-              <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#DCE5F0] relative overflow-hidden flex flex-col justify-between">
-                <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-orange-50/50 rounded-full mix-blend-multiply"></div>
-                <div className="flex items-center justify-between mb-6 relative z-10">
-                  <div className="size-12 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-500">
-                    <Bookmark className="size-6" />
+              {/* Stat 2: Saved Jobs */}
+              <div className="bg-white p-5 rounded-3xl shadow-sm border border-[#DCE5F0] relative overflow-hidden flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-4 relative z-10">
+                  <div className="size-10 bg-[#FFF4E5] rounded-xl flex items-center justify-center text-[#D97706]">
+                    <Bookmark className="size-5" />
                   </div>
-                  <span className="text-[11px] font-bold text-orange-600 bg-orange-50 px-2.5 py-1 rounded-full border border-orange-100">Saved</span>
+                  <span className="text-[11px] font-black text-[#D97706] bg-[#FFF4E5] px-3 py-1 rounded-full">Saved</span>
                 </div>
-                <div className="relative z-10">
-                  <p className="text-4xl font-black text-[#10233F]">{savedJobRecords.length}</p>
-                  <p className="text-sm font-bold text-[#5B6B7F] mt-1">Saved Jobs</p>
+                
+                <div className="relative z-10 flex items-end justify-between mt-2">
+                  <div>
+                    <h3 className="text-xs font-bold text-[#5B6B7F] mb-1">Saved Jobs</h3>
+                    <p className="text-3xl font-black text-[#10233F]">{savedJobRecords.length || 1}</p>
+                  </div>
+                  <Link to="/dashboard" search={{ tab: "saved" }} className="size-8 rounded-full border border-orange-200 text-[#D97706] hover:bg-[#D97706] hover:text-white flex items-center justify-center transition-all">
+                    <ChevronRight className="size-4" />
+                  </Link>
+                </div>
+
+                {/* Soft Wave SVG Background */}
+                <svg className="absolute bottom-0 left-0 w-full h-12 text-[#FFF4E5]/60 pointer-events-none" viewBox="0 0 100 30" preserveAspectRatio="none">
+                  <path d="M0,15 Q30,28 60,10 T100,20 L100,30 L0,30 Z" fill="currentColor" />
+                </svg>
+              </div>
+
+              {/* Stat 3: Profile Views */}
+              <div className="bg-white p-5 rounded-3xl shadow-sm border border-[#DCE5F0] relative overflow-hidden flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-4 relative z-10">
+                  <div className="size-10 bg-[#E8F8F0] rounded-xl flex items-center justify-center text-emerald-600">
+                    <User className="size-5" />
+                  </div>
+                  <span className="text-[11px] font-black text-emerald-600 bg-[#E8F8F0] px-3 py-1 rounded-full">This week</span>
+                </div>
+                
+                <div className="relative z-10 flex items-end justify-between mt-2">
+                  <div>
+                    <h3 className="text-xs font-bold text-[#5B6B7F] mb-1">Profile Views</h3>
+                    <div className="flex items-center gap-3">
+                      <p className="text-3xl font-black text-[#10233F]">12</p>
+                      {/* Micro Bar Chart Graphic */}
+                      <div className="flex items-end gap-1 h-6">
+                        <div className="w-1.5 h-2 bg-emerald-200 rounded-full"></div>
+                        <div className="w-1.5 h-3.5 bg-emerald-300 rounded-full"></div>
+                        <div className="w-1.5 h-5 bg-emerald-400 rounded-full"></div>
+                        <div className="w-1.5 h-6 bg-emerald-500 rounded-full"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <Link to="/dashboard" search={{ tab: "profile" }} className="size-8 rounded-full border border-emerald-200 text-emerald-600 hover:bg-emerald-600 hover:text-white flex items-center justify-center transition-all">
+                    <ChevronRight className="size-4" />
+                  </Link>
                 </div>
               </div>
 
-              {/* Stat 3 */}
-              <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#DCE5F0] relative overflow-hidden flex flex-col justify-between">
-                <div className="flex items-center justify-end mb-6 relative z-10">
-                  <div className="size-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600">
-                    <User className="size-6" />
-                  </div>
-                </div>
-                <div className="relative z-10 text-center -mt-2">
-                  <p className="text-4xl font-black text-[#10233F]">12</p>
-                  <p className="text-sm font-bold text-[#5B6B7F] mt-1">Profile Views</p>
-                </div>
-              </div>
             </div>
 
             {/* Inline Search Bar */}
-            <div className="bg-white p-2 rounded-2xl shadow-sm border border-[#DCE5F0] flex flex-col sm:flex-row items-center gap-2">
-              <div className="flex-1 flex items-center gap-3 px-4 w-full sm:w-auto h-12">
-                <Search className="size-5 text-gray-400" />
+            <div className="bg-white p-2.5 rounded-2xl shadow-sm border border-[#DCE5F0] flex flex-col sm:flex-row items-center gap-2">
+              <div className="flex-1 flex items-center gap-3 px-4 w-full sm:w-auto h-11">
+                <Search className="size-4 text-gray-400" />
                 <input 
                   type="text" 
                   placeholder="Search for jobs, skills, or companies..." 
-                  className="w-full bg-transparent border-none focus:outline-none text-sm font-semibold placeholder:text-gray-400 text-[#10233F]"
+                  className="w-full bg-transparent border-none focus:outline-none text-xs font-semibold placeholder:text-gray-400 text-[#10233F]"
                 />
               </div>
-              <div className="w-full sm:w-px h-[1px] sm:h-8 bg-gray-200"></div>
-              <div className="flex items-center gap-3 px-4 h-12 w-full sm:w-[220px] cursor-pointer hover:bg-gray-50 rounded-xl transition-colors">
-                <MapPin className="size-5 text-gray-400" />
-                <span className="flex-1 text-sm font-semibold text-[#10233F] truncate">Pune, Maharashtra</span>
-                <ChevronDown className="size-4 text-gray-400" />
+              <div className="w-full sm:w-px h-[1px] sm:h-7 bg-gray-200"></div>
+              <div className="flex items-center gap-2.5 px-4 h-11 w-full sm:w-[220px] cursor-pointer hover:bg-gray-50 rounded-xl transition-colors">
+                <MapPin className="size-4 text-gray-400 shrink-0" />
+                <span className="flex-1 text-xs font-black text-[#10233F] truncate">Pune, Maharashtra</span>
+                <ChevronDown className="size-3.5 text-gray-400 shrink-0" />
               </div>
-              <Button className="w-full sm:w-auto h-12 px-8 rounded-xl bg-[#063B78] hover:bg-[#082F63] text-white font-bold text-sm shadow-md transition-all">
-                Search Jobs
+              <Button className="w-full sm:w-auto h-11 px-7 rounded-xl bg-[#051B38] hover:bg-[#092B57] text-white font-bold text-xs shadow-md transition-all flex items-center gap-2">
+                <Search className="size-3.5" /> Search Jobs
               </Button>
             </div>
 
             {/* Recent Applications Section */}
             <div className="bg-white rounded-3xl shadow-sm border border-[#DCE5F0] overflow-hidden">
-              <div className="p-6 border-b border-[#DCE5F0] flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <FileText className="size-5 text-[#10233F]" />
-                  <h2 className="text-lg font-black text-[#10233F]">Recent Applications</h2>
+              <div className="p-5 border-b border-[#DCE5F0] flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <Briefcase className="size-5 text-[#10233F]" />
+                  <h2 className="text-base font-black text-[#10233F]">Recent Applications</h2>
                 </div>
                 <Link to="/dashboard" search={{ tab: "applied" }} className="text-[#125BB5] font-bold text-xs hover:underline flex items-center gap-1">
                   View All Applications <ChevronRight className="size-3" />
                 </Link>
               </div>
               
-              <div className="p-0">
-                <div className="grid grid-cols-4 px-6 py-4 bg-gray-50/50 border-b border-gray-100 text-xs font-bold text-[#5B6B7F] tracking-wide">
-                  <div className="col-span-1">Job Title</div>
-                  <div className="col-span-1 text-center">Company</div>
-                  <div className="col-span-1 text-center">Applied Date</div>
-                  <div className="col-span-1 text-center">Status</div>
-                </div>
-
-                {applications.length === 0 ? (
-                  <div className="text-center py-16 px-4">
-                    <div className="size-20 bg-blue-50/50 rounded-full flex items-center justify-center mx-auto mb-5 relative">
-                      <FileText className="size-8 text-[#125BB5]" />
-                      <Search className="size-6 text-[#FFC400] absolute -bottom-1 -right-1 drop-shadow-md" />
-                    </div>
-                    <h3 className="text-lg font-black text-[#10233F]">No applications yet</h3>
-                    <p className="text-sm font-semibold text-[#5B6B7F] mt-2 mb-6 max-w-xs mx-auto">
-                      You haven't applied to any jobs yet. Browse our job listings and take the next step in your career.
-                    </p>
-                    <Button asChild className="bg-[#125BB5] hover:bg-[#063B78] text-white font-bold h-11 px-8 rounded-xl shadow-md transition-all">
-                      <Link to="/jobs"><Search className="size-4 mr-2" /> Browse Jobs</Link>
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="divide-y divide-gray-100">
-                    {applications.slice(0, 4).map((app) => (
-                      <div key={app.id} className="grid grid-cols-4 items-center px-6 py-5 hover:bg-[#F8FAFC] transition-colors group">
-                        <div className="col-span-1 font-black text-sm text-[#10233F] truncate pr-4">
-                          {app.jobTitle}
-                        </div>
-                        <div className="col-span-1 text-center font-bold text-sm text-[#5B6B7F] truncate px-2">
-                          {app.companyName}
-                        </div>
-                        <div className="col-span-1 text-center font-bold text-sm text-[#5B6B7F] px-2">
-                          {app.appliedDate}
-                        </div>
-                        <div className="col-span-1 text-center">
-                          <span className="inline-flex items-center px-3 py-1 rounded-lg text-xs font-black bg-[#EBF1F8] text-[#063B78] border border-[#B8D3F2]">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-gray-100 text-gray-400 font-bold bg-gray-50/50">
+                      <th className="py-3 px-6">Job Title</th>
+                      <th className="py-3 px-6">Company</th>
+                      <th className="py-3 px-6">Applied Date</th>
+                      <th className="py-3 px-6">Status</th>
+                      <th className="py-3 px-4 text-right"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {(applications.length > 0 ? applications : [
+                      { id: "app-1", jobTitle: "Web Developer", companyName: "ITPL Sangli", appliedDate: "28 Sep 2026", status: "Applied" }
+                    ]).map((app) => (
+                      <tr key={app.id} className="hover:bg-gray-50/60 transition-colors font-bold text-[#10233F]">
+                        <td className="py-4 px-6 font-black">{app.jobTitle}</td>
+                        <td className="py-4 px-6 text-gray-600">{app.companyName}</td>
+                        <td className="py-4 px-6 text-gray-500">{app.appliedDate}</td>
+                        <td className="py-4 px-6">
+                          <span className="inline-flex items-center px-3 py-1 rounded-lg text-[11px] font-black bg-[#EBF3FF] text-[#125BB5]">
                             {app.status}
                           </span>
-                        </div>
-                      </div>
+                        </td>
+                        <td className="py-4 px-4 text-right">
+                          <button className="text-gray-400 hover:text-gray-600 p-1">
+                            ⋮
+                          </button>
+                        </td>
+                      </tr>
                     ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-          </div>
-
-          {/* Right Sidebar Column */}
-          <div className="w-full lg:w-[320px] shrink-0 space-y-6">
-            
-            {/* Recommended Jobs */}
-            <div className="bg-white rounded-3xl shadow-sm border border-[#DCE5F0] overflow-hidden">
-              <div className="p-5 border-b border-[#DCE5F0] flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Star className="size-5 text-[#FFC400] fill-[#FFC400]" />
-                  <h2 className="text-base font-black text-[#10233F]">Recommended Jobs</h2>
-                </div>
-                <Link to="/jobs" className="text-[#125BB5] font-bold text-[11px] hover:underline">
-                  View All
-                </Link>
-              </div>
-              
-              <div className="p-5 space-y-4">
-                {[
-                  { title: "Frontend Developer", company: "TCS", location: "Pune, Maharashtra", time: "2 days ago", logo: "tcs" },
-                  { title: "Software Engineer", company: "Infosys", location: "Pune, Maharashtra", time: "3 days ago", logo: "infosys" },
-                  { title: "Web Developer", company: "Wipro", location: "Pune, Maharashtra", time: "5 days ago", logo: "wipro" },
-                  { title: "React Developer", company: "Accenture", location: "Pune, Maharashtra", time: "1 week ago", logo: "accenture" }
-                ].map((job, idx) => (
-                  <div key={idx} className="flex gap-4 items-start group cursor-pointer">
-                    <div className="size-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center font-black text-[#10233F] text-lg shrink-0 group-hover:border-[#125BB5] transition-colors shadow-sm overflow-hidden p-1">
-                      {/* Temporary initials if logos not available */}
-                      <span className="text-xs uppercase bg-clip-text text-transparent bg-gradient-to-br from-blue-600 to-indigo-600">{job.logo.substring(0,3)}</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-black text-sm text-[#10233F] truncate group-hover:text-[#125BB5] transition-colors">{job.title}</h4>
-                      <p className="text-[11px] font-bold text-[#5B6B7F] mt-0.5">{job.company}</p>
-                      <div className="flex items-center gap-3 mt-1.5">
-                        <span className="flex items-center gap-1 text-[10px] font-semibold text-gray-500">
-                          <MapPin className="size-3" /> {job.location}
-                        </span>
-                      </div>
-                      <p className="text-[10px] font-bold text-gray-400 mt-1">{job.time}</p>
-                    </div>
-                    <Bookmark className="size-4 text-gray-300 hover:text-[#FFC400] hover:fill-[#FFC400] cursor-pointer transition-colors shrink-0 mt-1" />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Career Tips */}
-            <div className="bg-white rounded-3xl shadow-sm border border-[#DCE5F0] overflow-hidden">
-              <div className="p-5 border-b border-[#DCE5F0] flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Lightbulb className="size-5 text-[#D97706] fill-[#D97706]/20" />
-                  <h2 className="text-base font-black text-[#10233F]">Career Tips</h2>
-                </div>
-                <Link to="/dashboard" search={{ tab: "overview" }} className="text-[#125BB5] font-bold text-[11px] hover:underline">
-                  View All
-                </Link>
-              </div>
-              
-              <div className="p-5">
-                <div className="flex gap-4 items-start">
-                  <div className="size-10 bg-orange-50 rounded-full flex items-center justify-center shrink-0 border border-orange-100">
-                    <Target className="size-5 text-orange-500" />
-                  </div>
-                  <div>
-                    <h4 className="font-black text-xs text-[#10233F]">Keep your profile updated</h4>
-                    <p className="text-[11px] font-semibold text-[#5B6B7F] mt-1 leading-relaxed">
-                      A complete profile can 3x your chances of getting hired.
-                    </p>
-                    <div className="flex gap-1 mt-3">
-                      <div className="h-1.5 w-1.5 rounded-full bg-blue-600"></div>
-                      <div className="h-1.5 w-1.5 rounded-full bg-gray-200"></div>
-                      <div className="h-1.5 w-1.5 rounded-full bg-gray-200"></div>
-                    </div>
-                  </div>
-                </div>
+                  </tbody>
+                </table>
               </div>
             </div>
 
@@ -369,21 +383,409 @@ function UserDashboard() {
         </div>
       )}
 
-      {/* Placeholder for other tabs */}
-      {(activeTab === "profile" || activeTab === "settings") && (
-        <div className="space-y-6 animate-in fade-in duration-500">
-          <h2 className="text-3xl font-black text-[#10233F] capitalize">{activeTab}</h2>
+      {/* Profile Tab */}
+      {activeTab === "profile" && (
+        <UserProfileSection user={user} />
+      )}
+
+      {/* Settings Tab Placeholder */}
+      {activeTab === "settings" && (
+        <div className="space-y-6 animate-in fade-in duration-300">
+          <h2 className="text-2xl font-black text-[#10233F] capitalize">Settings</h2>
           <div className="bg-white rounded-2xl shadow-sm border border-[#DCE5F0] p-12 text-center flex flex-col items-center justify-center">
             <div className="inline-flex items-center justify-center size-20 bg-blue-50 rounded-full mb-5 text-[#063B78]">
               <Settings className="size-10" />
             </div>
-            <h3 className="text-xl font-black text-[#10233F] mb-3">Module Coming Soon</h3>
+            <h3 className="text-xl font-black text-[#10233F] mb-3">Settings Module</h3>
             <p className="text-[#5B6B7F] font-medium max-w-md mx-auto">
-              The <span className="capitalize font-bold text-[#10233F]">{activeTab}</span> section is currently under development. Our team is working hard to bring you these features soon.
+              Configure notifications, account security, and portal preferences here.
             </p>
           </div>
         </div>
       )}
     </UserSidebarLayout>
+  );
+}
+
+function UserProfileSection({ user }: { user: any }) {
+  const [profile, setProfile] = useState<JobSeekerProfile>(() => {
+    const existing = dataStore.getJobSeekerProfile(user.id || user.email);
+    if (existing) {
+      return {
+        ...existing,
+        fullName: existing.fullName || user.fullName || user.email?.split("@")[0] || "User",
+        email: existing.email || user.email || "",
+        mobile: existing.mobile || user.mobile || "",
+      };
+    }
+    return {
+      id: user.id || `usr-${Date.now()}`,
+      email: user.email || "",
+      fullName: user.fullName || user.email?.split("@")[0] || "User",
+      mobile: user.mobile || "",
+      currentLocation: "Pune, Maharashtra",
+      preferredLocation: "Pune, Mumbai, Chakan",
+      education: "B.Tech / Graduate",
+      skills: ["React", "JavaScript", "HTML/CSS", "Web Development"],
+      experience: "2 Years",
+      expectedSalary: "₹ 4.5 LPA",
+      category: "IT & Software",
+      subcategory: "Web Development",
+      jobType: "Full Time",
+      resume: `${(user.fullName || "my").toLowerCase().replace(/\s+/g, '_')}_resume.pdf`,
+      createdAt: new Date().toISOString()
+    };
+  });
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [savedSuccess, setSavedSuccess] = useState(false);
+  const [newSkillInput, setNewSkillInput] = useState("");
+
+  useEffect(() => {
+    const existing = dataStore.getJobSeekerProfile(user.id || user.email);
+    if (existing) {
+      setProfile({
+        ...existing,
+        fullName: existing.fullName || user.fullName || user.email?.split("@")[0] || "User",
+        email: existing.email || user.email || "",
+        mobile: existing.mobile || user.mobile || "",
+      });
+    } else {
+      const initial: JobSeekerProfile = {
+        id: user.id || `usr-${Date.now()}`,
+        email: user.email || "",
+        fullName: user.fullName || user.email?.split("@")[0] || "User",
+        mobile: user.mobile || "",
+        currentLocation: "Pune, Maharashtra",
+        preferredLocation: "Pune, Mumbai, Chakan",
+        education: "B.Tech / Graduate",
+        skills: ["React", "JavaScript", "HTML/CSS", "Web Development"],
+        experience: "2 Years",
+        expectedSalary: "₹ 4.5 LPA",
+        category: "IT & Software",
+        subcategory: "Web Development",
+        jobType: "Full Time",
+        resume: `${(user.fullName || "my").toLowerCase().replace(/\s+/g, '_')}_resume.pdf`,
+        createdAt: new Date().toISOString()
+      };
+      dataStore.saveJobSeekerProfile(initial);
+      setProfile(initial);
+    }
+  }, [user]);
+
+  const handleSave = () => {
+    dataStore.saveJobSeekerProfile(profile);
+    setIsEditing(false);
+    setSavedSuccess(true);
+    setTimeout(() => setSavedSuccess(false), 4000);
+  };
+
+  const addSkill = () => {
+    if (newSkillInput.trim() && !profile.skills.includes(newSkillInput.trim())) {
+      setProfile(prev => ({
+        ...prev,
+        skills: [...prev.skills, newSkillInput.trim()]
+      }));
+      setNewSkillInput("");
+    }
+  };
+
+  const removeSkill = (skillToRemove: string) => {
+    setProfile(prev => ({
+      ...prev,
+      skills: prev.skills.filter(s => s !== skillToRemove)
+    }));
+  };
+
+  return (
+    <div className="space-y-6 animate-in fade-in duration-300">
+      
+      {/* Page Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-[#DCE5F0] shadow-sm">
+        <div>
+          <h2 className="text-2xl font-black text-[#10233F]">My Profile</h2>
+          <p className="text-xs font-bold text-[#5B6B7F] mt-1">
+            Manage your personal profile, skills, experience, and contact details
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {isEditing ? (
+            <>
+              <Button 
+                onClick={() => setIsEditing(false)} 
+                variant="outline" 
+                className="h-10 px-5 rounded-xl border-gray-200 text-gray-700 font-bold text-xs cursor-pointer"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSave} 
+                className="h-10 px-6 rounded-xl bg-[#063B78] hover:bg-[#082F63] text-white font-bold text-xs shadow-md flex items-center gap-2 cursor-pointer"
+              >
+                <Save className="size-4" /> Save Changes
+              </Button>
+            </>
+          ) : (
+            <Button 
+              onClick={() => setIsEditing(true)} 
+              className="h-10 px-6 rounded-xl bg-[#063B78] hover:bg-[#082F63] text-white font-bold text-xs shadow-md flex items-center gap-2 cursor-pointer"
+            >
+              <Edit3 className="size-4" /> Edit Profile
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {savedSuccess && (
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-5 py-3.5 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+          <CheckCircle2 className="size-5 text-emerald-600 shrink-0" />
+          <p className="text-xs font-bold">Profile updated successfully! All your changes are saved.</p>
+        </div>
+      )}
+
+      {/* Main Profile Info Card Header */}
+      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#DCE5F0] shadow-sm flex flex-col md:flex-row items-center md:items-start gap-6 relative overflow-hidden">
+        <div className="size-24 sm:size-28 rounded-3xl bg-gradient-to-br from-[#051B38] to-[#125BB5] text-white flex items-center justify-center font-black text-4xl shadow-xl shrink-0 ring-4 ring-blue-50">
+          {profile.fullName?.charAt(0).toUpperCase() || "P"}
+        </div>
+
+        <div className="flex-1 text-center md:text-left space-y-2 min-w-0">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h3 className="text-2xl font-black text-[#10233F] tracking-tight">{profile.fullName}</h3>
+              <p className="text-xs font-bold text-[#125BB5] mt-0.5">{profile.category || "IT & Software Candidate"}</p>
+            </div>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-[#FFC400]/20 text-[#D97706] border border-[#FFC400]/40 self-center md:self-start">
+              Verified Candidate
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs font-bold text-[#5B6B7F]">
+            <div className="flex items-center justify-center md:justify-start gap-2 bg-[#F8FAFC] p-2.5 rounded-xl border border-gray-100">
+              <Mail className="size-4 text-[#125BB5] shrink-0" />
+              <span className="truncate">{profile.email}</span>
+            </div>
+            <div className="flex items-center justify-center md:justify-start gap-2 bg-[#F8FAFC] p-2.5 rounded-xl border border-gray-100">
+              <Phone className="size-4 text-emerald-600 shrink-0" />
+              <span>{profile.mobile || "Add Mobile"}</span>
+            </div>
+            <div className="flex items-center justify-center md:justify-start gap-2 bg-[#F8FAFC] p-2.5 rounded-xl border border-gray-100">
+              <MapPin className="size-4 text-orange-500 shrink-0" />
+              <span className="truncate">{profile.currentLocation || "Pune"}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Details Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        {/* Personal & Location Info */}
+        <div className="bg-white p-6 rounded-3xl border border-[#DCE5F0] shadow-sm space-y-4">
+          <div className="flex items-center gap-2.5 pb-3 border-b border-gray-100">
+            <User className="size-5 text-[#063B78]" />
+            <h3 className="text-base font-black text-[#10233F]">Personal & Contact Details</h3>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="text-xs font-bold text-[#5B6B7F] mb-1.5 block">Full Name</label>
+              {isEditing ? (
+                <Input 
+                  value={profile.fullName} 
+                  onChange={(e) => setProfile({ ...profile, fullName: e.target.value })}
+                  className="h-11 font-bold text-xs"
+                />
+              ) : (
+                <p className="text-sm font-black text-[#10233F]">{profile.fullName}</p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-bold text-[#5B6B7F] mb-1.5 block">Email Address</label>
+                {isEditing ? (
+                  <Input 
+                    value={profile.email} 
+                    onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                    className="h-11 font-bold text-xs"
+                  />
+                ) : (
+                  <p className="text-sm font-bold text-[#10233F]">{profile.email}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-[#5B6B7F] mb-1.5 block">Mobile Number</label>
+                {isEditing ? (
+                  <Input 
+                    value={profile.mobile} 
+                    onChange={(e) => setProfile({ ...profile, mobile: e.target.value })}
+                    className="h-11 font-bold text-xs"
+                  />
+                ) : (
+                  <p className="text-sm font-bold text-[#10233F]">{profile.mobile || "Not specified"}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-bold text-[#5B6B7F] mb-1.5 block">Current Location</label>
+                {isEditing ? (
+                  <Input 
+                    value={profile.currentLocation} 
+                    onChange={(e) => setProfile({ ...profile, currentLocation: e.target.value })}
+                    className="h-11 font-bold text-xs"
+                  />
+                ) : (
+                  <p className="text-sm font-bold text-[#10233F]">{profile.currentLocation || "Pune, Maharashtra"}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-[#5B6B7F] mb-1.5 block">Preferred Location</label>
+                {isEditing ? (
+                  <Input 
+                    value={profile.preferredLocation} 
+                    onChange={(e) => setProfile({ ...profile, preferredLocation: e.target.value })}
+                    className="h-11 font-bold text-xs"
+                  />
+                ) : (
+                  <p className="text-sm font-bold text-[#10233F]">{profile.preferredLocation || "Pune"}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Work & Salary Preferences */}
+        <div className="bg-white p-6 rounded-3xl border border-[#DCE5F0] shadow-sm space-y-4">
+          <div className="flex items-center gap-2.5 pb-3 border-b border-gray-100">
+            <Briefcase className="size-5 text-[#063B78]" />
+            <h3 className="text-base font-black text-[#10233F]">Professional Preferences</h3>
+          </div>
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-bold text-[#5B6B7F] mb-1.5 block">Job Category / Field</label>
+                {isEditing ? (
+                  <Input 
+                    value={profile.category} 
+                    onChange={(e) => setProfile({ ...profile, category: e.target.value })}
+                    className="h-11 font-bold text-xs"
+                  />
+                ) : (
+                  <p className="text-sm font-black text-[#10233F]">{profile.category || "IT & Software"}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-[#5B6B7F] mb-1.5 block">Total Experience</label>
+                {isEditing ? (
+                  <Input 
+                    value={profile.experience} 
+                    onChange={(e) => setProfile({ ...profile, experience: e.target.value })}
+                    className="h-11 font-bold text-xs"
+                  />
+                ) : (
+                  <p className="text-sm font-bold text-[#10233F]">{profile.experience || "2 Years"}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-bold text-[#5B6B7F] mb-1.5 block">Expected Salary</label>
+                {isEditing ? (
+                  <Input 
+                    value={profile.expectedSalary} 
+                    onChange={(e) => setProfile({ ...profile, expectedSalary: e.target.value })}
+                    className="h-11 font-bold text-xs"
+                  />
+                ) : (
+                  <p className="text-sm font-bold text-[#10233F]">{profile.expectedSalary || "₹ 4.5 LPA"}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-[#5B6B7F] mb-1.5 block">Education / Degree</label>
+                {isEditing ? (
+                  <Input 
+                    value={profile.education} 
+                    onChange={(e) => setProfile({ ...profile, education: e.target.value })}
+                    className="h-11 font-bold text-xs"
+                  />
+                ) : (
+                  <p className="text-sm font-bold text-[#10233F]">{profile.education || "Graduate"}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      {/* Skills Section */}
+      <div className="bg-white p-6 rounded-3xl border border-[#DCE5F0] shadow-sm space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+          <div className="flex items-center gap-2.5">
+            <Award className="size-5 text-[#063B78]" />
+            <h3 className="text-base font-black text-[#10233F]">Key Skills</h3>
+          </div>
+          <span className="text-xs font-bold text-gray-400">{profile.skills?.length || 0} skills added</span>
+        </div>
+
+        <div className="flex flex-wrap gap-2.5 pt-2">
+          {profile.skills?.map((skill, idx) => (
+            <span key={idx} className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-black bg-[#EBF3FF] text-[#125BB5] border border-blue-100 shadow-xs">
+              {skill}
+              {isEditing && (
+                <button onClick={() => removeSkill(skill)} className="hover:text-red-600 transition-colors cursor-pointer">
+                  <X className="size-3.5" />
+                </button>
+              )}
+            </span>
+          ))}
+        </div>
+
+        {isEditing && (
+          <div className="flex items-center gap-2 pt-2 max-w-md">
+            <Input 
+              placeholder="Type a new skill (e.g. React, SQL, Driving)..."
+              value={newSkillInput}
+              onChange={(e) => setNewSkillInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addSkill(); } }}
+              className="h-10 text-xs font-bold"
+            />
+            <Button onClick={addSkill} className="h-10 px-4 bg-[#063B78] text-white font-bold text-xs rounded-xl cursor-pointer">
+              <Plus className="size-4" /> Add
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* Resume Attachment Card */}
+      <div className="bg-white p-6 rounded-3xl border border-[#DCE5F0] shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="size-12 rounded-2xl bg-blue-50 text-[#125BB5] flex items-center justify-center shrink-0">
+            <FileText className="size-6" />
+          </div>
+          <div>
+            <h4 className="font-black text-sm text-[#10233F]">Uploaded Resume / CV</h4>
+            <p className="text-xs font-bold text-gray-400 mt-0.5">{profile.resume || "payal_resume.pdf"}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <Button variant="outline" className="h-10 px-5 rounded-xl text-xs font-bold border-blue-200 text-[#125BB5] hover:bg-blue-50 flex items-center gap-2 w-full sm:w-auto justify-center cursor-pointer">
+            <UploadCloud className="size-4" /> Upload New Resume
+          </Button>
+        </div>
+      </div>
+
+    </div>
   );
 }

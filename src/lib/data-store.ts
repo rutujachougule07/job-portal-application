@@ -205,7 +205,7 @@ export const DEFAULT_JOB_PACKAGES: JobPackagePlan[] = [
   },
 ];
 
-// INITIAL SEED DATA FOR REAL JOBS (Initially 100% empty; populated when employers post real jobs)
+// INITIAL SEED DATA FOR REAL JOBS (Only jobs added via Admin will exist)
 const INITIAL_JOBS: JobRecord[] = [];
 
 export class DataStoreManager {
@@ -348,12 +348,13 @@ export class DataStoreManager {
   }
 
   // --- USER AUTHENTICATION & CURRENT SESSION ---
-  public getCurrentUser(): { email: string; role: UserRole; fullName?: string; id?: string } | null {
+  public getCurrentUser(): { email: string; role: UserRole; fullName?: string; id?: string; mobile?: string } | null {
     if (typeof window === "undefined") return null;
     const raw = localStorage.getItem(this.STORAGE_KEYS.USER);
     if (!raw) return null;
     try {
-      return JSON.parse(raw);
+      const u = JSON.parse(raw);
+      return u;
     } catch {
       return null;
     }
@@ -376,65 +377,36 @@ export class DataStoreManager {
   public getAllJobs(): JobRecord[] {
     if (typeof window === "undefined") return INITIAL_JOBS;
     const raw = localStorage.getItem(this.STORAGE_KEYS.JOBS);
-    if (!raw) return INITIAL_JOBS;
+    if (!raw) {
+      localStorage.setItem(this.STORAGE_KEYS.JOBS, JSON.stringify(INITIAL_JOBS));
+      return INITIAL_JOBS;
+    }
     try {
       const parsed: JobRecord[] = JSON.parse(raw);
-      // Clean out legacy seed jobs and test entries (e.g. software company / alpha byete)
-      const cleaned = parsed.filter(
-        (j) =>
-          !j.id.startsWith("job-c") &&
-          !j.id.startsWith("job-it") &&
-          !j.id.startsWith("job-eng") &&
-          !j.id.startsWith("job-hc") &&
-          !j.id.startsWith("job-tr") &&
-          !j.id.startsWith("job-ag") &&
-          !j.id.startsWith("job-fin") &&
-          !j.id.startsWith("job-sm") &&
-          !j.id.startsWith("job-edu") &&
-          !j.id.startsWith("job-mfg") &&
-          !j.id.startsWith("job-hr") &&
-          !j.id.startsWith("job-hosp") &&
-          !j.id.startsWith("job-log") &&
-          !j.id.startsWith("job-gov") &&
-          !j.id.startsWith("job-legal") &&
-          !j.id.startsWith("job-arch") &&
-          !j.id.startsWith("job-ret") &&
-          !j.id.startsWith("job-bpo") &&
-          !j.id.startsWith("job-des") &&
-          !j.id.startsWith("c-") &&
-          !j.id.startsWith("it-") &&
-          !j.id.startsWith("eng-") &&
-          !j.id.startsWith("hc-") &&
-          !j.id.startsWith("fin-") &&
-          !j.id.startsWith("sm-") &&
-          !j.id.startsWith("edu-") &&
-          !j.id.startsWith("mfg-") &&
-          !j.id.startsWith("hr-") &&
-          !j.id.startsWith("hosp-") &&
-          !j.id.startsWith("log-") &&
-          !j.id.startsWith("gov-") &&
-          !j.id.startsWith("leg-") &&
-          !j.id.startsWith("arch-") &&
-          !j.id.startsWith("ret-") &&
-          !j.id.startsWith("bpo-") &&
-          !j.id.startsWith("des-") &&
-          !j.id.startsWith("agri-") &&
-          !j.id.startsWith("sci-") &&
-          !j.id.startsWith("med-") &&
-          j.company?.toLowerCase() !== "alpha byete" &&
-          j.title?.toLowerCase() !== "software company"
-      );
-      if (cleaned.length !== parsed.length) {
-        localStorage.setItem(this.STORAGE_KEYS.JOBS, JSON.stringify(cleaned));
+      // Merge initial seed jobs if missing from parsed array
+      const existingIds = new Set(parsed.map(j => j.id));
+      let updated = [...parsed];
+      let hasNewSeed = false;
+
+      for (const initJob of INITIAL_JOBS) {
+        if (!existingIds.has(initJob.id)) {
+          updated.push(initJob);
+          hasNewSeed = true;
+        }
       }
-      return cleaned;
+
+      if (hasNewSeed) {
+        localStorage.setItem(this.STORAGE_KEYS.JOBS, JSON.stringify(updated));
+      }
+      return updated;
     } catch {
+      localStorage.setItem(this.STORAGE_KEYS.JOBS, JSON.stringify(INITIAL_JOBS));
       return INITIAL_JOBS;
     }
   }
 
   public getActiveJobs(): JobRecord[] {
-    return this.getAllJobs().filter((j) => j.status === "Active" && (j.approvalStatus === "approved" || !j.approvalStatus));
+    return this.getAllJobs().filter((j) => j.status === "Active");
   }
 
   public getPendingJobs(): JobRecord[] {
@@ -462,7 +434,8 @@ export class DataStoreManager {
       postedDate: new Date().toISOString(),
       postedAgo: "Just now",
       initials,
-      approvalStatus: jobData.approvalStatus || "pending",
+      approvalStatus: jobData.approvalStatus || "approved",
+      status: jobData.status || "Active",
     };
     jobs.unshift(newJob);
     if (typeof window !== "undefined") {
@@ -761,6 +734,68 @@ export class DataStoreManager {
       }
     } catch { }
     return true;
+  }
+
+  // --- JOB SEEKER PROFILE MANAGEMENT ---
+  public getJobSeekerProfile(userId: string): JobSeekerProfile | null {
+    if (typeof window === "undefined" || !userId) return null;
+    const raw = localStorage.getItem(this.STORAGE_KEYS.PROFILES);
+    if (!raw) return null;
+    try {
+      const profiles: JobSeekerProfile[] = JSON.parse(raw);
+      return profiles.find((p) => p.id === userId || p.email === userId) || null;
+    } catch {
+      return null;
+    }
+  }
+
+  public saveJobSeekerProfile(profile: Partial<JobSeekerProfile> & { id: string; email: string }): JobSeekerProfile {
+    const raw = typeof window !== "undefined" ? localStorage.getItem(this.STORAGE_KEYS.PROFILES) : null;
+    const profiles: JobSeekerProfile[] = raw ? JSON.parse(raw) : [];
+    
+    const existingIndex = profiles.findIndex((p) => p.id === profile.id || p.email === profile.email);
+    const found = existingIndex >= 0 ? profiles[existingIndex] : undefined;
+
+    const updatedProfile: JobSeekerProfile = {
+      id: profile.id,
+      email: profile.email,
+      fullName: profile.fullName ?? found?.fullName ?? "User",
+      mobile: profile.mobile ?? found?.mobile ?? "",
+      education: profile.education ?? found?.education ?? "",
+      skills: profile.skills ?? found?.skills ?? [],
+      experience: profile.experience ?? found?.experience ?? "",
+      currentLocation: profile.currentLocation ?? found?.currentLocation ?? "",
+      preferredLocation: profile.preferredLocation ?? found?.preferredLocation ?? "",
+      expectedSalary: profile.expectedSalary ?? found?.expectedSalary ?? "",
+      category: profile.category ?? found?.category ?? "",
+      subcategory: profile.subcategory ?? found?.subcategory ?? "",
+      jobType: profile.jobType ?? found?.jobType ?? "Full Time",
+      resume: profile.resume ?? found?.resume ?? "",
+      profilePhoto: profile.profilePhoto ?? found?.profilePhoto ?? "",
+      createdAt: found?.createdAt ?? new Date().toISOString(),
+    };
+
+    if (existingIndex >= 0) {
+      profiles[existingIndex] = updatedProfile;
+    } else {
+      profiles.push(updatedProfile);
+    }
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem(this.STORAGE_KEYS.PROFILES, JSON.stringify(profiles));
+      fbSync(() => setDoc(doc(db, "profiles", updatedProfile.id), updatedProfile));
+
+      // Also update session user if full name or email changed
+      const currentUser = this.getCurrentUser();
+      if (currentUser && (currentUser.id === updatedProfile.id || currentUser.email === updatedProfile.email)) {
+        this.setCurrentUser({
+          ...currentUser,
+          fullName: updatedProfile.fullName,
+          email: updatedProfile.email,
+        });
+      }
+    }
+    return updatedProfile;
   }
 
   public getUserPackages(userId: string): PackageTransaction[] {

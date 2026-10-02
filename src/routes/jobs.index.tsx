@@ -90,6 +90,35 @@ function JobsListingPage() {
 
   const isInitialState = (!categoryFilter || categoryFilter === "all") && !searchTerm && (!locationFilter || locationFilter === "all") && (!typeFilter || typeFilter === "all") && (!workModeFilter || workModeFilter === "all") && (!experienceFilter || experienceFilter === "all") && (!salaryFilter || salaryFilter === "all");
 
+  const dynamicMainCategories = useMemo(() => {
+    const jobsList = dataStore.getActiveJobs();
+    const catMap = new Map<string, { slug: string; name: string; count: number }>();
+
+    jobsList.forEach((job) => {
+      if (job.category && job.category.trim()) {
+        const name = job.category.trim();
+        const slug = name.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-');
+        if (!catMap.has(slug)) {
+          catMap.set(slug, { slug, name, count: 1 });
+        } else {
+          catMap.get(slug)!.count += 1;
+        }
+      }
+    });
+
+    return Array.from(catMap.values());
+  }, []);
+
+  const dynamicLocations = useMemo(() => {
+    const locSet = new Set<string>();
+    dataStore.getActiveJobs().forEach((job) => {
+      if (job.location) {
+        locSet.add(job.location.trim());
+      }
+    });
+    return Array.from(locSet);
+  }, []);
+
   const dynamicSubCategories = useMemo(() => {
     if (!categoryFilter || categoryFilter === "all") return [];
     
@@ -307,225 +336,217 @@ function JobsListingPage() {
             </div>
           ) : null)}
 
-          {currentUser && (
-            <div className="mb-6 w-full flex flex-col md:flex-row gap-3 bg-white p-4 rounded-2xl shadow-sm border border-[#DCE5F0]">
-              <div className="flex-1 relative flex items-center bg-[#F5F8FC] rounded-xl h-12 overflow-hidden border border-[#DCE5F0]">
-                <Search className="absolute left-4 size-5 text-[#5B6B7F]" />
-                <Input
-                  placeholder={t("searchJobPlaceholder")}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-12 h-full border-0 bg-transparent text-sm text-[#10233F] font-bold focus-visible:ring-0 rounded-none shadow-none"
-                />
+          {/* SECTION 1: Category Cards View (Displayed when no specific category card is clicked) */}
+          {(!categoryFilter || categoryFilter === "all") ? (
+            <div className="mb-10 w-full">
+              <div className="flex flex-col items-center text-center max-w-2xl mx-auto mb-8">
+                <div className="size-14 rounded-2xl bg-[#063B78] text-[#FFC400] flex items-center justify-center shadow-lg mb-3">
+                  <LayoutGrid className="size-7" />
+                </div>
+                <h2 className="text-3xl sm:text-4xl font-black text-[#10233F]">
+                  {lang === "mr" ? "मुख्य नोकरी श्रेणी (Main Job Categories)" : "Main Job Categories"}
+                </h2>
+                <p className="mt-2 text-sm font-bold text-[#5B6B7F]">
+                  {lang === "mr" ? "नोकऱ्या पाहण्यासाठी खालील कोणत्याही श्रेणी कार्डवर क्लिक करा" : "Select any category card to view jobs in that section"}
+                </p>
               </div>
-              <div className="md:w-[200px] relative flex items-center bg-[#F5F8FC] rounded-xl h-12 overflow-hidden border border-[#DCE5F0]">
-                <Briefcase className="absolute left-4 size-5 text-[#125BB5]" />
-                <select
-                  value={categoryFilter}
-                  onChange={(e) => setCategoryFilter(e.target.value)}
-                  className="w-full h-full border-0 bg-transparent text-sm font-bold text-[#10233F] pl-12 pr-10 focus:outline-none appearance-none cursor-pointer"
-                >
-                  <option value="all">{lang === "mr" ? "सर्व श्रेणी" : "All Categories"}</option>
-                  <option value="it">IT & Software</option>
-                  <option value="manufacturing">Manufacturing</option>
-                  <option value="finance">Finance</option>
-                  <option value="healthcare">Healthcare</option>
-                  <option value="retail">Retail</option>
-                  <option value="education">Education</option>
-                </select>
-                <ChevronDown className="absolute right-4 size-5 text-[#5B6B7F] pointer-events-none" />
-              </div>
-              <div className="md:w-[200px] relative flex items-center bg-[#F5F8FC] rounded-xl h-12 overflow-hidden border border-[#DCE5F0]">
-                <MapPin className="absolute left-4 size-5 text-[#125BB5]" />
-                <select
-                  value={locationFilter}
-                  onChange={(e) => setLocationFilter(e.target.value)}
-                  className="w-full h-full border-0 bg-transparent text-sm font-bold text-[#10233F] pl-12 pr-10 focus:outline-none appearance-none cursor-pointer"
-                >
-                  <option value="all">{t("allLocations")}</option>
-                  <option value="mumbai">Mumbai</option>
-                  <option value="pune">Pune</option>
-                  <option value="chakan">Chakan</option>
-                  <option value="bengaluru">Bengaluru</option>
-                </select>
-                <ChevronDown className="absolute right-4 size-5 text-[#5B6B7F] pointer-events-none" />
-              </div>
-              <Button className="btn-yellow h-12 font-black text-sm px-8 rounded-xl shadow-md transition-shadow shrink-0">
-                {t("search")}
-              </Button>
-            </div>
-          )}
 
-          {(!categoryFilter || categoryFilter === "all") && !currentUser && (
-            <div className="mb-8 bg-white p-6 rounded-2xl border border-[#DCE5F0] shadow-xs">
-              <h2 className="text-xl font-black text-[#10233F] mb-6 flex items-center gap-2">
-                <LayoutGrid className="size-5 text-[#063B78]" />
-                {t("popularCategories")}
-              </h2>
-              <PopularCategories limit={20} hideHeader={true} />
-            </div>
-          )}
+              {dynamicMainCategories.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 max-w-6xl mx-auto">
+                  {/* Dynamic Main Category Cards */}
+                  {dynamicMainCategories.map(({ slug, name, count }) => {
+                    let CategoryIcon = Briefcase;
+                    const lc = name.toLowerCase();
+                    if (lc.includes('construction') || lc.includes('builder') || lc.includes('civil')) CategoryIcon = HardHat;
+                    else if (lc.includes('software') || lc.includes('it') || lc.includes('develop') || lc.includes('computer')) CategoryIcon = Laptop;
+                    else if (lc.includes('engineer') || lc.includes('tech') || lc.includes('mechanic')) CategoryIcon = Wrench;
+                    else if (lc.includes('health') || lc.includes('medic') || lc.includes('doctor') || lc.includes('nurse')) CategoryIcon = Stethoscope;
+                    else if (lc.includes('financ') || lc.includes('account') || lc.includes('bank')) CategoryIcon = Landmark;
+                    else if (lc.includes('sales') || lc.includes('market')) CategoryIcon = TrendingUp;
+                    else if (lc.includes('educat') || lc.includes('teach') || lc.includes('school')) CategoryIcon = GraduationCap;
+                    else if (lc.includes('manufact') || lc.includes('factory') || lc.includes('production') || lc.includes('industrial')) CategoryIcon = Factory;
+                    else if (lc.includes('logistic') || lc.includes('transport') || lc.includes('driver') || lc.includes('delivery')) CategoryIcon = Truck;
+                    else if (lc.includes('hotel') || lc.includes('restaurant') || lc.includes('hospitality')) CategoryIcon = Hotel;
+                    else if (lc.includes('security') || lc.includes('guard')) CategoryIcon = ShieldCheck;
 
-          {/* Horizontal Category List for Current User */}
-          {currentUser && (
-            <div className="mb-8 w-full max-w-full overflow-hidden">
-              <div className="flex flex-nowrap overflow-x-auto gap-3 pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                <button
-                  onClick={() => setCategoryFilter("all")}
-                  className={`shrink-0 px-6 py-2.5 rounded-full text-sm font-bold transition-all border shadow-sm ${
-                    !categoryFilter || categoryFilter === "all" 
-                      ? "bg-[#063B78] text-white border-[#063B78]" 
-                      : "bg-white text-[#5B6B7F] border-[#DCE5F0] hover:border-[#125BB5] hover:text-[#125BB5]"
-                  }`}
-                >
-                  {lang === "mr" ? "सर्व नोकऱ्या" : "All Jobs"}
-                </button>
-                {["IT & Software", "Manufacturing", "Finance", "Healthcare", "Retail", "Education", "Engineering", "Marketing"].map((cat) => (
+                    return (
+                      <button
+                        key={slug}
+                        onClick={() => { setCategoryFilter(slug); setSubCategoryFilter("all"); }}
+                        className="group p-6 rounded-3xl border border-[#DCE5F0] bg-white text-left transition-all duration-300 hover:border-[#063B78] hover:shadow-xl hover:-translate-y-1 flex flex-col justify-between cursor-pointer"
+                      >
+                        <div className="flex items-start justify-between mb-6">
+                          <div className="size-14 rounded-2xl bg-[#063B78]/10 text-[#063B78] flex items-center justify-center group-hover:bg-[#063B78] group-hover:text-white transition-colors">
+                            <CategoryIcon className="size-7" />
+                          </div>
+                          <span className="text-xs font-black px-3.5 py-1.5 rounded-full bg-[#EBF1F8] text-[#063B78] group-hover:bg-[#063B78] group-hover:text-white transition-colors">
+                            {count} {lang === "mr" ? "नोकऱ्या" : "Jobs"}
+                          </span>
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-black text-[#10233F] group-hover:text-[#063B78] leading-tight">
+                            {getCategoryTitle(name, lang) || name}
+                          </h3>
+                          <p className="text-xs font-bold text-[#5B6B7F] mt-2">
+                            {lang === "mr" ? `${count} नोकरी जाहिराती उपलब्ध` : `${count} Active Listings`}
+                          </p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="card-realjob p-12 text-center bg-white rounded-3xl border border-[#DCE5F0] max-w-xl mx-auto">
+                  <Briefcase className="mx-auto size-14 text-[#5B6B7F] mb-4" />
+                  <h3 className="text-xl font-black text-[#10233F]">कोणतीही नोकरी श्रेणी उपलब्ध नाही</h3>
+                  <p className="text-xs font-semibold text-[#5B6B7F] mt-2">
+                    अद्याप ॲडमिन कडून कोणतीही नोकरी पोस्ट केलेली नाही. ॲडमिन नोकरी पोस्ट करेल तेव्हा येथे श्रेणी दिसेल.
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : (
+            /* SECTION 2: Jobs Listing inside selected category (Displayed ONLY when a category card is clicked) */
+            <div className="w-full flex flex-col gap-6">
+              {/* Selected Category Header */}
+              <div className="bg-white p-6 rounded-3xl border border-[#DCE5F0] shadow-sm flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className="text-xs font-black uppercase tracking-wider text-[#063B78] bg-[#EBF1F8] px-3 py-1 rounded-full border border-[#063B78]/10">
+                      {lang === "mr" ? "निवडलेली श्रेणी" : "Selected Category"}
+                    </span>
+                    <span className="text-xs font-extrabold text-[#5B6B7F]">
+                      • {filteredJobs.length} {lang === "mr" ? "नोकऱ्या उपलब्ध" : "Jobs Available"}
+                    </span>
+                  </div>
+                  <h2 className="text-2xl sm:text-3xl font-black text-[#10233F] mt-1.5 capitalize tracking-tight">
+                    {getCategoryTitle(categoryFilter, lang) || categoryFilter}
+                  </h2>
+                </div>
+
+                <div className="flex items-center gap-3 flex-wrap">
                   <button
-                    key={cat}
-                    onClick={() => setCategoryFilter(cat.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-'))}
-                    className={`shrink-0 px-6 py-2.5 rounded-full text-sm font-bold transition-all border shadow-sm ${
-                      categoryFilter === cat.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-')
-                        ? "bg-[#063B78] text-white border-[#063B78]" 
-                        : "bg-white text-[#5B6B7F] border-[#DCE5F0] hover:border-[#125BB5] hover:text-[#125BB5]"
-                    }`}
+                    onClick={() => { setCategoryFilter("all"); setSubCategoryFilter("all"); }}
+                    className="px-5 py-2.5 rounded-xl bg-[#063B78] text-white text-xs font-black hover:bg-[#082F63] transition-all shadow-md flex items-center gap-2 cursor-pointer"
                   >
-                    {cat}
+                    <ArrowLeft className="size-4" />
+                    {lang === "mr" ? "सर्व श्रेणी कडे जा (All Categories)" : "Back to All Categories"}
                   </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Main Grid Layout */}
-          {(!isInitialState || currentUser) && (
-            <div className={`grid grid-cols-1 ${categoryFilter !== "all" && categoryFilter ? "lg:grid-cols-[300px_1fr]" : ""} gap-8 items-start`}>
-              {/* Desktop Filters Sidebar */}
-            {(categoryFilter !== "all" && categoryFilter) && (
-              <aside className="hidden lg:block bg-white p-6 rounded-3xl border border-[#DCE5F0] shadow-sm sticky top-24">
-              <div className="flex items-center justify-between pb-5 border-b border-[#DCE5F0]/80 mb-6">
-                <span className="font-black text-sm text-[#10233F] flex items-center gap-2">
-                  <div className="p-1.5 bg-[#F5F8FC] rounded-lg">
-                    <SlidersHorizontal className="size-4 text-[#063B78]" />
-                  </div>
-                  {t("filters")}
-                </span>
-                <button
-                  onClick={resetFilters}
-                  className="text-xs font-bold text-[#5B6B7F] hover:text-[#125BB5] flex items-center gap-1.5 transition-colors"
-                >
-                  <RotateCcw className="size-3.5" /> {t("reset")}
-                </button>
-              </div>
-
-              {/* Experience Filter */}
-              <div className="mb-6">
-                <label className="block text-xs font-extrabold text-[#10233F] mb-2 uppercase">
-                  {t("experience")}
-                </label>
-                <select
-                  value={experienceFilter}
-                  onChange={(e) => setExperienceFilter(e.target.value)}
-                  className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold text-[#10233F]"
-                >
-                  <option value="all">{t("experience")}</option>
-                  <option value="Fresher">Fresher</option>
-                  <option value="1-3">1-3 Years</option>
-                  <option value="3-5">3-5 Years</option>
-                  <option value="5+">5+ Years</option>
-                </select>
-              </div>
-
-              {/* Salary Filter */}
-              <div className="mb-6">
-                <label className="block text-xs font-extrabold text-[#10233F] mb-2 uppercase">
-                  {t("expectedSalary")}
-                </label>
-                <select
-                  value={salaryFilter}
-                  onChange={(e) => setSalaryFilter(e.target.value)}
-                  className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold text-[#10233F]"
-                >
-                  <option value="all">{t("expectedSalary")}</option>
-                  <option value="10000">₹10,000+ / mo</option>
-                  <option value="15000">₹15,000+ / mo</option>
-                  <option value="20000">₹20,000+ / mo</option>
-                  <option value="25000">₹25,000+ / mo</option>
-                </select>
-              </div>
-
-              {/* Job Type Filter */}
-              <div className="mb-6 relative">
-                <label className="block text-xs font-extrabold text-[#5B6B7F] mb-2 uppercase tracking-wide">
-                  {t("jobTypeLabel")}
-                </label>
-                <div className="relative">
-                  <select
-                    value={typeFilter}
-                    onChange={(e) => setTypeFilter(e.target.value)}
-                    className="w-full h-11 rounded-xl border-2 border-[#F5F8FC] bg-[#F5F8FC] px-4 text-sm font-bold text-[#10233F] focus:border-[#063B78] transition-colors appearance-none cursor-pointer"
-                  >
-                    <option value="all">{t("allTypes")}</option>
-                    <option value="Full-time">{t("fullTime")}</option>
-                    <option value="Part-time">{t("partTime")}</option>
-                    <option value="Contract">{t("contract")}</option>
-                  </select>
-                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 size-4 text-[#5B6B7F] pointer-events-none" />
                 </div>
               </div>
 
-              {/* Work Mode Filter (WFH / On-site / Hybrid) */}
-              <div className="mb-6">
-                <label className="block text-xs font-extrabold text-[#10233F] mb-2 uppercase">
-                  Work Mode / मोड
-                </label>
-                <select
-                  value={workModeFilter}
-                  onChange={(e) => setWorkModeFilter(e.target.value)}
-                  className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold text-[#10233F]"
-                >
-                  <option value="all">All Modes / सर्व मोड</option>
-                  <option value="Remote">🏠 Work From Home (WFH)</option>
-                  <option value="On-site">🏢 On-site (Office / Site)</option>
-                  <option value="Hybrid">🔄 Hybrid</option>
-                </select>
-              </div>
-            </aside>
-            )}
-
-            {/* Main Content List */}
-            <div className="w-full">
-              {/* Toolbar */}
-              {(categoryFilter !== "all" && categoryFilter) && (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-[#DCE5F0] mb-6 shadow-sm">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-[#F5F8FC] rounded-lg">
-                    <List className="size-4 text-[#063B78]" />
+              {/* Compact Filter Bar */}
+              <div className="bg-white p-4 rounded-2xl border border-[#DCE5F0] shadow-sm flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-2 px-3 py-2 bg-[#063B78]/10 text-[#063B78] rounded-xl text-xs font-black mr-1">
+                    <SlidersHorizontal className="size-3.5" />
+                    <span>{t("filters")}</span>
                   </div>
-                  <span className="text-sm font-black text-[#10233F]">
-                    {t("totalJobsCount")}: <span className="text-[#063B78] text-base">{n(filteredJobs.length)}</span>
+
+                  {/* Experience Filter */}
+                  <div className="relative">
+                    <select
+                      value={experienceFilter}
+                      onChange={(e) => setExperienceFilter(e.target.value)}
+                      className="h-10 rounded-xl border border-[#DCE5F0] bg-[#F5F8FC] pl-3 pr-8 text-xs font-bold text-[#10233F] focus:border-[#063B78] appearance-none cursor-pointer"
+                    >
+                      <option value="all">🎓 {lang === "mr" ? "अनुभव (सर्व)" : "Experience: All"}</option>
+                      <option value="Fresher">Fresher / फ्रेसर</option>
+                      <option value="1-3">1-3 {lang === "mr" ? "वर्षे" : "Years"}</option>
+                      <option value="3-5">3-5 {lang === "mr" ? "वर्षे" : "Years"}</option>
+                      <option value="5+">5+ {lang === "mr" ? "वर्षे" : "Years"}</option>
+                    </select>
+                    <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 text-[#5B6B7F] pointer-events-none" />
+                  </div>
+
+                  {/* Salary Filter */}
+                  <div className="relative">
+                    <select
+                      value={salaryFilter}
+                      onChange={(e) => setSalaryFilter(e.target.value)}
+                      className="h-10 rounded-xl border border-[#DCE5F0] bg-[#F5F8FC] pl-3 pr-8 text-xs font-bold text-[#10233F] focus:border-[#063B78] appearance-none cursor-pointer"
+                    >
+                      <option value="all">💰 {lang === "mr" ? "पगार (सर्व)" : "Salary: All"}</option>
+                      <option value="10000">₹10,000+ / mo</option>
+                      <option value="15000">₹15,000+ / mo</option>
+                      <option value="20000">₹20,000+ / mo</option>
+                      <option value="25000">₹25,000+ / mo</option>
+                    </select>
+                    <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 text-[#5B6B7F] pointer-events-none" />
+                  </div>
+
+                  {/* Job Type Filter */}
+                  <div className="relative">
+                    <select
+                      value={typeFilter}
+                      onChange={(e) => setTypeFilter(e.target.value)}
+                      className="h-10 rounded-xl border border-[#DCE5F0] bg-[#F5F8FC] pl-3 pr-8 text-xs font-bold text-[#10233F] focus:border-[#063B78] appearance-none cursor-pointer"
+                    >
+                      <option value="all">💼 {t("allTypes")}</option>
+                      <option value="Full Time">{t("fullTime")}</option>
+                      <option value="Part Time">{t("partTime")}</option>
+                      <option value="Contract">{t("contract")}</option>
+                    </select>
+                    <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 text-[#5B6B7F] pointer-events-none" />
+                  </div>
+
+                  {/* Work Mode Filter */}
+                  <div className="relative">
+                    <select
+                      value={workModeFilter}
+                      onChange={(e) => setWorkModeFilter(e.target.value)}
+                      className="h-10 rounded-xl border border-[#DCE5F0] bg-[#F5F8FC] pl-3 pr-8 text-xs font-bold text-[#10233F] focus:border-[#063B78] appearance-none cursor-pointer"
+                    >
+                      <option value="all">🏢 {lang === "mr" ? "मोड (सर्व)" : "Mode: All"}</option>
+                      <option value="Work From Home">🏠 WFH / Remote</option>
+                      <option value="On-site">🏢 On-site</option>
+                      <option value="Hybrid">🔄 Hybrid</option>
+                    </select>
+                    <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 text-[#5B6B7F] pointer-events-none" />
+                  </div>
+
+                  {/* Location Filter */}
+                  <div className="relative">
+                    <select
+                      value={locationFilter}
+                      onChange={(e) => setLocationFilter(e.target.value)}
+                      className="h-10 rounded-xl border border-[#DCE5F0] bg-[#F5F8FC] pl-3 pr-8 text-xs font-bold text-[#10233F] focus:border-[#063B78] appearance-none cursor-pointer"
+                    >
+                      <option value="all">📍 {t("allLocations")}</option>
+                      {dynamicLocations.map((loc) => (
+                        <option key={loc} value={loc.toLowerCase()}>
+                          {loc}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 text-[#5B6B7F] pointer-events-none" />
+                  </div>
+
+                  {/* Reset Button */}
+                  {(experienceFilter !== "all" || salaryFilter !== "all" || typeFilter !== "all" || workModeFilter !== "all" || locationFilter !== "all") && (
+                    <button
+                      onClick={resetFilters}
+                      className="h-10 px-3.5 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 text-xs font-extrabold hover:bg-amber-100 transition-colors flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <RotateCcw className="size-3.5" />
+                      {t("reset")}
+                    </button>
+                  )}
+                </div>
+
+                {/* Total Count & Sort By */}
+                <div className="flex items-center gap-4">
+                  <span className="text-xs font-extrabold text-[#10233F] flex items-center gap-1.5">
+                    <List className="size-3.5 text-[#063B78]" />
+                    {t("totalJobsCount")}: <span className="text-[#063B78] font-black text-sm">{n(filteredJobs.length)}</span>
                   </span>
-                </div>
 
-                <div className="flex items-center gap-3">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="lg:hidden text-xs font-bold border-[#063B78] text-[#063B78]"
-                    onClick={() => setMobileFilterOpen(true)}
-                  >
-                    <Filter className="size-3.5 mr-1" /> {t("filters")}
-                  </Button>
-
-                  <div className="flex items-center gap-2 bg-[#F5F8FC] rounded-xl p-1 border border-[#DCE5F0]/50">
-                    <div className="pl-3 pr-2 flex items-center gap-1.5">
-                      <ArrowDownAZ className="size-3.5 text-[#5B6B7F]" />
-                      <span className="text-xs font-bold text-[#5B6B7F] shrink-0">{t("sortByLabel")}</span>
-                    </div>
+                  <div className="flex items-center gap-1.5 bg-[#F5F8FC] rounded-xl p-1 border border-[#DCE5F0]/50">
+                    <span className="text-xs font-bold text-[#5B6B7F] pl-2">{t("sortByLabel")}</span>
                     <select
                       value={sortBy}
                       onChange={(e) => setSortBy(e.target.value as any)}
-                      className="h-9 rounded-lg border-none bg-white shadow-sm px-4 text-xs font-bold text-[#10233F] focus:ring-0 appearance-none cursor-pointer"
+                      className="h-8 rounded-lg border-none bg-white shadow-xs px-2.5 text-xs font-bold text-[#10233F] focus:ring-0 appearance-none cursor-pointer"
                     >
                       <option value="newest">{t("newestFirst")}</option>
                       <option value="title">{t("byTitle")}</option>
@@ -533,95 +554,27 @@ function JobsListingPage() {
                   </div>
                 </div>
               </div>
-              )}
 
-              {/* Dynamic Trapeze Tabs and Sub-categories */}
-              {(categoryFilter !== "all" && categoryFilter) && (
-                <div className="mb-8">
-                  {/* Trapeze Tabs - Exactly like Factory */}
-                  <div className="flex border-b border-[#DCE5F0] mb-6 overflow-x-auto no-scrollbar items-end gap-2">
-                    <button 
-                      onClick={() => {
-                        setCategoryFilter("all");
-                        setSubCategoryFilter("all");
-                      }}
-                      className="px-3 py-2 text-[#5B6B7F] hover:text-[#10233F] hover:bg-[#F5F8FC] rounded-lg mb-1 ml-1 flex items-center gap-1.5 text-[13px] font-bold transition-colors shrink-0"
-                    >
-                      <ArrowLeft className="size-4" /> {t("viewWebsite")}
-                    </button>
-                    <div className="relative px-8 py-3 text-sm font-black text-[#10233F] bg-white border border-b-0 border-[#DCE5F0] rounded-t-[16px] shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-10 flex items-center gap-2 shrink-0">
-                      {categoryFilter === "factory-workers" ? <Factory className="size-4" /> :
-                       categoryFilter === "construction-workers" ? <HardHat className="size-4" /> :
-                       categoryFilter === "technical-staff" ? <Wrench className="size-4" /> :
-                       categoryFilter === "logistics-drivers" ? <Truck className="size-4" /> :
-                       categoryFilter === "skilled-workers" ? <UserCheck className="size-4" /> :
-                       categoryFilter === "unskilled-workers" ? <Users className="size-4" /> :
-                       categoryFilter === "helpers" ? <Headphones className="size-4" /> :
-                       categoryFilter === "electricians" ? <Zap className="size-4" /> :
-                       categoryFilter === "maintenance" ? <Building className="size-4" /> :
-                       categoryFilter === "warehouse-workers" ? <PackageCheck className="size-4" /> :
-                       categoryFilter === "hotel-restaurant" ? <Hotel className="size-4" /> :
-                       categoryFilter === "security" ? <ShieldCheck className="size-4" /> :
-                       <Briefcase className="size-4" />}
-                      {getCategoryTitle(categoryFilter, lang) || categoryFilter}
-                      {/* Trapeze slope effect on right side */}
-                      <div className="absolute -right-3 bottom-0 w-3 h-full bg-white skew-x-[15deg] origin-bottom border-r border-[#DCE5F0]"></div>
-                    </div>
-                  </div>
-
-                  {/* Sub-Category Pills */}
-                  {dynamicSubCategories.length > 0 && (
-                    <div className="flex flex-wrap gap-3">
-                      <button
-                        onClick={() => setSubCategoryFilter("all")}
-                        className={`px-5 py-2.5 rounded-full text-[11px] font-black tracking-wide uppercase transition-all shadow-sm flex items-center gap-2 ${
-                          subCategoryFilter === "all"
-                            ? "bg-[#063B78] text-white shadow-md scale-105"
-                            : "bg-white border border-[#DCE5F0] text-[#5B6B7F] hover:bg-[#F5F8FC] hover:text-[#10233F] hover:scale-105"
-                        }`}
-                      >
-                        {t("allCategories")}
-                      </button>
-                      {dynamicSubCategories.map(sub => (
-                        <button
-                          key={sub.id}
-                          onClick={() => setSubCategoryFilter(sub.id)}
-                          className={`px-5 py-2.5 rounded-full text-[11px] font-black tracking-wide uppercase transition-all shadow-sm flex items-center gap-2 ${
-                            subCategoryFilter === sub.id
-                              ? "bg-[#063B78] text-white shadow-md scale-105"
-                              : "bg-white border border-[#DCE5F0] text-[#5B6B7F] hover:bg-[#F5F8FC] hover:text-[#10233F] hover:scale-105"
-                          }`}
-                        >
-                          {sub.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Main Content Area */}
-              {/* Main Content Area */}
+              {/* Main Job Cards Display */}
               {filteredJobs.length > 0 ? (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <div className={`grid grid-cols-1 ${filteredJobs.length === 1 ? "" : "xl:grid-cols-2"} gap-6`}>
                   {filteredJobs.map((job: Job) => (
                     <JobCard key={job.id} job={job} />
                   ))}
                 </div>
               ) : (
-                <div className="card-realjob p-12 text-center bg-white rounded-2xl border border-[#DCE5F0]">
+                <div className="card-realjob p-12 text-center bg-white rounded-3xl border border-[#DCE5F0]">
                   <Briefcase className="mx-auto size-14 text-[#5B6B7F] mb-4" />
-                  <h3 className="text-xl font-black text-[#10233F]">कोणतीही नोकरी उपलब्ध नाही (No Jobs Found)</h3>
+                  <h3 className="text-xl font-black text-[#10233F]">या श्रेणीमध्ये कोणतीही नोकरी उपलब्ध नाही (No Jobs Found in this Category)</h3>
                   <p className="text-xs font-semibold text-[#5B6B7F] mt-2">
-                    अद्याप कोणतीही नवीन नोकरी पोस्ट केलेली नाही. मालक / कंपनी नवीन नोकरी पोस्ट करतील तेव्हा ती येथे थेट दिसेल.
+                    या श्रेणीमध्ये अद्याप कोणतीही नवीन नोकरी पोस्ट केलेली नाही. ॲडमिन ने नवीन नोकरी पोस्ट केल्यावर ती येथे दिसेल.
                   </p>
-                  <Button onClick={resetFilters} className="mt-5 btn-yellow text-xs font-bold px-6">
-                    {t("resetFilters")}
+                  <Button onClick={() => { setCategoryFilter("all"); setSubCategoryFilter("all"); }} className="mt-5 btn-yellow text-xs font-bold px-6">
+                    {lang === "mr" ? "सर्व श्रेणी कडे जा (Back to Categories)" : "Back to Categories"}
                   </Button>
                 </div>
               )}
             </div>
-          </div>
           )}
         </div>
 
