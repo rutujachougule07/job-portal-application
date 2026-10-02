@@ -1,5 +1,5 @@
 import { useState, useEffect, Fragment } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   ShieldCheck,
   Users,
@@ -12,12 +12,20 @@ import {
   Search,
   BarChart3,
   FileText,
+  Sparkles,
+  Zap,
+  CheckCircle2,
+  CreditCard,
+  Smartphone,
+  Package,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { StatCard } from "@/components/portal/Stats";
-import { dataStore, JobRecord, ApplicationRecord } from "@/lib/data-store";
+import { dataStore, DataStoreManager, JobRecord, ApplicationRecord } from "@/lib/data-store";
 import { toast } from "sonner";
 
 import {
@@ -46,6 +54,42 @@ const monthlyAnalytics = [
   { month: "Jul", workers: 0, jobs: 0, hires: 0 },
   { month: "Aug", workers: 0, jobs: 0, hires: 0 },
   { month: "Sep", workers: 0, jobs: 0, hires: 0 },
+];
+
+const JOB_PACKAGES = [
+  {
+    id: "plan-100",
+    name: "1 Job Starter Plan",
+    price: 100,
+    jobCount: 1,
+    description: "1 Job Posting Credit for ₹100",
+    badge: "Basic Plan",
+  },
+  {
+    id: "plan-200",
+    name: "2 Jobs Standard Plan",
+    price: 200,
+    jobCount: 2,
+    description: "2 Job Posting Credits for ₹200",
+    badge: "Most Popular",
+    popular: true,
+  },
+  {
+    id: "plan-400",
+    name: "5 Jobs Pro Growth Plan",
+    price: 400,
+    jobCount: 5,
+    description: "5 Job Posting Credits for ₹400 (Save ₹100)",
+    badge: "Save ₹100",
+  },
+  {
+    id: "plan-999",
+    name: "Enterprise Unlimited Plan",
+    price: 999,
+    jobCount: 999,
+    description: "Unlimited Job Postings for 30 Days",
+    badge: "Unlimited",
+  },
 ];
 
 function formatWaNumber(phone: string): string {
@@ -82,13 +126,27 @@ function AdminDashboardPage() {
   const [filterJobId, setFilterJobId] = useState<string | null>(null);
   const [expandedApp, setExpandedApp] = useState<string | null>(null);
 
+  // Package & Credits states
+  const [showPackageModal, setShowPackageModal] = useState(false);
+  const [selectedPlanId, setSelectedPlanId] = useState<string>("plan-100");
+  const [paymentMethod, setPaymentMethod] = useState<"upi" | "card" | "netbanking">("upi");
+  const [upiId, setUpiId] = useState("");
+  const [isProcessingPackage, setIsProcessingPackage] = useState(false);
+  const [userCredits, setUserCredits] = useState<number>(0);
+
   // User Accounts for Admin View (Live Dynamic Data)
   const [registeredUsers, setRegisteredUsers] = useState<
-    Array<{ id: string; name: string; role: string; mobile: string; city: string; trade: string; status: string }>
+    Array<{ id: string; name: string; role: string; mobile: string; city: string; trade: string; status: string; createdAt?: string | undefined }>
   >([]);
   const currentUser = dataStore.getCurrentUser();
   const isSuperAdmin = currentUser?.email?.toLowerCase() === "supera@gmail.com" || currentUser?.email?.toLowerCase() === "superadmin";
   const empIdentifier = currentUser?.fullName || currentUser?.email || "admin-001";
+
+  const refreshCredits = () => {
+    if (currentUser?.id) {
+      setUserCredits(dataStore.getUserJobCredits(currentUser.id));
+    }
+  };
 
   const loadAllData = () => {
     if (isSuperAdmin) {
@@ -106,8 +164,10 @@ function AdminDashboardPage() {
       mobile: u.mobile || "N/A",
       city: "Maharashtra",
       trade: u.role === "worker" ? "Worker" : u.role === "employer" ? "Employer" : "Admin",
-      status: "Verified"
+      status: "Verified",
+      createdAt: u.createdAt || undefined
     })));
+    refreshCredits();
   };
 
   useEffect(() => {
@@ -133,6 +193,14 @@ function AdminDashboardPage() {
   const setJ = (k: string, v: any) => setJobForm(p => ({ ...p, [k]: v }));
 
   const handleAddNewJobClick = () => {
+    // Check if user has active credits or is super admin
+    const credits = currentUser?.id ? dataStore.getUserJobCredits(currentUser.id) : 0;
+    if (!isSuperAdmin && credits <= 0) {
+      toast.info("Please select a Job Package to post new jobs.");
+      setShowPackageModal(true);
+      return;
+    }
+
     setEditingJobId(null);
     setJobForm({
       title: "", company: currentUser?.fullName || "REAL JOB Platform", category: "", subcategory: "", location: "",
@@ -142,6 +210,44 @@ function AdminDashboardPage() {
       responsibilities: "", benefits: "", status: "Active",
     });
     setShowJobForm(true);
+  };
+
+  const handleActivatePackage = () => {
+    if (!currentUser) {
+      toast.error("User session expired. Please login again.");
+      return;
+    }
+    const selectedPlan = JOB_PACKAGES.find((p) => p.id === selectedPlanId) || JOB_PACKAGES[0]!;
+    const userId = currentUser.id || currentUser.email || "admin-001";
+
+    setIsProcessingPackage(true);
+    setTimeout(() => {
+      dataStore.addPackagePurchase({
+        userId: userId,
+        planId: selectedPlan.id,
+        planName: selectedPlan.name,
+        price: selectedPlan.price,
+        jobCount: selectedPlan.jobCount,
+        paymentMethod: paymentMethod.toUpperCase(),
+      });
+
+      setIsProcessingPackage(false);
+      setShowPackageModal(false);
+      refreshCredits();
+
+      toast.success(`🎉 ${selectedPlan.name} activated! You now have ${selectedPlan.jobCount} Job Credits.`);
+
+      // Open Post New Job form immediately
+      setEditingJobId(null);
+      setJobForm({
+        title: "", company: currentUser?.fullName || "REAL JOB Platform", category: "", subcategory: "", location: "",
+        salaryMin: "", salaryMax: "", salaryType: "Monthly",
+        jobType: "Full Time", workMode: "On-site", vacancies: "5",
+        education: "", experience: "", skills: "", description: "",
+        responsibilities: "", benefits: "", status: "Active",
+      });
+      setShowJobForm(true);
+    }, 1000);
   };
 
   const handleEditJobClick = (job: JobRecord) => {
@@ -230,6 +336,12 @@ function AdminDashboardPage() {
         status: jobForm.status as any,
         approvalStatus: "pending",
       });
+
+      if (!isSuperAdmin && currentUser?.id) {
+        dataStore.consumeJobCredit(currentUser.id);
+        refreshCredits();
+      }
+
       toast.success("🎉 New job posted successfully!");
     }
     setShowJobForm(false);
@@ -256,6 +368,8 @@ function AdminDashboardPage() {
       j.company.toLowerCase().includes(jobSearch.toLowerCase()) ||
       j.location.toLowerCase().includes(jobSearch.toLowerCase())
   );
+
+  const activeSelectedPlan = JOB_PACKAGES.find((p) => p.id === selectedPlanId) || JOB_PACKAGES[0]!;
 
   // ── FULL PAGE: Add / Edit Job Form ──
   if (showJobForm) {
@@ -499,19 +613,25 @@ function AdminDashboardPage() {
 
           {/* Right: Actions */}
           <div className="flex items-center gap-2 sm:gap-3">
-            <Button
-              asChild
-              variant="ghost"
-              size="sm"
-              className="hidden sm:flex border border-white/30 text-white hover:bg-white/15 font-bold text-xs h-8 px-3 rounded-lg"
-            >
-              <Link to="/home">🌐 Main Website</Link>
-            </Button>
+            {/* Job Credits Indicator */}
+            {!isSuperAdmin && (
+              <div className="flex items-center gap-2 bg-amber-400/20 border border-amber-400/40 px-3 py-1 rounded-xl text-xs font-extrabold text-amber-300">
+                <Zap className="size-3.5 fill-current text-amber-400" />
+                <span>Credits: {userCredits >= 999 ? "Unlimited" : userCredits}</span>
+                <button
+                  onClick={() => setShowPackageModal(true)}
+                  className="ml-1 bg-amber-400 hover:bg-amber-500 text-[#063B78] px-2 py-0.5 rounded text-[10px] font-black transition-all"
+                >
+                  + Add
+                </button>
+              </div>
+            )}
+
             <Button
               onClick={() => {
                 window.localStorage.removeItem("realjob-user");
                 dataStore.setCurrentUser(null);
-                toast.info("Logged out from Dashboard");
+                toast.info("Logged out successfully");
                 window.location.href = "/";
               }}
               size="sm"
@@ -577,96 +697,107 @@ function AdminDashboardPage() {
             {/* Top Stat Cards Grid */}
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <StatCard
-                label="Total Registered Candidates"
-                value={registeredUsers.filter((u) => u.role === "worker").length.toString()}
-                change="Verified Candidates"
+                label={isSuperAdmin ? "Total Registered Candidates" : "Candidates Applied to Your Jobs"}
+                value={
+                  isSuperAdmin
+                    ? registeredUsers.filter((u) => u.role === "worker").length.toString()
+                    : new Set(applications.map((a) => a.jobSeekerId || a.candidateEmail)).size.toString()
+                }
+                change={isSuperAdmin ? "Verified Platform Candidates" : "Unique Applicants"}
                 icon={Users}
               />
               <StatCard
                 label="Active Job Listings"
                 value={jobs.filter((j) => j.status === "Active").length.toString()}
-                change="Live on Platform"
+                change={isSuperAdmin ? "Platform Total" : "Your Active Jobs"}
                 icon={BriefcaseBusiness}
               />
               <StatCard
                 label="Total Applications Received"
                 value={applications.length.toString()}
-                change="Candidate Applications"
+                change={isSuperAdmin ? "Platform Total" : "Applications for Your Jobs"}
                 icon={FileText}
               />
             </div>
 
             {/* Platform Analytics Chart */}
-            <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-              <div className="rounded-2xl border border-[#DCE5F0] bg-white p-6 shadow-sm">
+            {/* Recent Job Applicants Panel (Visible for 5 Days) */}
+            <div className="rounded-2xl border border-[#DCE5F0] bg-white p-6 shadow-sm flex flex-col justify-between">
+              <div>
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h2 className="text-lg font-black text-[#10233F]">
-                      Platform Growth & Applications
+                    <h2 className="text-lg font-black text-[#10233F] flex items-center gap-2">
+                      <span>📩 Candidates Who Applied To Your Jobs</span>
+                      <span className="text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-300 font-extrabold px-2.5 py-0.5 rounded-full">
+                        Last 5 Days Window
+                      </span>
                     </h2>
-                    <p className="text-xs font-semibold text-[#5B6B7F]">
-                      Monthly candidate registration and hiring metrics
+                    <p className="text-xs font-semibold text-[#5B6B7F] mt-0.5">
+                      Candidates who applied to your posted jobs are displayed here for up to 5 days.
                     </p>
                   </div>
-                  <Badge className="bg-[#063B78] text-white font-bold">2026 Live</Badge>
-                </div>
-                <div className="h-72">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={monthlyAnalytics}>
-                      <defs>
-                        <linearGradient id="colorWorkers" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#063B78" stopOpacity={0.8} />
-                          <stop offset="95%" stopColor="#063B78" stopOpacity={0} />
-                        </linearGradient>
-                        <linearGradient id="colorJobs" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#FFC400" stopOpacity={0.8} />
-                          <stop offset="95%" stopColor="#FFC400" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <Tooltip />
-                      <Area type="monotone" dataKey="workers" stroke="#063B78" fillOpacity={1} fill="url(#colorWorkers)" name="Workers" />
-                      <Area type="monotone" dataKey="jobs" stroke="#FFC400" fillOpacity={1} fill="url(#colorJobs)" name="Jobs" />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              {/* Quick Actions */}
-              <div className="rounded-2xl border border-[#DCE5F0] bg-white p-6 shadow-sm space-y-6 flex flex-col justify-between">
-                <div>
-                  <h2 className="text-lg font-black text-[#10233F]">
-                    Quick Actions
-                  </h2>
-                  <p className="text-xs font-semibold text-[#5B6B7F] mt-1">
-                    Manage job listings and candidate applications using quick controls.
-                  </p>
+                  <Badge className="bg-[#063B78] text-white font-bold text-xs">
+                    {applications.length} Total Applications
+                  </Badge>
                 </div>
 
-                <div className="space-y-3">
-                  <Button
-                    onClick={handleAddNewJobClick}
-                    className="w-full btn-yellow text-xs font-black py-3"
-                  >
-                    + Post New Job
-                  </Button>
-                  <Button
-                    onClick={() => setActiveTab("jobs")}
-                    variant="outline"
-                    className="w-full border-[#063B78] text-[#063B78] font-bold text-xs py-3"
-                  >
-                    💼 Manage All Job Listings
-                  </Button>
-                  <Button
-                    onClick={() => setActiveTab("applications")}
-                    variant="outline"
-                    className="w-full border-[#063B78] text-[#063B78] font-bold text-xs py-3"
-                  >
-                    📄 View All Applications ({applications.length})
-                  </Button>
-                </div>
+                {/* List of Applicants from Last 5 Days */}
+                {(() => {
+                  const FIVE_DAYS_MS = 5 * 24 * 60 * 60 * 1000;
+                  const recentApps = applications.filter((app) => {
+                    let ts = 0;
+                    if (app.appliedDate) {
+                      const parsed = Date.parse(app.appliedDate);
+                      if (!isNaN(parsed)) ts = parsed;
+                    }
+                    if (!ts && app.id?.startsWith("app-")) {
+                      const parsedTs = Number(app.id.replace("app-", ""));
+                      if (!isNaN(parsedTs)) ts = parsedTs;
+                    }
+                    if (!ts) return true;
+                    return Date.now() - ts <= FIVE_DAYS_MS;
+                  });
+
+                  if (recentApps.length === 0) {
+                    return (
+                      <div className="py-10 text-center border-2 border-dashed border-[#E0E8F5] rounded-xl bg-[#F8FAFF] my-2">
+                        <FileText className="size-10 text-[#A0AEC0] mx-auto mb-2" />
+                        <p className="text-sm font-bold text-[#10233F]">No candidate applications received in the last 5 days</p>
+                        <p className="text-xs font-medium text-[#5B6B7F] mt-1">
+                          When candidates apply to your posted jobs, they will automatically appear here for 5 days.
+                        </p>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="space-y-3 my-2 max-h-[300px] overflow-y-auto pr-1">
+                      {recentApps.map((app) => (
+                        <div
+                          key={app.id}
+                          className="p-3.5 rounded-xl border border-[#E2E8F0] bg-[#F8FAFF] hover:bg-[#F0F4FA] transition-all flex items-center justify-between gap-3"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="size-10 rounded-full bg-[#063B78] text-white font-black text-sm flex items-center justify-center shrink-0">
+                              {(app.candidateName || "C").charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <h4 className="text-xs font-black text-[#10233F]">{app.candidateName}</h4>
+                              <p className="text-[11px] font-semibold text-[#5B6B7F]">
+                                💼 Applied for: <span className="font-bold text-[#063B78]">{app.jobTitle}</span> | 📞 {app.candidateMobile || "N/A"}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <span className="inline-block text-[10px] font-extrabold px-2.5 py-1 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-300">
+                              Applied: {app.appliedDate || "Recent"} (5 Days Active)
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           </div>
@@ -952,6 +1083,167 @@ function AdminDashboardPage() {
           </div>
         )}
       </div>
+
+      {/* ── JOB PACKAGE SELECTION & CHECKOUT MODAL (ENGLISH) ── */}
+      {showPackageModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white w-full max-w-xl rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-100 relative max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => setShowPackageModal(false)}
+              className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 font-extrabold text-xl p-2 rounded-full hover:bg-slate-100"
+            >
+              ✕
+            </button>
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 rounded-2xl bg-amber-50 text-[#063B78]">
+                <Package className="size-6 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-[#063B78]">
+                  Activate Job Posting Package
+                </h3>
+                <p className="text-xs text-slate-500 font-semibold">
+                  You need an active job posting package to post new job listings.
+                </p>
+              </div>
+            </div>
+
+            {/* Package Selector Cards */}
+            <div className="space-y-3 my-5">
+              {JOB_PACKAGES.map((pkg) => (
+                <div
+                  key={pkg.id}
+                  onClick={() => setSelectedPlanId(pkg.id)}
+                  className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between ${
+                    selectedPlanId === pkg.id
+                      ? "border-[#063B78] bg-blue-50/60 ring-2 ring-[#063B78]/20"
+                      : "border-slate-200 hover:border-slate-300 bg-white"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`size-5 rounded-full border-2 flex items-center justify-center ${
+                      selectedPlanId === pkg.id ? "border-[#063B78] bg-[#063B78] text-white" : "border-slate-300"
+                    }`}>
+                      {selectedPlanId === pkg.id && <Check className="size-3 stroke-[3]" />}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-extrabold text-sm text-[#063B78]">{pkg.name}</span>
+                        {pkg.badge && (
+                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase ${
+                            pkg.popular ? "bg-[#063B78] text-amber-300" : "bg-amber-100 text-amber-800"
+                          }`}>
+                            {pkg.badge}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-500 font-medium mt-0.5">{pkg.description}</p>
+                    </div>
+                  </div>
+
+                  <div className="text-right">
+                    <span className="text-xl font-black text-[#063B78]">₹{pkg.price}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Selected Plan Summary */}
+            <div className="bg-[#F4F7FB] p-4 rounded-2xl border border-[#DCE5F0] my-4 flex justify-between items-center">
+              <div>
+                <p className="text-xs font-bold text-slate-500">Selected Plan</p>
+                <p className="text-sm font-extrabold text-[#063B78]">{activeSelectedPlan.name}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs font-bold text-slate-500">Total Amount</p>
+                <p className="text-2xl font-black text-emerald-700">₹{activeSelectedPlan.price}</p>
+              </div>
+            </div>
+
+            {/* Payment Method Selector */}
+            <div className="space-y-3 my-4">
+              <Label className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">
+                Select Payment Method
+              </Label>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod("upi")}
+                  className={`p-3 rounded-2xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all ${
+                    paymentMethod === "upi"
+                      ? "border-[#063B78] bg-blue-50/70 text-[#063B78] ring-2 ring-[#063B78]/20"
+                      : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
+                  <Smartphone className="size-5" />
+                  <span>UPI / GPay</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod("card")}
+                  className={`p-3 rounded-2xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all ${
+                    paymentMethod === "card"
+                      ? "border-[#063B78] bg-blue-50/70 text-[#063B78] ring-2 ring-[#063B78]/20"
+                      : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
+                  <CreditCard className="size-5" />
+                  <span>Debit / Card</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod("netbanking")}
+                  className={`p-3 rounded-2xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all ${
+                    paymentMethod === "netbanking"
+                      ? "border-[#063B78] bg-blue-50/70 text-[#063B78] ring-2 ring-[#063B78]/20"
+                      : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
+                  <Building2 className="size-5" />
+                  <span>NetBanking</span>
+                </button>
+              </div>
+
+              {paymentMethod === "upi" && (
+                <div className="pt-2">
+                  <Label className="text-xs font-bold text-slate-600 mb-1 block">
+                    Enter UPI ID (or pay via PhonePe / GPay)
+                  </Label>
+                  <Input
+                    placeholder="e.g. 9876543210@paytm"
+                    value={upiId}
+                    onChange={(e) => setUpiId(e.target.value)}
+                    className="h-11 rounded-xl text-sm font-semibold border-slate-300"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowPackageModal(false)}
+                className="flex-1 py-6 rounded-2xl font-bold border-slate-300"
+              >
+                Cancel
+              </Button>
+              <Button
+                disabled={isProcessingPackage}
+                onClick={handleActivatePackage}
+                className="flex-1 py-6 rounded-2xl font-black bg-[#063B78] hover:bg-[#082F63] text-white shadow-lg"
+              >
+                {isProcessingPackage ? (
+                  <span>Activating...</span>
+                ) : (
+                  <span>Pay ₹{activeSelectedPlan.price} & Post Job</span>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

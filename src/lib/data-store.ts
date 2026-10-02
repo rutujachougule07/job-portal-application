@@ -163,7 +163,7 @@ export type PackageTransaction = {
 // INITIAL SEED DATA FOR REAL JOBS (Initially 100% empty; populated when employers post real jobs)
 const INITIAL_JOBS: JobRecord[] = [];
 
-class DataStoreManager {
+export class DataStoreManager {
   private STORAGE_KEYS = {
     USER: "realjob_current_user",
     JOBS: "realjob_db_jobs",
@@ -256,7 +256,7 @@ class DataStoreManager {
     }
   }
 
-  public getRegisteredUsers(): Array<{ id: string; email: string; mobile?: string; role: UserRole; fullName: string }> {
+  public getRegisteredUsers(): Array<{ id: string; email: string; mobile?: string; role: UserRole; fullName: string; createdAt?: string }> {
     return this.getRegisteredUserAccounts();
   }
 
@@ -722,6 +722,9 @@ class DataStoreManager {
     }
   }
 
+  /**
+   * Record package purchase transaction
+   */
   public addPackagePurchase(data: Omit<PackageTransaction, "id" | "purchaseDate" | "status">): PackageTransaction {
     const raw = localStorage.getItem(this.STORAGE_KEYS.PACKAGES);
     const existing: PackageTransaction[] = raw ? JSON.parse(raw) : [];
@@ -738,9 +741,33 @@ class DataStoreManager {
     return newTx;
   }
 
+  /**
+   * Get available job credits count for user
+   */
   public getUserJobCredits(userId: string): number {
     const packages = this.getUserPackages(userId);
     return packages.reduce((acc, p) => acc + (p.jobCount || 0), 0);
+  }
+
+  /**
+   * Consume 1 credit when posting a job
+   */
+  public consumeJobCredit(userId: string): boolean {
+    if (typeof window === "undefined") return false;
+    const raw = localStorage.getItem(this.STORAGE_KEYS.PACKAGES);
+    if (!raw) return false;
+    try {
+      const all: PackageTransaction[] = JSON.parse(raw);
+      const activePkg = all.find((p) => p.userId === userId && p.jobCount > 0);
+      if (!activePkg) return false;
+      if (activePkg.jobCount < 999) {
+        activePkg.jobCount -= 1;
+      }
+      localStorage.setItem(this.STORAGE_KEYS.PACKAGES, JSON.stringify(all));
+      return true;
+    } catch {
+      return false;
+    }
   }
 }
 
