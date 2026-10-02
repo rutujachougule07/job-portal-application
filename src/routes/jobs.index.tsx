@@ -39,7 +39,10 @@ import {
   Wrench,
   X,
   Zap,
+  List,
+  ArrowDownAZ
 } from "lucide-react";
+import { UserSidebarLayout } from "@/components/portal/UserSidebarLayout";
 import { PublicHeader } from "@/components/portal/PublicHeader";
 import { PublicFooter } from "@/components/portal/PublicFooter";
 import { PopularCategories } from "@/components/portal/PopularCategories";
@@ -68,6 +71,7 @@ export const Route = createFileRoute("/jobs/")({
 function JobsListingPage() {
   const { t, n, lang } = useI18n();
   const searchParams = Route.useSearch();
+  const currentUser = dataStore.getCurrentUser();
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>(searchParams.category || "all");
   const [subCategoryFilter, setSubCategoryFilter] = useState("all");
@@ -203,47 +207,49 @@ function JobsListingPage() {
     });
   }, [searchTerm, categoryFilter, locationFilter, typeFilter, workModeFilter, subCategoryFilter, experienceFilter, salaryFilter, lang]);
 
-  return (
-    <>
-      <PublicHeader />
-      <main className="bg-[#F5F8FC] min-h-screen py-8">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+  const pageContent = (
+      <main className={`bg-[#F5F8FC] min-h-screen ${currentUser ? '' : 'py-8'}`}>
+        <div className={`mx-auto ${currentUser ? 'w-full' : 'max-w-7xl px-4 sm:px-6 lg:px-8'}`}>
           {/* Hero Banner */}
           {/* Hero Banner or Category Header */}
-          {(!categoryFilter || categoryFilter === "all") ? (
-            <div className="bg-hero-overlay p-8 rounded-2xl text-white mb-8 shadow-lg relative overflow-hidden">
-              <div className="relative z-10 max-w-3xl">
-                <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#FFC400] backdrop-blur mb-3">
-                  <Briefcase className="size-3.5" />
+          {(!categoryFilter || categoryFilter === "all") && !currentUser ? (
+            <div className="relative p-10 sm:p-16 rounded-[2rem] text-white mb-10 shadow-2xl overflow-hidden bg-[#063B78]">
+              {/* Decorative Background Elements */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+              <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#FFC400]/10 rounded-full blur-2xl translate-y-1/3 -translate-x-1/4"></div>
+
+              <div className="relative z-10 max-w-4xl mx-auto text-center flex flex-col items-center">
+                <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-black uppercase tracking-widest text-[#FFC400] backdrop-blur-md mb-6 shadow-sm">
+                  <Briefcase className="size-4" />
                   {t("jobs")}
                 </div>
 
-                <h1 className="text-3xl sm:text-4xl font-black text-white">
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white leading-tight mb-4 tracking-tight drop-shadow-md">
                   {t("jobsInRegion")} <br />
-                  <span className="text-[#FFC400]">{t("directCompanyContact")}</span>
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FFC400] to-[#FDE047] filter drop-shadow-sm">{t("directCompanyContact")}</span>
                 </h1>
 
-                <p className="mt-2 text-sm text-white/90 font-medium">
+                <p className="mt-4 text-base sm:text-lg text-white/90 font-medium max-w-2xl text-center shadow-black/10">
                   {t("jobsSubtext")}
                 </p>
 
                 {/* Inline Search Bar */}
-                <div className="mt-6 grid sm:grid-cols-[1fr_0.8fr_auto] gap-3 bg-white p-2.5 rounded-xl shadow-md border border-[#DCE5F0]">
-                  <div className="relative flex items-center">
-                    <Search className="absolute left-3 size-4 text-[#5B6B7F]" />
+                <div className="mt-10 w-full max-w-3xl grid sm:grid-cols-[1fr_0.8fr_auto] gap-2 bg-white/10 backdrop-blur-md p-2 rounded-2xl shadow-xl border border-white/20">
+                  <div className="relative flex items-center bg-white rounded-xl h-14 overflow-hidden">
+                    <Search className="absolute left-4 size-5 text-[#5B6B7F]" />
                     <Input
                       placeholder={t("searchJobPlaceholder")}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-9 h-11 border-0 bg-transparent text-xs text-[#10233F] font-bold focus-visible:ring-0"
+                      className="pl-12 h-full border-0 bg-transparent text-sm text-[#10233F] font-bold focus-visible:ring-0 rounded-none shadow-none"
                     />
                   </div>
-                  <div className="relative flex items-center">
-                    <MapPin className="absolute left-3 size-4 text-[#125BB5]" />
+                  <div className="relative flex items-center bg-white rounded-xl h-14 overflow-hidden">
+                    <MapPin className="absolute left-4 size-5 text-[#125BB5]" />
                     <select
                       value={locationFilter}
                       onChange={(e) => setLocationFilter(e.target.value)}
-                      className="w-full h-11 border-0 bg-transparent text-xs font-bold text-[#10233F] pl-9 pr-3 focus:outline-none"
+                      className="w-full h-full border-0 bg-transparent text-sm font-bold text-[#10233F] pl-12 pr-10 focus:outline-none appearance-none cursor-pointer"
                     >
                       <option value="all">{t("allLocations")}</option>
                       <option value="mumbai">Mumbai</option>
@@ -251,53 +257,106 @@ function JobsListingPage() {
                       <option value="chakan">Chakan</option>
                       <option value="bengaluru">Bengaluru</option>
                     </select>
+                    <ChevronDown className="absolute right-4 size-5 text-[#5B6B7F] pointer-events-none" />
                   </div>
-                  <Button className="btn-yellow h-11 font-black text-xs px-6">
+                  <Button className="btn-yellow h-14 font-black text-sm px-8 rounded-xl shadow-md hover:shadow-lg transition-shadow">
                     {t("search")}
                   </Button>
                 </div>
               </div>
             </div>
-          ) : (
-            <div className="mb-8 flex flex-col md:flex-row gap-6 justify-between items-start md:items-center bg-white p-6 rounded-2xl border border-[#DCE5F0] shadow-sm">
-              <div>
+          ) : (!currentUser && categoryFilter && categoryFilter !== "all" ? (
+            <div className="mb-10 bg-white p-6 sm:p-8 rounded-[2rem] border border-[#DCE5F0] shadow-sm flex flex-col md:flex-row gap-6 justify-between items-start md:items-center relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-48 h-48 bg-[#F5F8FC] rounded-full blur-3xl -translate-y-1/2 translate-x-1/4"></div>
+              
+              <div className="relative z-10 flex flex-col items-start gap-4">
                 <button 
                   onClick={() => { setCategoryFilter("all"); setSubCategoryFilter("all"); }} 
-                  className="text-xs font-bold text-[#125BB5] mb-3 flex items-center gap-1 hover:underline"
+                  className="px-4 py-2 rounded-full bg-[#F5F8FC] border border-[#DCE5F0] text-xs font-bold text-[#5B6B7F] flex items-center gap-2 hover:bg-[#10233F] hover:text-white transition-all shadow-sm group"
                 >
-                  <ArrowLeft className="size-3" /> {lang === "mr" ? "सर्व नोकऱ्या पहा" : "All Jobs"}
+                  <ArrowLeft className="size-3.5 group-hover:-translate-x-1 transition-transform" /> {lang === "mr" ? "सर्व नोकऱ्या पहा" : "All Jobs"}
                 </button>
-                <div className="flex items-center gap-4">
-                  <div className="size-14 rounded-2xl bg-gradient-to-br from-[#EBF1F8] to-[#DCE5F0] flex items-center justify-center text-[#063B78] shadow-inner">
-                    <Briefcase className="size-6" />
+                <div className="flex items-center gap-5">
+                  <div className="size-16 rounded-2xl bg-gradient-to-br from-[#063B78] to-[#125BB5] flex items-center justify-center text-white shadow-lg shadow-[#063B78]/20">
+                    <Briefcase className="size-7" />
                   </div>
                   <div>
-                    <h1 className="text-2xl sm:text-3xl font-black text-[#082F63] capitalize">
+                    <h1 className="text-3xl sm:text-4xl font-black text-[#082F63] capitalize tracking-tight">
                       {getCategoryTitle(categoryFilter, lang)}
                     </h1>
-                    <p className="text-sm font-bold text-[#5B6B7F] mt-1">
-                      {filteredJobs.length} {lang === "mr" ? "नोकऱ्या उपलब्ध" : "Jobs Available"}
+                    <p className="text-sm font-bold text-[#125BB5] mt-1.5 flex items-center gap-1.5">
+                      <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                      {filteredJobs.length} {lang === "mr" ? "सक्रिय नोकऱ्या" : "Active Jobs"}
                     </p>
                   </div>
                 </div>
               </div>
 
               {/* Smaller Search Bar for Category Page */}
-              <div className="w-full md:w-auto grid grid-cols-[1fr] gap-3">
-                <div className="relative flex items-center w-full md:w-[280px]">
-                  <Search className="absolute left-3 size-4 text-[#5B6B7F]" />
+              <div className="w-full md:w-auto relative z-10">
+                <div className="relative flex items-center w-full md:w-[320px] group">
+                  <Search className="absolute left-4 size-5 text-[#5B6B7F] group-focus-within:text-[#125BB5] transition-colors" />
                   <Input
                     placeholder={lang === "mr" ? "नोकरी शोधा..." : "Search in category..."}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-9 h-12 border border-[#DCE5F0] bg-[#F5F8FC] rounded-xl text-xs text-[#10233F] font-bold focus-visible:ring-1 focus-visible:ring-[#125BB5]"
+                    className="pl-12 h-14 border-2 border-[#DCE5F0] bg-[#F5F8FC] rounded-xl text-sm text-[#10233F] font-bold focus-visible:ring-0 focus-visible:border-[#125BB5] shadow-sm transition-all"
                   />
                 </div>
               </div>
             </div>
+          ) : null)}
+
+          {currentUser && (
+            <div className="mb-6 w-full flex flex-col md:flex-row gap-3 bg-white p-4 rounded-2xl shadow-sm border border-[#DCE5F0]">
+              <div className="flex-1 relative flex items-center bg-[#F5F8FC] rounded-xl h-12 overflow-hidden border border-[#DCE5F0]">
+                <Search className="absolute left-4 size-5 text-[#5B6B7F]" />
+                <Input
+                  placeholder={t("searchJobPlaceholder")}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-12 h-full border-0 bg-transparent text-sm text-[#10233F] font-bold focus-visible:ring-0 rounded-none shadow-none"
+                />
+              </div>
+              <div className="md:w-[200px] relative flex items-center bg-[#F5F8FC] rounded-xl h-12 overflow-hidden border border-[#DCE5F0]">
+                <Briefcase className="absolute left-4 size-5 text-[#125BB5]" />
+                <select
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  className="w-full h-full border-0 bg-transparent text-sm font-bold text-[#10233F] pl-12 pr-10 focus:outline-none appearance-none cursor-pointer"
+                >
+                  <option value="all">{lang === "mr" ? "सर्व श्रेणी" : "All Categories"}</option>
+                  <option value="it">IT & Software</option>
+                  <option value="manufacturing">Manufacturing</option>
+                  <option value="finance">Finance</option>
+                  <option value="healthcare">Healthcare</option>
+                  <option value="retail">Retail</option>
+                  <option value="education">Education</option>
+                </select>
+                <ChevronDown className="absolute right-4 size-5 text-[#5B6B7F] pointer-events-none" />
+              </div>
+              <div className="md:w-[200px] relative flex items-center bg-[#F5F8FC] rounded-xl h-12 overflow-hidden border border-[#DCE5F0]">
+                <MapPin className="absolute left-4 size-5 text-[#125BB5]" />
+                <select
+                  value={locationFilter}
+                  onChange={(e) => setLocationFilter(e.target.value)}
+                  className="w-full h-full border-0 bg-transparent text-sm font-bold text-[#10233F] pl-12 pr-10 focus:outline-none appearance-none cursor-pointer"
+                >
+                  <option value="all">{t("allLocations")}</option>
+                  <option value="mumbai">Mumbai</option>
+                  <option value="pune">Pune</option>
+                  <option value="chakan">Chakan</option>
+                  <option value="bengaluru">Bengaluru</option>
+                </select>
+                <ChevronDown className="absolute right-4 size-5 text-[#5B6B7F] pointer-events-none" />
+              </div>
+              <Button className="btn-yellow h-12 font-black text-sm px-8 rounded-xl shadow-md transition-shadow shrink-0">
+                {t("search")}
+              </Button>
+            </div>
           )}
 
-          {(!categoryFilter || categoryFilter === "all") && (
+          {(!categoryFilter || categoryFilter === "all") && !currentUser && (
             <div className="mb-8 bg-white p-6 rounded-2xl border border-[#DCE5F0] shadow-xs">
               <h2 className="text-xl font-black text-[#10233F] mb-6 flex items-center gap-2">
                 <LayoutGrid className="size-5 text-[#063B78]" />
@@ -307,22 +366,55 @@ function JobsListingPage() {
             </div>
           )}
 
+          {/* Horizontal Category List for Current User */}
+          {currentUser && (
+            <div className="mb-8 w-full max-w-full overflow-hidden">
+              <div className="flex flex-nowrap overflow-x-auto gap-3 pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                <button
+                  onClick={() => setCategoryFilter("all")}
+                  className={`shrink-0 px-6 py-2.5 rounded-full text-sm font-bold transition-all border shadow-sm ${
+                    !categoryFilter || categoryFilter === "all" 
+                      ? "bg-[#063B78] text-white border-[#063B78]" 
+                      : "bg-white text-[#5B6B7F] border-[#DCE5F0] hover:border-[#125BB5] hover:text-[#125BB5]"
+                  }`}
+                >
+                  {lang === "mr" ? "सर्व नोकऱ्या" : "All Jobs"}
+                </button>
+                {["IT & Software", "Manufacturing", "Finance", "Healthcare", "Retail", "Education", "Engineering", "Marketing"].map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setCategoryFilter(cat.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-'))}
+                    className={`shrink-0 px-6 py-2.5 rounded-full text-sm font-bold transition-all border shadow-sm ${
+                      categoryFilter === cat.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-')
+                        ? "bg-[#063B78] text-white border-[#063B78]" 
+                        : "bg-white text-[#5B6B7F] border-[#DCE5F0] hover:border-[#125BB5] hover:text-[#125BB5]"
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Main Grid Layout */}
-          {!isInitialState && (
-            <div className={`grid grid-cols-1 ${categoryFilter !== "all" && categoryFilter ? "lg:grid-cols-[280px_1fr]" : ""} gap-8 items-start`}>
+          {(!isInitialState || currentUser) && (
+            <div className={`grid grid-cols-1 ${categoryFilter !== "all" && categoryFilter ? "lg:grid-cols-[300px_1fr]" : ""} gap-8 items-start`}>
               {/* Desktop Filters Sidebar */}
             {(categoryFilter !== "all" && categoryFilter) && (
-              <aside className="hidden lg:block bg-white p-6 rounded-2xl border border-[#DCE5F0] shadow-xs sticky top-24">
-              <div className="flex items-center justify-between pb-4 border-b border-[#DCE5F0] mb-5">
+              <aside className="hidden lg:block bg-white p-6 rounded-3xl border border-[#DCE5F0] shadow-sm sticky top-24">
+              <div className="flex items-center justify-between pb-5 border-b border-[#DCE5F0]/80 mb-6">
                 <span className="font-black text-sm text-[#10233F] flex items-center gap-2">
-                  <SlidersHorizontal className="size-4 text-[#063B78]" />
+                  <div className="p-1.5 bg-[#F5F8FC] rounded-lg">
+                    <SlidersHorizontal className="size-4 text-[#063B78]" />
+                  </div>
                   {t("filters")}
                 </span>
                 <button
                   onClick={resetFilters}
-                  className="text-xs font-bold text-[#125BB5] hover:underline flex items-center gap-1"
+                  className="text-xs font-bold text-[#5B6B7F] hover:text-[#125BB5] flex items-center gap-1.5 transition-colors"
                 >
-                  <RotateCcw className="size-3" /> {t("reset")}
+                  <RotateCcw className="size-3.5" /> {t("reset")}
                 </button>
               </div>
 
@@ -363,20 +455,23 @@ function JobsListingPage() {
               </div>
 
               {/* Job Type Filter */}
-              <div className="mb-6">
-                <label className="block text-xs font-extrabold text-[#10233F] mb-2 uppercase">
+              <div className="mb-6 relative">
+                <label className="block text-xs font-extrabold text-[#5B6B7F] mb-2 uppercase tracking-wide">
                   {t("jobTypeLabel")}
                 </label>
-                <select
-                  value={typeFilter}
-                  onChange={(e) => setTypeFilter(e.target.value)}
-                  className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold text-[#10233F]"
-                >
-                  <option value="all">{t("allTypes")}</option>
-                  <option value="Full-time">{t("fullTime")}</option>
-                  <option value="Part-time">{t("partTime")}</option>
-                  <option value="Contract">{t("contract")}</option>
-                </select>
+                <div className="relative">
+                  <select
+                    value={typeFilter}
+                    onChange={(e) => setTypeFilter(e.target.value)}
+                    className="w-full h-11 rounded-xl border-2 border-[#F5F8FC] bg-[#F5F8FC] px-4 text-sm font-bold text-[#10233F] focus:border-[#063B78] transition-colors appearance-none cursor-pointer"
+                  >
+                    <option value="all">{t("allTypes")}</option>
+                    <option value="Full-time">{t("fullTime")}</option>
+                    <option value="Part-time">{t("partTime")}</option>
+                    <option value="Contract">{t("contract")}</option>
+                  </select>
+                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 size-4 text-[#5B6B7F] pointer-events-none" />
+                </div>
               </div>
 
               {/* Work Mode Filter (WFH / On-site / Hybrid) */}
@@ -402,10 +497,13 @@ function JobsListingPage() {
             <div className="w-full">
               {/* Toolbar */}
               {(categoryFilter !== "all" && categoryFilter) && (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-[#DCE5F0] mb-6">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-[#DCE5F0] mb-6 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-[#F5F8FC] rounded-lg">
+                    <List className="size-4 text-[#063B78]" />
+                  </div>
                   <span className="text-sm font-black text-[#10233F]">
-                    {t("totalJobsCount")}: <span className="text-[#063B78]">{n(filteredJobs.length)}</span>
+                    {t("totalJobsCount")}: <span className="text-[#063B78] text-base">{n(filteredJobs.length)}</span>
                   </span>
                 </div>
 
@@ -419,12 +517,15 @@ function JobsListingPage() {
                     <Filter className="size-3.5 mr-1" /> {t("filters")}
                   </Button>
 
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-[#5B6B7F] shrink-0">{t("sortByLabel")}:</span>
+                  <div className="flex items-center gap-2 bg-[#F5F8FC] rounded-xl p-1 border border-[#DCE5F0]/50">
+                    <div className="pl-3 pr-2 flex items-center gap-1.5">
+                      <ArrowDownAZ className="size-3.5 text-[#5B6B7F]" />
+                      <span className="text-xs font-bold text-[#5B6B7F] shrink-0">{t("sortByLabel")}</span>
+                    </div>
                     <select
                       value={sortBy}
                       onChange={(e) => setSortBy(e.target.value as any)}
-                      className="h-9 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold text-[#10233F]"
+                      className="h-9 rounded-lg border-none bg-white shadow-sm px-4 text-xs font-bold text-[#10233F] focus:ring-0 appearance-none cursor-pointer"
                     >
                       <option value="newest">{t("newestFirst")}</option>
                       <option value="title">{t("byTitle")}</option>
@@ -608,7 +709,21 @@ function JobsListingPage() {
             </div>
           </div>
         )}
-      </main>
+            </main>
+  );
+
+  if (currentUser) {
+    return (
+      <UserSidebarLayout activeTab="find-jobs">
+        {pageContent}
+      </UserSidebarLayout>
+    );
+  }
+
+  return (
+    <>
+      <PublicHeader />
+      {pageContent}
       <PublicFooter />
     </>
   );

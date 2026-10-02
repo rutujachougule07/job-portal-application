@@ -181,7 +181,20 @@ function LandingGatewayPage() {
     return () => clearInterval(interval);
   }, [images.length]);
 
-  const [currentUser, setCurrentUser] = useState(() => dataStore.getCurrentUser());
+  const [currentUser, setCurrentUser] = useState<any>(() => dataStore.getCurrentUser());
+
+  useEffect(() => {
+    if (currentUser) {
+      if (currentUser.role === 'admin' || currentUser.role === 'employer') {
+        navigate({ to: '/admin' });
+      } else {
+        // @ts-ignore
+        navigate({ to: '/dashboard' });
+      }
+    }
+  }, [currentUser, navigate]);
+
+  if (currentUser) return null; // Prevents flash of landing page
 
   const handleLogout = () => {
     window.localStorage.removeItem("realjob-user");

@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { dataStore } from "@/lib/data-store";
 import {
   ArrowRight,
   BadgeCheck,
@@ -7,7 +8,6 @@ import {
   Building2,
   CheckCircle2,
   ChevronRight,
-  Download,
   Factory,
   Globe,
   HardHat,
@@ -15,7 +15,6 @@ import {
   HeartHandshake,
   MapPin,
   PhoneCall,
-  QrCode,
   Search,
   ShieldCheck,
   Sparkles,
@@ -29,7 +28,7 @@ import { PublicHeader } from "@/components/portal/PublicHeader";
 import { PublicFooter } from "@/components/portal/PublicFooter";
 import { PopularCategories } from "@/components/portal/PopularCategories";
 import { PopularJobs } from "@/components/portal/PopularJobs";
-import { WorkerCard, workersList } from "@/components/portal/WorkerCard";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useI18n, getCategoryTitle } from "@/lib/i18n";
@@ -55,6 +54,22 @@ function HomePage() {
   const [keyword, setKeyword] = useState("");
   const [location, setLocation] = useState("");
   const [category, setCategory] = useState("all");
+
+  const navigate = useNavigate();
+  const user = dataStore.getCurrentUser();
+
+  useEffect(() => {
+    if (user) {
+      if (user.role === 'admin' || user.role === 'employer') {
+        navigate({ to: '/admin' });
+      } else {
+        // @ts-ignore
+        navigate({ to: '/dashboard' });
+      }
+    }
+  }, [user, navigate]);
+
+  if (user) return null; // Prevents flashing the page content before redirect
 
   return (
     <>
@@ -226,38 +241,7 @@ function HomePage() {
         {/* FEATURED JOBS SECTION */}
         <PopularJobs />
 
-        {/* FEATURED VERIFIED WORKERS SECTION */}
-        <section className="py-16 sm:py-24 bg-white border-y border-[#DCE5F0]">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-              <div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-[#063B78]/20 bg-[#063B78]/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-[#063B78]">
-                  <span className="h-2 w-2 rounded-full bg-[#FFC400]" />
-                  {t("topWorkersTitle")}
-                </div>
-                <h2 className="mt-3 text-3xl font-black text-[#10233F] sm:text-4xl">
-                  {t("topWorkersTitle")}
-                </h2>
-                <p className="mt-2 text-sm font-semibold text-[#5B6B7F]">
-                  {t("topWorkersSubtitle")}
-                </p>
-              </div>
 
-              <Button asChild className="btn-navy font-bold text-xs px-6 py-3 h-auto shrink-0">
-                <Link to="/workers">
-                  {t("viewAll")} ({workersList.length}) <ArrowRight className="ml-1.5 size-4 text-[#FFC400]" />
-                </Link>
-              </Button>
-            </div>
-
-            {/* Workers Cards Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {workersList.slice(0, 3).map((worker) => (
-                <WorkerCard key={worker.id} worker={worker} />
-              ))}
-            </div>
-          </div>
-        </section>
 
         {/* WHY CHOOSE REAL JOB */}
         <section className="py-16 sm:py-24">
@@ -318,42 +302,7 @@ function HomePage() {
           </div>
         </section>
 
-        {/* MOBILE APP PROMOTION BANNER */}
-        <section className="bg-hero-overlay text-white py-16 relative overflow-hidden">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="grid md:grid-cols-2 gap-10 items-center">
-              <div>
-                <span className="text-xs font-black uppercase tracking-wider text-[#FFC400] bg-white/10 px-3 py-1 rounded-full border border-white/20">
-                  {t("downloadTitle")}
-                </span>
-                <h2 className="mt-4 text-3xl font-black text-white sm:text-4xl leading-tight">
-                  {t("downloadTitle")} <br />
-                  <span className="text-[#FFC400]">{t("downloadSubtitle")}</span>
-                </h2>
-                <p className="mt-4 text-sm font-semibold text-white/90 leading-relaxed">
-                  {t("downloadSubtitle")}
-                </p>
 
-                <div className="mt-8 flex flex-wrap items-center gap-4">
-                  <Button className="btn-yellow font-black text-xs px-6 py-3 h-12">
-                    <Download className="size-4 mr-2" /> {t("playStore")}
-                  </Button>
-                  <Button variant="outline" className="border-white text-white font-bold text-xs px-6 py-3 h-12 hover:bg-white hover:text-[#063B78]">
-                    {t("appStore")}
-                  </Button>
-                </div>
-              </div>
-
-              <div className="flex justify-center md:justify-end">
-                <div className="bg-white text-[#10233F] p-6 rounded-2xl shadow-2xl border-4 border-[#FFC400] text-center max-w-xs">
-                  <QrCode className="size-36 mx-auto text-[#063B78]" />
-                  <span className="block text-xs font-black text-[#063B78] mt-3">{t("downloadTitle")}</span>
-                  <span className="block text-[10px] font-bold text-[#5B6B7F]">Scan QR to download REAL JOB App</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
       </main>
 
       <PublicFooter />

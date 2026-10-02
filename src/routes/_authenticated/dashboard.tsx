@@ -1,2 +1,0 @@
-import { createFileRoute } from "@tanstack/react-router";import { SeekerDashboard } from "@/components/portal/Dashboards";
-export const Route=createFileRoute("/_authenticated/dashboard")({head:()=>({meta:[{title:"Career Dashboard — Karyam"},{name:"description",content:"Track jobs, applications, interviews and profile progress."},{property:"og:title",content:"Career Dashboard — Karyam"},{property:"og:description",content:"Your career activity in one place."},{property:"og:type",content:"website"},{name:"twitter:card",content:"summary"}]}),component:SeekerDashboard});

@@ -110,7 +110,6 @@ function AuthPage() {
         window.localStorage.setItem("realjob-user", JSON.stringify(userObj));
         dataStore.setCurrentUser(userObj);
         toast.success("✅ खाते यशस्वीरित्या तयार झाले! Welcome to REAL JOB.");
-
         if (role === "admin" || role === "employer") {
           navigate({ to: "/admin" });
         } else {
@@ -184,7 +183,6 @@ function AuthPage() {
         window.localStorage.setItem("realjob-user", JSON.stringify(userObj));
         dataStore.setCurrentUser(userObj);
         toast.success(`✅ स्वागत आहे, ${existingAccount.fullName}! Welcome back.`);
-
         const isEmpOrAdmin = userObj.role === "employer" || userObj.role === "admin" || role === "admin" || role === "employer";
         if (isEmpOrAdmin) {
           navigate({ to: "/admin" });
@@ -211,7 +209,6 @@ function AuthPage() {
         window.localStorage.setItem("realjob-user", JSON.stringify(userObj));
         dataStore.setCurrentUser(userObj);
         toast.success("✅ लॉगिन यशस्वी झाले! Welcome to REAL JOB!");
-
         const isEmpOrAdmin = userObj.role === "employer" || userObj.role === "admin" || role === "admin" || role === "employer";
         if (isEmpOrAdmin) {
           navigate({ to: "/admin" });
