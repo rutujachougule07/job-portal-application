@@ -49,6 +49,7 @@ export type Job = {
   category: string;
   featured?: boolean;
   openings?: number;
+  vacancies?: number;
 };
 
 export type CompanyMetadata = {
@@ -327,7 +328,17 @@ export function JobCard({
     const currentUser = dataStore.getCurrentUser();
     const seekerId = currentUser ? (currentUser.email || currentUser.id || "seeker-demo") : (fieldValues['email'] || "candidate@realjob.com");
     const seekerName = fieldValues['fullName'] || fieldValues['candidateName'] || currentUser?.fullName || "Candidate Applicant";
-    const seekerMobile = fieldValues['mobile'] || fieldValues['phone'] || fieldValues['candidateMobile'] || fieldValues['mobileNumber'] || fieldValues['contactNumber'] || fieldValues['phoneNo'] || fieldValues['mobileNo'] || (currentUser as any)?.mobile || "9822011223";
+    const userAcc = seekerId ? dataStore.findRegisteredAccount(seekerId) : null;
+    const userMobile = userAcc?.mobile || (currentUser as any)?.mobile || "";
+    const seekerMobile =
+      fieldValues['mobile'] ||
+      fieldValues['phone'] ||
+      fieldValues['candidateMobile'] ||
+      fieldValues['mobileNumber'] ||
+      fieldValues['contactNumber'] ||
+      fieldValues['phoneNo'] ||
+      fieldValues['mobileNo'] ||
+      userMobile;
 
     // Duplicate Application Check
     if (dataStore.hasAlreadyApplied(seekerId, job.id)) {

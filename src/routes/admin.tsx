@@ -100,10 +100,18 @@ function AdminDashboardPage() {
   const [registeredUsers, setRegisteredUsers] = useState<
     Array<{ id: string; name: string; role: string; mobile: string; city: string; trade: string; status: string }>
   >([]);
+  const currentUser = dataStore.getCurrentUser();
+  const isSuperAdmin = currentUser?.email?.toLowerCase() === "supera@gmail.com" || currentUser?.email?.toLowerCase() === "superadmin";
+  const empIdentifier = currentUser?.fullName || currentUser?.email || "admin-001";
 
   const loadAllData = () => {
-    setJobs(dataStore.getAllJobs());
-    setApplications(dataStore.getAllApplications());
+    if (isSuperAdmin) {
+      setJobs(dataStore.getAllJobs());
+      setApplications(dataStore.getAllApplications());
+    } else {
+      setJobs(dataStore.getEmployerJobs(empIdentifier));
+      setApplications(dataStore.getEmployerApplications(empIdentifier));
+    }
     const reg = dataStore.getRegisteredUsers();
     setRegisteredUsers(reg.map(u => ({
       id: u.id,
@@ -118,11 +126,11 @@ function AdminDashboardPage() {
 
   useEffect(() => {
     loadAllData();
-  }, []);
+  }, [empIdentifier]);
 
   const handleUpdateAppStatus = (appId: string, status: any) => {
     dataStore.updateApplicationStatus(appId, status);
-    setApplications(dataStore.getAllApplications());
+    loadAllData();
     toast.success(`अर्जाची स्थिती '${status}' वर बदलली!`);
   };
 
@@ -193,7 +201,7 @@ function AdminDashboardPage() {
     if (editingJobId) {
       dataStore.updateJob(editingJobId, {
         title: jobForm.title,
-        company: jobForm.company,
+        company: jobForm.company || currentUser?.fullName || "Company",
         category: jobForm.category || "General",
         subcategory: jobForm.subcategory || "",
         description: jobForm.description,
@@ -211,10 +219,12 @@ function AdminDashboardPage() {
       });
       toast.success("✅ नोकरीची माहिती यशस्वीरित्या अद्ययावत (Updated) झाली!");
     } else {
+      const empId = currentUser?.email || currentUser?.fullName || currentUser?.id || "admin-001";
+      const compName = jobForm.company || currentUser?.fullName || "Company";
       dataStore.createJob({
-        employerId: "admin-001",
+        employerId: empId,
         title: jobForm.title,
-        company: jobForm.company,
+        company: compName,
         category: jobForm.category || "General",
         subcategory: jobForm.subcategory || "",
         description: jobForm.description,
@@ -238,21 +248,19 @@ function AdminDashboardPage() {
     }
     setShowJobForm(false);
     setEditingJobId(null);
-    setJobs(dataStore.getAllJobs());
+    loadAllData();
   };
 
   const handleToggleJobStatus = (jobId: string, currentStatus: string) => {
     const nextStatus = currentStatus === "Active" ? "Closed" : "Active";
     dataStore.updateJob(jobId, { status: nextStatus as any });
-    setJobs((prev) =>
-      prev.map((j) => (j.id === jobId ? { ...j, status: nextStatus as any } : j))
-    );
+    loadAllData();
     toast.success(`Job status updated to ${nextStatus}!`);
   };
 
   const handleDeleteJob = (jobId: string) => {
     dataStore.deleteJob(jobId);
-    setJobs((prev) => prev.filter((j) => j.id !== jobId));
+    loadAllData();
     toast.success("Job posting removed by Admin!");
   };
 

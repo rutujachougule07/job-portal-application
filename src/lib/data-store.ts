@@ -448,18 +448,16 @@ class DataStoreManager {
 
   public getEmployerJobs(identifier: string): JobRecord[] {
     const jobs = this.getAllJobs();
-    if (!identifier) return [];
+    if (!identifier || !identifier.trim()) return [];
     const q = identifier.toLowerCase().trim();
     return jobs.filter((j) => {
-      const empId = (j.employerId || "").toLowerCase();
-      const comp = (j.company || "").toLowerCase();
+      const empId = (j.employerId || "").toLowerCase().trim();
+      const comp = (j.company || "").toLowerCase().trim();
+      if (!empId && !comp) return false;
       return (
         empId === q ||
         comp === q ||
-        (empId && empId.includes(q)) ||
-        (q && q.includes(empId)) ||
-        (comp && comp.includes(q)) ||
-        (q && q.includes(comp))
+        (q.length >= 4 && (empId.includes(q) || comp.includes(q)))
       );
     });
   }
@@ -470,7 +468,22 @@ class DataStoreManager {
     const raw = localStorage.getItem(this.STORAGE_KEYS.APPLICATIONS);
     if (!raw) return [];
     try {
-      return JSON.parse(raw);
+      const apps: ApplicationRecord[] = JSON.parse(raw);
+      let modified = false;
+      const updated = apps.map((app) => {
+        if (!app.candidateMobile || app.candidateMobile === "9822011223" || app.candidateMobile === "+91 98220 11223") {
+          const reg = this.findRegisteredAccount(app.candidateEmail || app.jobSeekerId);
+          if (reg?.mobile) {
+            modified = true;
+            return { ...app, candidateMobile: reg.mobile };
+          }
+        }
+        return app;
+      });
+      if (modified) {
+        localStorage.setItem(this.STORAGE_KEYS.APPLICATIONS, JSON.stringify(updated));
+      }
+      return updated;
     } catch {
       return [];
     }
@@ -507,18 +520,16 @@ class DataStoreManager {
 
   public getEmployerApplications(identifier: string): ApplicationRecord[] {
     const apps = this.getAllApplications();
-    if (!identifier) return [];
+    if (!identifier || !identifier.trim()) return [];
     const q = identifier.toLowerCase().trim();
     return apps.filter((a) => {
-      const empId = (a.employerId || "").toLowerCase();
-      const comp = (a.companyName || "").toLowerCase();
+      const empId = (a.employerId || "").toLowerCase().trim();
+      const comp = (a.companyName || "").toLowerCase().trim();
+      if (!empId && !comp) return false;
       return (
         empId === q ||
         comp === q ||
-        (empId && empId.includes(q)) ||
-        (q && q.includes(empId)) ||
-        (comp && comp.includes(q)) ||
-        (q && q.includes(comp))
+        (q.length >= 4 && (empId.includes(q) || comp.includes(q)))
       );
     });
   }

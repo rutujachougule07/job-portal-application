@@ -2298,8 +2298,8 @@ export function formatNum(val: string | number | undefined | null, lang: string)
 }
 
 type I18nValue = {
-  lang: string;
-  setLang: (lang: string) => void;
+  lang: LanguageCode;
+  setLang: (lang: LanguageCode) => void;
   t: (key: TranslationKeys) => string;
   n: (val: string | number | undefined | null) => string;
 };
@@ -2307,14 +2307,14 @@ type I18nValue = {
 const I18nContext = createContext<I18nValue | null>(null);
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<string>("mr");
+  const [lang, setLangState] = useState<LanguageCode>("mr");
 
   useEffect(() => {
-    const stored = window.localStorage.getItem("realjob-language");
+    const stored = window.localStorage.getItem("realjob-language") as LanguageCode;
     if (stored) setLangState(stored);
   }, []);
 
-  const setLang = (value: string) => {
+  const setLang = (value: LanguageCode) => {
     setLangState(value);
     window.localStorage.setItem("realjob-language", value);
   };
