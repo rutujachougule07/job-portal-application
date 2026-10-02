@@ -173,7 +173,12 @@ function AuthPage() {
         window.localStorage.setItem("realjob-user", JSON.stringify(userObj));
         dataStore.setCurrentUser(userObj);
         toast.success(`✅ स्वागत आहे, ${existingAccount.fullName}! Welcome back.`);
-        navigate({ to: "/select-language", search: { redirectTo: "/packages" } });
+        
+        const isEmpOrAdmin = userObj.role === "employer" || userObj.role === "admin";
+        const hasCredits = dataStore.getUserJobCredits(userObj.id) > 0;
+        const targetRoute = isEmpOrAdmin ? (hasCredits ? "/admin" : "/packages") : "/home";
+        
+        navigate({ to: "/select-language", search: { redirectTo: targetRoute } });
       } else {
         // Auto-register new user on first login with entered credentials
         const newAcc = dataStore.registerAccount({
@@ -194,7 +199,11 @@ function AuthPage() {
         window.localStorage.setItem("realjob-user", JSON.stringify(userObj));
         dataStore.setCurrentUser(userObj);
         toast.success("✅ लॉगिन यशस्वी झाले! Welcome to REAL JOB!");
-        navigate({ to: "/select-language", search: { redirectTo: "/packages" } });
+        
+        const isEmpOrAdmin = userObj.role === "employer" || userObj.role === "admin";
+        const targetRoute = isEmpOrAdmin ? "/packages" : "/home";
+        
+        navigate({ to: "/select-language", search: { redirectTo: targetRoute } });
       }
     } catch (err: any) {
       const code = err?.code || "";

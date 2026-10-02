@@ -16,6 +16,8 @@ import {
   Briefcase,
 } from "lucide-react";
 
+import { z } from "zod";
+
 import { PublicHeader } from "@/components/portal/PublicHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,7 +26,12 @@ import { dataStore, PackageTransaction } from "@/lib/data-store";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 
+const searchSchema = z.object({
+  redirectTo: z.string().optional().catch(""),
+});
+
 export const Route = createFileRoute("/packages")({
+  validateSearch: (s) => searchSchema.parse(s),
   head: () => ({
     meta: [
       { title: "जॉब पॅकेजेस आणि सबस्क्रिप्शन | Job Packages & Pricing — REAL JOB" },
@@ -147,6 +154,8 @@ const PLANS: Plan[] = [
 
 function PackagesPage() {
   const navigate = useNavigate();
+  const search = Route.useSearch();
+  const redirectTo = search.redirectTo;
   const { lang } = useI18n();
   const isMr = lang === "mr";
 
@@ -209,9 +218,14 @@ function PackagesPage() {
 
       toast.success(
         isMr
-          ? `🎉 अभिनंदन! ${selectedPlan.price} रुपयांचे पॅकेज (क्रेडिट्स: ${selectedPlan.jobCount}) यशस्वीरित्या ॲड झाले!`
-          : `🎉 Success! ₹${selectedPlan.price} package added (${selectedPlan.jobCount} job credits)!`
+          ? `🎉 अभिनंदन! ${selectedPlan.price} रुपयांचे पॅकेज यशस्वीरित्या खरेदी केले. आता डॅशबोर्ड उघडत आहे...`
+          : `🎉 Success! ₹${selectedPlan.price} package added. Opening dashboard now...`
       );
+
+      const targetPath = redirectTo || (user.role === "admin" || user.role === "employer" ? "/admin" : "/home");
+      setTimeout(() => {
+        navigate({ to: targetPath as any });
+      }, 700);
     }, 1200);
   };
 

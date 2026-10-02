@@ -125,8 +125,20 @@ function AdminDashboardPage() {
   };
 
   useEffect(() => {
+    if (!currentUser) {
+      navigate({ to: "/auth", search: { mode: "login", role: "employer" } });
+      return;
+    }
+    if (!isSuperAdmin) {
+      const credits = dataStore.getUserJobCredits(currentUser.id || "");
+      if (credits <= 0) {
+        toast.info("डॅशबोर्ड उघडण्यासाठी कृपया प्रथम तुमचे जॉब पॅकेज (₹100 / ₹200) खरेदी करा.");
+        navigate({ to: "/packages", search: { redirectTo: "/admin" } });
+        return;
+      }
+    }
     loadAllData();
-  }, [empIdentifier]);
+  }, [empIdentifier, currentUser]);
 
   const handleUpdateAppStatus = (appId: string, status: any) => {
     dataStore.updateApplicationStatus(appId, status);
