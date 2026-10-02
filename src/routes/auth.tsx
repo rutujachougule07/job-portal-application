@@ -106,12 +106,7 @@ function AuthPage() {
         toast.success("✅ खाते यशस्वीरित्या तयार झाले! Welcome to REAL JOB.");
 
         if (role === "admin" || role === "employer") {
-          const credits = dataStore.getUserJobCredits(userObj.id);
-          if (credits > 0) {
-            navigate({ to: "/admin" });
-          } else {
-            navigate({ to: "/packages", search: { redirectTo: "/admin" } } as any);
-          }
+          navigate({ to: "/admin" });
         } else {
           navigate({ to: "/home" });
         }
@@ -186,12 +181,7 @@ function AuthPage() {
 
         const isEmpOrAdmin = userObj.role === "employer" || userObj.role === "admin" || role === "admin" || role === "employer";
         if (isEmpOrAdmin) {
-          const credits = dataStore.getUserJobCredits(userObj.id);
-          if (credits > 0) {
-            navigate({ to: "/admin" });
-          } else {
-            navigate({ to: "/packages", search: { redirectTo: "/admin" } } as any);
-          }
+          navigate({ to: "/admin" });
         } else {
           navigate({ to: "/home" });
         }
@@ -218,12 +208,7 @@ function AuthPage() {
 
         const isEmpOrAdmin = userObj.role === "employer" || userObj.role === "admin" || role === "admin" || role === "employer";
         if (isEmpOrAdmin) {
-          const credits = dataStore.getUserJobCredits(userObj.id);
-          if (credits > 0) {
-            navigate({ to: "/admin" });
-          } else {
-            navigate({ to: "/packages", search: { redirectTo: "/admin" } } as any);
-          }
+          navigate({ to: "/admin" });
         } else {
           navigate({ to: "/home" });
         }
