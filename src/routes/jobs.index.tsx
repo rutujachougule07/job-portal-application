@@ -91,7 +91,7 @@ function JobsListingPage() {
   const isInitialState = (!categoryFilter || categoryFilter === "all") && !searchTerm && (!locationFilter || locationFilter === "all") && (!typeFilter || typeFilter === "all") && (!workModeFilter || workModeFilter === "all") && (!experienceFilter || experienceFilter === "all") && (!salaryFilter || salaryFilter === "all");
 
   const dynamicMainCategories = useMemo(() => {
-    const jobsList = dataStore.getActiveJobs();
+    const jobsList = dataStore.getAllJobs();
     const catMap = new Map<string, { slug: string; name: string; count: number }>();
 
     jobsList.forEach((job) => {

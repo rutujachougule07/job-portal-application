@@ -1,9 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 import {
   ArrowLeft,
   Building2,
+  Camera,
+  Check,
   Eye,
   EyeOff,
   Loader2,
@@ -11,8 +13,11 @@ import {
   LogIn,
   Mail,
   Phone,
+  RotateCcw,
+  Upload,
   User,
   UserPlus,
+  X,
 } from "lucide-react";
 import { LogoIcon } from "@/components/portal/Brand";
 
@@ -41,6 +46,7 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const search = Route.useSearch();
   const navigate = useNavigate();
+  const { lang } = useI18n();
 
   const [mode, setMode] = useState<"login" | "register" | "forgot">((search.mode as any) || "login");
   const [role, setRole] = useState<"worker" | "employer" | "admin">((search.role as any) || "worker");
@@ -51,12 +57,76 @@ function AuthPage() {
   // Common credentials
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [profilePhoto, setProfilePhoto] = useState<string>("");
+
+  // WebCam Camera state
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
+  const [tempCaptured, setTempCaptured] = useState<string | null>(null);
 
   // Clear inputs on mode or role change
   useEffect(() => {
     setEmail("");
     setPassword("");
+    setProfilePhoto("");
   }, [mode, role]);
+
+  // Handle live camera stream attachment when camera open
+  useEffect(() => {
+    if (cameraOpen && videoRef.current && mediaStream) {
+      videoRef.current.srcObject = mediaStream;
+    }
+  }, [cameraOpen, mediaStream]);
+
+  const startCamera = async () => {
+    try {
+      setTempCaptured(null);
+      setCameraOpen(true);
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 640 } },
+        audio: false,
+      });
+      setMediaStream(stream);
+    } catch (err) {
+      toast.error(lang === "mr" ? "कॅमेरा उघडता आला नाही! कृपया कॅमेरा परवानगी तपासा." : "Could not open camera. Please check camera permissions.");
+      setCameraOpen(false);
+    }
+  };
+
+  const stopCamera = () => {
+    if (mediaStream) {
+      mediaStream.getTracks().forEach((track) => track.stop());
+      setMediaStream(null);
+    }
+    setCameraOpen(false);
+    setTempCaptured(null);
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current) {
+      const video = videoRef.current;
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+        setTempCaptured(dataUrl);
+      }
+    }
+  };
+
+  const confirmCapturedPhoto = () => {
+    if (tempCaptured) {
+      setProfilePhoto(tempCaptured);
+      toast.success(lang === "mr" ? "फोटो कॅमेऱ्यातून यशस्वीरीत्या घेतला!" : "Photo captured successfully!");
+    }
+    stopCamera();
+  };
 
   // Worker registration extra fields
   const [workerName, setWorkerName] = useState("");
@@ -66,6 +136,20 @@ function AuthPage() {
   const [companyName, setCompanyName] = useState("");
   const [employerPhone, setEmployerPhone] = useState("");
 
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Photo size should be less than 5MB");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfilePhoto(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,6 +181,7 @@ function AuthPage() {
           role: role === "admin" ? "employer" : role,
           fullName: nameString,
           mobile: userMobile || "",
+          profilePhoto: profilePhoto || "",
         });
 
         const userObj = {
@@ -105,6 +190,7 @@ function AuthPage() {
           role: registeredAccount.role,
           fullName: registeredAccount.fullName || "User",
           mobile: registeredAccount.mobile || userMobile || "",
+          profilePhoto: registeredAccount.profilePhoto || profilePhoto || "",
         };
 
         window.localStorage.setItem("realjob-user", JSON.stringify(userObj));
@@ -261,16 +347,16 @@ function AuthPage() {
 
 
       {/* Centered Frosted Glassmorphism Card */}
-      <div className="relative z-10 w-full max-w-md sm:max-w-[430px] bg-white/80 backdrop-blur-xl rounded-2xl border border-white/80 shadow-2xl px-6 py-5 sm:px-8 sm:py-6 transition-all duration-300">
+      <div className="relative z-10 w-full max-w-md sm:max-w-[420px] max-h-[92vh] overflow-y-auto bg-white/85 backdrop-blur-xl rounded-2xl border border-white/80 shadow-2xl px-5 py-4 sm:px-6 sm:py-5 transition-all duration-300">
 
         {/* Top Logo */}
-        <div className="flex justify-center mb-2">
-          <LogoIcon className="h-11 sm:h-12 object-contain" />
+        <div className="flex justify-center mb-1.5">
+          <LogoIcon className="h-9 sm:h-10 object-contain" />
         </div>
 
         {/* Title Header (Strictly English) */}
-        <div className="text-center space-y-0.5 mb-3">
-          <h1 className="text-xl sm:text-2xl font-black text-[#0A3B7B] tracking-tight leading-tight">
+        <div className="text-center space-y-0.5 mb-2">
+          <h1 className="text-lg sm:text-xl font-black text-[#0A3B7B] tracking-tight leading-tight">
             {role === "admin"
               ? mode === "register"
                 ? "Employer / Admin Registration"
@@ -284,7 +370,7 @@ function AuthPage() {
                   : "Worker / User Login"}
           </h1>
 
-          <p className="text-[11px] font-semibold text-gray-600 mt-1 px-2 leading-tight">
+          <p className="text-[10px] sm:text-[11px] font-semibold text-gray-600 px-1 leading-tight">
             {role === "admin"
               ? mode === "register"
                 ? "For employers & companies: Register an account to find workers."
@@ -297,13 +383,13 @@ function AuthPage() {
 
         {/* Mode Pill Toggle (Login / Register) */}
         {mode !== "forgot" && (
-          <div className="bg-gray-200/80 backdrop-blur-md p-1 rounded-full border border-white/70 flex items-center shadow-inner mb-3">
+          <div className="bg-gray-200/80 backdrop-blur-md p-1 rounded-full border border-white/70 flex items-center shadow-inner mb-2.5">
             <button
               type="button"
               onClick={() => setMode("login")}
-              className={`flex-1 py-1.5 rounded-full text-xs font-black transition-all duration-200 flex items-center justify-center gap-1.5 ${mode === "login"
-                  ? "bg-[#0A3B7B] text-white shadow-md shadow-[#0A3B7B]/30"
-                  : "text-gray-700 hover:text-black font-bold"
+              className={`flex-1 py-1 rounded-full text-[11px] font-black transition-all duration-200 flex items-center justify-center gap-1.5 ${mode === "login"
+                ? "bg-[#0A3B7B] text-white shadow-md shadow-[#0A3B7B]/30"
+                : "text-gray-700 hover:text-black font-bold"
                 }`}
             >
               <User className="size-3.5" /> Login
@@ -311,9 +397,9 @@ function AuthPage() {
             <button
               type="button"
               onClick={() => setMode("register")}
-              className={`flex-1 py-1.5 rounded-full text-xs font-black transition-all duration-200 flex items-center justify-center gap-1.5 ${mode === "register"
-                  ? "bg-[#0A3B7B] text-white shadow-md shadow-[#0A3B7B]/30"
-                  : "text-gray-700 hover:text-black font-bold"
+              className={`flex-1 py-1 rounded-full text-[11px] font-black transition-all duration-200 flex items-center justify-center gap-1.5 ${mode === "register"
+                ? "bg-[#0A3B7B] text-white shadow-md shadow-[#0A3B7B]/30"
+                : "text-gray-700 hover:text-black font-bold"
                 }`}
             >
               <UserPlus className="size-3.5" /> Register
@@ -322,13 +408,13 @@ function AuthPage() {
         )}
 
         {/* Form Container */}
-        <form onSubmit={handleSubmit} autoComplete="off" className="space-y-3">
+        <form onSubmit={handleSubmit} autoComplete="off" className="space-y-2.5">
 
           {/* WORKER REGISTRATION FIELDS */}
           {mode === "register" && role === "worker" && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
-                <Label className="text-[11px] font-extrabold text-gray-800 mb-0.5 block">Full Name *</Label>
+                <Label className="text-[10px] sm:text-[11px] font-extrabold text-gray-800 mb-0.5 block">Full Name *</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-gray-400" />
                   <input
@@ -338,13 +424,13 @@ function AuthPage() {
                     placeholder="e.g. Rahul Sharma"
                     value={workerName}
                     onChange={(e) => setWorkerName(e.target.value)}
-                    className="w-full h-9 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B]"
+                    className="w-full h-8.5 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B]"
                   />
                 </div>
               </div>
 
               <div>
-                <Label className="text-[11px] font-extrabold text-gray-800 mb-0.5 block">Mobile Number *</Label>
+                <Label className="text-[10px] sm:text-[11px] font-extrabold text-gray-800 mb-0.5 block">Mobile Number *</Label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-gray-400" />
                   <input
@@ -354,7 +440,7 @@ function AuthPage() {
                     placeholder="+91 98220 00000"
                     value={workerPhone}
                     onChange={(e) => setWorkerPhone(e.target.value)}
-                    className="w-full h-9 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B]"
+                    className="w-full h-8.5 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B]"
                   />
                 </div>
               </div>
@@ -363,9 +449,9 @@ function AuthPage() {
 
           {/* EMPLOYER REGISTRATION FIELDS */}
           {mode === "register" && (role === "employer" || role === "admin") && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
-                <Label className="text-[11px] font-extrabold text-gray-800 mb-0.5 block">Company Name *</Label>
+                <Label className="text-[10px] sm:text-[11px] font-extrabold text-gray-800 mb-0.5 block">Company Name *</Label>
                 <div className="relative">
                   <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-gray-400" />
                   <input
@@ -375,13 +461,13 @@ function AuthPage() {
                     placeholder="e.g. Tata Motors / L&T"
                     value={companyName}
                     onChange={(e) => setCompanyName(e.target.value)}
-                    className="w-full h-9 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B]"
+                    className="w-full h-8.5 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B]"
                   />
                 </div>
               </div>
 
               <div>
-                <Label className="text-[11px] font-extrabold text-gray-800 mb-0.5 block">Mobile Number *</Label>
+                <Label className="text-[10px] sm:text-[11px] font-extrabold text-gray-800 mb-0.5 block">Mobile Number *</Label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-gray-400" />
                   <input
@@ -391,17 +477,61 @@ function AuthPage() {
                     placeholder="+91 98220 00000"
                     value={employerPhone}
                     onChange={(e) => setEmployerPhone(e.target.value)}
-                    className="w-full h-9 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B]"
+                    className="w-full h-8.5 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B]"
                   />
                 </div>
               </div>
             </div>
           )}
 
+          {/* PROFILE / COMPANY PHOTO UPLOAD & LIVE CAMERA FIELD */}
+          {mode === "register" && (
+            <div className="bg-blue-50/80 p-2 sm:p-2.5 rounded-xl border border-blue-100 space-y-1.5">
+              <div className="flex items-center gap-2">
+                {profilePhoto ? (
+                  <img src={profilePhoto} alt="Profile Preview" className="size-9 rounded-full object-cover ring-2 ring-[#0A3B7B] shadow-xs" />
+                ) : (
+                  <div className="size-9 rounded-full bg-[#0A3B7B]/10 text-[#0A3B7B] flex items-center justify-center shrink-0 border border-[#0A3B7B]/20">
+                    <Camera className="size-4" />
+                  </div>
+                )}
+                <div>
+                  <p className="text-[11px] font-extrabold text-[#0A3B7B]">
+                    {role === "employer" || role === "admin" ? "Company Logo / Photo" : "Profile Photo (प्रोफाईल फोटो)"}
+                  </p>
+                  <p className="text-[10px] text-gray-500 font-bold">
+                    {profilePhoto ? "✓ Photo Attached" : "Choose file or take live camera photo"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Action Buttons: 1. Upload File 2. Live Camera */}
+              <div className="flex items-center gap-2 pt-0.5">
+                <label className="flex-1 py-1 px-2 rounded-lg bg-[#0A3B7B] text-white text-[10px] sm:text-[11px] font-black cursor-pointer hover:bg-[#072B5B] transition-colors shadow-xs flex items-center justify-center gap-1">
+                  <Upload className="size-3" /> {profilePhoto ? "Change" : "Upload File"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    className="hidden"
+                  />
+                </label>
+
+                <button
+                  type="button"
+                  onClick={startCamera}
+                  className="flex-1 py-1 px-2 rounded-lg bg-emerald-700 text-white text-[10px] sm:text-[11px] font-black hover:bg-emerald-800 transition-colors shadow-xs flex items-center justify-center gap-1 cursor-pointer"
+                >
+                  <Camera className="size-3" /> {lang === "mr" ? "कॅमेरा उघडा" : "Take Photo"}
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* EMAIL OR MOBILE FIELD */}
           <div>
-            <Label htmlFor="email" className="text-[11px] font-extrabold text-gray-800 mb-0.5 block">
-              {mode === "login" ? "Email Address or Mobile Number *" : "Email Address *"}
+            <Label htmlFor="email" className="text-[10px] sm:text-[11px] font-extrabold text-gray-800 mb-0.5 block">
+              {mode === "login" ? "Email Address or Mobile Number *" : "Email Address (Optional / ऐच्छिक)"}
             </Label>
             <div className="relative">
               {mode === "login" && /^\d+$/.test(email.replace(/\D/g, "")) && email.length >= 5 ? (
@@ -412,12 +542,12 @@ function AuthPage() {
               <input
                 id="email"
                 type={mode === "login" ? "text" : "email"}
-                required
+                required={mode === "login"}
                 autoComplete="off"
-                placeholder={mode === "login" ? "Email or Mobile (e.g. 98220 00000 / user@gmail.com)" : "name@example.com"}
+                placeholder={mode === "login" ? "Email or Mobile (e.g. 98220 00000 / user@gmail.com)" : "name@example.com (Optional)"}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full h-9.5 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B] shadow-xs"
+                className="w-full h-8.5 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B] shadow-xs"
               />
             </div>
           </div>
@@ -515,6 +645,77 @@ function AuthPage() {
         </div>
 
       </div>
+
+      {/* Live WebCam Camera Modal */}
+      {cameraOpen && (
+        <div className="fixed inset-0 z-50 bg-[#051B38]/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-white/40 flex flex-col items-center animate-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="w-full flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="size-8 rounded-full bg-[#0A3B7B]/10 text-[#0A3B7B] flex items-center justify-center">
+                  <Camera className="size-4" />
+                </div>
+                <span className="font-black text-sm text-[#0A3B7B]">
+                  {lang === "mr" ? "थेट फोटो काढा (Take Photo)" : "Live Camera Capture"}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={stopCamera}
+                className="size-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+
+            {/* Video Stream or Captured Preview */}
+            <div className="relative size-64 sm:size-72 rounded-2xl overflow-hidden bg-black flex items-center justify-center shadow-inner border-2 border-[#0A3B7B]">
+              {tempCaptured ? (
+                <img src={tempCaptured} alt="Captured" className="w-full h-full object-cover" />
+              ) : (
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="w-full h-full object-cover transform -scale-x-100"
+                />
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="w-full flex items-center justify-center gap-3 mt-5">
+              {tempCaptured ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setTempCaptured(null)}
+                    className="px-4 py-2.5 rounded-xl border border-gray-300 text-xs font-bold text-gray-700 hover:bg-gray-50 flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <RotateCcw className="size-4" /> {lang === "mr" ? "पुन्हा काढा (Retake)" : "Retake"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={confirmCapturedPhoto}
+                    className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black shadow-md flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <Check className="size-4" /> {lang === "mr" ? "फोटो वापरा (Use Photo)" : "Use Photo"}
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={capturePhoto}
+                  className="px-6 py-3 rounded-full bg-[#0A3B7B] hover:bg-[#072B5B] text-white text-xs font-black shadow-lg shadow-[#0A3B7B]/30 flex items-center gap-2 transition-all transform active:scale-95 cursor-pointer"
+                >
+                  <Camera className="size-4" /> 📷 {lang === "mr" ? "फोटो काढा (Snap Photo)" : "Snap Photo"}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

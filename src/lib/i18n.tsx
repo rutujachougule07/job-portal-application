@@ -45,7 +45,7 @@ const en = {
   settings: "Settings",
   signIn: "Login",
   userLogin: "User Login",
-  adminLogin: "Admin Login",
+  adminLogin: "Job Poster Login",
   register: "Register",
   logout: "Logout",
 
@@ -338,7 +338,7 @@ const partial: Record<string, Partial<Record<TranslationKeys, string>>> = {
     settings: "सेटिंग्ज",
     signIn: "लॉगिन",
     userLogin: "यूझर लॉगिन",
-    adminLogin: "ॲडमिन लॉगिन",
+    adminLogin: "जॉब पोस्टर लॉगिन",
     register: "रजिस्टर",
     logout: "लॉगआउट",
 
@@ -620,6 +620,8 @@ const partial: Record<string, Partial<Record<TranslationKeys, string>>> = {
     profile: "मेरी प्रोफाइल",
     settings: "सेटिंग्स",
     signIn: "लॉगिन",
+    userLogin: "यूजर लॉगिन",
+    adminLogin: "जॉब पोस्टर लॉगिन",
     register: "पंजीकरण करें",
     logout: "लॉगआउट",
 

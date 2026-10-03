@@ -57,6 +57,7 @@ function getJobDetails(jobId: string) {
       featured: storeJob.featured,
       openings: storeJob.vacancies,
       vacancies: storeJob.vacancies,
+      employerId: storeJob.employerId || storeJob.company,
       description: storeJob.description,
       responsibilities: storeJob.responsibilities,
       requiredSkills: storeJob.requiredSkills,
@@ -202,12 +203,22 @@ function JobDetailPage() {
                     <Badge variant="outline" className="border-[#063B78] text-[#063B78] font-bold text-xs">
                       {job.workMode}
                     </Badge>
+                    {(job as any).approvalStatus === "pending" && (
+                      <Badge className="bg-amber-500 text-white font-black text-xs px-2.5 py-0.5">
+                        ⏳ Pending Super Admin Approval
+                      </Badge>
+                    )}
                   </div>
 
                   <h1 className="text-2xl sm:text-3xl font-black text-[#10233F] mt-1">{job.title}</h1>
-                  <p className="text-sm font-extrabold text-[#125BB5] flex items-center gap-1.5 mt-1">
-                    <Building2 className="size-4" /> {job.company}
-                  </p>
+                  <div className="flex items-center gap-3 flex-wrap mt-1">
+                    <p className="text-sm font-extrabold text-[#125BB5] flex items-center gap-1.5">
+                      <Building2 className="size-4" /> {job.company}
+                    </p>
+                    <span className="text-xs font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200 flex items-center gap-1">
+                      <User className="size-3.5" /> Job Poster: <strong>{(job as any).employerId || job.company}</strong>
+                    </span>
+                  </div>
 
                   <div className="mt-3 flex flex-wrap gap-4 text-xs font-bold text-[#5B6B7F]">
                     <span className="flex items-center gap-1">
@@ -226,10 +237,11 @@ function JobDetailPage() {
               {/* Action Buttons */}
               <div className="flex sm:flex-col gap-3 w-full sm:w-auto shrink-0">
                 <Button
+                  disabled={(job as any).approvalStatus === "pending"}
                   onClick={() => setShowApplyModal(true)}
-                  className="btn-yellow flex-1 sm:flex-none font-black text-xs px-8 py-3 h-11"
+                  className="btn-yellow flex-1 sm:flex-none font-black text-xs px-8 py-3 h-11 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {t("applyNow")}
+                  {(job as any).approvalStatus === "pending" ? "⏳ Pending Approval" : t("applyNow")}
                 </Button>
 
                 <div className="flex items-center gap-2">

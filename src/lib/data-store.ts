@@ -29,6 +29,7 @@ export type JobSeekerProfile = {
   subcategory: string;
   jobType: string;
   resume?: string;
+  resumeName?: string;
   createdAt: string;
 };
 
@@ -206,6 +207,29 @@ export const DEFAULT_JOB_PACKAGES: JobPackagePlan[] = [
 ];
 
 // INITIAL SEED DATA FOR REAL JOBS (Only jobs added via Admin will exist)
+export type EmployerWorker = {
+  id: string;
+  employerId: string;
+  name: string;
+  mobile: string;
+  trade: string;
+  category?: string;
+  dailyRate: number;
+  joiningDate: string;
+  status: "Active" | "Inactive";
+};
+
+export type DailyAttendanceRecord = {
+  id: string;
+  employerId: string;
+  workerId: string;
+  workerName: string;
+  date: string;
+  status: "Present" | "HalfDay" | "Absent" | "Overtime";
+  notes?: string;
+  updatedAt: string;
+};
+
 const INITIAL_JOBS: JobRecord[] = [];
 
 export class DataStoreManager {
@@ -220,6 +244,8 @@ export class DataStoreManager {
     INTERVIEWS: "realjob_db_interviews",
     RESUMES: "realjob_db_resumes",
     PACKAGES: "realjob_db_packages",
+    EMP_WORKERS: "realjob_db_emp_workers",
+    ATTENDANCE: "realjob_db_attendance",
   };
 
   constructor() {
@@ -305,19 +331,20 @@ export class DataStoreManager {
     return this.getRegisteredUserAccounts();
   }
 
-  public registerAccount(user: { email: string; password?: string; mobile?: string; role: UserRole; fullName: string }): { id: string; email: string; password?: string; mobile?: string; role: UserRole; fullName: string; createdAt?: string } {
+  public registerAccount(user: { email: string; password?: string; mobile?: string; role: UserRole; fullName: string; profilePhoto?: string }): { id: string; email: string; password?: string; mobile?: string; role: UserRole; fullName: string; profilePhoto?: string; createdAt?: string } {
     const list = this.getRegisteredUserAccounts();
     const cleanEmail = user.email.trim().toLowerCase();
     const existingIndex = list.findIndex(u => u.email.toLowerCase() === cleanEmail);
     const fallbackName = cleanEmail.split("@")[0] || "User";
     
-    const account: { id: string; email: string; password?: string; mobile?: string; role: UserRole; fullName: string; createdAt?: string } = {
+    const account: { id: string; email: string; password?: string; mobile?: string; role: UserRole; fullName: string; profilePhoto?: string; createdAt?: string } = {
       id: `usr-${Date.now()}`,
       email: cleanEmail,
       password: user.password || "",
       mobile: user.mobile || "",
       role: user.role,
       fullName: user.fullName || fallbackName,
+      profilePhoto: user.profilePhoto || "",
       createdAt: new Date().toISOString(),
     };
 
@@ -347,10 +374,47 @@ export class DataStoreManager {
     });
   }
 
+  public deleteRegisteredUser(userId: string): boolean {
+    if (typeof window === "undefined") return false;
+    let list = this.getRegisteredUserAccounts();
+    list = list.filter((u) => u.id !== userId);
+    localStorage.setItem("realjob_db_registered_users", JSON.stringify(list));
+    fbSync(() => deleteDoc(doc(db, "users", userId)));
+    return true;
+  }
+
+  public deleteAllRegisteredUsers(): boolean {
+    if (typeof window === "undefined") return false;
+    const users = this.getRegisteredUserAccounts();
+    localStorage.setItem("realjob_db_registered_users", JSON.stringify([]));
+    for (const u of users) {
+      fbSync(() => deleteDoc(doc(db, "users", u.id)));
+    }
+    return true;
+  }
+
+  public deleteApplication(appId: string): boolean {
+    if (typeof window === "undefined") return false;
+    let apps = this.getAllApplications();
+    apps = apps.filter((a) => a.id !== appId);
+    localStorage.setItem(this.STORAGE_KEYS.APPLICATIONS, JSON.stringify(apps));
+    fbSync(() => deleteDoc(doc(db, "applications", appId)));
+    return true;
+  }
+
+  public clearAllAdminData(): void {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(this.STORAGE_KEYS.JOBS, JSON.stringify([]));
+    localStorage.setItem(this.STORAGE_KEYS.APPLICATIONS, JSON.stringify([]));
+    localStorage.setItem("realjob_db_registered_users", JSON.stringify([]));
+    localStorage.setItem(this.STORAGE_KEYS.PACKAGES, JSON.stringify([]));
+  }
+
+
   // --- USER AUTHENTICATION & CURRENT SESSION ---
-  public getCurrentUser(): { email: string; role: UserRole; fullName?: string; id?: string; mobile?: string } | null {
+  public getCurrentUser(): { email: string; role: UserRole; fullName?: string; id?: string; mobile?: string; profilePhoto?: string } | null {
     if (typeof window === "undefined") return null;
-    const raw = localStorage.getItem(this.STORAGE_KEYS.USER);
+    const raw = localStorage.getItem("realjob-user") || localStorage.getItem(this.STORAGE_KEYS.USER);
     if (!raw) return null;
     try {
       const u = JSON.parse(raw);
@@ -360,12 +424,14 @@ export class DataStoreManager {
     }
   }
 
-  public setCurrentUser(userData: { email: string; role: UserRole; fullName?: string; id?: string } | null) {
+  public setCurrentUser(userData: { email: string; role: UserRole; fullName?: string; id?: string; mobile?: string; profilePhoto?: string } | null) {
     if (typeof window === "undefined") return;
     if (!userData) {
       localStorage.removeItem(this.STORAGE_KEYS.USER);
+      localStorage.removeItem("realjob-user");
     } else {
       localStorage.setItem(this.STORAGE_KEYS.USER, JSON.stringify(userData));
+      localStorage.setItem("realjob-user", JSON.stringify(userData));
     }
   }
 
@@ -383,30 +449,28 @@ export class DataStoreManager {
     }
     try {
       const parsed: JobRecord[] = JSON.parse(raw);
-      // Merge initial seed jobs if missing from parsed array
-      const existingIds = new Set(parsed.map(j => j.id));
-      let updated = [...parsed];
-      let hasNewSeed = false;
-
-      for (const initJob of INITIAL_JOBS) {
-        if (!existingIds.has(initJob.id)) {
-          updated.push(initJob);
-          hasNewSeed = true;
+      let modified = false;
+      const updated = parsed.map((j) => {
+        if (!j.approvalStatus) {
+          modified = true;
+          return { ...j, approvalStatus: "pending" as ApprovalStatus };
         }
-      }
+        return j;
+      });
 
-      if (hasNewSeed) {
+      if (modified) {
         localStorage.setItem(this.STORAGE_KEYS.JOBS, JSON.stringify(updated));
       }
       return updated;
     } catch {
-      localStorage.setItem(this.STORAGE_KEYS.JOBS, JSON.stringify(INITIAL_JOBS));
       return INITIAL_JOBS;
     }
   }
 
   public getActiveJobs(): JobRecord[] {
-    return this.getAllJobs().filter((j) => j.status === "Active");
+    return this.getAllJobs().filter(
+      (j) => j.status === "Active" && j.approvalStatus === "approved"
+    );
   }
 
   public getPendingJobs(): JobRecord[] {
@@ -414,7 +478,7 @@ export class DataStoreManager {
   }
 
   public getApprovedJobs(): JobRecord[] {
-    return this.getAllJobs().filter((j) => j.approvalStatus === "approved" || !j.approvalStatus);
+    return this.getAllJobs().filter((j) => j.approvalStatus === "approved");
   }
 
   public getRejectedJobs(): JobRecord[] {
@@ -434,7 +498,7 @@ export class DataStoreManager {
       postedDate: new Date().toISOString(),
       postedAgo: "Just now",
       initials,
-      approvalStatus: jobData.approvalStatus || "approved",
+      approvalStatus: jobData.approvalStatus || "pending",
       status: jobData.status || "Active",
     };
     jobs.unshift(newJob);
@@ -736,14 +800,41 @@ export class DataStoreManager {
     return true;
   }
 
-  // --- JOB SEEKER PROFILE MANAGEMENT ---
   public getJobSeekerProfile(userId: string): JobSeekerProfile | null {
     if (typeof window === "undefined" || !userId) return null;
     const raw = localStorage.getItem(this.STORAGE_KEYS.PROFILES);
     if (!raw) return null;
     try {
       const profiles: JobSeekerProfile[] = JSON.parse(raw);
-      return profiles.find((p) => p.id === userId || p.email === userId) || null;
+      const profile = profiles.find((p) => p.id === userId || p.email === userId) || null;
+      if (profile) {
+        // Clean legacy auto-generated seed values if present
+        if (profile.category === "IT & Software" || profile.category === "General Candidate") {
+          profile.category = "";
+        }
+        if (profile.experience === "2 Years" || profile.experience === "Fresher") {
+          profile.experience = "";
+        }
+        if (profile.education === "B.Tech / Graduate" || profile.education === "Not Specified" || profile.education === "Graduate") {
+          profile.education = "";
+        }
+        if (profile.expectedSalary === "₹ 4.5 LPA" || profile.expectedSalary === "As per standards") {
+          profile.expectedSalary = "";
+        }
+        if (profile.currentLocation === "Pune, Maharashtra" || profile.currentLocation === "Pune") {
+          profile.currentLocation = "";
+        }
+        if (profile.preferredLocation === "Pune, Mumbai, Chakan" || profile.preferredLocation === "Pune, Maharashtra" || profile.preferredLocation === "Pune") {
+          profile.preferredLocation = "";
+        }
+        if (profile.skills?.includes("React") && profile.skills?.includes("JavaScript")) {
+          profile.skills = [];
+        }
+        if (profile.resume?.includes("_resume.pdf")) {
+          profile.resume = "";
+        }
+      }
+      return profile;
     } catch {
       return null;
     }
@@ -771,6 +862,7 @@ export class DataStoreManager {
       subcategory: profile.subcategory ?? found?.subcategory ?? "",
       jobType: profile.jobType ?? found?.jobType ?? "Full Time",
       resume: profile.resume ?? found?.resume ?? "",
+      resumeName: profile.resumeName ?? found?.resumeName ?? "",
       profilePhoto: profile.profilePhoto ?? found?.profilePhoto ?? "",
       createdAt: found?.createdAt ?? new Date().toISOString(),
     };
@@ -785,13 +877,14 @@ export class DataStoreManager {
       localStorage.setItem(this.STORAGE_KEYS.PROFILES, JSON.stringify(profiles));
       fbSync(() => setDoc(doc(db, "profiles", updatedProfile.id), updatedProfile));
 
-      // Also update session user if full name or email changed
+      // Also update session user if full name, email, or profile photo changed
       const currentUser = this.getCurrentUser();
       if (currentUser && (currentUser.id === updatedProfile.id || currentUser.email === updatedProfile.email)) {
         this.setCurrentUser({
           ...currentUser,
           fullName: updatedProfile.fullName,
           email: updatedProfile.email,
+          profilePhoto: updatedProfile.profilePhoto || currentUser.profilePhoto || "",
         });
       }
     }
@@ -874,6 +967,20 @@ export class DataStoreManager {
     }
   }
 
+  public deletePackagePurchase(txId: string): boolean {
+    if (typeof window === "undefined") return false;
+    let list = this.getAllPackagePurchases();
+    list = list.filter((tx) => tx.id !== txId);
+    localStorage.setItem(this.STORAGE_KEYS.PACKAGES, JSON.stringify(list));
+    return true;
+  }
+
+  public clearPackagePurchases(): boolean {
+    if (typeof window === "undefined") return false;
+    localStorage.setItem(this.STORAGE_KEYS.PACKAGES, JSON.stringify([]));
+    return true;
+  }
+
   /**
    * Consume 1 credit when posting a job
    */
@@ -893,6 +1000,122 @@ export class DataStoreManager {
     } catch {
       return false;
     }
+  }
+
+  // --- EMPLOYER WORKER & ATTENDANCE MANAGEMENT ---
+  public getEmployerWorkers(employerId: string): EmployerWorker[] {
+    if (typeof window === "undefined" || !employerId) return [];
+    const raw = localStorage.getItem(this.STORAGE_KEYS.EMP_WORKERS);
+    if (!raw) return [];
+    try {
+      const all: EmployerWorker[] = JSON.parse(raw);
+      return all.filter((w) => w.employerId === employerId);
+    } catch {
+      return [];
+    }
+  }
+
+  public saveEmployerWorker(worker: Omit<EmployerWorker, "id"> & { id?: string }): EmployerWorker {
+    const raw = typeof window !== "undefined" ? localStorage.getItem(this.STORAGE_KEYS.EMP_WORKERS) : null;
+    const all: EmployerWorker[] = raw ? JSON.parse(raw) : [];
+    const workerId = worker.id || `empw-${Date.now()}`;
+    const newWorker: EmployerWorker = {
+      ...worker,
+      id: workerId,
+      status: worker.status || "Active",
+    };
+    const index = all.findIndex((w) => w.id === workerId);
+    if (index >= 0) {
+      all[index] = newWorker;
+    } else {
+      all.unshift(newWorker);
+    }
+    if (typeof window !== "undefined") {
+      localStorage.setItem(this.STORAGE_KEYS.EMP_WORKERS, JSON.stringify(all));
+    }
+    return newWorker;
+  }
+
+  public deleteEmployerWorker(workerId: string): boolean {
+    if (typeof window === "undefined" || !workerId) return false;
+    const raw = localStorage.getItem(this.STORAGE_KEYS.EMP_WORKERS);
+    if (!raw) return false;
+    try {
+      const all: EmployerWorker[] = JSON.parse(raw);
+      const filtered = all.filter((w) => w.id !== workerId);
+      localStorage.setItem(this.STORAGE_KEYS.EMP_WORKERS, JSON.stringify(filtered));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  public getEmployerAttendance(employerId: string, date?: string): DailyAttendanceRecord[] {
+    if (typeof window === "undefined" || !employerId) return [];
+    const raw = localStorage.getItem(this.STORAGE_KEYS.ATTENDANCE);
+    if (!raw) return [];
+    try {
+      const all: DailyAttendanceRecord[] = JSON.parse(raw);
+      let res = all.filter((a) => a.employerId === employerId);
+      if (date) {
+        res = res.filter((a) => a.date === date);
+      }
+      return res;
+    } catch {
+      return [];
+    }
+  }
+
+  public getEmployerAttendanceRange(employerId: string, startDate?: string, endDate?: string): DailyAttendanceRecord[] {
+    if (typeof window === "undefined" || !employerId) return [];
+    const raw = localStorage.getItem(this.STORAGE_KEYS.ATTENDANCE);
+    if (!raw) return [];
+    try {
+      const all: DailyAttendanceRecord[] = JSON.parse(raw);
+      let res = all.filter((a) => a.employerId === employerId);
+      if (startDate) {
+        res = res.filter((a) => a.date >= startDate);
+      }
+      if (endDate) {
+        res = res.filter((a) => a.date <= endDate);
+      }
+      return res;
+    } catch {
+      return [];
+    }
+  }
+
+  public saveAttendanceStatus(
+    employerId: string,
+    workerId: string,
+    workerName: string,
+    date: string,
+    status: "Present" | "HalfDay" | "Absent" | "Overtime",
+    notes?: string
+  ): DailyAttendanceRecord {
+    const raw = typeof window !== "undefined" ? localStorage.getItem(this.STORAGE_KEYS.ATTENDANCE) : null;
+    const all: DailyAttendanceRecord[] = raw ? JSON.parse(raw) : [];
+    const recordId = `att-${workerId}-${date}`;
+    const newRecord: DailyAttendanceRecord = {
+      id: recordId,
+      employerId,
+      workerId,
+      workerName,
+      date,
+      status,
+      notes: notes || "",
+      updatedAt: new Date().toISOString(),
+    };
+    const index = all.findIndex((a) => a.id === recordId || (a.workerId === workerId && a.date === date));
+    if (index >= 0) {
+      all[index] = newRecord;
+    } else {
+      all.push(newRecord);
+    }
+    if (typeof window !== "undefined") {
+      localStorage.setItem(this.STORAGE_KEYS.ATTENDANCE, JSON.stringify(all));
+    }
+    return newRecord;
   }
 }
 

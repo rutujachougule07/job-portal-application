@@ -29,7 +29,8 @@ import {
   Phone,
   Mail,
   UserCheck,
-  BadgeCheck
+  BadgeCheck,
+  Trash2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -120,10 +121,14 @@ function SuperAdminPage() {
   const [appSearchQuery, setAppSearchQuery] = useState("");
   const [appStatusFilter, setAppStatusFilter] = useState<string>("all");
 
-  useEffect(() => {
+  const refreshData = () => {
     setAllJobs(dataStore.getAllJobs());
     setAllUsers(dataStore.getRegisteredUserAccounts());
     setAllApplications(dataStore.getAllApplications());
+  };
+
+  useEffect(() => {
+    refreshData();
   }, []);
 
   const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
@@ -131,13 +136,62 @@ function SuperAdminPage() {
   const handleApproveJob = (jobId: string) => {
     dataStore.updateJobApprovalStatus(jobId, "approved");
     toast.success("✅ Job Approved Successfully! Now live on portal.");
-    setAllJobs(dataStore.getAllJobs());
+    refreshData();
   };
 
   const handleRejectJob = (jobId: string) => {
     dataStore.updateJobApprovalStatus(jobId, "rejected");
     toast.error("❌ Job Posting Rejected.");
-    setAllJobs(dataStore.getAllJobs());
+    refreshData();
+  };
+
+  const handleDeleteJob = (jobId: string) => {
+    dataStore.deleteJob(jobId);
+    toast.success("🗑️ Job deleted permanently.");
+    refreshData();
+  };
+
+  const handleDeleteUser = (userId: string) => {
+    dataStore.deleteRegisteredUser(userId);
+    toast.success("🗑️ User account deleted.");
+    refreshData();
+  };
+
+  const handleDeleteAllUsers = () => {
+    if (window.confirm("Are you sure you want to delete ALL registered users?")) {
+      dataStore.deleteAllRegisteredUsers();
+      toast.success("🗑️ All registered users deleted successfully!");
+      refreshData();
+    }
+  };
+
+  const handleDeleteApplication = (appId: string) => {
+    dataStore.deleteApplication(appId);
+    toast.success("🗑️ Application deleted.");
+    refreshData();
+  };
+
+  const handleDeletePackagePurchase = (txId: string) => {
+    dataStore.deletePackagePurchase(txId);
+    setPackagePurchases(dataStore.getAllPackagePurchases());
+    toast.success("🗑️ Package purchase transaction deleted!");
+  };
+
+  const handleClearPackagePurchases = () => {
+    if (window.confirm("Are you sure you want to clear all package purchase history?")) {
+      dataStore.clearPackagePurchases();
+      setPackagePurchases([]);
+      toast.success("🗑️ Package purchase history cleared!");
+    }
+  };
+
+  const handleClearAllData = () => {
+    if (window.confirm("Are you sure you want to remove ALL admin data (Jobs, Applications, Users, Packages)?")) {
+      dataStore.clearAllAdminData();
+      setPackagePurchases([]);
+      toast.success("✅ All admin data removed successfully!");
+      refreshData();
+    }
   };
 
   const pendingJobsCount = allJobs.filter((j) => j.approvalStatus === "pending").length;
@@ -504,31 +558,50 @@ function SuperAdminPage() {
                   </div>
                 </div>
 
-                <div className="bg-white rounded-2xl border border-[#E0E8F5] shadow-sm p-6">
-                  <h3 className="text-lg font-black text-[#063B78] mb-6">Active Admins</h3>
-                  <div className="space-y-4">
-                    {[
-                      { name: "Admin Alpha", role: "Verification Manager", status: "Online" },
-                      { name: "Admin Beta", role: "Support Lead", status: "Online" },
-                      { name: "System Bot", role: "Auto-Moderation", status: "Active" },
-                    ].map((admin, idx) => (
-                      <div key={idx} className="flex items-center justify-between p-3 rounded-xl hover:bg-[#F8FAFF] transition-colors border border-transparent hover:border-[#E0E8F5]">
-                        <div className="flex items-center gap-3">
-                          <div className="size-10 bg-[#E0E8F5] rounded-full flex items-center justify-center font-black text-[#063B78]">
-                            {admin.name.charAt(0)}
-                          </div>
-                          <div>
-                            <p className="font-bold text-sm text-[#063B78]">{admin.name}</p>
-                            <p className="text-xs font-semibold text-[#5B6B7F]">{admin.role}</p>
-                          </div>
+                <div className="bg-white rounded-2xl border border-[#E0E8F5] shadow-sm p-6 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-black text-[#063B78]">Active Admin Accounts</h3>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-[#063B78]">
+                        {allUsers.filter(u => u.role === "admin").length} Registered
+                      </span>
+                    </div>
+
+                    <div className="space-y-3">
+                      {allUsers.filter(u => u.role === "admin").length === 0 ? (
+                        <div className="p-4 text-center border border-dashed border-[#E0E8F5] rounded-xl text-xs text-[#5B6B7F] font-semibold bg-[#F8FAFF]">
+                          No secondary admin accounts registered.
                         </div>
-                        <span className="text-[10px] font-bold px-2 py-1 rounded-md bg-emerald-100 text-emerald-700">
-                          {admin.status}
-                        </span>
-                      </div>
-                    ))}
+                      ) : (
+                        allUsers.filter(u => u.role === "admin").map((admin) => (
+                          <div key={admin.id} className="flex items-center justify-between p-3 rounded-xl bg-[#F8FAFF] border border-[#E0E8F5]">
+                            <div className="flex items-center gap-3">
+                              <div className="size-9 bg-[#063B78] text-white rounded-full flex items-center justify-center font-black text-xs">
+                                {admin.fullName.charAt(0).toUpperCase()}
+                              </div>
+                              <div>
+                                <p className="font-bold text-xs text-[#063B78]">{admin.fullName}</p>
+                                <p className="text-[10px] text-[#5B6B7F]">{admin.email}</p>
+                              </div>
+                            </div>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-700">
+                              Active
+                            </span>
+                          </div>
+                        ))
+                      )}
+                    </div>
                   </div>
-                  <Button className="w-full mt-6 bg-gradient-to-r from-[#063B78] to-[#0A4F9E] hover:from-[#0A4F9E] hover:to-[#063B78] text-white font-bold border-b-[3px] border-[#021D3D] transition-all active:scale-95">Manage Admins</Button>
+
+                  <div className="pt-6 border-t border-[#E0E8F5] mt-4 space-y-2">
+                    <Button 
+                      onClick={handleClearAllData}
+                      variant="outline"
+                      className="w-full text-xs font-bold text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+                    >
+                      <Trash2 className="size-3.5 mr-1.5" /> Clear All Data In Admin
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -647,6 +720,7 @@ function SuperAdminPage() {
 
                           <div className="flex items-center gap-4 text-xs font-bold text-[#5B6B7F] flex-wrap pt-1">
                             <span className="flex items-center gap-1 text-[#063B78]"><Building2 className="size-3.5" /> {j.company}</span>
+                            <span className="flex items-center gap-1 text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200"><UserCheck className="size-3.5" /> Job Poster: <strong>{j.employerId || j.company}</strong></span>
                             <span className="flex items-center gap-1"><MapPin className="size-3.5" /> {j.location}</span>
                             <span className="flex items-center gap-1 text-emerald-700"><IndianRupee className="size-3.5" /> {j.salary}</span>
                             <span className="flex items-center gap-1"><Briefcase className="size-3.5" /> {j.jobType} ({j.vacancies || 1} Vacancies)</span>
@@ -682,12 +756,20 @@ function SuperAdminPage() {
                             <Button
                               variant="outline"
                               onClick={() => handleRejectJob(j.id)}
-                              className="w-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 font-bold text-xs h-10"
+                              className="w-full border-amber-200 text-amber-700 hover:bg-amber-50 font-bold text-xs h-9"
                             >
                               <X className="size-4 mr-1" />
                               Reject Job
                             </Button>
                           )}
+                          <Button
+                            variant="outline"
+                            onClick={() => handleDeleteJob(j.id)}
+                            className="w-full border-red-200 text-red-600 hover:bg-red-50 font-bold text-xs h-9"
+                          >
+                            <Trash2 className="size-3.5 mr-1" />
+                            Delete Job
+                          </Button>
                         </div>
                       </div>
 
@@ -701,6 +783,10 @@ function SuperAdminPage() {
                             <div>
                               <span className="text-[10px] font-bold text-[#5B6B7F] uppercase block">Job Title</span>
                               <span className="font-bold text-[#063B78]">{j.title}</span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] font-bold text-[#5B6B7F] uppercase block">Job Poster Name / Account</span>
+                              <span className="font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200 inline-block">{j.employerId || j.company}</span>
                             </div>
                             <div>
                               <span className="text-[10px] font-bold text-[#5B6B7F] uppercase block">Company Name</span>
@@ -832,7 +918,7 @@ function SuperAdminPage() {
                     className="w-full h-10 pl-10 pr-4 rounded-xl bg-[#F8FAFF] border border-[#DCE5F0] text-xs font-bold text-[#063B78] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
                   />
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   {[
                     { id: "all", label: `All Users (${allUsers.length})` },
                     { id: "worker", label: `Workers (${allUsers.filter(u => u.role === "worker").length})` },
@@ -850,6 +936,14 @@ function SuperAdminPage() {
                       {btn.label}
                     </button>
                   ))}
+                  {allUsers.length > 0 && (
+                    <button
+                      onClick={handleDeleteAllUsers}
+                      className="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-100 text-red-700 hover:bg-red-200 transition-all flex items-center gap-1 ml-2"
+                    >
+                      <Trash2 className="size-3.5" /> Remove All Users
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -864,6 +958,7 @@ function SuperAdminPage() {
                         <th className="p-4">Role / Type</th>
                         <th className="p-4">Mobile Number</th>
                         <th className="p-4">User ID</th>
+                        <th className="p-4 text-right">Action</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#E0E8F5] font-semibold text-[#10233F]">
@@ -884,7 +979,7 @@ function SuperAdminPage() {
                         })
                         .length === 0 ? (
                         <tr>
-                          <td colSpan={5} className="p-8 text-center text-[#5B6B7F] font-bold">
+                          <td colSpan={6} className="p-8 text-center text-[#5B6B7F] font-bold">
                             No registered users match your search query.
                           </td>
                         </tr>
@@ -941,6 +1036,15 @@ function SuperAdminPage() {
                                 </div>
                               </td>
                               <td className="p-4 text-[11px] font-mono font-bold text-[#9DAEC5]">{u.id}</td>
+                              <td className="p-4 text-right">
+                                <button
+                                  onClick={() => handleDeleteUser(u.id)}
+                                  className="p-2 rounded-lg text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors"
+                                  title="Delete User"
+                                >
+                                  <Trash2 className="size-4" />
+                                </button>
+                              </td>
                             </tr>
                           ))
                       )}
@@ -1027,6 +1131,7 @@ function SuperAdminPage() {
                         <th className="p-4">Company Name</th>
                         <th className="p-4">Status</th>
                         <th className="p-4">Applied Date</th>
+                        <th className="p-4 text-right">Action</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#E0E8F5] font-semibold text-[#10233F]">
@@ -1044,7 +1149,7 @@ function SuperAdminPage() {
                         })
                         .length === 0 ? (
                         <tr>
-                          <td colSpan={5} className="p-8 text-center text-[#5B6B7F] font-bold">
+                          <td colSpan={6} className="p-8 text-center text-[#5B6B7F] font-bold">
                             No job applications found matching your criteria.
                           </td>
                         </tr>
@@ -1091,6 +1196,15 @@ function SuperAdminPage() {
                                 </span>
                               </td>
                               <td className="p-4 font-bold text-[#5B6B7F]">{a.appliedDate}</td>
+                              <td className="p-4 text-right">
+                                <button
+                                  onClick={() => handleDeleteApplication(a.id)}
+                                  className="p-2 rounded-lg text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors"
+                                  title="Delete Application"
+                                >
+                                  <Trash2 className="size-4" />
+                                </button>
+                              </td>
                             </tr>
                           ))
                       )}
@@ -1451,16 +1565,26 @@ function SuperAdminPage() {
 
               {/* Employer Package Purchases History */}
               <div className="bg-white rounded-2xl border border-[#E0E8F5] shadow-sm p-6 space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <div>
                     <h3 className="text-lg font-black text-[#063B78]">Employer Package Purchases History</h3>
                     <p className="text-xs font-semibold text-[#5B6B7F]">
                       All transactions and active package purchases made by registered employers.
                     </p>
                   </div>
-                  <span className="text-xs font-black bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full border border-emerald-300">
-                    {packagePurchases.length} Total Transactions
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-black bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full border border-emerald-300">
+                      {packagePurchases.length} Total Transactions
+                    </span>
+                    {packagePurchases.length > 0 && (
+                      <button
+                        onClick={handleClearPackagePurchases}
+                        className="px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700 hover:bg-red-200 transition-all flex items-center gap-1"
+                      >
+                        <Trash2 className="size-3.5" /> Clear History
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {packagePurchases.length === 0 ? (
@@ -1481,6 +1605,7 @@ function SuperAdminPage() {
                           <th className="p-3">Credits Granted</th>
                           <th className="p-3">Payment Method</th>
                           <th className="p-3">Date</th>
+                          <th className="p-3 text-right">Action</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-[#E0E8F5] font-semibold text-[#10233F]">
@@ -1493,6 +1618,15 @@ function SuperAdminPage() {
                             <td className="p-3 font-extrabold text-amber-600">{tx.jobCount >= 999 ? "Unlimited" : tx.jobCount}</td>
                             <td className="p-3 font-bold uppercase">{tx.paymentMethod}</td>
                             <td className="p-3 text-[#5B6B7F]">{tx.purchaseDate}</td>
+                            <td className="p-3 text-right">
+                              <button
+                                onClick={() => handleDeletePackagePurchase(tx.id)}
+                                className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors"
+                                title="Delete Transaction"
+                              >
+                                <Trash2 className="size-4" />
+                              </button>
+                            </td>
                           </tr>
                         ))}
                       </tbody>

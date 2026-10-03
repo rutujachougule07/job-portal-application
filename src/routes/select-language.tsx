@@ -53,11 +53,10 @@ function SelectLanguagePage() {
             <button
               key={lang.code}
               onClick={() => setSelectedLang(lang.code)}
-              className={`relative flex items-center justify-between p-2.5 sm:p-3 rounded-xl border-2 transition-all duration-200 ${
-                selectedLang === lang.code
+              className={`relative flex items-center justify-between p-2.5 sm:p-3 rounded-xl border-2 transition-all duration-200 ${selectedLang === lang.code
                   ? "border-[#0A3B7B] bg-[#EBF1F8] shadow-md"
                   : "border-white/60 bg-white/50 hover:bg-white hover:border-[#DCE5F0]"
-              }`}
+                }`}
             >
               <div className="flex flex-col text-left">
                 <span className={`text-base sm:text-lg font-bold ${selectedLang === lang.code ? "text-[#0A3B7B]" : "text-gray-900"}`}>

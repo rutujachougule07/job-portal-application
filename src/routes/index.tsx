@@ -154,7 +154,7 @@ function LandingGatewayPage() {
     const savedMetrics = localStorage.getItem("cms_metrics");
     const savedAbout = localStorage.getItem("cms_aboutData");
     const savedCategories = localStorage.getItem("cms_categories");
-    
+
     if (savedTitle) setHeroTitle(savedTitle);
     if (savedSubtitle) setHeroSubtitle(savedSubtitle);
     if (savedImages) setImages(JSON.parse(savedImages));
@@ -278,9 +278,8 @@ function LandingGatewayPage() {
                 key={img}
                 src={img}
                 alt="REAL JOB India Portal Background"
-                className={`absolute inset-0 h-full w-full object-cover object-[70%_20%] transition-opacity duration-1000 ease-in-out ${
-                  index === currentImageIndex ? "opacity-100" : "opacity-0"
-                }`}
+                className={`absolute inset-0 h-full w-full object-cover object-[70%_20%] transition-opacity duration-1000 ease-in-out ${index === currentImageIndex ? "opacity-100" : "opacity-0"
+                  }`}
               />
             ))}
 
@@ -291,7 +290,7 @@ function LandingGatewayPage() {
         <section className="relative z-20 pt-8 pb-16 bg-white">
           <div className="w-full px-4 sm:px-8 lg:px-12">
             <div className="flex flex-wrap justify-center md:justify-evenly xl:justify-around items-center gap-6 bg-white rounded-[2rem] md:rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-gray-100 p-6 md:p-8 mx-auto w-full max-w-[1800px] -mt-4">
-              
+
               <div className="flex items-center gap-4">
                 <div className="text-[#D4AF37]"><Users className="size-12 fill-current" /></div>
                 <div>
@@ -299,7 +298,7 @@ function LandingGatewayPage() {
                   <span className="text-[10px] md:text-xs font-bold text-gray-500 leading-tight block">{metrics[0]?.label}</span>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-4">
                 <div className="text-[#D4AF37]"><Briefcase className="size-12 fill-current" /></div>
                 <div>
@@ -323,7 +322,7 @@ function LandingGatewayPage() {
                   <span className="text-[10px] md:text-xs font-bold text-gray-500 leading-tight block">{metrics[3]?.label}</span>
                 </div>
               </div>
-              
+
             </div>
           </div>
         </section>
@@ -333,7 +332,7 @@ function LandingGatewayPage() {
           <div className="relative z-10 mx-auto max-w-[1500px] px-4">
             <div className="bg-white rounded-[30px] border border-gray-100 shadow-[0_10px_40px_rgb(0,0,0,0.05)] overflow-hidden">
               <div className="grid grid-cols-1 lg:grid-cols-12">
-                
+
                 {/* Left Column: Image and Stats */}
                 <div className="lg:col-span-5 relative bg-white pb-24 lg:pb-0">
                   {/* Image container with gold curved edge */}
@@ -375,11 +374,11 @@ function LandingGatewayPage() {
                     <div className="h-[2px] w-10 bg-[#D4AF37]"></div>
                     <span className="text-xs font-black text-[#082F63] tracking-[0.1em] uppercase">ABOUT REAL JOB</span>
                   </div>
-                  
+
                   <h2 className="text-4xl md:text-5xl font-black text-[#082F63] leading-[1.1] mb-6">
                     {aboutData.title.split(' ').slice(0, -1).join(' ')} <span className="text-[#D4AF37]">{aboutData.title.split(' ').pop()}</span>
                   </h2>
-                  
+
                   <p className="text-[15px] font-medium text-gray-600 leading-relaxed mb-10 max-w-3xl whitespace-pre-wrap">
                     {aboutData.description}
                   </p>
@@ -425,7 +424,7 @@ function LandingGatewayPage() {
                       </div>
                       <h4 className="text-[14px] font-black text-[#082F63] mb-2">Our Belief</h4>
                       <p className="text-[11px] font-semibold text-gray-500 leading-snug">
-                        Right Person<br/>Right Job<br/>Right Opportunity.
+                        Right Person<br />Right Job<br />Right Opportunity.
                       </p>
                     </div>
                   </div>
@@ -438,7 +437,7 @@ function LandingGatewayPage() {
         {/* POPULAR JOB CATEGORIES */}
         <section className="relative py-20 bg-white overflow-hidden">
           <div className="relative z-10 mx-auto max-w-[1600px] px-4 text-center">
-            
+
             {/* Eyebrow Pill */}
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#FEF9E7] border border-[#FDE68A] text-[#B45309] font-black text-xs uppercase tracking-wider mb-4 shadow-2xs">
               <Briefcase className="size-4 text-[#D97706]" />

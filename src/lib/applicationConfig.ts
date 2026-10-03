@@ -1,6 +1,6 @@
 export const getFallbackConfig = (category: string) => {
   const cat = (category || "").toLowerCase();
-  
+
   const config = {
     fields: {
       fullName: "required" as any,
@@ -204,6 +204,19 @@ export const getFallbackConfig = (category: string) => {
       resume: "optional",
       experienceCertificate: "optional",
       skillCertificate: "optional",
+    };
+  } else if (cat.includes("farm") || cat.includes("agri") || cat.includes("crop") || cat.includes("harvest") || cat.includes("tractor")) {
+    config.fields = {
+      ...config.fields,
+      email: "optional",
+      positionAppliedFor: "required",
+      typeOfFarmingWork: "required",
+      employmentType: "required",
+      expectedSalary: "required",
+      availableJoiningDate: "required",
+      farmingExperience: "required",
+      skills: "required",
+      resume: "optional",
     };
   } else {
     // Default general fields

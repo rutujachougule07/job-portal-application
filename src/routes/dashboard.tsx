@@ -33,6 +33,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { UserSidebarLayout } from "@/components/portal/UserSidebarLayout";
 import { JobCard } from "@/components/portal/JobCard";
+import { toast } from "sonner";
 
 // @ts-ignore
 export const Route = createFileRoute("/dashboard")({
@@ -116,7 +117,7 @@ function UserDashboard() {
 
               <div className="relative z-20 max-w-xl">
                 <h1 className="text-2xl sm:text-3xl font-black text-[#10233F] tracking-tight">
-                  Welcome back, {user.fullName?.split(" ")[0] || "Payal"}! 👋
+                  Welcome back, {user.fullName?.split(" ")[0] || user.email?.split("@")[0] || "User"}! 👋
                 </h1>
                 <p className="text-[#5B6B7F] font-semibold mt-1.5 text-sm">
                   Here is what's happening with your job search today.
@@ -431,16 +432,17 @@ function UserProfileSection({ user }: { user: any }) {
       email: user.email || "",
       fullName: user.fullName || user.email?.split("@")[0] || "User",
       mobile: user.mobile || "",
-      currentLocation: "Pune, Maharashtra",
-      preferredLocation: "Pune, Mumbai, Chakan",
-      education: "B.Tech / Graduate",
-      skills: ["React", "JavaScript", "HTML/CSS", "Web Development"],
-      experience: "2 Years",
-      expectedSalary: "₹ 4.5 LPA",
-      category: "IT & Software",
-      subcategory: "Web Development",
+      profilePhoto: user.profilePhoto || "",
+      currentLocation: "",
+      preferredLocation: "",
+      education: "",
+      skills: [],
+      experience: "",
+      expectedSalary: "",
+      category: "",
+      subcategory: "",
       jobType: "Full Time",
-      resume: `${(user.fullName || "my").toLowerCase().replace(/\s+/g, '_')}_resume.pdf`,
+      resume: "",
       createdAt: new Date().toISOString()
     };
   });
@@ -464,16 +466,17 @@ function UserProfileSection({ user }: { user: any }) {
         email: user.email || "",
         fullName: user.fullName || user.email?.split("@")[0] || "User",
         mobile: user.mobile || "",
-        currentLocation: "Pune, Maharashtra",
-        preferredLocation: "Pune, Mumbai, Chakan",
-        education: "B.Tech / Graduate",
-        skills: ["React", "JavaScript", "HTML/CSS", "Web Development"],
-        experience: "2 Years",
-        expectedSalary: "₹ 4.5 LPA",
-        category: "IT & Software",
-        subcategory: "Web Development",
+        profilePhoto: user.profilePhoto || "",
+        currentLocation: "",
+        preferredLocation: "",
+        education: "",
+        skills: [],
+        experience: "",
+        expectedSalary: "",
+        category: "",
+        subcategory: "",
         jobType: "Full Time",
-        resume: `${(user.fullName || "my").toLowerCase().replace(/\s+/g, '_')}_resume.pdf`,
+        resume: "",
         createdAt: new Date().toISOString()
       };
       dataStore.saveJobSeekerProfile(initial);
@@ -504,6 +507,52 @@ function UserProfileSection({ user }: { user: any }) {
       skills: prev.skills.filter(s => s !== skillToRemove)
     }));
   };
+
+  const handlePhotoUploadInProfile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Photo size should be less than 5MB");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const photoUrl = reader.result as string;
+        const updated = { ...profile, profilePhoto: photoUrl };
+        setProfile(updated);
+        dataStore.saveJobSeekerProfile(updated);
+        toast.success("Profile photo updated successfully!");
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleResumeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error("Resume file size should be less than 10MB");
+        return;
+      }
+      const fileName = file.name;
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const fileDataUrl = reader.result as string;
+        const updated = {
+          ...profile,
+          resume: fileDataUrl,
+          resumeName: fileName
+        };
+        setProfile(updated);
+        dataStore.saveJobSeekerProfile(updated);
+        toast.success(`Resume "${fileName}" uploaded successfully!`);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const hasResume = Boolean(profile.resume && !profile.resume.includes("_resume.pdf"));
+  const resumeDisplayName = profile.resumeName || (hasResume ? (profile.resume?.startsWith("data:") ? "Uploaded_Resume.pdf" : profile.resume) : "No resume uploaded yet");
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -554,15 +603,29 @@ function UserProfileSection({ user }: { user: any }) {
 
       {/* Main Profile Info Card Header */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#DCE5F0] shadow-sm flex flex-col md:flex-row items-center md:items-start gap-6 relative overflow-hidden">
-        <div className="size-24 sm:size-28 rounded-3xl bg-gradient-to-br from-[#051B38] to-[#125BB5] text-white flex items-center justify-center font-black text-4xl shadow-xl shrink-0 ring-4 ring-blue-50">
-          {profile.fullName?.charAt(0).toUpperCase() || "P"}
+        <div className="relative group">
+          {profile.profilePhoto || user.profilePhoto ? (
+            <img
+              src={profile.profilePhoto || user.profilePhoto}
+              alt={profile.fullName}
+              className="size-24 sm:size-28 rounded-3xl object-cover shadow-xl shrink-0 ring-4 ring-blue-50"
+            />
+          ) : (
+            <div className="size-24 sm:size-28 rounded-3xl bg-gradient-to-br from-[#051B38] to-[#125BB5] text-white flex items-center justify-center font-black text-4xl shadow-xl shrink-0 ring-4 ring-blue-50">
+              {profile.fullName?.charAt(0).toUpperCase() || "P"}
+            </div>
+          )}
+          <label className="absolute -bottom-1 -right-1 p-2 rounded-xl bg-[#063B78] text-white cursor-pointer shadow-md hover:bg-[#082F63] transition-colors" title="Upload new photo">
+            <UploadCloud className="size-4" />
+            <input type="file" accept="image/*" onChange={handlePhotoUploadInProfile} className="hidden" />
+          </label>
         </div>
 
         <div className="flex-1 text-center md:text-left space-y-2 min-w-0">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <h3 className="text-2xl font-black text-[#10233F] tracking-tight">{profile.fullName}</h3>
-              <p className="text-xs font-bold text-[#125BB5] mt-0.5">{profile.category || "IT & Software Candidate"}</p>
+              <p className="text-xs font-bold text-[#125BB5] mt-0.5">{profile.category || "Not Specified"}</p>
             </div>
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-[#FFC400]/20 text-[#D97706] border border-[#FFC400]/40 self-center md:self-start">
               Verified Candidate
@@ -576,11 +639,11 @@ function UserProfileSection({ user }: { user: any }) {
             </div>
             <div className="flex items-center justify-center md:justify-start gap-2 bg-[#F8FAFC] p-2.5 rounded-xl border border-gray-100">
               <Phone className="size-4 text-emerald-600 shrink-0" />
-              <span>{profile.mobile || "Add Mobile"}</span>
+              <span>{profile.mobile || "Not Specified"}</span>
             </div>
             <div className="flex items-center justify-center md:justify-start gap-2 bg-[#F8FAFC] p-2.5 rounded-xl border border-gray-100">
               <MapPin className="size-4 text-orange-500 shrink-0" />
-              <span className="truncate">{profile.currentLocation || "Pune"}</span>
+              <span className="truncate">{profile.currentLocation || "Not Specified"}</span>
             </div>
           </div>
         </div>
@@ -648,7 +711,7 @@ function UserProfileSection({ user }: { user: any }) {
                     className="h-11 font-bold text-xs"
                   />
                 ) : (
-                  <p className="text-sm font-bold text-[#10233F]">{profile.currentLocation || "Pune, Maharashtra"}</p>
+                  <p className="text-sm font-bold text-[#10233F]">{profile.currentLocation || "Not specified"}</p>
                 )}
               </div>
 
@@ -661,7 +724,7 @@ function UserProfileSection({ user }: { user: any }) {
                     className="h-11 font-bold text-xs"
                   />
                 ) : (
-                  <p className="text-sm font-bold text-[#10233F]">{profile.preferredLocation || "Pune"}</p>
+                  <p className="text-sm font-bold text-[#10233F]">{profile.preferredLocation || "Not specified"}</p>
                 )}
               </div>
             </div>
@@ -686,7 +749,7 @@ function UserProfileSection({ user }: { user: any }) {
                     className="h-11 font-bold text-xs"
                   />
                 ) : (
-                  <p className="text-sm font-black text-[#10233F]">{profile.category || "IT & Software"}</p>
+                  <p className="text-sm font-black text-[#10233F]">{profile.category || "Not specified"}</p>
                 )}
               </div>
 
@@ -699,7 +762,7 @@ function UserProfileSection({ user }: { user: any }) {
                     className="h-11 font-bold text-xs"
                   />
                 ) : (
-                  <p className="text-sm font-bold text-[#10233F]">{profile.experience || "2 Years"}</p>
+                  <p className="text-sm font-bold text-[#10233F]">{profile.experience || "Not specified"}</p>
                 )}
               </div>
             </div>
@@ -714,7 +777,7 @@ function UserProfileSection({ user }: { user: any }) {
                     className="h-11 font-bold text-xs"
                   />
                 ) : (
-                  <p className="text-sm font-bold text-[#10233F]">{profile.expectedSalary || "₹ 4.5 LPA"}</p>
+                  <p className="text-sm font-bold text-[#10233F]">{profile.expectedSalary || "Not specified"}</p>
                 )}
               </div>
 
@@ -727,7 +790,7 @@ function UserProfileSection({ user }: { user: any }) {
                     className="h-11 font-bold text-xs"
                   />
                 ) : (
-                  <p className="text-sm font-bold text-[#10233F]">{profile.education || "Graduate"}</p>
+                  <p className="text-sm font-bold text-[#10233F]">{profile.education || "Not specified"}</p>
                 )}
               </div>
             </div>
@@ -783,14 +846,26 @@ function UserProfileSection({ user }: { user: any }) {
           </div>
           <div>
             <h4 className="font-black text-sm text-[#10233F]">Uploaded Resume / CV</h4>
-            <p className="text-xs font-bold text-gray-400 mt-0.5">{profile.resume || "payal_resume.pdf"}</p>
+            <p className="text-xs font-bold text-gray-500 mt-0.5">{resumeDisplayName}</p>
           </div>
         </div>
 
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          <Button variant="outline" className="h-10 px-5 rounded-xl text-xs font-bold border-blue-200 text-[#125BB5] hover:bg-blue-50 flex items-center gap-2 w-full sm:w-auto justify-center cursor-pointer">
+          {hasResume && profile.resume && (
+            <a
+              href={profile.resume}
+              download={profile.resumeName || "resume.pdf"}
+              target="_blank"
+              rel="noreferrer"
+              className="h-10 px-4 rounded-xl text-xs font-bold bg-blue-50 text-[#125BB5] hover:bg-blue-100 flex items-center gap-2 transition-colors"
+            >
+              View / Download Resume
+            </a>
+          )}
+          <label className="h-10 px-5 rounded-xl text-xs font-bold border border-blue-200 text-[#125BB5] hover:bg-blue-50 flex items-center gap-2 w-full sm:w-auto justify-center cursor-pointer bg-white transition-colors shadow-xs">
             <UploadCloud className="size-4" /> Upload New Resume
-          </Button>
+            <input type="file" accept=".pdf,.doc,.docx,image/*" onChange={handleResumeUpload} className="hidden" />
+          </label>
         </div>
       </div>
 

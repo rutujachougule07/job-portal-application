@@ -81,7 +81,11 @@ export function PublicHeader() {
             <div className="flex items-center gap-2">
               {/* Logged in User Badge */}
               <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#EBF1F8] border border-[#B8D3F2] text-xs font-black text-[#063B78]">
-                <User className="size-3.5 text-[#063B78]" />
+                {(user as any).profilePhoto ? (
+                  <img src={(user as any).profilePhoto} alt={user.fullName || "User"} className="size-5 rounded-full object-cover ring-1 ring-[#063B78]" />
+                ) : (
+                  <User className="size-3.5 text-[#063B78]" />
+                )}
                 <span>{user.fullName || user.email?.split("@")[0] || "User"}</span>
               </div>
 

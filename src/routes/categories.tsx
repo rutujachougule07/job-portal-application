@@ -2,6 +2,7 @@ import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowRight,
+  ArrowLeft,
   Building,
   Building2,
   Compass,
@@ -88,9 +89,17 @@ function CategoriesPage() {
           {/* Header Banner */}
           <div className="bg-hero-overlay p-8 sm:p-12 rounded-2xl text-white mb-10 shadow-lg relative overflow-hidden">
             <div className="relative z-10 max-w-3xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#FFC400] backdrop-blur mb-3">
-                <Sparkles className="size-3.5" />
-                {t("catHeroEyebrow")}
+              <div className="flex items-center gap-3 mb-3">
+                <Link
+                  to="/select-language"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-white/10 px-3.5 py-1 text-xs font-bold text-white hover:bg-white hover:text-[#063B78] backdrop-blur transition-all"
+                >
+                  <ArrowLeft className="size-3.5" /> {t("chooseLanguage")} (भाषा निवडा)
+                </Link>
+                <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#FFC400] backdrop-blur">
+                  <Sparkles className="size-3.5" />
+                  {t("catHeroEyebrow")}
+                </div>
               </div>
 
               <h1 className="text-3xl sm:text-5xl font-black text-white">
@@ -125,9 +134,9 @@ function CategoriesPage() {
               return (
                 <Link
                   key={cat.id}
-                  to="/jobs"
+                  to="/"
                   search={{ category: cat.id }}
-                  className="card-realjob p-6 flex flex-col justify-between group"
+                  className="card-realjob p-6 flex flex-col justify-between group cursor-pointer"
                 >
                   <div>
                     <div className="flex items-center justify-between mb-4">

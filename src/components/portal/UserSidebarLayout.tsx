@@ -31,7 +31,6 @@ export function UserSidebarLayout({ children, activeTab }: { children: ReactNode
     { id: "applied", label: "Applied Jobs", icon: FileText, path: "/dashboard", search: { tab: "applied" } },
     { id: "saved", label: "Saved Jobs", icon: Bookmark, path: "/dashboard", search: { tab: "saved" } },
     { id: "profile", label: "My Profile", icon: User, path: "/dashboard", search: { tab: "profile" } },
-    { id: "settings", label: "Settings", icon: Settings, path: "/dashboard", search: { tab: "settings" } },
   ];
 
   return (
@@ -39,17 +38,25 @@ export function UserSidebarLayout({ children, activeTab }: { children: ReactNode
       {/* Main Container Layout */}
       <div className="flex-1 flex overflow-hidden">
         {/* Dark Navy Left Sidebar */}
-        <aside className="w-64 bg-[#051B38] text-white flex flex-col justify-between shrink-0 h-full p-4 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
+        <aside className="w-64 bg-[#051B38] text-white flex flex-col justify-between shrink-0 h-full px-4 py-2 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
           <div>
             {/* User Profile Card */}
-            <div className="pt-4 pb-6 px-2 text-center border-b border-white/10 mb-4">
-              <div className="size-20 rounded-full bg-[#125BB5] text-white flex items-center justify-center font-black text-3xl mx-auto mb-3 shadow-lg ring-4 ring-white/10">
-                {user.fullName?.charAt(0).toUpperCase() || "P"}
-              </div>
-              <h2 className="font-black text-lg text-white tracking-tight">{user.fullName || "payal"}</h2>
-              <p className="text-xs font-semibold text-white/70 truncate px-2">{user.email || "payal@gmail.com"}</p>
+            <div className="pt-1 pb-4 px-2 text-center border-b border-white/10 mb-3">
+              {user.profilePhoto ? (
+                <img
+                  src={user.profilePhoto}
+                  alt={user.fullName || "User"}
+                  className="size-20 rounded-full object-cover mx-auto mb-2 shadow-lg ring-4 ring-white/20 border-2 border-white"
+                />
+              ) : (
+                <div className="size-20 rounded-full bg-[#125BB5] text-white flex items-center justify-center font-black text-3xl mx-auto mb-2 shadow-lg ring-4 ring-white/10">
+                  {user.fullName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || "U"}
+                </div>
+              )}
+              <h2 className="font-black text-lg text-white tracking-tight">{user.fullName || user.email?.split("@")[0] || "User"}</h2>
+              <p className="text-xs font-semibold text-white/70 truncate px-2">{user.email || ""}</p>
               
-              <div className="mt-3 inline-flex items-center gap-1.5 bg-[#FFC400]/20 border border-[#FFC400] text-[#FFC400] px-3 py-1 rounded-full text-[11px] font-black">
+              <div className="mt-2 inline-flex items-center gap-1.5 bg-[#FFC400]/20 border border-[#FFC400] text-[#FFC400] px-3 py-0.5 rounded-full text-[11px] font-black">
                 <BadgeCheck className="size-3.5" /> Verified User
               </div>
             </div>
