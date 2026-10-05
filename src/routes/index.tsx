@@ -25,7 +25,6 @@ import {
   Star,
   Monitor,
   Sparkles,
-  FileText,
 } from "lucide-react";
 
 const ICONS: Record<string, React.ElementType> = {
@@ -80,10 +79,10 @@ function LandingGatewayPage() {
   const [heroSubtitle, setHeroSubtitle] = useState("Right Person • Right Job • Right Opportunity");
   const [images, setImages] = useState(heroImages);
   const [metrics, setMetrics] = useState([
-    { value: "12,500", label: "Total Users" },
-    { value: "5,020", label: "Jobs Posted" },
-    { value: "2,200", label: "Applications" },
-    { value: "95%", label: "Success Rate" },
+    { value: "10,000+", label: "Verified Workers" },
+    { value: "5,000+", label: "Live Job Openings" },
+    { value: "2,200+", label: "Employers" },
+    { value: "0%", label: "Zero Commission" },
   ]);
   const [aboutData, setAboutData] = useState({
     image: "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&q=80",
@@ -159,6 +158,7 @@ function LandingGatewayPage() {
     if (savedTitle) setHeroTitle(savedTitle);
     if (savedSubtitle) setHeroSubtitle(savedSubtitle);
     if (savedImages) setImages(JSON.parse(savedImages));
+    if (savedMetrics) setMetrics(JSON.parse(savedMetrics));
     if (savedAbout) setAboutData(JSON.parse(savedAbout));
     if (savedCategories) {
       try {
@@ -289,45 +289,37 @@ function LandingGatewayPage() {
         {/* METRICS & ADVANTAGES */}
         <section className="relative z-20 pt-8 pb-16 bg-white">
           <div className="w-full px-4 sm:px-8 lg:px-12">
-            <div className="flex flex-wrap lg:flex-nowrap justify-center lg:justify-between items-center gap-y-6 bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-gray-100 p-6 md:p-8 mx-auto w-full max-w-[1100px] -mt-10 lg:divide-x lg:divide-gray-100">
+            <div className="flex flex-wrap justify-center md:justify-evenly xl:justify-around items-center gap-6 bg-white rounded-[2rem] md:rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-gray-100 p-6 md:p-8 mx-auto w-full max-w-[1800px] -mt-4">
 
-              <div className="flex items-center gap-4 px-4 sm:px-6 w-full sm:w-1/2 lg:w-1/4 justify-center lg:justify-start">
-                <div className="size-14 md:size-16 shrink-0 rounded-2xl bg-blue-100 flex items-center justify-center">
-                  <Users className="size-7 md:size-8 text-blue-500 fill-current" />
-                </div>
+              <div className="flex items-center gap-4">
+                <div className="text-[#D4AF37]"><Users className="size-12 fill-current" /></div>
                 <div>
-                  <strong className="block text-2xl md:text-[28px] font-black text-[#10233F] leading-none mb-1">{metrics[0]?.value}</strong>
-                  <span className="text-xs font-semibold text-gray-500 leading-tight block">{metrics[0]?.label}</span>
+                  <strong className="block text-2xl md:text-3xl font-black text-[#10233F]">{metrics[0]?.value}</strong>
+                  <span className="text-[10px] md:text-xs font-bold text-gray-500 leading-tight block">{metrics[0]?.label}</span>
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 px-4 sm:px-6 w-full sm:w-1/2 lg:w-1/4 justify-center lg:justify-start">
-                <div className="size-14 md:size-16 shrink-0 rounded-2xl bg-indigo-100 flex items-center justify-center">
-                  <Briefcase className="size-7 md:size-8 text-indigo-600 fill-current" />
-                </div>
+              <div className="flex items-center gap-4">
+                <div className="text-[#D4AF37]"><Briefcase className="size-12 fill-current" /></div>
                 <div>
-                  <strong className="block text-2xl md:text-[28px] font-black text-[#10233F] leading-none mb-1">{metrics[1]?.value}</strong>
-                  <span className="text-xs font-semibold text-gray-500 leading-tight block">{metrics[1]?.label}</span>
+                  <strong className="block text-2xl md:text-3xl font-black text-[#10233F]">{metrics[1]?.value}</strong>
+                  <span className="text-[10px] md:text-xs font-bold text-gray-500 leading-tight block">{metrics[1]?.label}</span>
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 px-4 sm:px-6 w-full sm:w-1/2 lg:w-1/4 justify-center lg:justify-start">
-                <div className="size-14 md:size-16 shrink-0 rounded-2xl bg-orange-100 flex items-center justify-center">
-                  <FileText className="size-7 md:size-8 text-orange-500 fill-current" />
-                </div>
+              <div className="flex items-center gap-4">
+                <div className="text-[#D4AF37]"><Building2 className="size-12 fill-current" /></div>
                 <div>
-                  <strong className="block text-2xl md:text-[28px] font-black text-[#10233F] leading-none mb-1">{metrics[2]?.value}</strong>
-                  <span className="text-xs font-semibold text-gray-500 leading-tight block">{metrics[2]?.label}</span>
+                  <strong className="block text-2xl md:text-3xl font-black text-[#10233F]">{metrics[2]?.value}</strong>
+                  <span className="text-[10px] md:text-xs font-bold text-gray-500 leading-tight block">{metrics[2]?.label}</span>
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 px-4 sm:px-6 w-full sm:w-1/2 lg:w-1/4 justify-center lg:justify-start">
-                <div className="size-14 md:size-16 shrink-0 rounded-2xl bg-green-100 flex items-center justify-center">
-                  <ShieldCheck className="size-7 md:size-8 text-green-500 fill-current" />
-                </div>
+              <div className="flex items-center gap-4">
+                <div className="text-[#D4AF37]"><ShieldCheck className="size-12 fill-current" /></div>
                 <div>
-                  <strong className="block text-2xl md:text-[28px] font-black text-[#10233F] leading-none mb-1">{metrics[3]?.value}</strong>
-                  <span className="text-xs font-semibold text-gray-500 leading-tight block">{metrics[3]?.label}</span>
+                  <strong className="block text-2xl md:text-3xl font-black text-[#10233F]">{metrics[3]?.value}</strong>
+                  <span className="text-[10px] md:text-xs font-bold text-gray-500 leading-tight block">{metrics[3]?.label}</span>
                 </div>
               </div>
 
