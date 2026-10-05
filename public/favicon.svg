@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <defs>
+    <linearGradient id="favBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#1F2937" />
+      <stop offset="50%" stopColor="#111827" />
+      <stop offset="100%" stopColor="#0B0F17" />
+    </linearGradient>
+    <linearGradient id="favGoldGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stopColor="#F5E3A0" />
+      <stop offset="50%" stopColor="#D4AF37" />
+      <stop offset="100%" stopColor="#F9F0CE" />
+    </linearGradient>
+  </defs>
+  <rect width="100" height="100" rx="24" fill="url(#favBgGrad)" />
+  <g transform="translate(23, 21)">
+    <rect x="18" y="1" width="18" height="10" rx="4" fill="none" stroke="#FFFFFF" strokeWidth="4.5" />
+    <rect x="0" y="9" width="54" height="38" rx="8" fill="#FFFFFF" />
+    <path d="M0 27 H54" stroke="#1F2937" strokeWidth="3" />
+    <rect x="22" y="22" width="10" height="10" rx="2.5" fill="#FFFFFF" stroke="#1F2937" strokeWidth="2.5" />
+    <circle cx="27" cy="27" r="1.5" fill="#1F2937" />
+  </g>
+  <path d="M 10 74 C 20 84, 52 83, 76 56 L 70 54 L 88 47 L 82 65 L 77 60 C 58 80, 26 82, 10 74 Z" fill="url(#favGoldGrad)" />
+</svg>
