@@ -191,7 +191,7 @@ function AdminDashboardPage() {
   };
 
   const [customCategories, setCustomCategories] = useState<string[]>(getStoredCustomCats);
-  
+
   // Removed Standard & Custom Categories State (Persisted)
   const getStoredRemovedCats = () => {
     try {
@@ -256,18 +256,12 @@ function AdminDashboardPage() {
 
     if (workerForm.category === catToRemove) {
       const allPossible = [
-        "Plant Nursery & Care",
-        "Tractor & Machinery",
-        "Grafting & Propagation",
-        "Packing & Loading",
-        "Irrigation & Spraying",
-        "Soil & Fertilizer",
-        "General Labour",
-        "⚙️ Other / Custom",
+        ...getIndustryDefaultCategories(),
         ...customCategories,
+        "⚙️ Other / Custom",
       ];
       const remaining = allPossible.filter((c) => c !== catToRemove && !removedCategories.includes(c));
-      setWorkerForm((p) => ({ ...p, category: remaining[0] || "Plant Nursery & Care" }));
+      setWorkerForm((p) => ({ ...p, category: remaining[0] || getIndustryDefaultCategories()[0] || "General Work" }));
     }
     toast.info(`Category "${catToRemove}" removed`);
   };
@@ -328,17 +322,134 @@ function AdminDashboardPage() {
     });
   };
 
-  // Category display cleaner helper (maps legacy/Marathi category strings to clean English)
+  // Auto-detect employer's industry from company name or profile
+  const detectEmployerIndustry = (): string => {
+    const text = `${currentUser?.fullName || ""} ${currentUser?.email || ""} ${empIdentifier || ""} ${profileForm?.industry || ""}`.toLowerCase();
+
+    if (
+      text.includes("construction") ||
+      text.includes("builder") ||
+      text.includes("developer") ||
+      text.includes("infrastructure") ||
+      text.includes("बांधकाम") ||
+      text.includes("कंत्राटदार") ||
+      text.includes("vaje")
+    ) {
+      return "construction";
+    }
+
+    if (
+      text.includes("factory") ||
+      text.includes("manufacturing") ||
+      text.includes("auto") ||
+      text.includes("steel") ||
+      text.includes("pipes") ||
+      text.includes("engineering")
+    ) {
+      return "factory";
+    }
+
+    if (
+      text.includes("hotel") ||
+      text.includes("restaurant") ||
+      text.includes("caterer") ||
+      text.includes("resort") ||
+      text.includes("food")
+    ) {
+      return "hospitality";
+    }
+
+    if (
+      text.includes("hospital") ||
+      text.includes("clinic") ||
+      text.includes("medical") ||
+      text.includes("pharma") ||
+      text.includes("health")
+    ) {
+      return "healthcare";
+    }
+
+    if (
+      text.includes("nursery") ||
+      text.includes("ropvatika") ||
+      text.includes("farm") ||
+      text.includes("krushi") ||
+      text.includes("agri") ||
+      text.includes("plant") ||
+      text.includes("रोपवाटिका")
+    ) {
+      return "agriculture";
+    }
+
+    return "general";
+  };
+
+  const getIndustryDefaultCategories = (): string[] => {
+    const indType = detectEmployerIndustry();
+    switch (indType) {
+      case "construction":
+        return [
+          "🏗️ Construction & Site Work",
+          "🧱 Masonry & Brickwork",
+          "⚡ Electrical & Wiring",
+          "🚰 Plumbing & Piping",
+          "🪚 Carpentry & Woodwork",
+          "🎨 Painting & Finishing",
+          "🛠️ General Labour & Helper",
+        ];
+      case "factory":
+        return [
+          "⚙️ Machine Operator",
+          "🔧 Assembly & Fitting",
+          "🔩 Welding & Fabrication",
+          "📦 Packing & Warehouse",
+          "🔍 Quality Inspection",
+          "🛠️ Helper & Maintenance",
+          "🚚 Loading & Unloading",
+        ];
+      case "hospitality":
+        return [
+          "👨‍🍳 Cook & Kitchen Staff",
+          "🍽️ Waiter & Food Service",
+          "🧹 Housekeeping & Cleaning",
+          "🛎️ Reception & Billing",
+          "🛡️ Security & Support",
+        ];
+      case "healthcare":
+        return [
+          "🩺 Nursing & Patient Care",
+          "💊 Pharmacy & Medical Support",
+          "🔬 Lab & Testing Support",
+          "🧹 Sanitation & Cleaning",
+          "🛡️ Security & Maintenance",
+        ];
+      case "agriculture":
+        return [
+          "🌱 Plant Nursery & Care",
+          "🚜 Tractor & Machinery",
+          "✂️ Grafting & Propagation",
+          "📦 Packing & Loading",
+          "💧 Irrigation & Spraying",
+          "🌿 Soil & Fertilizer",
+          "🛠️ General Labour",
+        ];
+      default:
+        return [
+          "💼 Office Staff & Admin",
+          "🏗️ Construction & Site Work",
+          "🌱 Plant Nursery & Agriculture",
+          "⚙️ Machine Operator & Factory",
+          "🚚 Logistics & Transport",
+          "🛠️ Skilled Labour",
+          "🧹 Cleaning & Housekeeping",
+          "🛡️ Security Guard",
+        ];
+    }
+  };
+
+  // Category display cleaner helper
   const formatCategoryName = (cat?: string) => {
-    if (!cat) return "Plant Nursery & Care";
-    if (cat.includes("Other") || cat.startsWith("✨") || cat.startsWith("⚙️")) return cat;
-    if (cat.includes("Grafting") || cat.includes("कलमे")) return "Grafting & Propagation";
-    if (cat.includes("Tractor") || cat.includes("ट्रॅक्टर") || cat.toLowerCase().includes("tractor")) return "Tractor & Machinery";
-    if (cat.includes("Packing") || cat.includes("पॅकिंग")) return "Packing & Loading";
-    if (cat.includes("Watering") || cat.includes("पाणी")) return "Irrigation & Spraying";
-    if (cat.includes("Soil") || cat.includes("माती")) return "Soil & Fertilizer";
-    if (cat.includes("Plant Nursery") || cat.includes("रोपवाटिका")) return "Plant Nursery & Care";
-    if (cat.includes("General")) return "General Labour";
+    if (!cat) return getIndustryDefaultCategories()[0] || "General Work";
     return cat;
   };
 
@@ -512,24 +623,22 @@ function AdminDashboardPage() {
             </tr>
           </thead>
           <tbody style="font-size: 12px; font-weight: 600;">
-            ${
-              metrics.records.length === 0
-                ? `<tr><td colspan="4" style="text-align:center; padding: 16px; color:#64748B;">No attendance logs recorded for this period.</td></tr>`
-                : metrics.records.map((r, i) => {
-                    let pay = worker.dailyRate;
-                    if (r.status === "HalfDay") pay = Math.round(worker.dailyRate / 2);
-                    if (r.status === "Absent") pay = 0;
-                    if (r.status === "Overtime") pay = Math.round(worker.dailyRate * 1.5);
-                    const bg = i % 2 === 0 ? "#FFFFFF" : "#F8FAFC";
-                    return `
+            ${metrics.records.length === 0
+        ? `<tr><td colspan="4" style="text-align:center; padding: 16px; color:#64748B;">No attendance logs recorded for this period.</td></tr>`
+        : metrics.records.map((r, i) => {
+          let pay = worker.dailyRate;
+          if (r.status === "HalfDay") pay = Math.round(worker.dailyRate / 2);
+          if (r.status === "Absent") pay = 0;
+          if (r.status === "Overtime") pay = Math.round(worker.dailyRate * 1.5);
+          const bg = i % 2 === 0 ? "#FFFFFF" : "#F8FAFC";
+          return `
                       <tr style="background: ${bg}; border-bottom: 1px solid #E2E8F0;">
                         <td style="padding: 8px 12px; font-weight: 700; color: #0F172A;">${r.date}</td>
                         <td style="padding: 8px 12px;">
-                          <span style="font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 4px; ${
-                            r.status === "Present" ? "background:#DCFCE7; color:#15803D;" :
-                            r.status === "HalfDay" ? "background:#FEF3C7; color:#B45309;" :
-                            r.status === "Absent" ? "background:#FFE4E6; color:#BE123C;" : "background:#DBEAFE; color:#1D4ED8;"
-                          }">
+                          <span style="font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 4px; ${r.status === "Present" ? "background:#DCFCE7; color:#15803D;" :
+              r.status === "HalfDay" ? "background:#FEF3C7; color:#B45309;" :
+                r.status === "Absent" ? "background:#FFE4E6; color:#BE123C;" : "background:#DBEAFE; color:#1D4ED8;"
+            }">
                             ${r.status}
                           </span>
                         </td>
@@ -537,8 +646,8 @@ function AdminDashboardPage() {
                         <td style="padding: 8px 12px; text-align: right; color:#059669; font-weight:900;">₹${pay}</td>
                       </tr>
                     `;
-                  }).join("")
-            }
+        }).join("")
+      }
           </tbody>
         </table>
 
@@ -648,7 +757,7 @@ function AdminDashboardPage() {
   const [registeredUsers, setRegisteredUsers] = useState<
     Array<{ id: string; name: string; role: string; mobile: string; city: string; trade: string; status: string; createdAt?: string | undefined }>
   >([]);
-  const currentUser = dataStore.getCurrentUser();
+  const currentUser = dataStore.getCurrentUser("employer") || dataStore.getCurrentUser("admin");
   const isSuperAdmin = currentUser?.email?.toLowerCase() === "supera@gmail.com" || currentUser?.email?.toLowerCase() === "superadmin";
   const empIdentifier = currentUser?.fullName || currentUser?.email || "admin-001";
 
@@ -748,7 +857,7 @@ function AdminDashboardPage() {
       name: "",
       mobile: "",
       trade: "General Worker",
-      category: "Plant Nursery & Care",
+      category: getIndustryDefaultCategories()[0] || "General Work",
       education: "",
       dailyRate: "500",
       joiningDate: new Date().toISOString().split("T")[0]!,
@@ -769,7 +878,7 @@ function AdminDashboardPage() {
       name: w.name,
       mobile: w.mobile,
       trade: w.trade,
-      category: w.category || w.trade || "Plant Nursery & Care",
+      category: w.category || w.trade || getIndustryDefaultCategories()[0] || "General Work",
       education: w.education || "",
       dailyRate: w.dailyRate.toString(),
       joiningDate: w.joiningDate || new Date().toISOString().split("T")[0]!,
@@ -850,10 +959,22 @@ function AdminDashboardPage() {
     loadAllData();
   }, [empIdentifier]);
 
+  const [replyInputs, setReplyInputs] = useState<Record<string, string>>({});
+
   const handleUpdateAppStatus = (appId: string, status: any) => {
     dataStore.updateApplicationStatus(appId, status);
     loadAllData();
-    toast.success(`Application status updated to '${status}'!`);
+    toast.success(`Application status updated to '${status}'! Candidate can view this on their dashboard.`);
+  };
+
+  const handleSaveReply = (appId: string, replyText: string) => {
+    if (!replyText || !replyText.trim()) {
+      toast.error("Please enter a reply or note for the candidate");
+      return;
+    }
+    dataStore.updateApplicationReply(appId, replyText.trim());
+    loadAllData();
+    toast.success("Reply saved & sent to candidate! They can now view it on their dashboard.");
   };
 
   // Job creation and edit form state
@@ -1294,20 +1415,18 @@ function AdminDashboardPage() {
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id as any)}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 ${
-                  isActive
-                    ? "bg-[#FFC400] text-[#021D3D] shadow-md shadow-[#FFC400]/20 font-extrabold"
-                    : "text-[#9DAEC5] hover:bg-white/5 hover:text-white"
-                }`}
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 ${isActive
+                  ? "bg-[#FFC400] text-[#021D3D] shadow-md shadow-[#FFC400]/20 font-extrabold"
+                  : "text-[#9DAEC5] hover:bg-white/5 hover:text-white"
+                  }`}
               >
                 <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-1">
                   <item.icon className={`size-4 shrink-0 ${isActive ? "text-[#021D3D]" : ""}`} />
                   <span className="truncate text-left">{item.label}</span>
                 </div>
                 {item.count !== undefined ? (
-                  <span className={`px-2 py-0.5 text-[10px] font-black rounded-full shrink-0 ${
-                    isActive ? "bg-[#021D3D] text-[#FFC400]" : "bg-amber-500/20 text-amber-300 border border-amber-400/30"
-                  }`}>
+                  <span className={`px-2 py-0.5 text-[10px] font-black rounded-full shrink-0 ${isActive ? "bg-[#021D3D] text-[#FFC400]" : "bg-amber-500/20 text-amber-300 border border-amber-400/30"
+                    }`}>
                     {item.count}
                   </span>
                 ) : null}
@@ -1320,8 +1439,7 @@ function AdminDashboardPage() {
         <div className="p-4 border-t border-white/10">
           <button
             onClick={() => {
-              window.localStorage.removeItem("realjob-user");
-              dataStore.setCurrentUser(null);
+              dataStore.logout("employer");
               toast.info("Logged out successfully");
               window.location.replace("/#main");
             }}
@@ -1404,1353 +1522,1434 @@ function AdminDashboardPage() {
         {/* Scrollable Body Content Area */}
         <main className="flex-1 p-6 sm:p-8 overflow-y-auto">
 
-        {/* TAB 1: OVERVIEW */}
-        {activeTab === "overview" && (
-          <div className="space-y-8">
-            {/* Top Stat Cards Grid */}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <StatCard
-                label={isSuperAdmin ? "Total Registered Candidates" : "Candidates Applied to Your Jobs"}
-                value={
-                  isSuperAdmin
-                    ? registeredUsers.filter((u) => u.role === "worker").length.toString()
-                    : new Set(applications.map((a) => a.jobSeekerId || a.candidateEmail)).size.toString()
-                }
-                change={isSuperAdmin ? "Verified Platform Candidates" : "Unique Applicants"}
-                icon={Users}
-              />
-              <StatCard
-                label="Active Job Listings"
-                value={jobs.filter((j) => j.status === "Active").length.toString()}
-                change={isSuperAdmin ? "Platform Total" : "Your Active Jobs"}
-                icon={BriefcaseBusiness}
-              />
-              <StatCard
-                label="Total Applications Received"
-                value={applications.length.toString()}
-                change={isSuperAdmin ? "Platform Total" : "Applications for Your Jobs"}
-                icon={FileText}
-              />
-            </div>
-
-            {/* Platform Analytics Chart */}
-            {/* Recent Job Applicants Panel (Visible for 5 Days) */}
-            <div className="rounded-2xl border border-[#DCE5F0] bg-white p-6 shadow-sm flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h2 className="text-lg font-black text-[#10233F] flex items-center gap-2">
-                      <span>📩 Candidates Who Applied To Your Jobs</span>
-                      <span className="text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-300 font-extrabold px-2.5 py-0.5 rounded-full">
-                        Last 5 Days Window
-                      </span>
-                    </h2>
-                    <p className="text-xs font-semibold text-[#5B6B7F] mt-0.5">
-                      Candidates who applied to your posted jobs are displayed here for up to 5 days.
-                    </p>
+          {/* TAB 1: OVERVIEW */}
+          {activeTab === "overview" && (
+            <div className="space-y-6">
+              {/* Top 4 Stat Cards Grid */}
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {/* Card 1: Total Jobs */}
+                <div
+                  onClick={() => setActiveTab("jobs")}
+                  className="bg-white p-5 rounded-2xl border border-[#DCE5F0] shadow-sm hover:shadow-md hover:border-[#063B78] transition-all cursor-pointer group flex flex-col justify-between"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-black text-[#5B6B7F] uppercase tracking-wider">Total Posted Jobs</span>
+                    <div className="size-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-black group-hover:bg-[#063B78] group-hover:text-white transition-colors shrink-0">
+                      <BriefcaseBusiness className="size-5" />
+                    </div>
                   </div>
-                  <Badge className="bg-[#063B78] text-white font-bold text-xs">
-                    {applications.length} Total Applications
-                  </Badge>
+                  <div className="text-3xl font-black text-[#063B78] mb-2">{jobs.length}</div>
+                  <div className="pt-2 border-t border-[#F0F4FA] text-xs">
+                    <span className="inline-block font-extrabold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md">
+                      {jobs.filter((j) => j.status === "Active").length} Active Jobs
+                    </span>
+                  </div>
                 </div>
 
-                {/* List of Applicants from Last 5 Days */}
-                {(() => {
-                  const FIVE_DAYS_MS = 5 * 24 * 60 * 60 * 1000;
-                  const recentApps = applications.filter((app) => {
-                    let ts = 0;
-                    if (app.appliedDate) {
-                      const parsed = Date.parse(app.appliedDate);
-                      if (!isNaN(parsed)) ts = parsed;
-                    }
-                    if (!ts && app.id?.startsWith("app-")) {
-                      const parsedTs = Number(app.id.replace("app-", ""));
-                      if (!isNaN(parsedTs)) ts = parsedTs;
-                    }
-                    if (!ts) return true;
-                    return Date.now() - ts <= FIVE_DAYS_MS;
-                  });
-
-                  if (recentApps.length === 0) {
-                    return (
-                      <div className="py-10 text-center border-2 border-dashed border-[#E0E8F5] rounded-xl bg-[#F8FAFF] my-2">
-                        <FileText className="size-10 text-[#A0AEC0] mx-auto mb-2" />
-                        <p className="text-sm font-bold text-[#10233F]">No candidate applications received in the last 5 days</p>
-                        <p className="text-xs font-medium text-[#5B6B7F] mt-1">
-                          When candidates apply to your posted jobs, they will automatically appear here for 5 days.
-                        </p>
-                      </div>
-                    );
-                  }
-
-                  return (
-                    <div className="space-y-3 my-2 max-h-[300px] overflow-y-auto pr-1">
-                      {recentApps.map((app) => (
-                        <div
-                          key={app.id}
-                          className="p-3.5 rounded-xl border border-[#E2E8F0] bg-[#F8FAFF] hover:bg-[#F0F4FA] transition-all flex items-center justify-between gap-3"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="size-10 rounded-full bg-[#063B78] text-white font-black text-sm flex items-center justify-center shrink-0">
-                              {(app.candidateName || "C").charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                              <h4 className="text-xs font-black text-[#10233F]">{app.candidateName}</h4>
-                              <p className="text-[11px] font-semibold text-[#5B6B7F]">
-                                💼 Applied for: <span className="font-bold text-[#063B78]">{app.jobTitle}</span> | 📞 {app.candidateMobile || "N/A"}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="text-right shrink-0">
-                            <span className="inline-block text-[10px] font-extrabold px-2.5 py-1 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-300">
-                              Applied: {app.appliedDate || "Recent"} (5 Days Active)
-                            </span>
-                          </div>
-                        </div>
-                      ))}
+                {/* Card 2: Total Applications */}
+                <div
+                  onClick={() => setActiveTab("applications")}
+                  className="bg-white p-5 rounded-2xl border border-[#DCE5F0] shadow-sm hover:shadow-md hover:border-[#063B78] transition-all cursor-pointer group flex flex-col justify-between"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-black text-[#5B6B7F] uppercase tracking-wider">Total Applications</span>
+                    <div className="size-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-black group-hover:bg-[#063B78] group-hover:text-white transition-colors shrink-0">
+                      <FileText className="size-5" />
                     </div>
-                  );
-                })()}
-              </div>
-            </div>
-          </div>
-        )}
+                  </div>
+                  <div className="text-3xl font-black text-[#063B78] mb-2">{applications.length}</div>
+                  <div className="pt-2 border-t border-[#F0F4FA] text-xs">
+                    <span className="inline-block font-extrabold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-md">
+                      {new Set(applications.map((a) => a.jobSeekerId || a.candidateEmail)).size} Applicants
+                    </span>
+                  </div>
+                </div>
 
-        {/* TAB 2: JOBS CONTROL */}
-        {activeTab === "jobs" && (
-          <div className="bg-white p-6 rounded-2xl border border-[#DCE5F0] shadow-sm space-y-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-black text-[#10233F]">
-                  All Platform Job Listings
-                </h2>
-                <p className="text-xs font-semibold text-[#5B6B7F]">
-                  Total {jobs.length} job listings available. Manage or update job posts.
-                </p>
-              </div>
+                {/* Card 3: Total Registered Employees */}
+                <div
+                  onClick={() => setActiveTab("attendance")}
+                  className="bg-white p-5 rounded-2xl border border-[#DCE5F0] shadow-sm hover:shadow-md hover:border-[#063B78] transition-all cursor-pointer group flex flex-col justify-between"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-black text-[#5B6B7F] uppercase tracking-wider">Total Employees</span>
+                    <div className="size-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-black group-hover:bg-[#063B78] group-hover:text-white transition-colors shrink-0">
+                      <Users className="size-5" />
+                    </div>
+                  </div>
+                  <div className="text-3xl font-black text-[#063B78] mb-2">{workers.length}</div>
+                  <div className="pt-2 border-t border-[#F0F4FA] text-xs">
+                    <span className="inline-block font-extrabold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-md">
+                      Registered Staff
+                    </span>
+                  </div>
+                </div>
 
-              <div className="w-full sm:w-72 relative">
-                <Search className="absolute left-3 top-3 size-4 text-[#5B6B7F]" />
-                <Input
-                  placeholder="Search job title, company, or location..."
-                  value={jobSearch}
-                  onChange={(e) => setJobSearch(e.target.value)}
-                  className="pl-9 text-xs font-bold"
-                />
-              </div>
-            </div>
-
-            <div className="overflow-x-auto rounded-xl border border-[#DCE5F0]">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-[#063B78] text-white font-black uppercase">
-                  <tr>
-                    <th className="p-3.5">Job Title</th>
-                    <th className="p-3.5">Company</th>
-                    <th className="p-3.5">Location & Salary</th>
-                    <th className="p-3.5">Vacancies</th>
-                    <th className="p-3.5">Approval</th>
-                    <th className="p-3.5">Status</th>
-                    <th className="p-3.5 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#DCE5F0] font-semibold text-[#10233F]">
-                  {filteredJobs.map((j) => (
-                    <tr key={j.id} className="hover:bg-[#F5F8FC]">
-                      <td className="p-3.5">
-                        <strong className="block font-black text-[#063B78]">{j.title}</strong>
-                        <span className="text-[11px] text-[#5B6B7F]">{j.category}</span>
-                      </td>
-                      <td className="p-3.5">
-                        <strong className="block font-bold text-[#063B78]">{j.company}</strong>
-                        <span className="text-[10px] text-indigo-700 font-bold block mt-0.5">👤 Posted by: {j.employerId || j.company}</span>
-                      </td>
-                      <td className="p-3.5">
-                        <div>{j.location}</div>
-                        <div className="text-[#125BB5] font-bold">{j.salary}</div>
-                      </td>
-                      <td className="p-3.5 font-black text-[#063B78]">{j.vacancies || 5} Openings</td>
-                      <td className="p-3.5">
-                        {j.approvalStatus === "rejected" ? (
-                          <Badge className="bg-red-600 text-white font-bold">❌ Rejected</Badge>
-                        ) : j.approvalStatus === "approved" || !j.approvalStatus ? (
-                          <Badge className="bg-emerald-600 text-white font-bold">✅ Approved</Badge>
-                        ) : (
-                          <Badge className="bg-amber-500 text-white font-bold">⏳ Pending Approval</Badge>
-                        )}
-                      </td>
-                      <td className="p-3.5">
-                        <Badge
-                          className={
-                            j.status === "Active"
-                              ? "bg-emerald-600 text-white font-bold"
-                              : "bg-gray-500 text-white font-bold"
-                          }
-                        >
-                          {j.status}
-                        </Badge>
-                      </td>
-                      <td className="p-3.5 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            size="sm"
-                            onClick={() => {
-                              setFilterJobId(j.id);
-                              setActiveTab("applications");
-                            }}
-                            className="bg-[#063B78] text-white font-extrabold text-[11px] hover:bg-[#0A4F9E]"
-                          >
-                            <Users className="size-3.5 mr-1" />
-                            View Applications ({applications.filter((a) => a.jobId === j.id).length})
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleEditJobClick(j)}
-                            className="font-extrabold text-[11px] border-[#063B78] text-[#063B78] hover:bg-[#F0F5FF]"
-                          >
-                            <Edit className="size-3.5 mr-1" /> Edit
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleToggleJobStatus(j.id, j.status)}
-                            className="font-extrabold text-[11px] border-gray-400 text-gray-700"
-                          >
-                            {j.status === "Active" ? "Close Job" : "Activate Job"}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleDeleteJob(j.id)}
-                            className="text-red-600 hover:bg-red-50"
-                          >
-                            <Trash2 className="size-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {filteredJobs.length === 0 && (
-                    <tr>
-                      <td colSpan={7} className="p-8 text-center text-xs font-bold text-[#5B6B7F] bg-[#F8FAFF]">
-                        No job listings posted yet.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 3: APPLICATIONS */}
-        {activeTab === "applications" && (
-          <div className="bg-white p-6 rounded-2xl border border-[#DCE5F0] shadow-sm space-y-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-black text-[#10233F]">
-                  Job Applications & Applicants
-                </h2>
-                <p className="text-xs font-semibold text-[#5B6B7F]">
-                  Total {applications.length} candidates applied. Contact candidates directly or update application status.
-                </p>
+                {/* Card 4: Today's Attendance Overview */}
+                <div
+                  onClick={() => setActiveTab("attendance")}
+                  className="bg-white p-5 rounded-2xl border border-[#DCE5F0] shadow-sm hover:shadow-md hover:border-[#063B78] transition-all cursor-pointer group flex flex-col justify-between"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-black text-[#5B6B7F] uppercase tracking-wider">Present Today</span>
+                    <div className="size-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-black group-hover:bg-[#063B78] group-hover:text-white transition-colors shrink-0">
+                      <CalendarCheck className="size-5" />
+                    </div>
+                  </div>
+                  <div className="text-3xl font-black text-[#063B78] mb-2">
+                    {dailyAttendanceRecords.filter((r) => r.status === "Present" || r.status === "Overtime" || r.status === "HalfDay").length} / {workers.length}
+                  </div>
+                  <div className="pt-2 border-t border-[#F0F4FA] text-xs">
+                    <span className="inline-block font-extrabold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md">
+                      Attendance Shift
+                    </span>
+                  </div>
+                </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-                {filterJobId && (
+              {/* Overview Section 1: Recent Applications */}
+              <div className="rounded-2xl border border-[#DCE5F0] bg-white p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-lg font-black text-[#10233F]">
+                      📩 Recent Job Candidates & Applications
+                    </h3>
+                    <p className="text-xs font-semibold text-[#5B6B7F] mt-0.5">
+                      Candidates who applied to your posted jobs on the portal.
+                    </p>
+                  </div>
                   <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setFilterJobId(null)}
-                    className="text-xs font-bold border-[#063B78] text-[#063B78]"
+                    onClick={() => setActiveTab("applications")}
+                    className="bg-[#063B78] text-white font-black text-xs hover:bg-[#0A4F9E]"
                   >
-                    ✕ Show All Applications
+                    View All →
                   </Button>
+                </div>
+
+                {applications.length === 0 ? (
+                  <div className="py-8 text-center border-2 border-dashed border-[#E0E8F5] rounded-xl bg-[#F8FAFF]">
+                    <FileText className="size-8 text-[#A0AEC0] mx-auto mb-2" />
+                    <p className="text-xs font-bold text-[#10233F]">No candidate applications received yet</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5 max-h-[320px] overflow-y-auto pr-1">
+                    {applications.slice(0, 5).map((app) => (
+                      <div
+                        key={app.id}
+                        onClick={() => setActiveTab("applications")}
+                        className="p-3.5 rounded-xl border border-[#E2E8F0] bg-[#F8FAFF] hover:bg-[#F0F4FA] transition-all cursor-pointer flex items-center justify-between gap-3"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="size-10 rounded-full bg-[#063B78] text-white font-black text-sm flex items-center justify-center shrink-0">
+                            {(app.candidateName || "C").charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <h4 className="text-xs font-black text-[#10233F]">{app.candidateName}</h4>
+                            <p className="text-[11px] font-semibold text-[#5B6B7F]">
+                              💼 Applied for: <span className="font-bold text-[#063B78]">{app.jobTitle}</span> | 📞 {app.candidateMobile || "N/A"}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 )}
-                <div className="w-full sm:w-64 relative">
+              </div>
+
+              {/* Overview Section 2: Employees Attendance & Payroll Register */}
+              <div className="rounded-2xl border border-[#DCE5F0] bg-white p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-lg font-black text-[#10233F]">
+                      👥 Registered Employees & Attendance Register
+                    </h3>
+                    <p className="text-xs font-semibold text-[#5B6B7F] mt-0.5">
+                      Manage employee wage rates, daily attendance marking, and monthly payroll reports.
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => setActiveTab("attendance")}
+                    className="bg-[#063B78] text-white font-black text-xs hover:bg-[#0A4F9E]"
+                  >
+                    View All →
+                  </Button>
+                </div>
+
+                {workers.length === 0 ? (
+                  <div className="py-8 text-center border-2 border-dashed border-[#E0E8F5] rounded-xl bg-[#F8FAFF]">
+                    <Users className="size-8 text-[#A0AEC0] mx-auto mb-2" />
+                    <p className="text-xs font-bold text-[#10233F]">No employees registered yet</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {workers.slice(0, 3).map((worker) => (
+                      <div
+                        key={worker.id}
+                        onClick={() => setActiveTab("attendance")}
+                        className="p-4 rounded-xl border border-[#E2E8F0] bg-[#F8FAFF] hover:bg-[#F0F4FA] transition-all cursor-pointer flex flex-col justify-between"
+                      >
+                        <div>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-xs font-black text-[#063B78]">{worker.name}</span>
+                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">₹{worker.dailyRate}/day</span>
+                          </div>
+                          <p className="text-xs font-semibold text-[#5B6B7F]">Department: <span className="font-bold text-[#10233F]">{formatCategoryName(worker.category || worker.trade)}</span></p>
+                          <p className="text-[11px] font-semibold text-[#5B6B7F]">Mobile: {worker.mobile || "N/A"}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: JOBS CONTROL */}
+          {activeTab === "jobs" && (
+            <div className="bg-white p-6 rounded-2xl border border-[#DCE5F0] shadow-sm space-y-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-black text-[#10233F]">
+                    All Platform Job Listings
+                  </h2>
+                  <p className="text-xs font-semibold text-[#5B6B7F]">
+                    Total {jobs.length} job listings available. Manage or update job posts.
+                  </p>
+                </div>
+
+                <div className="w-full sm:w-72 relative">
                   <Search className="absolute left-3 top-3 size-4 text-[#5B6B7F]" />
                   <Input
-                    placeholder="Search candidate name, job, or phone..."
-                    value={appSearch}
-                    onChange={(e) => setAppSearch(e.target.value)}
+                    placeholder="Search job title, company, or location..."
+                    value={jobSearch}
+                    onChange={(e) => setJobSearch(e.target.value)}
                     className="pl-9 text-xs font-bold"
                   />
                 </div>
               </div>
-            </div>
 
-            <div className="overflow-x-auto rounded-xl border border-[#DCE5F0]">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-[#063B78] text-white font-black uppercase">
-                  <tr>
-                    <th className="p-3.5">Candidate Name</th>
-                    <th className="p-3.5">Applied Job</th>
-                    <th className="p-3.5">Direct Contact</th>
-                    <th className="p-3.5">Applied Date</th>
-                    <th className="p-3.5">Status</th>
-                    <th className="p-3.5 text-right">Details</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#DCE5F0] font-semibold text-[#10233F]">
-                  {applications
-                    .filter((a) => !filterJobId || a.jobId === filterJobId)
-                    .filter(
-                      (a) =>
-                        a.candidateName.toLowerCase().includes(appSearch.toLowerCase()) ||
-                        a.jobTitle.toLowerCase().includes(appSearch.toLowerCase()) ||
-                        a.candidateMobile.toLowerCase().includes(appSearch.toLowerCase())
-                    )
-                    .map((a) => (
-                      <Fragment key={a.id}>
-                        <tr className="hover:bg-[#F5F8FC]">
-                          <td className="p-3.5 font-black text-[#063B78]">
-                            <div>{a.candidateName}</div>
-                            <div className="text-[11px] text-[#5B6B7F] font-normal">{a.candidateEmail}</div>
-                          </td>
-                          <td className="p-3.5">
-                            <div className="font-bold text-[#10233F]">{a.jobTitle}</div>
-                            <div className="text-[11px] text-[#125BB5]">{a.companyName || "Company"} • {a.location}</div>
-                          </td>
-                          <td className="p-3.5">
-                            <div className="flex items-center gap-2">
-                              <a
-                                href={`tel:${formatCallNumber(a.candidateMobile)}`}
-                                className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-bold text-[10px] hover:bg-emerald-700 transition-all flex items-center gap-1"
-                              >
-                                📞 Call Candidate
-                              </a>
-                              <a
-                                href={`https://wa.me/${formatWaNumber(a.candidateMobile)}?text=${encodeURIComponent(`Hello ${a.candidateName}, regarding your application for ${a.jobTitle}.`)}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="px-2.5 py-1 rounded-lg bg-green-600 text-white font-bold text-[10px] hover:bg-green-700 transition-all flex items-center gap-1"
-                              >
-                                💬 WhatsApp
-                              </a>
-                            </div>
-                          </td>
-                          <td className="p-3.5 text-[#5B6B7F] font-bold">{a.appliedDate}</td>
-                          <td className="p-3.5">
-                            <select
-                              value={a.status}
-                              onChange={(e) => handleUpdateAppStatus(a.id, e.target.value as any)}
-                              className="h-8 px-2 rounded-lg border border-[#DCE5F0] text-xs font-black focus:outline-none focus:border-[#063B78]"
-                            >
-                              <option value="Applied">📝 Applied</option>
-                              <option value="Viewed">👀 Viewed</option>
-                              <option value="Shortlisted">⭐ Shortlisted</option>
-                              <option value="Interview">📅 Interview Scheduled</option>
-                              <option value="Selected">✅ Selected / Hired</option>
-                              <option value="Rejected">❌ Rejected</option>
-                            </select>
-                          </td>
-                          <td className="p-3.5 text-right">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setExpandedApp(expandedApp === a.id ? null : a.id)}
-                              className="text-[10px] h-7 px-3 border-[#063B78] text-[#063B78] hover:bg-[#063B78] hover:text-white"
-                            >
-                              {expandedApp === a.id ? "Hide Details" : "View Details"}
-                            </Button>
-                          </td>
-                        </tr>
-                        {expandedApp === a.id && (
-                          <tr className="bg-[#F8FAFC]">
-                            <td colSpan={6} className="p-4 border-t border-[#DCE5F0]">
-                              <div className="bg-white p-5 rounded-xl border border-[#E2E8F0] shadow-sm">
-                                <h4 className="font-bold text-[#10233F] mb-4 border-b pb-2 flex items-center gap-2">
-                                  <FileText className="size-4 text-[#063B78]" />
-                                  Candidate Application Details
-                                </h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                                  {a.fieldValues && Object.entries(a.fieldValues).map(([key, value]) => (
-                                    <div key={key} className="text-xs bg-[#F5F8FC] p-3 rounded-lg border border-[#DCE5F0]">
-                                      <div className="font-bold text-[#5B6B7F] capitalize mb-1">{key.replace(/([A-Z])/g, ' $1').trim()}</div>
-                                      <div className="font-black text-[#10233F]">{value as string}</div>
-                                    </div>
-                                  ))}
-                                  {a.customAnswers && Object.entries(a.customAnswers).map(([key, value]) => (
-                                    <div key={key} className="text-xs bg-[#F5F8FC] p-3 rounded-lg border border-[#DCE5F0]">
-                                      <div className="font-bold text-[#5B6B7F] capitalize mb-1">{key}</div>
-                                      <div className="font-black text-[#10233F]">{value as string}</div>
-                                    </div>
-                                  ))}
-                                  {(!a.fieldValues && !a.customAnswers) && (
-                                    <div className="text-sm font-semibold text-[#5B6B7F]">No additional application details provided.</div>
-                                  )}
-                                </div>
-                              </div>
-                            </td>
-                          </tr>
-                        )}
-                      </Fragment>
-                    ))}
-                  {applications.length === 0 && (
+              <div className="overflow-x-auto rounded-xl border border-[#DCE5F0]">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-[#063B78] text-white font-black uppercase">
                     <tr>
-                      <td colSpan={6} className="p-8 text-center text-xs font-bold text-[#5B6B7F] bg-[#F8FAFF]">
-                        No job applications received yet.
-                      </td>
+                      <th className="p-3.5">Job Title</th>
+                      <th className="p-3.5">Company</th>
+                      <th className="p-3.5">Location & Salary</th>
+                      <th className="p-3.5">Vacancies</th>
+                      <th className="p-3.5">Approval</th>
+                      <th className="p-3.5">Status</th>
+                      <th className="p-3.5 text-right">Actions</th>
                     </tr>
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-[#DCE5F0] font-semibold text-[#10233F]">
+                    {filteredJobs.map((j) => (
+                      <tr key={j.id} className="hover:bg-[#F5F8FC]">
+                        <td className="p-3.5">
+                          <strong className="block font-black text-[#063B78]">{j.title}</strong>
+                          <span className="text-[11px] text-[#5B6B7F]">{j.category}</span>
+                        </td>
+                        <td className="p-3.5">
+                          <strong className="block font-bold text-[#063B78]">{j.company}</strong>
+                          <span className="text-[10px] text-indigo-700 font-bold block mt-0.5">👤 Posted by: {j.employerId || j.company}</span>
+                        </td>
+                        <td className="p-3.5">
+                          <div>{j.location}</div>
+                          <div className="text-[#125BB5] font-bold">{j.salary}</div>
+                        </td>
+                        <td className="p-3.5 font-black text-[#063B78]">{j.vacancies || 5} Openings</td>
+                        <td className="p-3.5">
+                          {j.approvalStatus === "rejected" ? (
+                            <Badge className="bg-red-600 text-white font-bold">❌ Rejected</Badge>
+                          ) : j.approvalStatus === "approved" || !j.approvalStatus ? (
+                            <Badge className="bg-emerald-600 text-white font-bold">✅ Approved</Badge>
+                          ) : (
+                            <Badge className="bg-amber-500 text-white font-bold">⏳ Pending Approval</Badge>
+                          )}
+                        </td>
+                        <td className="p-3.5">
+                          <Badge
+                            className={
+                              j.status === "Active"
+                                ? "bg-emerald-600 text-white font-bold"
+                                : "bg-gray-500 text-white font-bold"
+                            }
+                          >
+                            {j.status}
+                          </Badge>
+                        </td>
+                        <td className="p-3.5 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                setFilterJobId(j.id);
+                                setActiveTab("applications");
+                              }}
+                              className="bg-[#063B78] text-white font-extrabold text-[11px] hover:bg-[#0A4F9E]"
+                            >
+                              <Users className="size-3.5 mr-1" />
+                              View Applications ({applications.filter((a) => a.jobId === j.id).length})
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleEditJobClick(j)}
+                              className="font-extrabold text-[11px] border-[#063B78] text-[#063B78] hover:bg-[#F0F5FF]"
+                            >
+                              <Edit className="size-3.5 mr-1" /> Edit
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleToggleJobStatus(j.id, j.status)}
+                              className="font-extrabold text-[11px] border-gray-400 text-gray-700"
+                            >
+                              {j.status === "Active" ? "Close Job" : "Activate Job"}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleDeleteJob(j.id)}
+                              className="text-red-600 hover:bg-red-50"
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {filteredJobs.length === 0 && (
+                      <tr>
+                        <td colSpan={7} className="p-8 text-center text-xs font-bold text-[#5B6B7F] bg-[#F8FAFF]">
+                          No job listings posted yet.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* TAB 4: ATTENDANCE & WORKER MANAGEMENT */}
-        {activeTab === "attendance" && (
-          <div className="space-y-8 animate-fade-in">
-            {/* Top Attendance Header Banner */}
-            <div className="rounded-2xl border border-[#DCE5F0] bg-white p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div>
-                <div className="inline-flex items-center gap-2 rounded-full bg-[#063B78]/10 px-3.5 py-1 text-xs font-black text-[#063B78] mb-2">
-                  <CalendarCheck className="size-4 text-[#063B78]" />
-                  <span>Employee Attendance & Payroll Management</span>
+          {/* TAB 3: APPLICATIONS */}
+          {activeTab === "applications" && (
+            <div className="bg-white p-6 rounded-2xl border border-[#DCE5F0] shadow-sm space-y-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-black text-[#10233F]">
+                    Job Applications & Applicants
+                  </h2>
+                  <p className="text-xs font-semibold text-[#5B6B7F]">
+                    Total {applications.length} candidates applied. Contact candidates directly or update application status.
+                  </p>
                 </div>
-                <h2 className="text-xl sm:text-2xl font-black text-[#10233F]">
-                  Employee Attendance & Payroll Register
-                </h2>
-                <p className="text-xs sm:text-sm font-semibold text-[#5B6B7F] mt-1">
-                  Manage employee details by department, set custom daily wage rates, mark daily attendance, and generate weekly/monthly payroll reports.
-                </p>
-              </div>
 
-              <div className="flex flex-wrap gap-2 shrink-0">
-                <Button
-                  onClick={handleOpenAddWorker}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-5 py-3 rounded-xl shadow-md flex items-center gap-2"
-                >
-                  <UserPlus className="size-4" />
-                  <span>+ Add Employee</span>
-                </Button>
-              </div>
-            </div>
-
-            {/* 2-Column Layout: Left Category Sidebar + Right Content Area */}
-            {(() => {
-              const defaultCategories = [
-                "Plant Nursery & Care",
-                "Tractor & Machinery",
-                "Grafting & Propagation",
-                "Packing & Loading",
-                "Irrigation & Spraying",
-                "Soil & Fertilizer",
-                "General Labour",
-                "⚙️ Other / Custom",
-              ];
-              const customWorkerCats = workers.map((w) => w.category || w.trade || "Plant Nursery & Care");
-              const allCategories = Array.from(new Set([...defaultCategories, ...customCategories, ...customWorkerCats]))
-                .filter((c) => !removedCategories.includes(c) || customWorkerCats.includes(c));
-
-              const categoryCounts = new Map<string, number>();
-              workers.forEach((w) => {
-                const cat = w.category || w.trade || "Plant Nursery & Care";
-                categoryCounts.set(cat, (categoryCounts.get(cat) || 0) + 1);
-              });
-
-              return (
-                <div className="space-y-6 w-full">
-                  {/* Attendance Sub-View Navigation Tabs + Department Dropdown Filter */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-[#DCE5F0] shadow-sm">
-                    <div className="flex flex-wrap items-center gap-2">
-                      {[
-                        { id: "daily", label: "📋 Daily Attendance", icon: CalendarCheck },
-                        { id: "reports", label: "📊 Weekly & Monthly Reports", icon: PieChart },
-                        { id: "directory", label: `👥 Employee Directory (${workers.length})`, icon: Users },
-                      ].map((tab) => (
-                        <button
-                          key={tab.id}
-                          onClick={() => setAttendanceSubView(tab.id as any)}
-                          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-xs transition-all ${
-                            attendanceSubView === tab.id
-                              ? "bg-[#063B78] text-white shadow-md shadow-[#063B78]/20"
-                              : "bg-[#F8FAFF] text-[#5B6B7F] border border-[#DCE5F0] hover:bg-[#EBF1F8] hover:text-[#063B78]"
-                          }`}
-                        >
-                          <tab.icon className="size-4 shrink-0" />
-                          <span>{tab.label}</span>
-                        </button>
-                      ))}
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-3">
-                      {/* Department Filter Dropdown Selector */}
-                      <div className="flex items-center gap-2 bg-[#F8FAFF] px-3.5 py-2 rounded-xl border border-[#DCE5F0]">
-                        <Layers className="size-4 text-[#063B78] shrink-0" />
-                        <span className="text-xs font-black text-[#063B78] whitespace-nowrap">Department:</span>
-                        <select
-                          value={selectedCategoryFilter}
-                          onChange={(e) => setSelectedCategoryFilter(e.target.value)}
-                          className="bg-transparent font-bold text-xs text-[#10233F] focus:outline-none cursor-pointer outline-none"
-                        >
-                          <option value="ALL">🌐 All Categories ({workers.length})</option>
-                          {allCategories.map((cat) => {
-                            const count = categoryCounts.get(cat) || 0;
-                            const cleanName = formatCategoryName(cat);
-                            return (
-                              <option key={cat} value={cat}>
-                                {cleanName} ({count})
-                              </option>
-                            );
-                          })}
-                        </select>
-                      </div>
-
-                      {attendanceSubView === "reports" && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => window.print()}
-                          className="text-xs font-black border-[#063B78] text-[#063B78] hover:bg-blue-50 flex items-center gap-1.5 h-9"
-                        >
-                          <Printer className="size-4" />
-                          <span>Print / Export</span>
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-
-            {/* VIEW 1: DAILY ATTENDANCE SHEET */}
-            {attendanceSubView === "daily" && (
-              <div className="space-y-6">
-                {/* Attendance Quick Stats Overview */}
-                {(() => {
-                  const attMap = new Map<string, DailyAttendanceRecord>();
-                  dailyAttendanceRecords.forEach((r) => attMap.set(r.workerId, r));
-
-                  let pCount = 0;
-                  let hCount = 0;
-                  let aCount = 0;
-                  let otCount = 0;
-                  let todayWageSum = 0;
-
-                  const filteredByCat = workers.filter((w) => {
-                    if (selectedCategoryFilter === "ALL") return true;
-                    const cat = w.category || w.trade || "Plant Nursery / रोपवाटिका";
-                    return cat === selectedCategoryFilter;
-                  });
-
-                  filteredByCat.forEach((w) => {
-                    const rec = attMap.get(w.id);
-                    const st = rec?.status || "Present";
-                    if (st === "Present") {
-                      pCount++;
-                      todayWageSum += w.dailyRate;
-                    } else if (st === "HalfDay") {
-                      hCount++;
-                      todayWageSum += Math.round(w.dailyRate / 2);
-                    } else if (st === "Absent") {
-                      aCount++;
-                    } else if (st === "Overtime") {
-                      otCount++;
-                      todayWageSum += Math.round(w.dailyRate * 1.5);
-                    }
-                  });
-
-                  return (
-                    <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
-                      <div className="p-3.5 sm:p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                          <p className="text-[11px] sm:text-xs font-bold text-[#5B6B7F] truncate" title="Total Employees">Total Employees</p>
-                          <h4 className="text-xl sm:text-2xl font-black text-[#10233F] mt-0.5">{filteredByCat.length}</h4>
-                        </div>
-                        <div className="p-2.5 bg-blue-50 text-[#063B78] rounded-xl shrink-0">
-                          <Users className="size-5" />
-                        </div>
-                      </div>
-
-                      <div className="p-3.5 sm:p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                          <p className="text-[11px] sm:text-xs font-bold text-emerald-700 truncate" title="Present Today">Present Today</p>
-                          <h4 className="text-xl sm:text-2xl font-black text-emerald-600 mt-0.5">{pCount}</h4>
-                        </div>
-                        <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl shrink-0">
-                          <UserCheck className="size-5" />
-                        </div>
-                      </div>
-
-                      <div className="p-3.5 sm:p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                          <p className="text-[11px] sm:text-xs font-bold text-amber-700 truncate" title="Half Day Today">Half Day Today</p>
-                          <h4 className="text-xl sm:text-2xl font-black text-amber-600 mt-0.5">{hCount}</h4>
-                        </div>
-                        <div className="p-2.5 bg-amber-50 text-amber-600 rounded-xl shrink-0">
-                          <Clock className="size-5" />
-                        </div>
-                      </div>
-
-                      <div className="p-3.5 sm:p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                          <p className="text-[11px] sm:text-xs font-bold text-rose-700 truncate" title="Absent Today">Absent Today</p>
-                          <h4 className="text-xl sm:text-2xl font-black text-rose-600 mt-0.5">{aCount}</h4>
-                        </div>
-                        <div className="p-2.5 bg-rose-50 text-rose-600 rounded-xl shrink-0">
-                          <UserX className="size-5" />
-                        </div>
-                      </div>
-
-                      <div className="p-3.5 sm:p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                          <p className="text-[11px] sm:text-xs font-bold text-[#063B78] truncate" title="Today's Payable Wages">Payable Wages</p>
-                          <h4 className="text-lg sm:text-xl font-black text-[#063B78] mt-0.5">₹{todayWageSum.toLocaleString("en-IN")}</h4>
-                        </div>
-                        <div className="p-2.5 bg-indigo-50 text-[#063B78] rounded-xl shrink-0">
-                          <DollarSign className="size-5" />
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                {/* Date Selector & Search Bar */}
-                <div className="rounded-2xl border border-[#DCE5F0] bg-white p-4 sm:p-5 shadow-sm flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                    <div className="flex items-center gap-2 bg-[#F8FAFF] px-3 py-1.5 rounded-xl border border-[#DCE5F0]">
-                      <Calendar className="size-4 text-[#063B78] shrink-0" />
-                      <span className="text-xs font-extrabold text-[#10233F] whitespace-nowrap">Select Date:</span>
-                      <input
-                        type="date"
-                        value={selectedAttendanceDate}
-                        onChange={(e) => setSelectedAttendanceDate(e.target.value)}
-                        className="bg-transparent font-bold text-xs text-[#063B78] focus:outline-none cursor-pointer"
-                      />
-                    </div>
-
+                <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                  {filterJobId && (
                     <Button
-                      variant="outline"
                       size="sm"
-                      onClick={() => setSelectedAttendanceDate(new Date().toISOString().split("T")[0]!)}
-                      className={`h-9 text-xs font-extrabold rounded-xl border-[#DCE5F0] shrink-0 ${
-                        selectedAttendanceDate === new Date().toISOString().split("T")[0]!
-                          ? "bg-[#063B78] text-white hover:bg-[#063B78]"
-                          : "bg-white text-[#5B6B7F]"
-                      }`}
-                    >
-                      Today
-                    </Button>
-
-                    <Button
                       variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const d = new Date();
-                        d.setDate(d.getDate() - 1);
-                        setSelectedAttendanceDate(d.toISOString().split("T")[0]!);
-                      }}
-                      className={`h-9 text-xs font-extrabold rounded-xl border-[#DCE5F0] shrink-0 ${
-                        selectedAttendanceDate ===
-                        new Date(Date.now() - 86400000).toISOString().split("T")[0]!
-                          ? "bg-[#063B78] text-white hover:bg-[#063B78]"
-                          : "bg-white text-[#5B6B7F]"
-                      }`}
+                      onClick={() => setFilterJobId(null)}
+                      className="text-xs font-bold border-[#063B78] text-[#063B78]"
                     >
-                      Yesterday
+                      ✕ Show All Applications
                     </Button>
-                  </div>
-
-                  <div className="relative w-full sm:w-72 shrink-0">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#A0AEC0]" />
+                  )}
+                  <div className="w-full sm:w-64 relative">
+                    <Search className="absolute left-3 top-3 size-4 text-[#5B6B7F]" />
                     <Input
-                      placeholder="Search employee name or role..."
-                      value={workerSearch}
-                      onChange={(e) => setWorkerSearch(e.target.value)}
-                      className="pl-9 h-9 text-xs font-semibold rounded-xl border-[#DCE5F0]"
+                      placeholder="Search candidate name, job, or phone..."
+                      value={appSearch}
+                      onChange={(e) => setAppSearch(e.target.value)}
+                      className="pl-9 text-xs font-bold"
                     />
                   </div>
                 </div>
+              </div>
 
-                {/* Daily Attendance Sheet Table */}
-                <div className="rounded-2xl border border-[#DCE5F0] bg-white p-6 shadow-sm">
-                  <div className="flex items-center justify-between mb-5">
-                    <div>
-                      <h3 className="text-lg font-black text-[#10233F] flex items-center gap-2">
-                        <span>📅 Daily Attendance Sheet</span>
-                        <Badge className="bg-[#063B78] text-white font-bold text-xs">
-                          {selectedAttendanceDate}
-                        </Badge>
-                      </h3>
-                      <p className="text-xs font-semibold text-[#5B6B7F] mt-1">
-                        {selectedCategoryFilter === "ALL"
-                          ? "Showing attendance records for all departments:"
-                          : `Showing attendance records for '${selectedCategoryFilter}' department:`}
-                      </p>
-                    </div>
+              <div className="overflow-x-auto rounded-xl border border-[#DCE5F0]">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-[#063B78] text-white font-black uppercase">
+                    <tr>
+                      <th className="p-3.5">Candidate Name</th>
+                      <th className="p-3.5">Applied Job</th>
+                      <th className="p-3.5">Direct Contact</th>
+                      <th className="p-3.5">Applied Date</th>
+                      <th className="p-3.5">Status</th>
+                      <th className="p-3.5 text-right">Details</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#DCE5F0] font-semibold text-[#10233F]">
+                    {applications
+                      .filter((a) => !filterJobId || a.jobId === filterJobId)
+                      .filter(
+                        (a) =>
+                          a.candidateName.toLowerCase().includes(appSearch.toLowerCase()) ||
+                          a.jobTitle.toLowerCase().includes(appSearch.toLowerCase()) ||
+                          a.candidateMobile.toLowerCase().includes(appSearch.toLowerCase())
+                      )
+                      .map((a) => (
+                        <Fragment key={a.id}>
+                          <tr className="hover:bg-[#F5F8FC]">
+                            <td className="p-3.5 font-black text-[#063B78]">
+                              <div>{a.candidateName}</div>
+                              <div className="text-[11px] text-[#5B6B7F] font-normal">{a.candidateEmail}</div>
+                            </td>
+                            <td className="p-3.5">
+                              <div className="font-bold text-[#10233F]">{a.jobTitle}</div>
+                              <div className="text-[11px] text-[#125BB5]">{a.companyName || "Company"} • {a.location}</div>
+                            </td>
+                            <td className="p-3.5">
+                              <div className="flex items-center gap-2">
+                                <a
+                                  href={`tel:${formatCallNumber(a.candidateMobile)}`}
+                                  className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-bold text-[10px] hover:bg-emerald-700 transition-all flex items-center gap-1"
+                                >
+                                  📞 Call Candidate
+                                </a>
+                                <a
+                                  href={`https://wa.me/${formatWaNumber(a.candidateMobile)}?text=${encodeURIComponent(`Hello ${a.candidateName}, regarding your application for ${a.jobTitle}.`)}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="px-2.5 py-1 rounded-lg bg-green-600 text-white font-bold text-[10px] hover:bg-green-700 transition-all flex items-center gap-1"
+                                >
+                                  💬 WhatsApp
+                                </a>
+                              </div>
+                            </td>
+                            <td className="p-3.5 text-[#5B6B7F] font-bold">{a.appliedDate}</td>
+                            <td className="p-3.5">
+                              <select
+                                value={a.status}
+                                onChange={(e) => handleUpdateAppStatus(a.id, e.target.value as any)}
+                                className="h-8 px-2 rounded-lg border border-[#DCE5F0] text-xs font-black focus:outline-none focus:border-[#063B78]"
+                              >
+                                <option value="Applied">📝 Applied</option>
+                                <option value="Viewed">👀 Viewed</option>
+                                <option value="Shortlisted">⭐ Shortlisted</option>
+                                <option value="Interview">📅 Interview Scheduled</option>
+                                <option value="Selected">✅ Selected / Hired</option>
+                                <option value="Rejected">❌ Rejected</option>
+                              </select>
+                            </td>
+                            <td className="p-3.5 text-right">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setExpandedApp(expandedApp === a.id ? null : a.id)}
+                                className="text-[10px] h-7 px-3 border-[#063B78] text-[#063B78] hover:bg-[#063B78] hover:text-white"
+                              >
+                                {expandedApp === a.id ? "Hide Details" : "View Details"}
+                              </Button>
+                            </td>
+                          </tr>
+                          {expandedApp === a.id && (
+                            <tr className="bg-[#F8FAFC]">
+                              <td colSpan={6} className="p-4 border-t border-[#DCE5F0]">
+                                <div className="bg-white p-5 rounded-xl border border-[#E2E8F0] shadow-sm">
+                                  <h4 className="font-bold text-[#10233F] mb-4 border-b pb-2 flex items-center gap-2">
+                                    <FileText className="size-4 text-[#063B78]" />
+                                    Candidate Application Details
+                                  </h4>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                                    {a.fieldValues && Object.entries(a.fieldValues).map(([key, value]) => (
+                                      <div key={key} className="text-xs bg-[#F5F8FC] p-3 rounded-lg border border-[#DCE5F0]">
+                                        <div className="font-bold text-[#5B6B7F] capitalize mb-1">{key.replace(/([A-Z])/g, ' $1').trim()}</div>
+                                        <div className="font-black text-[#10233F]">{value as string}</div>
+                                      </div>
+                                    ))}
+                                    {a.customAnswers && Object.entries(a.customAnswers).map(([key, value]) => (
+                                      <div key={key} className="text-xs bg-[#F5F8FC] p-3 rounded-lg border border-[#DCE5F0]">
+                                        <div className="font-bold text-[#5B6B7F] capitalize mb-1">{key}</div>
+                                        <div className="font-black text-[#10233F]">{value as string}</div>
+                                      </div>
+                                    ))}
+                                    {(!a.fieldValues && !a.customAnswers) && (
+                                      <div className="text-sm font-semibold text-[#5B6B7F]">No additional application details provided.</div>
+                                     )}
+
+                                   {/* Employer Reply / Message to Candidate Box */}
+                                   <div className="mt-5 pt-4 border-t border-[#DCE5F0]">
+                                     <label className="block text-xs font-black text-[#063B78] mb-2">
+                                       💬 Candidate Reply / Employer Response (या उमेदवाराला संदेश / रिप्लाय पाठवा):
+                                     </label>
+                                     <div className="flex flex-col sm:flex-row gap-2">
+                                       <input
+                                         type="text"
+                                         placeholder="e.g. Selected! Please bring original documents on Monday at 10 AM."
+                                         value={replyInputs[a.id] !== undefined ? replyInputs[a.id] : (a.replyMessage || "")}
+                                         onChange={(e) => setReplyInputs(prev => ({ ...prev, [a.id]: e.target.value }))}
+                                         className="flex-1 h-10 px-3.5 rounded-xl border border-[#DCE5F0] bg-[#F8FAFC] text-xs font-bold text-[#10233F] focus:outline-none focus:border-[#063B78]"
+                                       />
+                                       <Button
+                                         onClick={() => handleSaveReply(a.id, replyInputs[a.id] !== undefined ? replyInputs[a.id]! : (a.replyMessage || ""))}
+                                         className="bg-[#063B78] hover:bg-[#082F63] text-white font-black text-xs px-5 h-10 rounded-xl shadow-xs shrink-0 cursor-pointer"
+                                       >
+                                         Save & Send Reply
+                                       </Button>
+                                     </div>
+                                     {a.replyMessage && (
+                                       <div className="mt-2.5 text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-3.5 py-2 rounded-xl flex items-center justify-between">
+                                         <span>✓ Sent Reply: "{a.replyMessage}"</span>
+                                         {a.replyDate && <span className="text-[10px] text-emerald-600 font-semibold">{a.replyDate}</span>}
+                                       </div>
+                                     )}
+                                   </div>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </Fragment>
+                      ))}
+                    {applications.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="p-8 text-center text-xs font-bold text-[#5B6B7F] bg-[#F8FAFF]">
+                          No job applications received yet.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: ATTENDANCE & WORKER MANAGEMENT */}
+          {activeTab === "attendance" && (
+            <div className="space-y-8 animate-fade-in">
+              {/* Top Attendance Header Banner */}
+              <div className="rounded-2xl border border-[#DCE5F0] bg-white p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <div className="inline-flex items-center gap-2 rounded-full bg-[#063B78]/10 px-3.5 py-1 text-xs font-black text-[#063B78] mb-2">
+                    <CalendarCheck className="size-4 text-[#063B78]" />
+                    <span>Employee Attendance & Payroll Management</span>
                   </div>
+                  <h2 className="text-xl sm:text-2xl font-black text-[#10233F]">
+                    Employee Attendance & Payroll Register
+                  </h2>
+                  <p className="text-xs sm:text-sm font-semibold text-[#5B6B7F] mt-1">
+                    Manage employee details by department, set custom daily wage rates, mark daily attendance, and generate weekly/monthly payroll reports.
+                  </p>
+                </div>
 
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                      <thead>
-                        <tr className="border-b border-[#EBF1F8] bg-[#F8FAFF] text-[11px] uppercase tracking-wider text-[#5B6B7F] font-black">
-                          <th className="p-4 rounded-l-xl">Employee Name</th>
-                          <th className="p-4">Department / Category</th>
-                          <th className="p-4">Role / Designation</th>
-                          <th className="p-4">Daily Wage Rate</th>
-                          <th className="p-4 text-center min-w-[390px]">Mark Attendance</th>
-                          <th className="p-4 text-right rounded-r-xl">Today's Pay</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[#EBF1F8] text-xs font-semibold">
+                <div className="flex flex-wrap gap-2 shrink-0">
+                  <Button
+                    onClick={handleOpenAddWorker}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-5 py-3 rounded-xl shadow-md flex items-center gap-2"
+                  >
+                    <UserPlus className="size-4" />
+                    <span>+ Add Employee</span>
+                  </Button>
+                </div>
+              </div>
+
+              {/* 2-Column Layout: Left Category Sidebar + Right Content Area */}
+              {(() => {
+                const defaultCategories = [
+                  ...getIndustryDefaultCategories(),
+                  "⚙️ Other / Custom",
+                ];
+                const customWorkerCats = workers.map((w) => w.category || w.trade || getIndustryDefaultCategories()[0] || "General Work");
+                const allCategories = Array.from(new Set([...defaultCategories, ...customCategories, ...customWorkerCats]))
+                  .filter((c) => !removedCategories.includes(c) || customWorkerCats.includes(c));
+
+                const categoryCounts = new Map<string, number>();
+                workers.forEach((w) => {
+                  const cat = w.category || w.trade || "Plant Nursery & Care";
+                  categoryCounts.set(cat, (categoryCounts.get(cat) || 0) + 1);
+                });
+
+                return (
+                  <div className="space-y-6 w-full">
+                    {/* Attendance Sub-View Navigation Tabs + Department Dropdown Filter (Single Row at 100% Zoom) */}
+                    <div className="flex flex-wrap lg:flex-nowrap items-center justify-between gap-2.5 bg-white p-2.5 rounded-2xl border border-[#DCE5F0] shadow-sm overflow-hidden">
+                      <div className="flex flex-nowrap items-center gap-2 overflow-x-auto shrink-0">
+                        {[
+                          { id: "daily", label: "📋 Daily Attendance", icon: CalendarCheck },
+                          { id: "reports", label: "📊 Reports", icon: PieChart },
+                          { id: "directory", label: `👥 Employee Directory (${workers.length})`, icon: Users },
+                        ].map((tab) => (
+                          <button
+                            key={tab.id}
+                            onClick={() => setAttendanceSubView(tab.id as any)}
+                            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-extrabold text-xs whitespace-nowrap transition-all ${attendanceSubView === tab.id
+                              ? "bg-[#063B78] text-white shadow-md shadow-[#063B78]/20"
+                              : "bg-[#F8FAFF] text-[#5B6B7F] border border-[#DCE5F0] hover:bg-[#EBF1F8] hover:text-[#063B78]"
+                              }`}
+                          >
+                            <tab.icon className="size-4 shrink-0" />
+                            <span>{tab.label}</span>
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        {/* Department Filter Dropdown Selector */}
+                        <div className="flex items-center gap-1.5 bg-[#F8FAFF] px-3 py-1.5 rounded-xl border border-[#DCE5F0] shrink-0">
+                          <Layers className="size-4 text-[#063B78] shrink-0" />
+                          <span className="text-xs font-black text-[#063B78] whitespace-nowrap">Department:</span>
+                          <select
+                            value={selectedCategoryFilter}
+                            onChange={(e) => setSelectedCategoryFilter(e.target.value)}
+                            className="bg-transparent font-bold text-xs text-[#10233F] focus:outline-none cursor-pointer outline-none max-w-[200px] truncate"
+                          >
+                            <option value="ALL">🌐 All Categories ({workers.length})</option>
+                            {allCategories.map((cat) => {
+                              const count = categoryCounts.get(cat) || 0;
+                              const cleanName = formatCategoryName(cat);
+                              return (
+                                <option key={cat} value={cat}>
+                                  {cleanName} ({count})
+                                </option>
+                              );
+                            })}
+                          </select>
+                        </div>
+
+                        {attendanceSubView === "reports" && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => window.print()}
+                            className="text-xs font-black border-[#063B78] text-[#063B78] hover:bg-blue-50 flex items-center gap-1.5 h-8 shrink-0"
+                          >
+                            <Printer className="size-3.5" />
+                            <span>Print</span>
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* VIEW 1: DAILY ATTENDANCE SHEET */}
+                    {attendanceSubView === "daily" && (
+                      <div className="space-y-6">
+                        {/* Attendance Quick Stats Overview */}
                         {(() => {
                           const attMap = new Map<string, DailyAttendanceRecord>();
                           dailyAttendanceRecords.forEach((r) => attMap.set(r.workerId, r));
 
-                          const list = workers.filter((w) => {
-                            if (selectedCategoryFilter !== "ALL") {
-                              const cat = w.category || w.trade || "Plant Nursery & Care";
-                              if (cat !== selectedCategoryFilter) return false;
+                          let pCount = 0;
+                          let hCount = 0;
+                          let aCount = 0;
+                          let otCount = 0;
+                          let todayWageSum = 0;
+
+                          const filteredByCat = workers.filter((w) => {
+                            if (selectedCategoryFilter === "ALL") return true;
+                            const cat = w.category || w.trade || "Plant Nursery / रोपवाटिका";
+                            return cat === selectedCategoryFilter;
+                          });
+
+                          filteredByCat.forEach((w) => {
+                            const rec = attMap.get(w.id);
+                            const st = rec?.status || "Present";
+                            if (st === "Present") {
+                              pCount++;
+                              todayWageSum += w.dailyRate;
+                            } else if (st === "HalfDay") {
+                              hCount++;
+                              todayWageSum += Math.round(w.dailyRate / 2);
+                            } else if (st === "Absent") {
+                              aCount++;
+                            } else if (st === "Overtime") {
+                              otCount++;
+                              todayWageSum += Math.round(w.dailyRate * 1.5);
                             }
-                            const q = workerSearch.toLowerCase().trim();
-                            if (!q) return true;
-                            return (
-                              w.name.toLowerCase().includes(q) ||
-                              w.mobile.includes(q) ||
-                              w.trade.toLowerCase().includes(q) ||
-                              (w.category && w.category.toLowerCase().includes(q))
-                            );
                           });
 
-                          if (list.length === 0) {
-                            return (
-                              <tr>
-                                <td colSpan={6} className="py-12 text-center text-xs font-bold text-[#5B6B7F]">
-                                  <div className="max-w-md mx-auto">
-                                    <Users className="size-10 text-[#A0AEC0] mx-auto mb-3" />
-                                    <p className="text-sm font-extrabold text-[#10233F]">
-                                      {selectedCategoryFilter === "ALL"
-                                        ? "No employees registered yet"
-                                        : `No employees found in '${selectedCategoryFilter}' department`}
-                                    </p>
-                                    <p className="text-xs font-medium text-[#5B6B7F] mt-1 mb-4">
-                                      Click the <span className="font-bold text-emerald-700">'+ Add Employee'</span> button above to register your first worker.
-                                    </p>
-                                    <Button
-                                      onClick={handleOpenAddWorker}
-                                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-4 py-2 rounded-xl"
-                                    >
-                                      <UserPlus className="size-4 mr-1.5" /> + Add Employee
-                                    </Button>
-                                  </div>
-                                </td>
-                              </tr>
-                            );
-                          }
+                          return (
+                            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
+                              <div className="p-3.5 sm:p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between gap-2">
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-[11px] sm:text-xs font-bold text-[#5B6B7F] truncate" title="Total Employees">Total Employees</p>
+                                  <h4 className="text-xl sm:text-2xl font-black text-[#10233F] mt-0.5">{filteredByCat.length}</h4>
+                                </div>
+                                <div className="p-2.5 bg-blue-50 text-[#063B78] rounded-xl shrink-0">
+                                  <Users className="size-5" />
+                                </div>
+                              </div>
 
-                          return list.map((worker) => {
-                            const record = attMap.get(worker.id);
-                            const currentStatus = record?.status || "Present";
+                              <div className="p-3.5 sm:p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between gap-2">
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-[11px] sm:text-xs font-bold text-emerald-700 truncate" title="Present Today">Present Today</p>
+                                  <h4 className="text-xl sm:text-2xl font-black text-emerald-600 mt-0.5">{pCount}</h4>
+                                </div>
+                                <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl shrink-0">
+                                  <UserCheck className="size-5" />
+                                </div>
+                              </div>
 
-                            let earnedAmount = worker.dailyRate;
-                            if (currentStatus === "HalfDay") earnedAmount = Math.round(worker.dailyRate / 2);
-                            if (currentStatus === "Absent") earnedAmount = 0;
-                            if (currentStatus === "Overtime") earnedAmount = Math.round(worker.dailyRate * 1.5);
+                              <div className="p-3.5 sm:p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between gap-2">
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-[11px] sm:text-xs font-bold text-amber-700 truncate" title="Half Day Today">Half Day Today</p>
+                                  <h4 className="text-xl sm:text-2xl font-black text-amber-600 mt-0.5">{hCount}</h4>
+                                </div>
+                                <div className="p-2.5 bg-amber-50 text-amber-600 rounded-xl shrink-0">
+                                  <Clock className="size-5" />
+                                </div>
+                              </div>
 
-                            return (
-                              <tr key={worker.id} className="hover:bg-[#F8FAFF] transition-colors">
-                                <td className="p-4 font-black text-[#10233F]">
-                                  <div className="flex items-center gap-3">
-                                    <div className="size-9 rounded-full bg-[#063B78]/10 text-[#063B78] font-black flex items-center justify-center text-sm shrink-0">
-                                      {worker.name.slice(0, 1).toUpperCase()}
-                                    </div>
-                                    <div>
-                                      <div className="text-sm font-black text-[#10233F]">{worker.name}</div>
-                                      <div className="text-[10px] text-[#5B6B7F]">
-                                        📞 {worker.mobile || "N/A"}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </td>
+                              <div className="p-3.5 sm:p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between gap-2">
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-[11px] sm:text-xs font-bold text-rose-700 truncate" title="Absent Today">Absent Today</p>
+                                  <h4 className="text-xl sm:text-2xl font-black text-rose-600 mt-0.5">{aCount}</h4>
+                                </div>
+                                <div className="p-2.5 bg-rose-50 text-rose-600 rounded-xl shrink-0">
+                                  <UserX className="size-5" />
+                                </div>
+                              </div>
 
-                                <td className="p-4">
-                                  <Badge className="bg-emerald-50 text-emerald-800 border border-emerald-200 font-extrabold text-[11px]">
-                                    {formatCategoryName(worker.category || worker.trade)}
-                                  </Badge>
-                                </td>
-
-                                <td className="p-4 font-bold text-[#063B78]">
-                                  {worker.trade || "General Worker"}
-                                </td>
-
-                                <td className="p-4 font-black text-[#10233F]">
-                                  ₹{worker.dailyRate} <span className="text-[10px] font-semibold text-[#5B6B7F]">/ day</span>
-                                </td>
-
-                                <td className="p-4 text-center min-w-[390px]">
-                                  <div className="inline-flex items-center gap-1 bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80 shadow-inner whitespace-nowrap">
-                                    <button
-                                      type="button"
-                                      onClick={() => handleMarkAttendance(worker, "Present")}
-                                      className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 ${
-                                        currentStatus === "Present"
-                                          ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/30 scale-[1.02]"
-                                          : "text-slate-600 hover:text-emerald-700 hover:bg-emerald-50/80"
-                                      }`}
-                                    >
-                                      <CheckCircle2 className="size-3.5" />
-                                      <span>Present</span>
-                                    </button>
-
-                                    <button
-                                      type="button"
-                                      onClick={() => handleMarkAttendance(worker, "HalfDay")}
-                                      className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 ${
-                                        currentStatus === "HalfDay"
-                                          ? "bg-amber-500 text-white shadow-md shadow-amber-500/30 scale-[1.02]"
-                                          : "text-slate-600 hover:text-amber-700 hover:bg-amber-50/80"
-                                      }`}
-                                    >
-                                      <Clock className="size-3.5" />
-                                      <span>Half Day</span>
-                                    </button>
-
-                                    <button
-                                      type="button"
-                                      onClick={() => handleMarkAttendance(worker, "Absent")}
-                                      className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 ${
-                                        currentStatus === "Absent"
-                                          ? "bg-rose-600 text-white shadow-md shadow-rose-600/30 scale-[1.02]"
-                                          : "text-slate-600 hover:text-rose-700 hover:bg-rose-50/80"
-                                      }`}
-                                    >
-                                      <XCircle className="size-3.5" />
-                                      <span>Absent</span>
-                                    </button>
-
-                                    <button
-                                      type="button"
-                                      onClick={() => handleMarkAttendance(worker, "Overtime")}
-                                      className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 ${
-                                        currentStatus === "Overtime"
-                                          ? "bg-[#063B78] text-white shadow-md shadow-[#063B78]/30 scale-[1.02]"
-                                          : "text-slate-600 hover:text-[#063B78] hover:bg-blue-50/80"
-                                      }`}
-                                    >
-                                      <Zap className="size-3.5 text-amber-400 fill-amber-400" />
-                                      <span>Overtime</span>
-                                    </button>
-                                  </div>
-                                </td>
-
-                                <td className="p-4 text-right font-black text-emerald-700 text-sm">
-                                   ₹{earnedAmount.toLocaleString("en-IN")}
-                                 </td>
-                              </tr>
-                            );
-                          });
+                              <div className="p-3.5 sm:p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between gap-2">
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-[11px] sm:text-xs font-bold text-[#063B78] truncate" title="Today's Payable Wages">Payable Wages</p>
+                                  <h4 className="text-lg sm:text-xl font-black text-[#063B78] mt-0.5">₹{todayWageSum.toLocaleString("en-IN")}</h4>
+                                </div>
+                                <div className="p-2.5 bg-indigo-50 text-[#063B78] rounded-xl shrink-0">
+                                  <DollarSign className="size-5" />
+                                </div>
+                              </div>
+                            </div>
+                          );
                         })()}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            )}
 
-            {/* VIEW 2: WEEKLY & MONTHLY REPORTS */}
-            {attendanceSubView === "reports" && (
-              <div className="space-y-6">
-                {/* Timeframe Filter Bar */}
-                <div className="rounded-2xl border border-[#DCE5F0] bg-white p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-xs font-black text-[#10233F] mr-1 flex items-center gap-1">
-                      <CalendarDays className="size-4 text-[#063B78]" />
-                      Report Period:
-                    </span>
-                    <button
-                      onClick={() => setReportTimeframe("week")}
-                      className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all ${
-                        reportTimeframe === "week"
-                          ? "bg-[#063B78] text-white shadow-md"
-                          : "bg-[#F5F8FC] text-[#5B6B7F] border border-[#DCE5F0] hover:bg-[#EBF1F8]"
-                      }`}
-                    >
-                      This Week
-                    </button>
+                        {/* Date Selector & Search Bar */}
+                        <div className="rounded-2xl border border-[#DCE5F0] bg-white p-4 sm:p-5 shadow-sm flex flex-wrap items-center justify-between gap-3">
+                          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                            <div className="flex items-center gap-2 bg-[#F8FAFF] px-3 py-1.5 rounded-xl border border-[#DCE5F0]">
+                              <Calendar className="size-4 text-[#063B78] shrink-0" />
+                              <span className="text-xs font-extrabold text-[#10233F] whitespace-nowrap">Select Date:</span>
+                              <input
+                                type="date"
+                                value={selectedAttendanceDate}
+                                onChange={(e) => setSelectedAttendanceDate(e.target.value)}
+                                className="bg-transparent font-bold text-xs text-[#063B78] focus:outline-none cursor-pointer"
+                              />
+                            </div>
 
-                    <button
-                      onClick={() => setReportTimeframe("month")}
-                      className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all ${
-                        reportTimeframe === "month"
-                          ? "bg-[#063B78] text-white shadow-md"
-                          : "bg-[#F5F8FC] text-[#5B6B7F] border border-[#DCE5F0] hover:bg-[#EBF1F8]"
-                      }`}
-                    >
-                      This Month
-                    </button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedAttendanceDate(new Date().toISOString().split("T")[0]!)}
+                              className={`h-9 text-xs font-extrabold rounded-xl border-[#DCE5F0] shrink-0 ${selectedAttendanceDate === new Date().toISOString().split("T")[0]!
+                                ? "bg-[#063B78] text-white hover:bg-[#063B78]"
+                                : "bg-white text-[#5B6B7F]"
+                                }`}
+                            >
+                              Today
+                            </Button>
 
-                    <button
-                      onClick={() => setReportTimeframe("custom")}
-                      className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all ${
-                        reportTimeframe === "custom"
-                          ? "bg-[#063B78] text-white shadow-md"
-                          : "bg-[#F5F8FC] text-[#5B6B7F] border border-[#DCE5F0] hover:bg-[#EBF1F8]"
-                      }`}
-                    >
-                      Custom Date Range
-                    </button>
-                  </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const d = new Date();
+                                d.setDate(d.getDate() - 1);
+                                setSelectedAttendanceDate(d.toISOString().split("T")[0]!);
+                              }}
+                              className={`h-9 text-xs font-extrabold rounded-xl border-[#DCE5F0] shrink-0 ${selectedAttendanceDate ===
+                                new Date(Date.now() - 86400000).toISOString().split("T")[0]!
+                                ? "bg-[#063B78] text-white hover:bg-[#063B78]"
+                                : "bg-white text-[#5B6B7F]"
+                                }`}
+                            >
+                              Yesterday
+                            </Button>
+                          </div>
 
-                  {reportTimeframe === "custom" && (
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="date"
-                        value={reportStartDate}
-                        onChange={(e) => setReportStartDate(e.target.value)}
-                        className="bg-[#F8FAFF] border border-[#DCE5F0] rounded-xl px-3 py-1.5 text-xs font-bold text-[#063B78]"
-                      />
-                      <span className="text-xs font-bold text-[#5B6B7F]">to</span>
-                      <input
-                        type="date"
-                        value={reportEndDate}
-                        onChange={(e) => setReportEndDate(e.target.value)}
-                        className="bg-[#F8FAFF] border border-[#DCE5F0] rounded-xl px-3 py-1.5 text-xs font-bold text-[#063B78]"
-                      />
-                    </div>
-                  )}
-                </div>
-
-                {/* Report Period Summary Cards */}
-                {(() => {
-                  const filteredWorkers = workers.filter((w) => {
-                    if (selectedCategoryFilter === "ALL") return true;
-                    return (w.category || w.trade) === selectedCategoryFilter;
-                  });
-
-                  let totalPresentDays = 0;
-                  let totalHalfDays = 0;
-                  let totalAbsentDays = 0;
-                  let totalOvertimeDays = 0;
-                  let totalPeriodPayroll = 0;
-
-                  filteredWorkers.forEach((w) => {
-                    const workerRecs = reportAttendanceRecords.filter((r) => r.workerId === w.id);
-                    workerRecs.forEach((r) => {
-                      if (r.status === "Present") {
-                        totalPresentDays++;
-                        totalPeriodPayroll += w.dailyRate;
-                      } else if (r.status === "HalfDay") {
-                        totalHalfDays++;
-                        totalPeriodPayroll += Math.round(w.dailyRate / 2);
-                      } else if (r.status === "Absent") {
-                        totalAbsentDays++;
-                      } else if (r.status === "Overtime") {
-                        totalOvertimeDays++;
-                        totalPeriodPayroll += Math.round(w.dailyRate * 1.5);
-                      }
-                    });
-                  });
-
-                  return (
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                      <div className="p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between">
-                        <div>
-                          <p className="text-xs font-extrabold text-[#5B6B7F]">Total Recorded Days</p>
-                          <h4 className="text-2xl font-black text-[#10233F] mt-1">{reportAttendanceRecords.length}</h4>
+                          <div className="relative w-full sm:w-72 shrink-0">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#A0AEC0]" />
+                            <Input
+                              placeholder="Search employee name or role..."
+                              value={workerSearch}
+                              onChange={(e) => setWorkerSearch(e.target.value)}
+                              className="pl-9 h-9 text-xs font-semibold rounded-xl border-[#DCE5F0]"
+                            />
+                          </div>
                         </div>
-                        <div className="p-3 bg-blue-50 text-[#063B78] rounded-xl">
-                          <CalendarDays className="size-5" />
+
+                        {/* Daily Attendance Sheet Table */}
+                        <div className="rounded-2xl border border-[#DCE5F0] bg-white p-6 shadow-sm">
+                          <div className="flex items-center justify-between mb-5">
+                            <div>
+                              <h3 className="text-lg font-black text-[#10233F] flex items-center gap-2">
+                                <span>📅 Daily Attendance Sheet</span>
+                                <Badge className="bg-[#063B78] text-white font-bold text-xs">
+                                  {selectedAttendanceDate}
+                                </Badge>
+                              </h3>
+                              <p className="text-xs font-semibold text-[#5B6B7F] mt-1">
+                                {selectedCategoryFilter === "ALL"
+                                  ? "Showing attendance records for all departments:"
+                                  : `Showing attendance records for '${selectedCategoryFilter}' department:`}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                              <thead>
+                                <tr className="border-b border-[#EBF1F8] bg-[#F8FAFF] text-[11px] uppercase tracking-wider text-[#5B6B7F] font-black">
+                                  <th className="p-4 rounded-l-xl">Employee Name</th>
+                                  <th className="p-4">Department / Category</th>
+                                  <th className="p-4">Role / Designation</th>
+                                  <th className="p-4">Daily Wage Rate</th>
+                                  <th className="p-4 text-center min-w-[390px]">Mark Attendance</th>
+                                  <th className="p-4 text-right rounded-r-xl">Today's Pay</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-[#EBF1F8] text-xs font-semibold">
+                                {(() => {
+                                  const attMap = new Map<string, DailyAttendanceRecord>();
+                                  dailyAttendanceRecords.forEach((r) => attMap.set(r.workerId, r));
+
+                                  const list = workers.filter((w) => {
+                                    if (selectedCategoryFilter !== "ALL") {
+                                      const cat = w.category || w.trade || "Plant Nursery & Care";
+                                      if (cat !== selectedCategoryFilter) return false;
+                                    }
+                                    const q = workerSearch.toLowerCase().trim();
+                                    if (!q) return true;
+                                    return (
+                                      w.name.toLowerCase().includes(q) ||
+                                      w.mobile.includes(q) ||
+                                      w.trade.toLowerCase().includes(q) ||
+                                      (w.category && w.category.toLowerCase().includes(q))
+                                    );
+                                  });
+
+                                  if (list.length === 0) {
+                                    return (
+                                      <tr>
+                                        <td colSpan={6} className="py-12 text-center text-xs font-bold text-[#5B6B7F]">
+                                          <div className="max-w-md mx-auto">
+                                            <Users className="size-10 text-[#A0AEC0] mx-auto mb-3" />
+                                            <p className="text-sm font-extrabold text-[#10233F]">
+                                              {selectedCategoryFilter === "ALL"
+                                                ? "No employees registered yet"
+                                                : `No employees found in '${selectedCategoryFilter}' department`}
+                                            </p>
+                                            <p className="text-xs font-medium text-[#5B6B7F] mt-1 mb-4">
+                                              Click the <span className="font-bold text-emerald-700">'+ Add Employee'</span> button above to register your first worker.
+                                            </p>
+                                            <Button
+                                              onClick={handleOpenAddWorker}
+                                              className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-4 py-2 rounded-xl"
+                                            >
+                                              <UserPlus className="size-4 mr-1.5" /> + Add Employee
+                                            </Button>
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    );
+                                  }
+
+                                  return list.map((worker) => {
+                                    const record = attMap.get(worker.id);
+                                    const currentStatus = record?.status || "Present";
+
+                                    let earnedAmount = worker.dailyRate;
+                                    if (currentStatus === "HalfDay") earnedAmount = Math.round(worker.dailyRate / 2);
+                                    if (currentStatus === "Absent") earnedAmount = 0;
+                                    if (currentStatus === "Overtime") earnedAmount = Math.round(worker.dailyRate * 1.5);
+
+                                    return (
+                                      <tr key={worker.id} className="hover:bg-[#F8FAFF] transition-colors">
+                                        <td className="p-4 font-black text-[#10233F]">
+                                          <div className="flex items-center gap-3">
+                                            <div className="size-9 rounded-full bg-[#063B78]/10 text-[#063B78] font-black flex items-center justify-center text-sm shrink-0">
+                                              {worker.name.slice(0, 1).toUpperCase()}
+                                            </div>
+                                            <div>
+                                              <div className="text-sm font-black text-[#10233F]">{worker.name}</div>
+                                              <div className="text-[10px] text-[#5B6B7F]">
+                                                📞 {worker.mobile || "N/A"}
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </td>
+
+                                        <td className="p-4">
+                                          <Badge className="bg-emerald-50 text-emerald-800 border border-emerald-200 font-extrabold text-[11px]">
+                                            {formatCategoryName(worker.category || worker.trade)}
+                                          </Badge>
+                                        </td>
+
+                                        <td className="p-4 font-bold text-[#063B78]">
+                                          {worker.trade || "General Worker"}
+                                        </td>
+
+                                        <td className="p-4 font-black text-[#10233F]">
+                                          ₹{worker.dailyRate} <span className="text-[10px] font-semibold text-[#5B6B7F]">/ day</span>
+                                        </td>
+
+                                        <td className="p-4 text-center min-w-[390px]">
+                                          <div className="inline-flex items-center gap-1 bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80 shadow-inner whitespace-nowrap">
+                                            <button
+                                              type="button"
+                                              onClick={() => handleMarkAttendance(worker, "Present")}
+                                              className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 ${currentStatus === "Present"
+                                                ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/30 scale-[1.02]"
+                                                : "text-slate-600 hover:text-emerald-700 hover:bg-emerald-50/80"
+                                                }`}
+                                            >
+                                              <CheckCircle2 className="size-3.5" />
+                                              <span>Present</span>
+                                            </button>
+
+                                            <button
+                                              type="button"
+                                              onClick={() => handleMarkAttendance(worker, "HalfDay")}
+                                              className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 ${currentStatus === "HalfDay"
+                                                ? "bg-amber-500 text-white shadow-md shadow-amber-500/30 scale-[1.02]"
+                                                : "text-slate-600 hover:text-amber-700 hover:bg-amber-50/80"
+                                                }`}
+                                            >
+                                              <Clock className="size-3.5" />
+                                              <span>Half Day</span>
+                                            </button>
+
+                                            <button
+                                              type="button"
+                                              onClick={() => handleMarkAttendance(worker, "Absent")}
+                                              className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 ${currentStatus === "Absent"
+                                                ? "bg-rose-600 text-white shadow-md shadow-rose-600/30 scale-[1.02]"
+                                                : "text-slate-600 hover:text-rose-700 hover:bg-rose-50/80"
+                                                }`}
+                                            >
+                                              <XCircle className="size-3.5" />
+                                              <span>Absent</span>
+                                            </button>
+
+                                            <button
+                                              type="button"
+                                              onClick={() => handleMarkAttendance(worker, "Overtime")}
+                                              className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 ${currentStatus === "Overtime"
+                                                ? "bg-[#063B78] text-white shadow-md shadow-[#063B78]/30 scale-[1.02]"
+                                                : "text-slate-600 hover:text-[#063B78] hover:bg-blue-50/80"
+                                                }`}
+                                            >
+                                              <Zap className="size-3.5 text-amber-400 fill-amber-400" />
+                                              <span>Overtime</span>
+                                            </button>
+                                          </div>
+                                        </td>
+
+                                        <td className="p-4 text-right font-black text-emerald-700 text-sm">
+                                          ₹{earnedAmount.toLocaleString("en-IN")}
+                                        </td>
+                                      </tr>
+                                    );
+                                  });
+                                })()}
+                              </tbody>
+                            </table>
+                          </div>
                         </div>
                       </div>
+                    )}
 
-                      <div className="p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between">
-                        <div>
-                          <p className="text-xs font-extrabold text-emerald-700">Total Present Days</p>
-                          <h4 className="text-2xl font-black text-emerald-600 mt-1">{totalPresentDays}</h4>
-                        </div>
-                        <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
-                          <UserCheck className="size-5" />
-                        </div>
-                      </div>
+                    {/* VIEW 2: WEEKLY & MONTHLY REPORTS */}
+                    {attendanceSubView === "reports" && (
+                      <div className="space-y-6">
+                        {/* Timeframe Filter Bar */}
+                        <div className="rounded-2xl border border-[#DCE5F0] bg-white p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-xs font-black text-[#10233F] mr-1 flex items-center gap-1">
+                              <CalendarDays className="size-4 text-[#063B78]" />
+                              Report Period:
+                            </span>
+                            <button
+                              onClick={() => setReportTimeframe("week")}
+                              className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all ${reportTimeframe === "week"
+                                ? "bg-[#063B78] text-white shadow-md"
+                                : "bg-[#F5F8FC] text-[#5B6B7F] border border-[#DCE5F0] hover:bg-[#EBF1F8]"
+                                }`}
+                            >
+                              This Week
+                            </button>
 
-                      <div className="p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between">
-                        <div>
-                          <p className="text-xs font-extrabold text-amber-700">Total Half Days</p>
-                          <h4 className="text-2xl font-black text-amber-600 mt-1">{totalHalfDays}</h4>
-                        </div>
-                        <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
-                          <Clock className="size-5" />
-                        </div>
-                      </div>
+                            <button
+                              onClick={() => setReportTimeframe("month")}
+                              className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all ${reportTimeframe === "month"
+                                ? "bg-[#063B78] text-white shadow-md"
+                                : "bg-[#F5F8FC] text-[#5B6B7F] border border-[#DCE5F0] hover:bg-[#EBF1F8]"
+                                }`}
+                            >
+                              This Month
+                            </button>
 
-                      <div className="p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between">
-                        <div>
-                          <p className="text-xs font-extrabold text-rose-700">Total Absent Days</p>
-                          <h4 className="text-2xl font-black text-rose-600 mt-1">{totalAbsentDays}</h4>
-                        </div>
-                        <div className="p-3 bg-rose-50 text-rose-600 rounded-xl">
-                          <UserX className="size-5" />
-                        </div>
-                      </div>
+                            <button
+                              onClick={() => setReportTimeframe("custom")}
+                              className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all ${reportTimeframe === "custom"
+                                ? "bg-[#063B78] text-white shadow-md"
+                                : "bg-[#F5F8FC] text-[#5B6B7F] border border-[#DCE5F0] hover:bg-[#EBF1F8]"
+                                }`}
+                            >
+                              Custom Date Range
+                            </button>
+                          </div>
 
-                      <div className="p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between">
-                        <div>
-                          <p className="text-xs font-extrabold text-[#063B78]">Net Total Payroll</p>
-                          <h4 className="text-xl font-black text-[#063B78] mt-1">₹{totalPeriodPayroll.toLocaleString("en-IN")}</h4>
+                          {reportTimeframe === "custom" && (
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="date"
+                                value={reportStartDate}
+                                onChange={(e) => setReportStartDate(e.target.value)}
+                                className="bg-[#F8FAFF] border border-[#DCE5F0] rounded-xl px-3 py-1.5 text-xs font-bold text-[#063B78]"
+                              />
+                              <span className="text-xs font-bold text-[#5B6B7F]">to</span>
+                              <input
+                                type="date"
+                                value={reportEndDate}
+                                onChange={(e) => setReportEndDate(e.target.value)}
+                                className="bg-[#F8FAFF] border border-[#DCE5F0] rounded-xl px-3 py-1.5 text-xs font-bold text-[#063B78]"
+                              />
+                            </div>
+                          )}
                         </div>
-                        <div className="p-3 bg-indigo-50 text-[#063B78] rounded-xl">
-                          <DollarSign className="size-5" />
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
 
-                {/* Worker Report Summary Table */}
-                <div className="rounded-2xl border border-[#DCE5F0] bg-white p-6 shadow-sm">
-                  <div className="flex items-center justify-between mb-5">
-                    <div>
-                      <h3 className="text-lg font-black text-[#10233F] flex items-center gap-2">
-                        <span>📊 Employee Weekly & Monthly Payroll Summary</span>
-                        <Badge className="bg-[#063B78] text-white font-bold text-xs uppercase">
-                          {reportTimeframe === "week" ? "Weekly Report" : reportTimeframe === "month" ? "Monthly Report" : "Custom Range"}
-                        </Badge>
-                      </h3>
-                      <p className="text-xs font-semibold text-[#5B6B7F] mt-1">
-                        Individual employee present days, half days, absent days, overtime, and calculated net wages:
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                      <thead>
-                        <tr className="border-b border-[#EBF1F8] bg-[#F8FAFF] text-[11px] uppercase tracking-wider text-[#5B6B7F] font-black">
-                          <th className="p-4 rounded-l-xl">Employee Name</th>
-                          <th className="p-4">Department / Category</th>
-                          <th className="p-4">Daily Wage Rate</th>
-                          <th className="p-4 text-center text-emerald-700">Present Days</th>
-                          <th className="p-4 text-center text-amber-700">Half Days</th>
-                          <th className="p-4 text-center text-rose-700">Absent Days</th>
-                          <th className="p-4 text-center text-blue-700">Overtime Days</th>
-                          <th className="p-4 text-right rounded-r-xl">Net Payable Wages</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[#EBF1F8] text-xs font-semibold">
+                        {/* Report Period Summary Cards */}
                         {(() => {
-                          const filtered = workers.filter((w) => {
+                          const filteredWorkers = workers.filter((w) => {
                             if (selectedCategoryFilter === "ALL") return true;
                             return (w.category || w.trade) === selectedCategoryFilter;
                           });
 
-                          if (filtered.length === 0) {
-                            return (
-                              <tr>
-                                <td colSpan={8} className="p-8 text-center text-xs font-bold text-[#5B6B7F]">
-                                  No employee attendance records found for the selected period.
-                                </td>
-                              </tr>
-                            );
-                          }
+                          let totalPresentDays = 0;
+                          let totalHalfDays = 0;
+                          let totalAbsentDays = 0;
+                          let totalOvertimeDays = 0;
+                          let totalPeriodPayroll = 0;
 
-                          return filtered.map((worker) => {
-                            const recs = reportAttendanceRecords.filter((r) => r.workerId === worker.id);
-                            let presentCount = 0;
-                            let halfCount = 0;
-                            let absentCount = 0;
-                            let otCount = 0;
-                            let totalWage = 0;
-
-                            recs.forEach((r) => {
+                          filteredWorkers.forEach((w) => {
+                            const workerRecs = reportAttendanceRecords.filter((r) => r.workerId === w.id);
+                            workerRecs.forEach((r) => {
                               if (r.status === "Present") {
-                                presentCount++;
-                                totalWage += worker.dailyRate;
+                                totalPresentDays++;
+                                totalPeriodPayroll += w.dailyRate;
                               } else if (r.status === "HalfDay") {
-                                halfCount++;
-                                totalWage += Math.round(worker.dailyRate / 2);
+                                totalHalfDays++;
+                                totalPeriodPayroll += Math.round(w.dailyRate / 2);
                               } else if (r.status === "Absent") {
-                                absentCount++;
+                                totalAbsentDays++;
                               } else if (r.status === "Overtime") {
-                                otCount++;
-                                totalWage += Math.round(worker.dailyRate * 1.5);
+                                totalOvertimeDays++;
+                                totalPeriodPayroll += Math.round(w.dailyRate * 1.5);
                               }
                             });
-
-                            return (
-                              <tr key={worker.id} className="hover:bg-[#F8FAFF]">
-                                <td className="p-4 font-black text-[#10233F]">
-                                  <div className="text-sm font-black">{worker.name}</div>
-                                  <div className="text-[10px] text-[#5B6B7F]">📞 {worker.mobile || "N/A"}</div>
-                                </td>
-
-                                <td className="p-4">
-                                  <Badge className="bg-blue-50 text-[#063B78] border border-blue-200 font-extrabold text-[11px]">
-                                    {formatCategoryName(worker.category || worker.trade)}
-                                  </Badge>
-                                </td>
-
-                                <td className="p-4 font-black text-[#10233F]">
-                                  ₹{worker.dailyRate} / day
-                                </td>
-
-                                <td className="p-4 text-center font-black text-emerald-600 text-sm">
-                                  {presentCount}
-                                </td>
-
-                                <td className="p-4 text-center font-black text-amber-600 text-sm">
-                                  {halfCount}
-                                </td>
-
-                                <td className="p-4 text-center font-black text-rose-600 text-sm">
-                                  {absentCount}
-                                </td>
-
-                                <td className="p-4 text-center font-black text-blue-600 text-sm">
-                                  {otCount}
-                                </td>
-
-                                <td className="p-4 text-right font-black text-emerald-700 text-base">
-                                   ₹{totalWage.toLocaleString("en-IN")}
-                                 </td>
-                              </tr>
-                            );
                           });
-                        })()}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            )}
 
-            {/* VIEW 3: WORKER DIRECTORY */}
-            {attendanceSubView === "directory" && (
-              <div className="rounded-2xl border border-[#DCE5F0] bg-white p-6 shadow-sm space-y-5">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-black text-[#10233F] flex items-center gap-2">
-                      <span>👥 Registered Employee Directory</span>
-                      <Badge className="bg-emerald-100 text-emerald-800 font-bold text-xs border border-emerald-300">
-                        {workers.length} Employees Total
-                      </Badge>
-                    </h3>
-                    <p className="text-xs font-semibold text-[#5B6B7F] mt-1">
-                      Manage department employees, custom daily wage rates, mobile contacts, and designations.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-[#EBF1F8] bg-[#F8FAFF] text-[11px] uppercase tracking-wider text-[#5B6B7F] font-black">
-                        <th className="p-4 rounded-l-xl">Employee Name</th>
-                        <th className="p-4">Department / Category</th>
-                        <th className="p-4">Role / Designation</th>
-                        <th className="p-4">Mobile Number</th>
-                        <th className="p-4">Daily Wage Rate</th>
-                        <th className="p-4">Joining Date</th>
-                        <th className="p-4 text-center rounded-r-xl">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#EBF1F8] text-xs font-semibold">
-                      {workers.length === 0 ? (
-                        <tr>
-                          <td colSpan={7} className="p-8 text-center text-xs font-bold text-[#5B6B7F]">
-                            No employees registered yet.
-                          </td>
-                        </tr>
-                      ) : (
-                        workers.map((w) => (
-                          <tr key={w.id} className="hover:bg-[#F8FAFF]">
-                            <td className="p-4">
-                              <div className="font-black text-[#10233F]">{w.name}</div>
-                              {(w.workShiftStart || w.workShiftEnd) && (
-                                <div className="text-[10px] text-[#063B78] font-bold mt-0.5 flex items-center gap-1">
-                                  <Clock className="size-3 text-[#063B78]" />
-                                  <span>Shift: {w.workShiftStart || "09:00"} - {w.workShiftEnd || "18:00"}</span>
+                          return (
+                            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                              <div className="p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between">
+                                <div>
+                                  <p className="text-xs font-extrabold text-[#5B6B7F]">Total Recorded Days</p>
+                                  <h4 className="text-2xl font-black text-[#10233F] mt-1">{reportAttendanceRecords.length}</h4>
                                 </div>
-                              )}
-                              {w.customFields && w.customFields.length > 0 && (
-                                <div className="flex flex-wrap gap-1 mt-1">
-                                  {w.customFields.map((cf, i) => (
-                                    <span key={i} className="text-[9px] font-black bg-blue-50 text-[#063B78] border border-blue-200 px-1.5 py-0.5 rounded">
-                                      {cf.label}: {cf.value}
-                                    </span>
-                                  ))}
+                                <div className="p-3 bg-blue-50 text-[#063B78] rounded-xl">
+                                  <CalendarDays className="size-5" />
                                 </div>
-                              )}
-                            </td>
-                            <td className="p-4">
-                              <Badge className="bg-emerald-50 text-emerald-800 border border-emerald-200 font-extrabold text-[11px]">
-                                {formatCategoryName(w.category || w.trade)}
-                              </Badge>
-                            </td>
-                            <td className="p-4 font-bold text-[#063B78]">{w.trade}</td>
-                            <td className="p-4 text-[#5B6B7F]">{w.mobile || "N/A"}</td>
-                            <td className="p-4 font-black text-emerald-700">₹{w.dailyRate} / day</td>
-                            <td className="p-4 text-[#5B6B7F]">{w.joiningDate || "N/A"}</td>
-                            <td className="p-4 text-center">
-                              <div className="flex items-center justify-center gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => setSelectedWorkerReport(w)}
-                                  className="h-8 px-2.5 rounded-lg border-blue-200 bg-blue-50/50 hover:bg-blue-100 text-xs font-bold text-[#063B78]"
-                                  title="View Report & Print Slip"
-                                >
-                                  <FileText className="size-3.5 mr-1 text-[#063B78]" /> Slip
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleOpenEditWorker(w)}
-                                  className="h-8 px-2.5 rounded-lg border-[#DCE5F0] text-xs font-bold text-[#063B78]"
-                                >
-                                  <Edit className="size-3.5 mr-1" /> Edit
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleDeleteWorker(w.id, w.name)}
-                                  className="h-8 px-2.5 rounded-lg border-rose-200 text-xs font-bold text-rose-600 hover:bg-rose-50"
-                                >
-                                  <Trash2 className="size-3.5 mr-1" /> Delete
-                                </Button>
                               </div>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-                </div>
-              );
-            })()}
-          </div>
-        )}
 
-        {/* TAB 5: MY PROFILE */}
-        {activeTab === "profile" && (
-          <div className="max-w-4xl mx-auto space-y-6">
-            <div className="bg-white rounded-2xl border border-[#DCE5F0] p-6 sm:p-8 shadow-sm">
-              <div className="flex items-center justify-between pb-5 border-b border-[#EBF1F8] mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 bg-[#F0F4FA] rounded-xl text-[#063B78]">
-                    <User className="size-6 text-[#063B78]" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-black text-[#10233F]">Employer Profile Settings</h2>
-                    <p className="text-xs font-semibold text-[#5B6B7F]">Update your organization details, contact person, and profile photo</p>
-                  </div>
-                </div>
-                <Badge className="bg-emerald-600 text-white font-bold text-xs px-3 py-1">
-                  ✓ Verified Employer
-                </Badge>
-              </div>
+                              <div className="p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between">
+                                <div>
+                                  <p className="text-xs font-extrabold text-emerald-700">Total Present Days</p>
+                                  <h4 className="text-2xl font-black text-emerald-600 mt-1">{totalPresentDays}</h4>
+                                </div>
+                                <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+                                  <UserCheck className="size-5" />
+                                </div>
+                              </div>
 
-              <form onSubmit={handleSaveProfile} className="space-y-6">
-                {/* Profile Photo Avatar Section */}
-                <div className="flex flex-col sm:flex-row items-center gap-6 p-5 rounded-2xl bg-[#F8FAFF] border border-[#E0E8F5]">
-                  <div className="relative shrink-0">
-                    {profileForm.profilePhoto ? (
-                      <img
-                        src={profileForm.profilePhoto}
-                        alt="Profile Avatar"
-                        className="size-24 rounded-full object-cover shadow-md ring-4 ring-white border-2 border-[#063B78]"
-                      />
-                    ) : (
-                      <div className="size-24 rounded-full bg-gradient-to-br from-[#063B78] to-[#125BB5] text-white font-black text-3xl flex items-center justify-center shadow-md ring-4 ring-white border-2 border-white">
-                        {(profileForm.fullName || "E").charAt(0).toUpperCase()}
+                              <div className="p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between">
+                                <div>
+                                  <p className="text-xs font-extrabold text-amber-700">Total Half Days</p>
+                                  <h4 className="text-2xl font-black text-amber-600 mt-1">{totalHalfDays}</h4>
+                                </div>
+                                <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
+                                  <Clock className="size-5" />
+                                </div>
+                              </div>
+
+                              <div className="p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between">
+                                <div>
+                                  <p className="text-xs font-extrabold text-rose-700">Total Absent Days</p>
+                                  <h4 className="text-2xl font-black text-rose-600 mt-1">{totalAbsentDays}</h4>
+                                </div>
+                                <div className="p-3 bg-rose-50 text-rose-600 rounded-xl">
+                                  <UserX className="size-5" />
+                                </div>
+                              </div>
+
+                              <div className="p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between">
+                                <div>
+                                  <p className="text-xs font-extrabold text-[#063B78]">Net Total Payroll</p>
+                                  <h4 className="text-xl font-black text-[#063B78] mt-1">₹{totalPeriodPayroll.toLocaleString("en-IN")}</h4>
+                                </div>
+                                <div className="p-3 bg-indigo-50 text-[#063B78] rounded-xl">
+                                  <DollarSign className="size-5" />
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })()}
+
+                        {/* Worker Report Summary Table */}
+                        <div className="rounded-2xl border border-[#DCE5F0] bg-white p-6 shadow-sm">
+                          <div className="flex items-center justify-between mb-5">
+                            <div>
+                              <h3 className="text-lg font-black text-[#10233F] flex items-center gap-2">
+                                <span>📊 Employee Weekly & Monthly Payroll Summary</span>
+                                <Badge className="bg-[#063B78] text-white font-bold text-xs uppercase">
+                                  {reportTimeframe === "week" ? "Weekly Report" : reportTimeframe === "month" ? "Monthly Report" : "Custom Range"}
+                                </Badge>
+                              </h3>
+                              <p className="text-xs font-semibold text-[#5B6B7F] mt-1">
+                                Individual employee present days, half days, absent days, overtime, and calculated net wages:
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                              <thead>
+                                <tr className="border-b border-[#EBF1F8] bg-[#F8FAFF] text-[11px] uppercase tracking-wider text-[#5B6B7F] font-black">
+                                  <th className="p-4 rounded-l-xl">Employee Name</th>
+                                  <th className="p-4">Department / Category</th>
+                                  <th className="p-4">Daily Wage Rate</th>
+                                  <th className="p-4 text-center text-emerald-700">Present Days</th>
+                                  <th className="p-4 text-center text-amber-700">Half Days</th>
+                                  <th className="p-4 text-center text-rose-700">Absent Days</th>
+                                  <th className="p-4 text-center text-blue-700">Overtime Days</th>
+                                  <th className="p-4 text-right rounded-r-xl">Net Payable Wages</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-[#EBF1F8] text-xs font-semibold">
+                                {(() => {
+                                  const filtered = workers.filter((w) => {
+                                    if (selectedCategoryFilter === "ALL") return true;
+                                    return (w.category || w.trade) === selectedCategoryFilter;
+                                  });
+
+                                  if (filtered.length === 0) {
+                                    return (
+                                      <tr>
+                                        <td colSpan={8} className="p-8 text-center text-xs font-bold text-[#5B6B7F]">
+                                          No employee attendance records found for the selected period.
+                                        </td>
+                                      </tr>
+                                    );
+                                  }
+
+                                  return filtered.map((worker) => {
+                                    const recs = reportAttendanceRecords.filter((r) => r.workerId === worker.id);
+                                    let presentCount = 0;
+                                    let halfCount = 0;
+                                    let absentCount = 0;
+                                    let otCount = 0;
+                                    let totalWage = 0;
+
+                                    recs.forEach((r) => {
+                                      if (r.status === "Present") {
+                                        presentCount++;
+                                        totalWage += worker.dailyRate;
+                                      } else if (r.status === "HalfDay") {
+                                        halfCount++;
+                                        totalWage += Math.round(worker.dailyRate / 2);
+                                      } else if (r.status === "Absent") {
+                                        absentCount++;
+                                      } else if (r.status === "Overtime") {
+                                        otCount++;
+                                        totalWage += Math.round(worker.dailyRate * 1.5);
+                                      }
+                                    });
+
+                                    return (
+                                      <tr key={worker.id} className="hover:bg-[#F8FAFF]">
+                                        <td className="p-4 font-black text-[#10233F]">
+                                          <div className="text-sm font-black">{worker.name}</div>
+                                          <div className="text-[10px] text-[#5B6B7F]">📞 {worker.mobile || "N/A"}</div>
+                                        </td>
+
+                                        <td className="p-4">
+                                          <Badge className="bg-blue-50 text-[#063B78] border border-blue-200 font-extrabold text-[11px]">
+                                            {formatCategoryName(worker.category || worker.trade)}
+                                          </Badge>
+                                        </td>
+
+                                        <td className="p-4 font-black text-[#10233F]">
+                                          ₹{worker.dailyRate} / day
+                                        </td>
+
+                                        <td className="p-4 text-center font-black text-emerald-600 text-sm">
+                                          {presentCount}
+                                        </td>
+
+                                        <td className="p-4 text-center font-black text-amber-600 text-sm">
+                                          {halfCount}
+                                        </td>
+
+                                        <td className="p-4 text-center font-black text-rose-600 text-sm">
+                                          {absentCount}
+                                        </td>
+
+                                        <td className="p-4 text-center font-black text-blue-600 text-sm">
+                                          {otCount}
+                                        </td>
+
+                                        <td className="p-4 text-right font-black text-emerald-700 text-base">
+                                          ₹{totalWage.toLocaleString("en-IN")}
+                                        </td>
+                                      </tr>
+                                    );
+                                  });
+                                })()}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* VIEW 3: WORKER DIRECTORY */}
+                    {attendanceSubView === "directory" && (
+                      <div className="rounded-2xl border border-[#DCE5F0] bg-white p-6 shadow-sm space-y-5">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="text-lg font-black text-[#10233F] flex items-center gap-2">
+                              <span>👥 Registered Employee Directory</span>
+                              <Badge className="bg-emerald-100 text-emerald-800 font-bold text-xs border border-emerald-300">
+                                {workers.length} Employees Total
+                              </Badge>
+                            </h3>
+                            <p className="text-xs font-semibold text-[#5B6B7F] mt-1">
+                              Manage department employees, custom daily wage rates, mobile contacts, and designations.
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left border-collapse">
+                            <thead>
+                              <tr className="border-b border-[#EBF1F8] bg-[#F8FAFF] text-[11px] uppercase tracking-wider text-[#5B6B7F] font-black">
+                                <th className="p-4 rounded-l-xl">Employee Name</th>
+                                <th className="p-4">Department / Category</th>
+                                <th className="p-4">Role / Designation</th>
+                                <th className="p-4">Mobile Number</th>
+                                <th className="p-4">Daily Wage Rate</th>
+                                <th className="p-4">Joining Date</th>
+                                <th className="p-4 text-center rounded-r-xl">Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-[#EBF1F8] text-xs font-semibold">
+                              {workers.length === 0 ? (
+                                <tr>
+                                  <td colSpan={7} className="p-8 text-center text-xs font-bold text-[#5B6B7F]">
+                                    No employees registered yet.
+                                  </td>
+                                </tr>
+                              ) : (
+                                workers.map((w) => (
+                                  <tr key={w.id} className="hover:bg-[#F8FAFF]">
+                                    <td className="p-4">
+                                      <div className="font-black text-[#10233F]">{w.name}</div>
+                                      {(w.workShiftStart || w.workShiftEnd) && (
+                                        <div className="text-[10px] text-[#063B78] font-bold mt-0.5 flex items-center gap-1">
+                                          <Clock className="size-3 text-[#063B78]" />
+                                          <span>Shift: {w.workShiftStart || "09:00"} - {w.workShiftEnd || "18:00"}</span>
+                                        </div>
+                                      )}
+                                      {w.customFields && w.customFields.length > 0 && (
+                                        <div className="flex flex-wrap gap-1 mt-1">
+                                          {w.customFields.map((cf, i) => (
+                                            <span key={i} className="text-[9px] font-black bg-blue-50 text-[#063B78] border border-blue-200 px-1.5 py-0.5 rounded">
+                                              {cf.label}: {cf.value}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </td>
+                                    <td className="p-4">
+                                      <Badge className="bg-emerald-50 text-emerald-800 border border-emerald-200 font-extrabold text-[11px]">
+                                        {formatCategoryName(w.category || w.trade)}
+                                      </Badge>
+                                    </td>
+                                    <td className="p-4 font-bold text-[#063B78]">{w.trade}</td>
+                                    <td className="p-4 text-[#5B6B7F]">{w.mobile || "N/A"}</td>
+                                    <td className="p-4 font-black text-emerald-700">₹{w.dailyRate} / day</td>
+                                    <td className="p-4 text-[#5B6B7F]">{w.joiningDate || "N/A"}</td>
+                                    <td className="p-4 text-center">
+                                      <div className="flex items-center justify-center gap-2">
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => setSelectedWorkerReport(w)}
+                                          className="h-8 px-2.5 rounded-lg border-blue-200 bg-blue-50/50 hover:bg-blue-100 text-xs font-bold text-[#063B78]"
+                                          title="View Report & Print Slip"
+                                        >
+                                          <FileText className="size-3.5 mr-1 text-[#063B78]" /> Slip
+                                        </Button>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => handleOpenEditWorker(w)}
+                                          className="h-8 px-2.5 rounded-lg border-[#DCE5F0] text-xs font-bold text-[#063B78]"
+                                        >
+                                          <Edit className="size-3.5 mr-1" /> Edit
+                                        </Button>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => handleDeleteWorker(w.id, w.name)}
+                                          className="h-8 px-2.5 rounded-lg border-rose-200 text-xs font-bold text-rose-600 hover:bg-rose-50"
+                                        >
+                                          <Trash2 className="size-3.5 mr-1" /> Delete
+                                        </Button>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                ))
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
                     )}
                   </div>
-                  <div className="flex-1 space-y-2 w-full text-center sm:text-left">
-                    <h3 className="text-sm font-black text-[#10233F]">Profile Picture / Logo URL</h3>
-                    <p className="text-xs text-[#5B6B7F]">Provide a valid photo or logo image URL</p>
-                    <Input
-                      type="url"
-                      placeholder="https://example.com/logo.jpg"
-                      value={profileForm.profilePhoto}
-                      onChange={(e) => setProfileForm({ ...profileForm, profilePhoto: e.target.value })}
-                      className="text-xs font-semibold"
-                    />
-                  </div>
-                </div>
-
-                {/* Form Fields Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <div>
-                    <label className="block text-xs font-bold text-[#5B6B7F] mb-1.5">Company / Organization Name *</label>
-                    <Input
-                      required
-                      value={profileForm.fullName}
-                      onChange={(e) => setProfileForm({ ...profileForm, fullName: e.target.value })}
-                      placeholder="e.g. Vikas Ropvatika & Nursery"
-                      className="text-xs font-semibold"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-[#5B6B7F] mb-1.5">Contact Person Name</label>
-                    <Input
-                      value={profileForm.contactPerson}
-                      onChange={(e) => setProfileForm({ ...profileForm, contactPerson: e.target.value })}
-                      placeholder="e.g. Vikas Patil"
-                      className="text-xs font-semibold"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-[#5B6B7F] mb-1.5">Email Address *</label>
-                    <Input
-                      required
-                      type="email"
-                      value={profileForm.email}
-                      onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
-                      placeholder="e.g. ropvatika@gmail.com"
-                      className="text-xs font-semibold"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-[#5B6B7F] mb-1.5">Mobile / Phone Number *</label>
-                    <Input
-                      required
-                      value={profileForm.mobile}
-                      onChange={(e) => setProfileForm({ ...profileForm, mobile: e.target.value })}
-                      placeholder="e.g. 9822011223"
-                      className="text-xs font-semibold"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-[#5B6B7F] mb-1.5">Location / Address</label>
-                    <Input
-                      value={profileForm.location}
-                      onChange={(e) => setProfileForm({ ...profileForm, location: e.target.value })}
-                      placeholder="e.g. Pune, Maharashtra"
-                      className="text-xs font-semibold"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-[#5B6B7F] mb-1.5">Business Industry / Sector</label>
-                    <Input
-                      value={profileForm.industry}
-                      onChange={(e) => setProfileForm({ ...profileForm, industry: e.target.value })}
-                      placeholder="e.g. Plant Nursery & Agricultural Services"
-                      className="text-xs font-semibold"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#EBF1F8]">
-                  <Button
-                    type="submit"
-                    className="px-6 py-2.5 rounded-xl bg-[#063B78] hover:bg-[#0A4F9E] text-white font-black text-xs shadow-md flex items-center gap-2"
-                  >
-                    <CheckCircle2 className="size-4" /> Save Profile Details
-                  </Button>
-                </div>
-              </form>
+                );
+              })()}
             </div>
-          </div>
-        )}
-      </main>
-    </div>
+          )}
+
+          {/* TAB 5: MY PROFILE */}
+          {activeTab === "profile" && (
+            <div className="max-w-4xl mx-auto space-y-6">
+              <div className="bg-white rounded-2xl border border-[#DCE5F0] p-6 sm:p-8 shadow-sm">
+                <div className="flex items-center justify-between pb-5 border-b border-[#EBF1F8] mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-[#F0F4FA] rounded-xl text-[#063B78]">
+                      <User className="size-6 text-[#063B78]" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-black text-[#10233F]">Employer Profile Settings</h2>
+                      <p className="text-xs font-semibold text-[#5B6B7F]">Update your organization details, contact person, and profile photo</p>
+                    </div>
+                  </div>
+                  <Badge className="bg-emerald-600 text-white font-bold text-xs px-3 py-1">
+                    ✓ Verified Employer
+                  </Badge>
+                </div>
+
+                <form onSubmit={handleSaveProfile} className="space-y-6">
+                  {/* Profile Photo Avatar Section */}
+                  <div className="flex flex-col sm:flex-row items-center gap-6 p-5 rounded-2xl bg-[#F8FAFF] border border-[#E0E8F5]">
+                    <div className="relative shrink-0">
+                      {profileForm.profilePhoto ? (
+                        <img
+                          src={profileForm.profilePhoto}
+                          alt="Profile Avatar"
+                          className="size-24 rounded-full object-cover shadow-md ring-4 ring-white border-2 border-[#063B78]"
+                        />
+                      ) : (
+                        <div className="size-24 rounded-full bg-gradient-to-br from-[#063B78] to-[#125BB5] text-white font-black text-3xl flex items-center justify-center shadow-md ring-4 ring-white border-2 border-white">
+                          {(profileForm.fullName || "E").charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 space-y-2 w-full text-center sm:text-left">
+                      <h3 className="text-sm font-black text-[#10233F]">Profile Picture / Logo URL</h3>
+                      <p className="text-xs text-[#5B6B7F]">Provide a valid photo or logo image URL</p>
+                      <Input
+                        type="url"
+                        placeholder="https://example.com/logo.jpg"
+                        value={profileForm.profilePhoto}
+                        onChange={(e) => setProfileForm({ ...profileForm, profilePhoto: e.target.value })}
+                        className="text-xs font-semibold"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Form Fields Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div>
+                      <label className="block text-xs font-bold text-[#5B6B7F] mb-1.5">Company / Organization Name *</label>
+                      <Input
+                        required
+                        value={profileForm.fullName}
+                        onChange={(e) => setProfileForm({ ...profileForm, fullName: e.target.value })}
+                        placeholder="e.g. Vikas Ropvatika & Nursery"
+                        className="text-xs font-semibold"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-[#5B6B7F] mb-1.5">Contact Person Name</label>
+                      <Input
+                        value={profileForm.contactPerson}
+                        onChange={(e) => setProfileForm({ ...profileForm, contactPerson: e.target.value })}
+                        placeholder="e.g. Vikas Patil"
+                        className="text-xs font-semibold"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-[#5B6B7F] mb-1.5">Email Address *</label>
+                      <Input
+                        required
+                        type="email"
+                        value={profileForm.email}
+                        onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
+                        placeholder="e.g. ropvatika@gmail.com"
+                        className="text-xs font-semibold"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-[#5B6B7F] mb-1.5">Mobile / Phone Number *</label>
+                      <Input
+                        required
+                        value={profileForm.mobile}
+                        onChange={(e) => setProfileForm({ ...profileForm, mobile: e.target.value })}
+                        placeholder="e.g. 9822011223"
+                        className="text-xs font-semibold"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-[#5B6B7F] mb-1.5">Location / Address</label>
+                      <Input
+                        value={profileForm.location}
+                        onChange={(e) => setProfileForm({ ...profileForm, location: e.target.value })}
+                        placeholder="e.g. Pune, Maharashtra"
+                        className="text-xs font-semibold"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-[#5B6B7F] mb-1.5">Business Industry / Sector</label>
+                      <Input
+                        value={profileForm.industry}
+                        onChange={(e) => setProfileForm({ ...profileForm, industry: e.target.value })}
+                        placeholder="e.g. Plant Nursery & Agricultural Services"
+                        className="text-xs font-semibold"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#EBF1F8]">
+                    <Button
+                      type="submit"
+                      className="px-6 py-2.5 rounded-xl bg-[#063B78] hover:bg-[#0A4F9E] text-white font-black text-xs shadow-md flex items-center gap-2"
+                    >
+                      <CheckCircle2 className="size-4" /> Save Profile Details
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+        </main>
+      </div>
 
       {/* ── ADD / EDIT WORKER MODAL WITH CUSTOM FIELDS GENERATOR ── */}
       {showWorkerModal && (
@@ -2881,13 +3080,7 @@ function AdminDashboardPage() {
                   {isCategoryDropdownOpen && (
                     <div className="absolute left-0 right-0 top-12 z-50 bg-white border border-slate-200 rounded-2xl shadow-xl max-h-72 overflow-y-auto p-1.5 space-y-0.5 animate-fade-in">
                       {[
-                        "Plant Nursery & Care",
-                        "Tractor & Machinery",
-                        "Grafting & Propagation",
-                        "Packing & Loading",
-                        "Irrigation & Spraying",
-                        "Soil & Fertilizer",
-                        "General Labour",
+                        ...getIndustryDefaultCategories(),
                         ...customCategories,
                         "⚙️ Other / Custom",
                       ]
@@ -2902,9 +3095,8 @@ function AdminDashboardPage() {
                                 setIsCategoryDropdownOpen(false);
                                 setShowOtherCategoryInput(false);
                               }}
-                              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-colors ${
-                                isSelected ? "bg-[#063B78] text-white" : "hover:bg-slate-100 text-[#10233F]"
-                              }`}
+                              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-colors ${isSelected ? "bg-[#063B78] text-white" : "hover:bg-slate-100 text-[#10233F]"
+                                }`}
                             >
                               <span className="truncate">{catName}</span>
                               <button
@@ -2913,9 +3105,8 @@ function AdminDashboardPage() {
                                   e.stopPropagation();
                                   handleRemoveCategory(catName);
                                 }}
-                                className={`p-1 rounded-lg hover:bg-red-500 hover:text-white transition-colors ml-2 shrink-0 ${
-                                  isSelected ? "text-white/80 hover:text-white" : "text-slate-400 hover:text-red-600"
-                                }`}
+                                className={`p-1 rounded-lg hover:bg-red-500 hover:text-white transition-colors ml-2 shrink-0 ${isSelected ? "text-white/80 hover:text-white" : "text-slate-400 hover:text-red-600"
+                                  }`}
                                 title={`Remove category "${catName}"`}
                               >
                                 <X className="size-3.5" />
@@ -3261,25 +3452,22 @@ function AdminDashboardPage() {
                 <div
                   key={pkg.id}
                   onClick={() => setSelectedPlanId(pkg.id)}
-                  className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between ${
-                    selectedPlanId === pkg.id
-                      ? "border-[#063B78] bg-blue-50/60 ring-2 ring-[#063B78]/20"
-                      : "border-slate-200 hover:border-slate-300 bg-white"
-                  }`}
+                  className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between ${selectedPlanId === pkg.id
+                    ? "border-[#063B78] bg-blue-50/60 ring-2 ring-[#063B78]/20"
+                    : "border-slate-200 hover:border-slate-300 bg-white"
+                    }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`size-5 rounded-full border-2 flex items-center justify-center ${
-                      selectedPlanId === pkg.id ? "border-[#063B78] bg-[#063B78] text-white" : "border-slate-300"
-                    }`}>
+                    <div className={`size-5 rounded-full border-2 flex items-center justify-center ${selectedPlanId === pkg.id ? "border-[#063B78] bg-[#063B78] text-white" : "border-slate-300"
+                      }`}>
                       {selectedPlanId === pkg.id && <Check className="size-3 stroke-[3]" />}
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="font-extrabold text-sm text-[#063B78]">{pkg.name}</span>
                         {pkg.badge && (
-                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase ${
-                            pkg.popular ? "bg-[#063B78] text-amber-300" : "bg-amber-100 text-amber-800"
-                          }`}>
+                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase ${pkg.popular ? "bg-[#063B78] text-amber-300" : "bg-amber-100 text-amber-800"
+                            }`}>
                             {pkg.badge}
                           </span>
                         )}
@@ -3316,11 +3504,10 @@ function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setPaymentMethod("upi")}
-                  className={`p-3 rounded-2xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all ${
-                    paymentMethod === "upi"
-                      ? "border-[#063B78] bg-blue-50/70 text-[#063B78] ring-2 ring-[#063B78]/20"
-                      : "border-slate-200 text-slate-600 hover:bg-slate-50"
-                  }`}
+                  className={`p-3 rounded-2xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all ${paymentMethod === "upi"
+                    ? "border-[#063B78] bg-blue-50/70 text-[#063B78] ring-2 ring-[#063B78]/20"
+                    : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                    }`}
                 >
                   <Smartphone className="size-5" />
                   <span>UPI / GPay</span>
@@ -3328,11 +3515,10 @@ function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setPaymentMethod("card")}
-                  className={`p-3 rounded-2xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all ${
-                    paymentMethod === "card"
-                      ? "border-[#063B78] bg-blue-50/70 text-[#063B78] ring-2 ring-[#063B78]/20"
-                      : "border-slate-200 text-slate-600 hover:bg-slate-50"
-                  }`}
+                  className={`p-3 rounded-2xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all ${paymentMethod === "card"
+                    ? "border-[#063B78] bg-blue-50/70 text-[#063B78] ring-2 ring-[#063B78]/20"
+                    : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                    }`}
                 >
                   <CreditCard className="size-5" />
                   <span>Debit / Card</span>
@@ -3340,11 +3526,10 @@ function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setPaymentMethod("netbanking")}
-                  className={`p-3 rounded-2xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all ${
-                    paymentMethod === "netbanking"
-                      ? "border-[#063B78] bg-blue-50/70 text-[#063B78] ring-2 ring-[#063B78]/20"
-                      : "border-slate-200 text-slate-600 hover:bg-slate-50"
-                  }`}
+                  className={`p-3 rounded-2xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all ${paymentMethod === "netbanking"
+                    ? "border-[#063B78] bg-blue-50/70 text-[#063B78] ring-2 ring-[#063B78]/20"
+                    : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                    }`}
                 >
                   <Building2 className="size-5" />
                   <span>NetBanking</span>
@@ -3431,33 +3616,30 @@ function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setWorkerReportPeriod("week")}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
-                    workerReportPeriod === "week"
-                      ? "bg-[#063B78] text-white shadow-md"
-                      : "bg-white text-[#5B6B7F] border border-[#DCE5F0] hover:bg-slate-50"
-                  }`}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${workerReportPeriod === "week"
+                    ? "bg-[#063B78] text-white shadow-md"
+                    : "bg-white text-[#5B6B7F] border border-[#DCE5F0] hover:bg-slate-50"
+                    }`}
                 >
                   This Week
                 </button>
                 <button
                   type="button"
                   onClick={() => setWorkerReportPeriod("month")}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
-                    workerReportPeriod === "month"
-                      ? "bg-[#063B78] text-white shadow-md"
-                      : "bg-white text-[#5B6B7F] border border-[#DCE5F0] hover:bg-slate-50"
-                  }`}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${workerReportPeriod === "month"
+                    ? "bg-[#063B78] text-white shadow-md"
+                    : "bg-white text-[#5B6B7F] border border-[#DCE5F0] hover:bg-slate-50"
+                    }`}
                 >
                   This Month
                 </button>
                 <button
                   type="button"
                   onClick={() => setWorkerReportPeriod("all")}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
-                    workerReportPeriod === "all"
-                      ? "bg-[#063B78] text-white shadow-md"
-                      : "bg-white text-[#5B6B7F] border border-[#DCE5F0] hover:bg-slate-50"
-                  }`}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${workerReportPeriod === "all"
+                    ? "bg-[#063B78] text-white shadow-md"
+                    : "bg-white text-[#5B6B7F] border border-[#DCE5F0] hover:bg-slate-50"
+                    }`}
                 >
                   All Time
                 </button>
@@ -3531,11 +3713,10 @@ function AdminDashboardPage() {
                                 <tr key={r.id} className="hover:bg-slate-50">
                                   <td className="p-2.5 font-bold text-[#10233F]">{r.date}</td>
                                   <td className="p-2.5">
-                                    <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
-                                      r.status === "Present" ? "bg-emerald-100 text-emerald-800" :
+                                    <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${r.status === "Present" ? "bg-emerald-100 text-emerald-800" :
                                       r.status === "HalfDay" ? "bg-amber-100 text-amber-800" :
-                                      r.status === "Absent" ? "bg-rose-100 text-rose-800" : "bg-blue-100 text-blue-800"
-                                    }`}>
+                                        r.status === "Absent" ? "bg-rose-100 text-rose-800" : "bg-blue-100 text-blue-800"
+                                      }`}>
                                       {r.status}
                                     </span>
                                   </td>

@@ -99,6 +99,9 @@ export type ApplicationRecord = {
   resume: string;
   appliedDate: string;
   status: ApplicationStatus;
+  adminNotes?: string;
+  replyMessage?: string;
+  replyDate?: string;
   fieldValues?: Record<string, string>;
   customAnswers?: Record<string, string>;
 };
@@ -417,31 +420,106 @@ export class DataStoreManager {
 
 
   // --- USER AUTHENTICATION & CURRENT SESSION ---
-  public getCurrentUser(): { email: string; role: UserRole; fullName?: string; id?: string; mobile?: string; profilePhoto?: string } | null {
+  public getCurrentUser(rolePreference?: UserRole | "worker" | "employer" | "admin"): { email: string; role: UserRole; fullName?: string; id?: string; mobile?: string; profilePhoto?: string } | null {
     if (typeof window === "undefined") return null;
+
+    // 1. Check tab-specific session if present
+    const sessionRaw = sessionStorage.getItem("realjob_tab_user");
+    if (sessionRaw) {
+      try {
+        const u = JSON.parse(sessionRaw);
+        if (
+          !rolePreference ||
+          u.role === rolePreference ||
+          (rolePreference === "employer" && (u.role === "admin" || u.role === "employer")) ||
+          (rolePreference === "admin" && (u.role === "admin" || u.role === "employer"))
+        ) {
+          return u;
+        }
+      } catch {}
+    }
+
+    // 2. Role-specific storage lookup
+    if (rolePreference) {
+      const prefKey = rolePreference === "worker" ? "realjob-user-worker" : "realjob-user-admin";
+      const roleRaw = localStorage.getItem(prefKey);
+      if (roleRaw) {
+        try {
+          const u = JSON.parse(roleRaw);
+          if (u && u.email) return u;
+        } catch {}
+      }
+    }
+
+    // 3. Fallback to general storage lookup
     const raw = localStorage.getItem("realjob-user") || localStorage.getItem(this.STORAGE_KEYS.USER);
     if (!raw) return null;
     try {
       const u = JSON.parse(raw);
+      if (rolePreference) {
+        if (rolePreference === "worker" && u.role !== "worker") {
+          const wRaw = localStorage.getItem("realjob-user-worker");
+          return wRaw ? JSON.parse(wRaw) : null;
+        }
+        if ((rolePreference === "employer" || rolePreference === "admin") && u.role === "worker") {
+          const aRaw = localStorage.getItem("realjob-user-admin");
+          return aRaw ? JSON.parse(aRaw) : null;
+        }
+      }
       return u;
     } catch {
       return null;
     }
   }
 
-  public setCurrentUser(userData: { email: string; role: UserRole; fullName?: string; id?: string; mobile?: string; profilePhoto?: string } | null) {
+  public setCurrentUser(
+    userData: { email: string; role: UserRole; fullName?: string; id?: string; mobile?: string; profilePhoto?: string } | null,
+    targetRole?: string
+  ) {
     if (typeof window === "undefined") return;
     if (!userData) {
-      localStorage.removeItem(this.STORAGE_KEYS.USER);
-      localStorage.removeItem("realjob-user");
+      if (targetRole === "worker") {
+        localStorage.removeItem("realjob-user-worker");
+        sessionStorage.removeItem("realjob_tab_user");
+        const main = this.getCurrentUser();
+        if (main && main.role === "worker") {
+          localStorage.removeItem(this.STORAGE_KEYS.USER);
+          localStorage.removeItem("realjob-user");
+        }
+      } else if (targetRole === "employer" || targetRole === "admin") {
+        localStorage.removeItem("realjob-user-admin");
+        localStorage.removeItem("realjob-user-employer");
+        sessionStorage.removeItem("realjob_tab_user");
+        const main = this.getCurrentUser();
+        if (main && (main.role === "employer" || main.role === "admin")) {
+          localStorage.removeItem(this.STORAGE_KEYS.USER);
+          localStorage.removeItem("realjob-user");
+        }
+      } else {
+        localStorage.removeItem(this.STORAGE_KEYS.USER);
+        localStorage.removeItem("realjob-user");
+        localStorage.removeItem("realjob-user-worker");
+        localStorage.removeItem("realjob-user-admin");
+        localStorage.removeItem("realjob-user-employer");
+        sessionStorage.removeItem("realjob_tab_user");
+      }
     } else {
-      localStorage.setItem(this.STORAGE_KEYS.USER, JSON.stringify(userData));
-      localStorage.setItem("realjob-user", JSON.stringify(userData));
+      const str = JSON.stringify(userData);
+      localStorage.setItem(this.STORAGE_KEYS.USER, str);
+      localStorage.setItem("realjob-user", str);
+      sessionStorage.setItem("realjob_tab_user", str);
+
+      if (userData.role === "worker") {
+        localStorage.setItem("realjob-user-worker", str);
+      } else {
+        localStorage.setItem("realjob-user-admin", str);
+        localStorage.setItem("realjob-user-employer", str);
+      }
     }
   }
 
-  public logout() {
-    this.setCurrentUser(null);
+  public logout(targetRole?: string) {
+    this.setCurrentUser(null, targetRole);
   }
 
   // --- JOBS COLLECTION ---
@@ -647,19 +725,44 @@ export class DataStoreManager {
     return apps.filter((a) => a.jobSeekerId === jobSeekerId || a.candidateEmail === jobSeekerId);
   }
 
-  public updateApplicationStatus(applicationId: string, status: ApplicationStatus): ApplicationRecord | null {
+  public updateApplicationStatus(applicationId: string, status: ApplicationStatus, replyMessage?: string): ApplicationRecord | null {
     const apps = this.getAllApplications();
     const existing = apps.find((a) => a.id === applicationId);
     if (!existing) return null;
 
     const index = apps.findIndex((a) => a.id === applicationId);
-    const updatedApp: ApplicationRecord = { ...existing, status };
+    const updatedApp: ApplicationRecord = {
+      ...existing,
+      status,
+      ...(replyMessage !== undefined ? { replyMessage, replyDate: new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) } : {})
+    };
     apps[index] = updatedApp;
 
     if (typeof window !== "undefined") {
       localStorage.setItem(this.STORAGE_KEYS.APPLICATIONS, JSON.stringify(apps));
       
-      fbSync(() => updateDoc(doc(db, "applications", updatedApp.id), { status }));
+      fbSync(() => updateDoc(doc(db, "applications", updatedApp.id), updatedApp));
+    }
+    return updatedApp;
+  }
+
+  public updateApplicationReply(applicationId: string, replyMessage: string): ApplicationRecord | null {
+    const apps = this.getAllApplications();
+    const existing = apps.find((a) => a.id === applicationId);
+    if (!existing) return null;
+
+    const index = apps.findIndex((a) => a.id === applicationId);
+    const updatedApp: ApplicationRecord = {
+      ...existing,
+      replyMessage,
+      replyDate: new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+    };
+    apps[index] = updatedApp;
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem(this.STORAGE_KEYS.APPLICATIONS, JSON.stringify(apps));
+      
+      fbSync(() => updateDoc(doc(db, "applications", updatedApp.id), updatedApp));
     }
     return updatedApp;
   }
