@@ -25,7 +25,6 @@ import {
   Star,
   Monitor,
   Sparkles,
-  Globe2,
 } from "lucide-react";
 
 const ICONS: Record<string, React.ElementType> = {
@@ -43,10 +42,11 @@ const THEMES: Record<string, any> = {
 };
 import careerTeam from "@/assets/career-team.jpg";
 import { Brand } from "@/components/portal/Brand";
+import { LanguageGate } from "@/components/portal/LanguageGate";
 
 import { PublicFooter } from "@/components/portal/PublicFooter";
 import { Button } from "@/components/ui/button";
-import { useI18n, languages } from "@/lib/i18n";
+import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 import { dataStore } from "@/lib/data-store";
 
@@ -71,26 +71,9 @@ const heroImages = [
 ];
 
 function LandingGatewayPage() {
-  const { t, lang, setLang } = useI18n();
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-
-  const [onboardingStep, setOnboardingStep] = useState<number>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("realjob_onboarding_done") ? 3 : 1;
-    }
-    return 1;
-  });
-
-  const handleLanguageSelect = (code: string) => {
-    setLang(code as any);
-    setOnboardingStep(2);
-  };
-
-  const handleRoleSelect = (role: "worker" | "employer") => {
-    localStorage.setItem("realjob_onboarding_done", "true");
-    setOnboardingStep(3);
-  };
 
   // Dynamic Landing Page CMS State
   const [heroTitle, setHeroTitle] = useState("Welcome to the\nREAL JOB Portal!");
@@ -238,84 +221,8 @@ function LandingGatewayPage() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col font-sans">
-      {/* ONBOARDING MODAL */}
-      {onboardingStep < 3 && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 sm:p-8 relative mx-4 animate-in fade-in zoom-in-95 duration-300">
-            {onboardingStep === 1 && (
-              <div className="text-center">
-                <div className="mb-6 flex justify-center">
-                  <div className="bg-orange-100 p-4 rounded-full">
-                    <Globe2 className="w-10 h-10 text-orange-600" />
-                  </div>
-                </div>
-                <h2 className="text-2xl font-black text-[#063B78] mb-2">{t("chooseLanguage")}</h2>
-                <p className="text-gray-500 mb-8 font-medium">{t("languageSubtitle")}</p>
-                <div className="grid grid-cols-2 gap-3">
-                  {languages.map((l) => (
-                    <button
-                      key={l.code}
-                      onClick={() => handleLanguageSelect(l.code)}
-                      className={`py-3 px-4 rounded-xl border-2 transition-all font-bold text-base
-                        ${lang === l.code 
-                          ? 'border-orange-500 bg-orange-50 text-orange-700 shadow-md scale-105' 
-                          : 'border-gray-200 text-gray-700 hover:border-orange-300 hover:bg-orange-50/50'
-                        }`}
-                    >
-                      {l.native}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {onboardingStep === 2 && (
-              <div className="text-center">
-                <div className="mb-6 flex justify-center">
-                  <div className="bg-[#EBF1F8] p-4 rounded-full">
-                    <Users className="w-10 h-10 text-[#063B78]" />
-                  </div>
-                </div>
-                <h2 className="text-2xl font-black text-[#063B78] mb-2">{t("selectRole")}</h2>
-                <p className="text-gray-500 mb-8 font-medium">{t("roleSubtitle")}</p>
-                <div className="flex flex-col gap-4">
-                  <button
-                    onClick={() => handleRoleSelect("worker")}
-                    className="flex items-center gap-4 p-4 rounded-xl border-2 border-gray-200 hover:border-[#063B78] hover:bg-[#EBF1F8] transition-all group text-left"
-                  >
-                    <div className="bg-[#063B78] text-white p-3 rounded-lg group-hover:scale-110 transition-transform flex-shrink-0">
-                      <Briefcase className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-gray-900 text-lg">{t("jobSeeker")}</h3>
-                      <p className="text-sm text-gray-500 font-medium">{t("jobSeekerDesc")}</p>
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => handleRoleSelect("employer")}
-                    className="flex items-center gap-4 p-4 rounded-xl border-2 border-gray-200 hover:border-orange-500 hover:bg-orange-50 transition-all group text-left"
-                  >
-                    <div className="bg-orange-500 text-white p-3 rounded-lg group-hover:scale-110 transition-transform flex-shrink-0">
-                      <Building2 className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-gray-900 text-lg">{t("jobProvider")}</h3>
-                      <p className="text-sm text-gray-500 font-medium">{t("jobProviderDesc")}</p>
-                    </div>
-                  </button>
-                </div>
-                <button 
-                  onClick={() => setOnboardingStep(1)} 
-                  className="mt-6 text-sm font-bold text-gray-500 hover:text-gray-800"
-                >
-                  ← {t("backToLanguage")}
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
+      <LanguageGate />
+      
       {/* LANDING HEADER */}
       <header className="absolute top-0 w-full z-50 bg-transparent p-4">
         <div className="mx-auto flex max-w-[1400px] items-center justify-between">
@@ -365,92 +272,20 @@ function LandingGatewayPage() {
       </header>
 
       <main className="flex-1">
-        {/* NEW HERO SECTION */}
-        <section className="relative w-full pt-28 pb-16 lg:pt-36 lg:pb-24 overflow-hidden bg-gradient-to-br from-white to-orange-50/50">
-          <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
-              
-              {/* Left Content */}
-              <div className="flex flex-col items-start gap-6">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-yellow-100/80 border border-yellow-200">
-                  <Crown className="w-5 h-5 text-yellow-600" />
-                  <span className="text-yellow-800 font-bold text-sm tracking-wide uppercase">Join India's Leading Job Portal</span>
-                </div>
-                
-                <h1 className="text-5xl lg:text-6xl xl:text-7xl font-black text-[#063B78] leading-[1.1] tracking-tight">
-                  Discover Opportunities <br/>
-                  <span className="text-orange-500">That Match Your Skills</span>
-                </h1>
-                
-                <p className="text-lg sm:text-xl text-gray-600 max-w-xl font-medium leading-relaxed">
-                  Connect with top employers and take the next step in your career journey. Find verified jobs, skilled workers, and endless opportunities.
-                </p>
-                
-                <div className="grid grid-cols-2 gap-4 mt-4 w-full max-w-xl">
-                  <div className="flex items-center gap-3 p-3 bg-white rounded-xl shadow-sm border border-gray-100">
-                    <div className="bg-blue-50 text-blue-600 p-2 rounded-lg">
-                      <Briefcase className="w-5 h-5" />
-                    </div>
-                    <span className="font-bold text-gray-700">Verified Jobs</span>
-                  </div>
-                  <div className="flex items-center gap-3 p-3 bg-white rounded-xl shadow-sm border border-gray-100">
-                    <div className="bg-orange-50 text-orange-500 p-2 rounded-lg">
-                      <Building2 className="w-5 h-5" />
-                    </div>
-                    <span className="font-bold text-gray-700">Top Companies</span>
-                  </div>
-                  <div className="flex items-center gap-3 p-3 bg-white rounded-xl shadow-sm border border-gray-100">
-                    <div className="bg-purple-50 text-purple-600 p-2 rounded-lg">
-                      <Target className="w-5 h-5" />
-                    </div>
-                    <span className="font-bold text-gray-700">Skill Development</span>
-                  </div>
-                  <div className="flex items-center gap-3 p-3 bg-white rounded-xl shadow-sm border border-gray-100">
-                    <div className="bg-green-50 text-green-600 p-2 rounded-lg">
-                      <Users className="w-5 h-5" />
-                    </div>
-                    <span className="font-bold text-gray-700">Diverse Roles</span>
-                  </div>
-                </div>
-                
-                <div className="flex flex-wrap gap-4 mt-4">
-                  <Button size="lg" className="h-14 px-8 bg-orange-500 hover:bg-orange-600 text-white font-black rounded-xl text-lg shadow-lg shadow-orange-500/25 transition-transform hover:-translate-y-1">
-                    Find a Job <ArrowRight className="ml-2 w-5 h-5" />
-                  </Button>
-                  <Button size="lg" variant="outline" className="h-14 px-8 border-2 border-[#063B78] text-[#063B78] hover:bg-[#063B78] hover:text-white font-black rounded-xl text-lg transition-transform hover:-translate-y-1">
-                    Hire Workers
-                  </Button>
-                </div>
-              </div>
+        {/* HERO SECTION */}
+        <section className="relative isolate overflow-hidden h-screen min-h-[600px] flex items-center pt-20 pb-24">
+          {/* Background Image Slider */}
+          <div className="absolute inset-0 z-0 bg-transparent">
+            {images.map((img, index) => (
+              <img
+                key={img}
+                src={img}
+                alt="REAL JOB India Portal Background"
+                className={`absolute inset-0 h-full w-full object-cover object-[70%_20%] transition-opacity duration-1000 ease-in-out ${index === currentImageIndex ? "opacity-100" : "opacity-0"
+                  }`}
+              />
+            ))}
 
-              {/* Right Content - Images/Visuals */}
-              <div className="relative w-full h-[500px] lg:h-[600px] flex items-center justify-center">
-                {/* Decorative background blobs */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-orange-100/50 rounded-full blur-3xl -z-10" />
-                
-                <div className="relative w-full h-full max-w-lg mx-auto rounded-3xl overflow-hidden shadow-2xl border-4 border-white">
-                  <img 
-                    src={careerTeam} 
-                    alt="Team working together" 
-                    className="w-full h-full object-cover"
-                  />
-                  
-                  {/* Floating overlay badge */}
-                  <div className="absolute top-6 right-6 bg-white/90 backdrop-blur-md px-6 py-4 rounded-2xl shadow-xl border border-white/50 animate-bounce-slow">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-orange-100 p-2 rounded-full">
-                        <Star className="w-6 h-6 text-orange-500 fill-orange-500" />
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="font-black text-[#063B78]">Together Towards</span>
-                        <span className="font-bold text-orange-500">A Better Tomorrow</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-            </div>
           </div>
         </section>
 
