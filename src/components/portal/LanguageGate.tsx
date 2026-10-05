@@ -12,6 +12,10 @@ export function LanguageGate() {
   const { lang, setLang, t } = useI18n();
   const navigate = useNavigate();
   const [open, setOpen] = useState(() => {
+    if (typeof window !== "undefined" && window.location.hash === "#main") {
+      hasShownGateThisSession = true;
+      return false;
+    }
     if (!hasShownGateThisSession) {
       return true;
     }

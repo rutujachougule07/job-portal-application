@@ -1441,7 +1441,8 @@ function AdminDashboardPage() {
             onClick={() => {
               dataStore.logout("employer");
               toast.info("Logged out successfully");
-              window.location.replace("/#main");
+              navigate({ to: "/", hash: "main", replace: true });
+              if (typeof window !== "undefined") window.scrollTo(0, 0);
             }}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-rose-400 hover:bg-rose-500/10 transition-all"
           >
