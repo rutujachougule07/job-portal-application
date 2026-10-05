@@ -6,10 +6,17 @@ import { Button } from "@/components/ui/button";
 import { LogoIcon } from "@/components/portal/Brand";
 import { toast } from "sonner";
 
+let hasShownGateThisSession = false;
+
 export function LanguageGate() {
   const { lang, setLang, t } = useI18n();
   const navigate = useNavigate();
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(() => {
+    if (!hasShownGateThisSession) {
+      return true;
+    }
+    return false;
+  });
   const [step, setStep] = useState<"language" | "role">("language");
   const [selectedLang, setSelectedLang] = useState<LanguageCode>(lang || "mr");
 
@@ -43,6 +50,7 @@ export function LanguageGate() {
       window.localStorage.setItem("realjob-gate-done", "true");
       window.localStorage.setItem("karyam-onboarding-done", "true");
     }
+    hasShownGateThisSession = true;
     setOpen(false);
 
     if (role === "admin") {
@@ -51,7 +59,7 @@ export function LanguageGate() {
           ? "जॉब पोस्टर पोर्टलमध्ये आपले स्वागत आहे!"
           : "Welcome to Job Poster Portal!"
       );
-      navigate({ to: "/auth", search: { mode: "login", role: "admin" } });
+      navigate({ to: "/" });
     } else {
       toast.success(
         selectedLang === "mr"

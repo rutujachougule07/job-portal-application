@@ -42,6 +42,7 @@ const THEMES: Record<string, any> = {
 };
 import careerTeam from "@/assets/career-team.jpg";
 import { Brand } from "@/components/portal/Brand";
+import { LanguageGate } from "@/components/portal/LanguageGate";
 
 import { PublicFooter } from "@/components/portal/PublicFooter";
 import { Button } from "@/components/ui/button";
@@ -220,6 +221,8 @@ function LandingGatewayPage() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col font-sans">
+      <LanguageGate />
+      
       {/* LANDING HEADER */}
       <header className="absolute top-0 w-full z-50 bg-transparent p-4">
         <div className="mx-auto flex max-w-[1400px] items-center justify-between">
