@@ -202,7 +202,7 @@ function LandingGatewayPage() {
     dataStore.setCurrentUser(userObj);
     setCurrentUser(userObj);
     toast.success("User Portal Ready! Redirecting to main website...");
-    navigate({ to: "/home" });
+    navigate({ to: "/dashboard", search: { tab: "overview" }, replace: true });
   };
 
   const handleQuickAdminEntry = () => {

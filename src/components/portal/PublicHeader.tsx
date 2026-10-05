@@ -47,7 +47,7 @@ export function PublicHeader() {
     setUser(null);
     toast.info("Logged out successfully!");
     if (typeof window !== "undefined") {
-      window.location.href = "/";
+      window.location.replace("/#main");
     }
   };
 
@@ -59,7 +59,7 @@ export function PublicHeader() {
         {/* Desktop Navigation */}
         {!user && (
           <nav className="hidden items-center gap-6 xl:gap-8 lg:flex">
-            <Link to="/home" className="nav-link text-sm font-bold hover:text-[#063B78] transition-colors">
+            <Link to="/" className="nav-link text-sm font-bold hover:text-[#063B78] transition-colors">
               {t("home")}
             </Link>
             <Link to="/jobs" className="nav-link text-sm font-bold hover:text-[#063B78] transition-colors">
@@ -159,7 +159,7 @@ export function PublicHeader() {
             {!user && (
               <nav className="grid gap-2">
                 <Link
-                  to="/home"
+                  to="/"
                   onClick={() => setMobileMenuOpen(false)}
                   className="flex items-center gap-3 rounded-lg px-3 py-2.5 font-bold text-[#10233F] hover:bg-[#F5F8FC]"
                 >

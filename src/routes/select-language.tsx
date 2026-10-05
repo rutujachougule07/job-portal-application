@@ -8,7 +8,7 @@ import { Check } from "lucide-react";
 
 export const Route = createFileRoute("/select-language")({
   validateSearch: z.object({
-    redirectTo: z.string().optional().catch("/home"),
+    redirectTo: z.string().optional().catch("/"),
   }),
   component: SelectLanguagePage,
 });
@@ -22,7 +22,7 @@ function SelectLanguagePage() {
 
   const handleContinue = () => {
     setLang(selectedLang);
-    navigate({ to: redirectTo || "/home" });
+    navigate({ to: redirectTo || "/" });
   };
 
   return (

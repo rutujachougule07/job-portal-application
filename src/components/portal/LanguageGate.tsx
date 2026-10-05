@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useLocation } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Building2, Check, Globe2, ShieldCheck, UserRound, Sparkles } from "lucide-react";
 import { languages, useI18n, type LanguageCode } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
@@ -17,8 +17,29 @@ export function LanguageGate() {
     }
     return false;
   });
-  const [step, setStep] = useState<"language" | "role">("language");
+  const location = useLocation();
+  const [step, setStep] = useState<"language" | "role">(() => {
+    if (typeof window !== "undefined" && window.location.hash === "#role") {
+      return "role";
+    }
+    return "language";
+  });
   const [selectedLang, setSelectedLang] = useState<LanguageCode>(lang || "mr");
+
+  useEffect(() => {
+    if (location.pathname === "/") {
+      const hash = location.hash; // TanStack Router hash (without #)
+      if (hash === "role") {
+        setOpen(true);
+        setStep("role");
+      } else if (hash === "main") {
+        setOpen(false);
+      } else if (hash === "") {
+        setOpen(true);
+        setStep("language");
+      }
+    }
+  }, [location.hash, location.pathname]);
 
   useEffect(() => {
     const handleOpen = (e: Event) => {
@@ -29,7 +50,10 @@ export function LanguageGate() {
     };
 
     window.addEventListener("karyam-open-gate", handleOpen as EventListener);
-    return () => window.removeEventListener("karyam-open-gate", handleOpen as EventListener);
+
+    return () => {
+      window.removeEventListener("karyam-open-gate", handleOpen as EventListener);
+    };
   }, []);
 
   if (!open) return null;
@@ -42,6 +66,7 @@ export function LanguageGate() {
   const proceedToRole = () => {
     setLang(selectedLang);
     setStep("role");
+    navigate({ to: "/", hash: "role" });
   };
 
   const handleSelectRole = (role: "user" | "admin") => {
@@ -52,6 +77,9 @@ export function LanguageGate() {
     }
     hasShownGateThisSession = true;
     setOpen(false);
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
 
     if (role === "admin") {
       toast.success(
@@ -59,19 +87,27 @@ export function LanguageGate() {
           ? "जॉब पोस्टर पोर्टलमध्ये आपले स्वागत आहे!"
           : "Welcome to Job Poster Portal!"
       );
-      navigate({ to: "/" });
+      navigate({ to: "/", hash: "main" });
     } else {
       toast.success(
         selectedLang === "mr"
           ? "नोकरी शोधक पोर्टलमध्ये आपले स्वागत आहे!"
           : "Welcome to Job Seeker Portal!"
       );
-      navigate({ to: "/" });
+      navigate({ to: "/", hash: "main" });
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-6 bg-[#082F63]/85 backdrop-blur-xl animate-fade-in overflow-y-auto">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-6 animate-fade-in overflow-y-auto">
+      {/* Blurred Poster Background */}
+      <div 
+        className="fixed inset-0 z-[-2] bg-cover bg-center bg-no-repeat blur-sm scale-105"
+        style={{ backgroundImage: `url('/portal-bg.png')` }}
+      />
+      {/* Color Overlay for Readability (No blue tint) */}
+      <div className="fixed inset-0 z-[-1] bg-black/40" />
+
       <div className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl border border-white/40 overflow-hidden my-auto p-6 sm:p-10 transition-all duration-300">
         
         {/* Header Branding & Progress Bar */}
@@ -219,7 +255,7 @@ export function LanguageGate() {
             <div className="flex justify-center pt-2">
               <Button
                 type="button"
-                onClick={() => setStep("language")}
+                onClick={() => window.history.back()}
                 variant="outline"
                 className="border-gray-200 text-gray-700 hover:bg-gray-100 font-extrabold text-xs rounded-xl h-10 px-4 flex items-center gap-2"
               >

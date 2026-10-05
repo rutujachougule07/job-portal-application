@@ -360,7 +360,8 @@ function SuperAdminPage() {
   const handleLogout = () => {
     setIsAuthenticated(false);
     toast.success("Superadmin logged out.");
-    navigate({ to: "/" });
+    navigate({ to: "/", hash: "main", replace: true });
+    if (typeof window !== "undefined") window.scrollTo(0, 0);
   };
 
   const stats = [

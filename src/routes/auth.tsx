@@ -199,7 +199,7 @@ function AuthPage() {
         if (role === "admin" || role === "employer") {
           navigate({ to: "/admin" });
         } else {
-          navigate({ to: "/home" });
+          navigate({ to: "/dashboard", search: { tab: "overview" }, replace: true });
         }
         setBusy(false);
         return;
@@ -273,7 +273,7 @@ function AuthPage() {
         if (isEmpOrAdmin) {
           navigate({ to: "/admin" });
         } else {
-          navigate({ to: "/home" });
+          navigate({ to: "/dashboard", search: { tab: "overview" }, replace: true });
         }
       } else {
         // Auto-register new user on first login with entered credentials
@@ -299,7 +299,7 @@ function AuthPage() {
         if (isEmpOrAdmin) {
           navigate({ to: "/admin" });
         } else {
-          navigate({ to: "/home" });
+          navigate({ to: "/dashboard", search: { tab: "overview" }, replace: true });
         }
       }
     } catch (err: any) {
@@ -338,7 +338,7 @@ function AuthPage() {
           size="sm"
           className="bg-white/85 hover:bg-white text-[#0A3B7B] font-bold text-xs rounded-full shadow-md backdrop-blur-md px-3.5 py-1.5 h-8 border border-white/70"
         >
-          <Link to="/">
+          <Link to="/" hash="main" replace={true} onClick={() => window.scrollTo(0, 0)}>
             <ArrowLeft className="mr-1 size-3.5" /> Home
           </Link>
         </Button>
