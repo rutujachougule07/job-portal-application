@@ -53,9 +53,14 @@ function UserDashboard() {
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    const currentUser = dataStore.getCurrentUser();
-    if (!currentUser) {
-      navigate({ to: "/auth", search: { mode: "login", role: "worker" } });
+    const currentUser = dataStore.getCurrentUser("worker");
+    if (!currentUser || currentUser.role === "employer" || currentUser.role === "admin") {
+      const workerUser = dataStore.getCurrentUser("worker");
+      if (workerUser && workerUser.role === "worker") {
+        setUser(workerUser);
+      } else {
+        navigate({ to: "/auth", search: { mode: "login", role: "worker" } });
+      }
     } else {
       setUser(currentUser);
     }
@@ -298,8 +303,20 @@ function UserDashboard() {
                           <td className="py-4 px-6 text-gray-600">{app.companyName}</td>
                           <td className="py-4 px-6 text-gray-500">{app.appliedDate}</td>
                           <td className="py-4 px-6">
-                            <span className="inline-flex items-center px-3 py-1 rounded-lg text-[11px] font-black bg-[#EBF3FF] text-[#125BB5]">
-                              {app.status}
+                            <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-black ${
+                              app.status === "Selected" ? "bg-emerald-50 text-emerald-800 border border-emerald-300" :
+                              app.status === "Shortlisted" ? "bg-amber-50 text-amber-800 border border-amber-300" :
+                              app.status === "Interview" ? "bg-purple-50 text-purple-800 border border-purple-300" :
+                              app.status === "Viewed" ? "bg-indigo-50 text-indigo-800 border border-indigo-200" :
+                              app.status === "Rejected" ? "bg-rose-50 text-rose-700 border border-rose-200" :
+                              "bg-[#EBF3FF] text-[#125BB5] border border-blue-100"
+                            }`}>
+                              {app.status === "Selected" && "✅ Selected / Hired"}
+                              {app.status === "Shortlisted" && "⭐ Shortlisted"}
+                              {app.status === "Interview" && "📅 Interview"}
+                              {app.status === "Viewed" && "👀 Viewed"}
+                              {app.status === "Rejected" && "❌ Rejected"}
+                              {(!app.status || app.status === "Applied") && "📝 Applied"}
                             </span>
                           </td>
                           <td className="py-4 px-4 text-right">
@@ -330,29 +347,63 @@ function UserDashboard() {
 
       {activeTab === "applied" && (
         <div className="space-y-6 animate-in fade-in duration-500">
-          <h2 className="text-3xl font-black text-[#10233F]">Applied Jobs History</h2>
-          <div className="bg-white rounded-2xl shadow-sm border border-[#DCE5F0] p-6 sm:p-8">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl sm:text-3xl font-black text-[#10233F]">Applied Jobs History</h2>
+            <span className="text-xs sm:text-sm font-bold text-[#5B6B7F] bg-white px-3 py-1 rounded-full border border-[#DCE5F0]">
+              Total Applications: {applications.length}
+            </span>
+          </div>
+
+          <div className="bg-white rounded-3xl shadow-sm border border-[#DCE5F0] p-4 sm:p-6">
             {applications.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-[#5B6B7F] font-semibold text-lg">You haven't applied to any jobs yet.</p>
-                <Button asChild className="mt-6 bg-[#063B78] hover:bg-[#082F63] text-white">
+                <Button asChild className="mt-6 bg-[#063B78] hover:bg-[#082F63] text-white font-bold text-xs px-6 h-10 rounded-xl">
                   <Link to="/jobs">Find Jobs to Apply</Link>
                 </Button>
               </div>
             ) : (
               <div className="space-y-4">
                 {applications.map((app) => (
-                  <div key={app.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-xl border border-gray-100 bg-gray-50/30 hover:bg-white hover:border-[#B8D3F2] hover:shadow-sm transition-all">
-                      <div className="flex-1">
-                        <h4 className="font-black text-[#10233F] text-lg">{app.jobTitle}</h4>
-                        <p className="text-sm font-semibold text-[#5B6B7F] mt-1">{app.companyName} • {app.location}</p>
+                  <div key={app.id} className="p-5 rounded-2xl border border-[#DCE5F0] bg-white shadow-xs hover:border-[#125BB5] hover:shadow-md transition-all space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-black text-[#10233F] text-base sm:text-lg tracking-tight">{app.jobTitle}</h4>
+                        <p className="text-xs font-bold text-[#125BB5] mt-0.5">{app.companyName} • {app.location}</p>
+                        {app.salary && <p className="text-xs font-semibold text-gray-500 mt-0.5">Salary: {app.salary}</p>}
                       </div>
-                      <div className="shrink-0 flex flex-col sm:items-end gap-2">
-                        <span className="inline-block px-3 py-1.5 rounded-lg text-xs font-black bg-[#EBF1F8] text-[#063B78] border border-[#B8D3F2]">
-                          Status: {app.status}
+                      <div className="shrink-0 flex flex-col sm:items-end gap-1.5">
+                        <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-black ${
+                          app.status === "Selected" ? "bg-emerald-50 text-emerald-800 border border-emerald-300" :
+                          app.status === "Shortlisted" ? "bg-amber-50 text-amber-800 border border-amber-300" :
+                          app.status === "Interview" ? "bg-purple-50 text-purple-800 border border-purple-300" :
+                          app.status === "Viewed" ? "bg-indigo-50 text-indigo-800 border border-indigo-200" :
+                          app.status === "Rejected" ? "bg-rose-50 text-rose-700 border border-rose-200" :
+                          "bg-[#EBF3FF] text-[#125BB5] border border-blue-100"
+                        }`}>
+                          {app.status === "Selected" && "✅ Selected / Hired"}
+                          {app.status === "Shortlisted" && "⭐ Shortlisted"}
+                          {app.status === "Interview" && "📅 Interview Scheduled"}
+                          {app.status === "Viewed" && "👀 Viewed by HR"}
+                          {app.status === "Rejected" && "❌ Application Closed"}
+                          {(!app.status || app.status === "Applied") && "📝 Applied"}
                         </span>
-                        <p className="text-xs font-semibold text-gray-500">Applied on {app.appliedDate}</p>
+                        <p className="text-[11px] font-semibold text-gray-500">Applied on {app.appliedDate}</p>
                       </div>
+                    </div>
+
+                    {/* Employer / Admin Reply Message Box */}
+                    {app.replyMessage && (
+                      <div className="bg-[#F4F8FF] border-l-4 border-[#063B78] p-3.5 rounded-r-xl mt-3 shadow-2xs">
+                        <div className="text-xs font-black text-[#063B78] flex items-center justify-between">
+                          <span>💬 Reply from Employer / Admin (कंपनीचा संदेश / रिप्लाय):</span>
+                          {app.replyDate && <span className="text-[10px] text-gray-500 font-semibold">{app.replyDate}</span>}
+                        </div>
+                        <p className="text-xs font-bold text-[#10233F] mt-1.5 whitespace-pre-wrap">
+                          "{app.replyMessage}"
+                        </p>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

@@ -18,7 +18,7 @@ import {
 
 export function UserSidebarLayout({ children, activeTab }: { children: ReactNode, activeTab: string }) {
   const navigate = useNavigate();
-  const user = dataStore.getCurrentUser();
+  const user = dataStore.getCurrentUser("worker");
   const { lang, setLang } = useI18n();
 
   if (!user) {
@@ -55,7 +55,7 @@ export function UserSidebarLayout({ children, activeTab }: { children: ReactNode
               )}
               <h2 className="font-black text-lg text-white tracking-tight">{user.fullName || user.email?.split("@")[0] || "User"}</h2>
               <p className="text-xs font-semibold text-white/70 truncate px-2">{user.email || ""}</p>
-              
+
               <div className="mt-2 inline-flex items-center gap-1.5 bg-[#FFC400]/20 border border-[#FFC400] text-[#FFC400] px-3 py-0.5 rounded-full text-[11px] font-black">
                 <BadgeCheck className="size-3.5" /> Verified User
               </div>
@@ -70,11 +70,10 @@ export function UserSidebarLayout({ children, activeTab }: { children: ReactNode
                   <Link
                     key={item.id}
                     {...(linkProps as any)}
-                    className={`relative w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200 ${
-                      isActive 
-                        ? "bg-[#0E356A] text-white shadow-md" 
+                    className={`relative w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200 ${isActive
+                        ? "bg-[#0E356A] text-white shadow-md"
                         : "text-white/70 hover:bg-white/5 hover:text-white"
-                    }`}
+                      }`}
                   >
                     {isActive && (
                       <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-[#FFC400] rounded-r-full"></span>
@@ -89,9 +88,9 @@ export function UserSidebarLayout({ children, activeTab }: { children: ReactNode
 
           {/* Sign Out Action */}
           <div className="pt-4 border-t border-white/10">
-            <button 
+            <button
               onClick={() => {
-                dataStore.logout();
+                dataStore.logout("worker");
                 navigate({ to: "/" });
               }}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-rose-400 hover:bg-rose-500/10 transition-colors"

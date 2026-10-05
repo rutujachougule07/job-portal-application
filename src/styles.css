@@ -8,10 +8,13 @@
 ::-webkit-scrollbar {
   display: none;
 }
+
 /* Hide scrollbar globally for IE, Edge and Firefox */
 * {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }
 
 /* Hide number input spin buttons globally */
@@ -20,6 +23,7 @@ input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
+
 input[type="number"] {
   -moz-appearance: textfield;
   appearance: textfield;
@@ -120,8 +124,18 @@ input[type="number"] {
     letter-spacing: -0.01em;
     min-width: 320px;
   }
-  button, a, input, select { letter-spacing: 0; }
-  ::selection { background: var(--color-yellow); color: #082F63; }
+
+  button,
+  a,
+  input,
+  select {
+    letter-spacing: 0;
+  }
+
+  ::selection {
+    background: var(--color-yellow);
+    color: #082F63;
+  }
 }
 
 @layer components {
@@ -131,32 +145,39 @@ input[type="number"] {
     color: #10233F;
     transition: all 0.2s ease;
   }
+
   .nav-link:hover {
     color: #125BB5;
   }
+
   .bg-hero-overlay {
     background: var(--hero-overlay);
   }
+
   .btn-yellow {
     background-color: #FFC400;
     color: #082F63;
     font-weight: 700;
     transition: all 0.2s ease;
   }
+
   .btn-yellow:hover {
     background-color: #FFD21F;
     box-shadow: var(--shadow-yellow);
     transform: translateY(-1px);
   }
+
   .btn-navy {
     background-color: #063B78;
     color: #FFFFFF;
     font-weight: 600;
     transition: all 0.2s ease;
   }
+
   .btn-navy:hover {
     background-color: #082F63;
   }
+
   .card-realjob {
     background-color: #FFFFFF;
     border: 1px solid #DCE5F0;
@@ -164,6 +185,7 @@ input[type="number"] {
     box-shadow: var(--shadow-card);
     transition: all 0.25s ease;
   }
+
   .card-realjob:hover {
     box-shadow: var(--shadow-card-hover);
     transform: translateY(-2px);
@@ -172,7 +194,10 @@ input[type="number"] {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+
+  *,
+  *::before,
+  *::after {
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;

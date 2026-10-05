@@ -226,18 +226,31 @@ export function ApplicationsPage() {
           filteredApps.map((a) => (
             <div
               key={a.id}
-              className="grid gap-2 border-b border-border px-5 py-4 last:border-0 sm:grid-cols-[1.4fr_1fr_0.8fr_0.8fr] sm:items-center hover:bg-secondary/30 transition-colors"
+              className="border-b border-border px-5 py-4 last:border-0 hover:bg-secondary/30 transition-colors space-y-2"
             >
-              <div>
-                <strong className="block text-sm text-[#10233F]">{a.jobTitle}</strong>
-                <span className="text-xs font-semibold text-[#125BB5]">{a.salary}</span>
+              <div className="grid gap-2 sm:grid-cols-[1.4fr_1fr_0.8fr_0.8fr] sm:items-center">
+                <div>
+                  <strong className="block text-sm text-[#10233F]">{a.jobTitle}</strong>
+                  <span className="text-xs font-semibold text-[#125BB5]">{a.salary}</span>
+                </div>
+                <div className="text-sm font-semibold text-muted-foreground">
+                  <span className="block text-[#10233F] font-bold">{a.companyName}</span>
+                  <span className="text-xs">{a.location}</span>
+                </div>
+                <div>{getStatusBadge(a.status)}</div>
+                <span className="text-xs font-bold text-muted-foreground">{a.appliedDate}</span>
               </div>
-              <div className="text-sm font-semibold text-muted-foreground">
-                <span className="block text-[#10233F] font-bold">{a.companyName}</span>
-                <span className="text-xs">{a.location}</span>
-              </div>
-              <div>{getStatusBadge(a.status)}</div>
-              <span className="text-xs font-bold text-muted-foreground">{a.appliedDate}</span>
+              {a.replyMessage && (
+                <div className="bg-[#F4F8FF] border-l-4 border-[#063B78] p-3 rounded-r-xl mt-2 text-xs">
+                  <div className="font-black text-[#063B78] flex items-center justify-between">
+                    <span>💬 Employer / Admin Response:</span>
+                    {a.replyDate && <span className="text-[10px] text-gray-500 font-semibold">{a.replyDate}</span>}
+                  </div>
+                  <p className="font-bold text-[#10233F] mt-1 whitespace-pre-wrap">
+                    "{a.replyMessage}"
+                  </p>
+                </div>
+              )}
             </div>
           ))
         )}
