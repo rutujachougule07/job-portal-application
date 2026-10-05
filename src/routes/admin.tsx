@@ -37,6 +37,8 @@ import {
   CalendarDays,
   Bell,
   LogOut,
+  ChevronDown,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,6 +53,7 @@ import {
   ApplicationRecord,
   EmployerWorker,
   DailyAttendanceRecord,
+  UserRole,
 } from "@/lib/data-store";
 import { toast } from "sonner";
 
@@ -107,7 +110,7 @@ function formatCallNumber(phone: string): string {
 function AdminDashboardPage() {
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState<"overview" | "jobs" | "applications" | "attendance">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "jobs" | "applications" | "attendance" | "profile">("overview");
 
   // Data states
   const [jobs, setJobs] = useState<JobRecord[]>([]);
@@ -151,20 +154,191 @@ function AdminDashboardPage() {
     mobile: "",
     trade: "General Worker",
     category: "Plant Nursery & Care",
+    education: "",
     dailyRate: "500",
     joiningDate: new Date().toISOString().split("T")[0]!,
+    workShiftStart: "09:00",
+    workShiftEnd: "18:00",
+    notes: "",
   });
+
+  // Dynamic Custom Fields State (With Persistence across sessions)
+  const [persistentCustomFields, setPersistentCustomFields] = useState<Array<{ label: string; value: string }>>(() => {
+    try {
+      const saved = localStorage.getItem(`emp_custom_fields_tpl_${empIdentifier}`);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [customFields, setCustomFields] = useState<Array<{ label: string; value: string }>>([]);
+  const [showAddFieldPrompt, setShowAddFieldPrompt] = useState(false);
+  const [newFieldNameInput, setNewFieldNameInput] = useState("");
+  const [removedStandardFields, setRemovedStandardFields] = useState<string[]>([]);
+
+  // Custom Departments / Categories State (Persisted across sessions)
+  const getStoredCustomCats = () => {
+    try {
+      const s1 = localStorage.getItem(`emp_custom_cats_${empIdentifier}`);
+      const s2 = localStorage.getItem("emp_custom_cats_global");
+      const set = new Set<string>();
+      if (s1) JSON.parse(s1).forEach((c: string) => set.add(c));
+      if (s2) JSON.parse(s2).forEach((c: string) => set.add(c));
+      return Array.from(set);
+    } catch {
+      return [];
+    }
+  };
+
+  const [customCategories, setCustomCategories] = useState<string[]>(getStoredCustomCats);
+  
+  // Removed Standard & Custom Categories State (Persisted)
+  const getStoredRemovedCats = () => {
+    try {
+      const s1 = localStorage.getItem(`emp_removed_cats_${empIdentifier}`);
+      const s2 = localStorage.getItem("emp_removed_cats_global");
+      const set = new Set<string>();
+      if (s1) JSON.parse(s1).forEach((c: string) => set.add(c));
+      if (s2) JSON.parse(s2).forEach((c: string) => set.add(c));
+      return Array.from(set);
+    } catch {
+      return [];
+    }
+  };
+
+  const [removedCategories, setRemovedCategories] = useState<string[]>(getStoredRemovedCats);
+  const [showOtherCategoryInput, setShowOtherCategoryInput] = useState(false);
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
+  const [newCustomCategoryInput, setNewCustomCategoryInput] = useState("");
+
+  const handleAddCustomCategory = () => {
+    const trimmed = newCustomCategoryInput.trim();
+    if (!trimmed) {
+      toast.error("Please enter department / category name");
+      return;
+    }
+    const catName = trimmed.startsWith("✨") || trimmed.startsWith("🌱") || trimmed.startsWith("🚜") || trimmed.startsWith("⚙️") ? trimmed : `✨ ${trimmed}`;
+    const updated = Array.from(new Set([...customCategories, catName]));
+    setCustomCategories(updated);
+    setRemovedCategories((prev) => prev.filter((c) => c !== catName));
+    try {
+      localStorage.setItem(`emp_custom_cats_${empIdentifier}`, JSON.stringify(updated));
+      localStorage.setItem("emp_custom_cats_global", JSON.stringify(updated));
+    } catch (e) {
+      console.error(e);
+    }
+    setWorkerForm((p) => ({ ...p, category: catName }));
+    toast.success(`Category "${catName}" added & selected!`);
+    setNewCustomCategoryInput("");
+    setShowOtherCategoryInput(false);
+  };
+
+  const handleRemoveCategory = (catToRemove: string) => {
+    if (customCategories.includes(catToRemove)) {
+      const updatedCustom = customCategories.filter((c) => c !== catToRemove);
+      setCustomCategories(updatedCustom);
+      try {
+        localStorage.setItem(`emp_custom_cats_${empIdentifier}`, JSON.stringify(updatedCustom));
+        localStorage.setItem("emp_custom_cats_global", JSON.stringify(updatedCustom));
+      } catch (e) {
+        console.error(e);
+      }
+    } else {
+      const updatedRemoved = Array.from(new Set([...removedCategories, catToRemove]));
+      setRemovedCategories(updatedRemoved);
+      try {
+        localStorage.setItem(`emp_removed_cats_${empIdentifier}`, JSON.stringify(updatedRemoved));
+        localStorage.setItem("emp_removed_cats_global", JSON.stringify(updatedRemoved));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    if (workerForm.category === catToRemove) {
+      const allPossible = [
+        "Plant Nursery & Care",
+        "Tractor & Machinery",
+        "Grafting & Propagation",
+        "Packing & Loading",
+        "Irrigation & Spraying",
+        "Soil & Fertilizer",
+        "General Labour",
+        "⚙️ Other / Custom",
+        ...customCategories,
+      ];
+      const remaining = allPossible.filter((c) => c !== catToRemove && !removedCategories.includes(c));
+      setWorkerForm((p) => ({ ...p, category: remaining[0] || "Plant Nursery & Care" }));
+    }
+    toast.info(`Category "${catToRemove}" removed`);
+  };
+
+  const savePersistentCustomFields = (fields: Array<{ label: string; value: string }>) => {
+    setPersistentCustomFields(fields);
+    try {
+      localStorage.setItem(`emp_custom_fields_tpl_${empIdentifier}`, JSON.stringify(fields.map(f => ({ label: f.label, value: "" }))));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleRemoveStandardField = (fieldKey: string) => {
+    setRemovedStandardFields((prev) => [...prev, fieldKey]);
+    toast.info("Field removed from form");
+  };
+
+  const handleRestoreStandardField = (fieldKey: string) => {
+    setRemovedStandardFields((prev) => prev.filter((k) => k !== fieldKey));
+    toast.success("Field restored to form");
+  };
+
+  const handleOpenAddFieldPrompt = () => {
+    setNewFieldNameInput("");
+    setShowAddFieldPrompt(true);
+  };
+
+  const handleConfirmAddCustomField = (presetName?: string) => {
+    const fieldName = (presetName || newFieldNameInput).trim();
+    if (!fieldName) {
+      toast.error("Please enter a field title (e.g. Aadhaar Card ID)");
+      return;
+    }
+    const updated = [...customFields, { label: fieldName, value: "" }];
+    setCustomFields(updated);
+    savePersistentCustomFields(updated);
+    toast.success(`"${fieldName}" added to form!`);
+    setNewFieldNameInput("");
+    setShowAddFieldPrompt(false);
+  };
+
+  const handleRemoveCustomField = (index: number) => {
+    const updated = customFields.filter((_, i) => i !== index);
+    setCustomFields(updated);
+    savePersistentCustomFields(updated);
+    toast.info("Custom field removed");
+  };
+
+  const handleCustomFieldChange = (index: number, key: "label" | "value", val: string) => {
+    setCustomFields((prev) => {
+      const copy = [...prev];
+      const existing = copy[index];
+      if (existing) {
+        copy[index] = { ...existing, [key]: val };
+      }
+      return copy;
+    });
+  };
 
   // Category display cleaner helper (maps legacy/Marathi category strings to clean English)
   const formatCategoryName = (cat?: string) => {
     if (!cat) return "Plant Nursery & Care";
+    if (cat.includes("Other") || cat.startsWith("✨") || cat.startsWith("⚙️")) return cat;
     if (cat.includes("Grafting") || cat.includes("कलमे")) return "Grafting & Propagation";
     if (cat.includes("Tractor") || cat.includes("ट्रॅक्टर") || cat.toLowerCase().includes("tractor")) return "Tractor & Machinery";
     if (cat.includes("Packing") || cat.includes("पॅकिंग")) return "Packing & Loading";
     if (cat.includes("Watering") || cat.includes("पाणी")) return "Irrigation & Spraying";
     if (cat.includes("Soil") || cat.includes("माती")) return "Soil & Fertilizer";
-    if (cat.includes("General") || cat.includes("इतर")) return "General Labour";
     if (cat.includes("Plant Nursery") || cat.includes("रोपवाटिका")) return "Plant Nursery & Care";
+    if (cat.includes("General")) return "General Labour";
     return cat;
   };
 
@@ -478,6 +652,48 @@ function AdminDashboardPage() {
   const isSuperAdmin = currentUser?.email?.toLowerCase() === "supera@gmail.com" || currentUser?.email?.toLowerCase() === "superadmin";
   const empIdentifier = currentUser?.fullName || currentUser?.email || "admin-001";
 
+  // Profile Edit Form state
+  const [profileForm, setProfileForm] = useState({
+    fullName: currentUser?.fullName || "",
+    contactPerson: currentUser?.fullName || "",
+    email: currentUser?.email || "",
+    mobile: currentUser?.mobile || "",
+    profilePhoto: currentUser?.profilePhoto || "",
+    location: "Maharashtra",
+    industry: "Plant Nursery & Workforce Services",
+  });
+
+  useEffect(() => {
+    if (currentUser) {
+      setProfileForm((prev) => ({
+        ...prev,
+        fullName: currentUser.fullName || prev.fullName,
+        email: currentUser.email || prev.email,
+        mobile: currentUser.mobile || prev.mobile,
+        profilePhoto: currentUser.profilePhoto || prev.profilePhoto,
+      }));
+    }
+  }, [currentUser?.email]);
+
+  const handleSaveProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!profileForm.fullName.trim()) {
+      toast.error("Please enter company or full name");
+      return;
+    }
+    const updatedUser = {
+      email: profileForm.email.trim() || currentUser?.email || "",
+      role: (currentUser?.role || "employer") as UserRole,
+      fullName: profileForm.fullName.trim(),
+      id: currentUser?.id || `usr-${Date.now()}`,
+      mobile: profileForm.mobile.trim(),
+      profilePhoto: profileForm.profilePhoto.trim(),
+    };
+    dataStore.setCurrentUser(updatedUser);
+    dataStore.registerAccount(updatedUser);
+    toast.success("🎉 Profile updated successfully!");
+  };
+
   const refreshCredits = () => {
     if (currentUser?.id) {
       setUserCredits(dataStore.getUserJobCredits(currentUser.id));
@@ -533,22 +749,42 @@ function AdminDashboardPage() {
       mobile: "",
       trade: "General Worker",
       category: "Plant Nursery & Care",
+      education: "",
       dailyRate: "500",
       joiningDate: new Date().toISOString().split("T")[0]!,
+      workShiftStart: "09:00",
+      workShiftEnd: "18:00",
+      notes: "",
     });
+    // Restore persistent custom fields & custom categories so they don't disappear when modal opens!
+    setCustomCategories(getStoredCustomCats());
+    setCustomFields(persistentCustomFields.map((f) => ({ label: f.label, value: "" })));
     setShowWorkerModal(true);
   };
 
   const handleOpenEditWorker = (w: EmployerWorker) => {
     setEditingWorkerId(w.id);
+    setCustomCategories(getStoredCustomCats());
     setWorkerForm({
       name: w.name,
       mobile: w.mobile,
       trade: w.trade,
       category: w.category || w.trade || "Plant Nursery & Care",
+      education: w.education || "",
       dailyRate: w.dailyRate.toString(),
       joiningDate: w.joiningDate || new Date().toISOString().split("T")[0]!,
+      workShiftStart: w.workShiftStart || "09:00",
+      workShiftEnd: w.workShiftEnd || "18:00",
+      notes: w.notes || "",
     });
+    const existing = w.customFields || [];
+    const merged = [...existing];
+    persistentCustomFields.forEach((tpl) => {
+      if (!merged.some((m) => m.label.toLowerCase() === tpl.label.toLowerCase())) {
+        merged.push({ label: tpl.label, value: "" });
+      }
+    });
+    setCustomFields(merged);
     setShowWorkerModal(true);
   };
 
@@ -565,9 +801,14 @@ function AdminDashboardPage() {
       mobile: workerForm.mobile.trim(),
       trade: workerForm.trade.trim() || "General Worker",
       category: workerForm.category.trim() || "Plant Nursery & Care",
+      education: workerForm.education.trim(),
       dailyRate: Number(workerForm.dailyRate) || 500,
       joiningDate: workerForm.joiningDate || new Date().toISOString().split("T")[0]!,
       status: "Active",
+      workShiftStart: workerForm.workShiftStart,
+      workShiftEnd: workerForm.workShiftEnd,
+      notes: workerForm.notes.trim(),
+      customFields: customFields.filter((f) => f.label.trim() !== ""),
     });
     setShowWorkerModal(false);
     setEditingWorkerId(null);
@@ -1023,45 +1264,48 @@ function AdminDashboardPage() {
     <div className="min-h-screen bg-[#F0F4FA] flex font-sans">
       {/* ── LEFT DARK NAVY SIDEBAR ── */}
       <aside className="w-64 bg-[#021D3D] text-white flex flex-col hidden md:flex h-screen sticky top-0 shrink-0 border-r border-white/10 overflow-y-auto">
-        {/* Logo / Portal Title */}
-        <div className="p-6 border-b border-white/10">
+        {/* Logo / Company Name Header */}
+        <div className="p-5 border-b border-white/10">
           <div className="flex items-center gap-3 text-white">
-            <div className="size-10 bg-gradient-to-br from-[#FFC400] to-[#FFA500] rounded-xl flex items-center justify-center shadow-lg border-[2px] border-white/10">
-              <ShieldCheck className="size-6 text-[#021D3D]" />
+            <div className="size-10 bg-gradient-to-br from-[#FFC400] to-[#FFA500] rounded-xl flex items-center justify-center shadow-lg border-[2px] border-white/10 shrink-0">
+              <Building2 className="size-5 text-[#021D3D]" />
             </div>
-            <div>
-              <h1 className="font-black text-lg leading-none tracking-tight">EMPLOYER PORTAL</h1>
-              <span className="text-[10px] text-[#FFC400] font-black uppercase tracking-widest">Master Control</span>
+            <div className="min-w-0 flex-1">
+              <h1 className="font-black text-sm leading-tight tracking-tight uppercase truncate text-white" title={currentUser?.fullName || "Employer Portal"}>
+                {currentUser?.fullName || "Company Portal"}
+              </h1>
+              <span className="text-[10px] text-[#FFC400] font-black uppercase tracking-widest block">Employer Portal</span>
             </div>
           </div>
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex-1 py-6 px-4 space-y-1 overflow-y-auto">
+        <div className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
           <div className="text-[10px] font-black uppercase text-[#9DAEC5] tracking-widest px-3 mb-2">Main Navigation</div>
           {[
             { id: "overview", label: "Dashboard Overview", icon: BarChart3 },
             { id: "jobs", label: "Job Listings", icon: BriefcaseBusiness, count: jobs.length },
             { id: "applications", label: "Job Applications", icon: FileText, count: applications.length },
             { id: "attendance", label: "Attendance & Payroll", icon: CalendarCheck, count: workers.length },
+            { id: "profile", label: "My Profile", icon: User },
           ].map((item) => {
             const isActive = activeTab === item.id;
             return (
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id as any)}
-                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200 ${
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 ${
                   isActive
-                    ? "bg-[#FFC400] text-[#021D3D] shadow-md shadow-[#FFC400]/20"
+                    ? "bg-[#FFC400] text-[#021D3D] shadow-md shadow-[#FFC400]/20 font-extrabold"
                     : "text-[#9DAEC5] hover:bg-white/5 hover:text-white"
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  <item.icon className={`size-4 ${isActive ? "text-[#021D3D]" : ""}`} />
-                  <span>{item.label}</span>
+                <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-1">
+                  <item.icon className={`size-4 shrink-0 ${isActive ? "text-[#021D3D]" : ""}`} />
+                  <span className="truncate text-left">{item.label}</span>
                 </div>
                 {item.count !== undefined ? (
-                  <span className={`px-2 py-0.5 text-[11px] font-black rounded-full ${
+                  <span className={`px-2 py-0.5 text-[10px] font-black rounded-full shrink-0 ${
                     isActive ? "bg-[#021D3D] text-[#FFC400]" : "bg-amber-500/20 text-amber-300 border border-amber-400/30"
                   }`}>
                     {item.count}
@@ -1070,103 +1314,6 @@ function AdminDashboardPage() {
               </button>
             );
           })}
-
-          {/* Department Categories Filter Section inside Left Sidebar */}
-          {(() => {
-            const defaultCategories = [
-              "Plant Nursery & Care",
-              "Tractor & Machinery",
-              "Grafting & Propagation",
-              "Packing & Loading",
-              "Irrigation & Spraying",
-              "Soil & Fertilizers",
-              "General Labour",
-            ];
-            const customWorkerCats = workers.map((w) => w.category || w.trade || "Plant Nursery & Care");
-            const allCategories = Array.from(new Set([...defaultCategories, ...customWorkerCats]));
-
-            const categoryCounts = new Map<string, number>();
-            workers.forEach((w) => {
-              const cat = w.category || w.trade || "Plant Nursery & Care";
-              categoryCounts.set(cat, (categoryCounts.get(cat) || 0) + 1);
-            });
-
-            return (
-              <div className="pt-6 mt-4 border-t border-white/10 space-y-1">
-                <div className="flex items-center justify-between px-3 mb-2">
-                  <span className="text-[10px] font-black uppercase text-[#FFC400] tracking-widest flex items-center gap-1.5">
-                    <Layers className="size-3.5" /> Departments
-                  </span>
-                  {selectedCategoryFilter !== "ALL" && (
-                    <button
-                      onClick={() => setSelectedCategoryFilter("ALL")}
-                      className="text-[10px] font-bold text-rose-400 hover:underline"
-                    >
-                      Reset
-                    </button>
-                  )}
-                </div>
-
-                <button
-                  onClick={() => {
-                    setSelectedCategoryFilter("ALL");
-                    if (activeTab !== "attendance") setActiveTab("attendance");
-                  }}
-                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                    selectedCategoryFilter === "ALL" && activeTab === "attendance"
-                      ? "bg-[#0A4F9E] text-white shadow-sm"
-                      : "text-[#9DAEC5] hover:bg-white/5 hover:text-white"
-                  }`}
-                >
-                  <span className="flex items-center gap-2">
-                    <span>🌐</span>
-                    <span>All Categories</span>
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-white/10 text-white">
-                    {workers.length}
-                  </span>
-                </button>
-
-                {allCategories.map((cat) => {
-                  const count = categoryCounts.get(cat) || 0;
-                  const isSelected = selectedCategoryFilter === cat && activeTab === "attendance";
-                  const cleanName = formatCategoryName(cat);
-                  let emoji = "🌱";
-                  if (cleanName.includes("Tractor")) emoji = "🚜";
-                  if (cleanName.includes("Grafting")) emoji = "✂️";
-                  if (cleanName.includes("Packing")) emoji = "📦";
-                  if (cleanName.includes("Irrigation")) emoji = "💧";
-                  if (cleanName.includes("Soil")) emoji = "🌿";
-                  if (cleanName.includes("Labour")) emoji = "🛠️";
-
-                  return (
-                    <button
-                      key={cat}
-                      onClick={() => {
-                        setSelectedCategoryFilter(cat);
-                        if (activeTab !== "attendance") setActiveTab("attendance");
-                      }}
-                      className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                        isSelected
-                          ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/30"
-                          : "text-[#9DAEC5] hover:bg-white/5 hover:text-white"
-                      }`}
-                    >
-                      <span className="flex items-center gap-2 truncate">
-                        <span>{emoji}</span>
-                        <span className="truncate">{cleanName}</span>
-                      </span>
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-black shrink-0 ${
-                        isSelected ? "bg-white text-emerald-800" : "bg-white/10 text-white"
-                      }`}>
-                        {count}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            );
-          })()}
         </div>
 
         {/* Bottom Sign Out Action */}
@@ -1190,19 +1337,20 @@ function AdminDashboardPage() {
       <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
         {/* Top Navbar Header */}
         <header className="h-20 bg-white border-b border-[#E0E8F5] flex items-center justify-between px-6 sm:px-8 sticky top-0 z-30 shadow-sm shrink-0">
-          <div className="flex items-center gap-4">
-            <h2 className="text-xl font-black text-[#063B78] capitalize">
+          <div className="flex items-center gap-4 min-w-0">
+            <h2 className="text-xl font-black text-[#063B78] whitespace-nowrap leading-tight">
               {activeTab === "overview" && "Dashboard Overview"}
               {activeTab === "jobs" && "Job Listings"}
               {activeTab === "applications" && "Job Applications"}
-              {activeTab === "attendance" && "Attendance & Payroll Register"}
+              {activeTab === "attendance" && "Attendance & Payroll"}
+              {activeTab === "profile" && "My Profile Settings"}
             </h2>
           </div>
 
-          <div className="flex items-center gap-3 sm:gap-4">
+          <div className="flex items-center gap-3 sm:gap-4 shrink-0">
             {/* Job Credits Indicator */}
             {!isSuperAdmin && (
-              <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl text-xs font-black text-amber-800">
+              <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl text-xs font-black text-amber-800 shrink-0">
                 <Zap className="size-4 fill-amber-400 text-amber-500" />
                 <span>Credits: {userCredits >= 999 ? "Unlimited" : userCredits}</span>
                 <button
@@ -1220,21 +1368,18 @@ function AdminDashboardPage() {
               <input
                 type="text"
                 placeholder="Global search..."
-                className="w-48 lg:w-64 h-10 pl-10 pr-4 rounded-full bg-[#F8FAFF] border border-[#DCE5F0] text-sm font-semibold focus:ring-2 focus:ring-[#FFC400]/50 focus:border-[#FFC400] outline-none transition-all text-[#063B78]"
+                className="w-44 lg:w-56 h-10 pl-10 pr-4 rounded-full bg-[#F8FAFF] border border-[#DCE5F0] text-sm font-semibold focus:ring-2 focus:ring-[#FFC400]/50 focus:border-[#FFC400] outline-none transition-all text-[#063B78]"
               />
             </div>
 
             {/* Notification Bell */}
-            <div className="size-10 bg-[#F8FAFF] border border-[#DCE5F0] rounded-full flex items-center justify-center relative cursor-pointer hover:bg-gray-100 transition-colors">
+            <div className="size-10 bg-[#F8FAFF] border border-[#DCE5F0] rounded-full flex items-center justify-center relative cursor-pointer hover:bg-gray-100 transition-colors shrink-0">
               <Bell className="size-5 text-[#5B6B7F]" />
               <span className="absolute top-2 right-2 size-2 bg-[#FFC400] rounded-full border border-white"></span>
             </div>
 
-            {/* Language Switcher */}
-            <LanguageSwitcher />
-
             {/* Employer Profile Pill */}
-            <div className="flex items-center gap-3 pl-3 sm:pl-4 border-l border-[#E0E8F5]">
+            <div className="flex items-center gap-3 pl-3 sm:pl-4 border-l border-[#E0E8F5] shrink-0">
               <div className="text-right hidden sm:block">
                 <div className="text-sm font-bold text-[#063B78]">{currentUser?.fullName || "Employer Account"}</div>
                 <div className="text-[10px] font-bold text-amber-600 flex items-center justify-end gap-1">
@@ -1691,11 +1836,13 @@ function AdminDashboardPage() {
                 "Grafting & Propagation",
                 "Packing & Loading",
                 "Irrigation & Spraying",
-                "Soil & Fertilizers",
+                "Soil & Fertilizer",
                 "General Labour",
+                "⚙️ Other / Custom",
               ];
               const customWorkerCats = workers.map((w) => w.category || w.trade || "Plant Nursery & Care");
-              const allCategories = Array.from(new Set([...defaultCategories, ...customWorkerCats]));
+              const allCategories = Array.from(new Set([...defaultCategories, ...customCategories, ...customWorkerCats]))
+                .filter((c) => !removedCategories.includes(c) || customWorkerCats.includes(c));
 
               const categoryCounts = new Map<string, number>();
               workers.forEach((w) => {
@@ -1704,104 +1851,51 @@ function AdminDashboardPage() {
               });
 
               return (
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
-                  {/* LEFT SIDEBAR: Department Categories */}
-                  <div className="lg:col-span-1 bg-white rounded-2xl border border-[#DCE5F0] p-4 shadow-sm space-y-4 lg:sticky lg:top-24">
-                    <div className="flex items-center justify-between pb-3 border-b border-[#EBF1F8]">
-                      <h3 className="text-xs font-black text-[#063B78] uppercase tracking-wider flex items-center gap-2">
-                        <Layers className="size-4 text-[#063B78]" />
-                        <span>Departments</span>
-                      </h3>
-                      {selectedCategoryFilter !== "ALL" && (
+                <div className="space-y-6 w-full">
+                  {/* Attendance Sub-View Navigation Tabs + Department Dropdown Filter */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-[#DCE5F0] shadow-sm">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {[
+                        { id: "daily", label: "📋 Daily Attendance", icon: CalendarCheck },
+                        { id: "reports", label: "📊 Weekly & Monthly Reports", icon: PieChart },
+                        { id: "directory", label: `👥 Employee Directory (${workers.length})`, icon: Users },
+                      ].map((tab) => (
                         <button
-                          onClick={() => setSelectedCategoryFilter("ALL")}
-                          className="text-[10px] font-bold text-rose-600 hover:underline"
+                          key={tab.id}
+                          onClick={() => setAttendanceSubView(tab.id as any)}
+                          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-xs transition-all ${
+                            attendanceSubView === tab.id
+                              ? "bg-[#063B78] text-white shadow-md shadow-[#063B78]/20"
+                              : "bg-[#F8FAFF] text-[#5B6B7F] border border-[#DCE5F0] hover:bg-[#EBF1F8] hover:text-[#063B78]"
+                          }`}
                         >
-                          ✕ Reset
+                          <tab.icon className="size-4 shrink-0" />
+                          <span>{tab.label}</span>
                         </button>
-                      )}
+                      ))}
                     </div>
 
-                    <div className="space-y-1.5">
-                      <button
-                        onClick={() => setSelectedCategoryFilter("ALL")}
-                        className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-extrabold transition-all ${
-                          selectedCategoryFilter === "ALL"
-                            ? "bg-[#063B78] text-white shadow-md shadow-[#063B78]/20"
-                            : "text-[#5B6B7F] hover:bg-[#F0F5FF] hover:text-[#063B78]"
-                        }`}
-                      >
-                        <span className="flex items-center gap-2">
-                          <span>🌐</span>
-                          <span>All Categories</span>
-                        </span>
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
-                          selectedCategoryFilter === "ALL" ? "bg-white text-[#063B78]" : "bg-slate-100 text-slate-700"
-                        }`}>
-                          {workers.length}
-                        </span>
-                      </button>
-
-                      {allCategories.map((cat) => {
-                        const count = categoryCounts.get(cat) || 0;
-                        const isSelected = selectedCategoryFilter === cat;
-                        const cleanName = formatCategoryName(cat);
-                        let emoji = "🌱";
-                        if (cleanName.includes("Tractor")) emoji = "🚜";
-                        if (cleanName.includes("Grafting")) emoji = "✂️";
-                        if (cleanName.includes("Packing")) emoji = "📦";
-                        if (cleanName.includes("Irrigation")) emoji = "💧";
-                        if (cleanName.includes("Soil")) emoji = "🌿";
-                        if (cleanName.includes("Labour")) emoji = "🛠️";
-
-                        return (
-                          <button
-                            key={cat}
-                            onClick={() => setSelectedCategoryFilter(cat)}
-                            className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-extrabold transition-all ${
-                              isSelected
-                                ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20"
-                                : "text-[#334155] hover:bg-emerald-50/80 hover:text-emerald-800"
-                            }`}
-                          >
-                            <span className="flex items-center gap-2 truncate">
-                              <span>{emoji}</span>
-                              <span className="truncate">{cleanName}</span>
-                            </span>
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black shrink-0 ${
-                              isSelected ? "bg-white text-emerald-800" : "bg-slate-100 text-slate-700"
-                            }`}>
-                              {count}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* RIGHT MAIN CONTENT AREA */}
-                  <div className="lg:col-span-3 space-y-6">
-                    {/* Attendance Sub-View Navigation Tabs */}
-                    <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-2.5 rounded-2xl border border-[#DCE5F0] shadow-sm">
-                      <div className="flex flex-wrap items-center gap-2">
-                        {[
-                          { id: "daily", label: "📋 Daily Attendance", icon: CalendarCheck },
-                          { id: "reports", label: "📊 Weekly & Monthly Reports", icon: PieChart },
-                          { id: "directory", label: `👥 Employee Directory (${workers.length})`, icon: Users },
-                        ].map((tab) => (
-                          <button
-                            key={tab.id}
-                            onClick={() => setAttendanceSubView(tab.id as any)}
-                            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-xs transition-all ${
-                              attendanceSubView === tab.id
-                                ? "bg-[#063B78] text-white shadow-md shadow-[#063B78]/20"
-                                : "bg-[#F8FAFF] text-[#5B6B7F] border border-[#DCE5F0] hover:bg-[#EBF1F8] hover:text-[#063B78]"
-                            }`}
-                          >
-                            <tab.icon className="size-4 shrink-0" />
-                            <span>{tab.label}</span>
-                          </button>
-                        ))}
+                    <div className="flex flex-wrap items-center gap-3">
+                      {/* Department Filter Dropdown Selector */}
+                      <div className="flex items-center gap-2 bg-[#F8FAFF] px-3.5 py-2 rounded-xl border border-[#DCE5F0]">
+                        <Layers className="size-4 text-[#063B78] shrink-0" />
+                        <span className="text-xs font-black text-[#063B78] whitespace-nowrap">Department:</span>
+                        <select
+                          value={selectedCategoryFilter}
+                          onChange={(e) => setSelectedCategoryFilter(e.target.value)}
+                          className="bg-transparent font-bold text-xs text-[#10233F] focus:outline-none cursor-pointer outline-none"
+                        >
+                          <option value="ALL">🌐 All Categories ({workers.length})</option>
+                          {allCategories.map((cat) => {
+                            const count = categoryCounts.get(cat) || 0;
+                            const cleanName = formatCategoryName(cat);
+                            return (
+                              <option key={cat} value={cat}>
+                                {cleanName} ({count})
+                              </option>
+                            );
+                          })}
+                        </select>
                       </div>
 
                       {attendanceSubView === "reports" && (
@@ -1809,13 +1903,14 @@ function AdminDashboardPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => window.print()}
-                          className="text-xs font-black border-[#063B78] text-[#063B78] hover:bg-blue-50 flex items-center gap-1.5"
+                          className="text-xs font-black border-[#063B78] text-[#063B78] hover:bg-blue-50 flex items-center gap-1.5 h-9"
                         >
                           <Printer className="size-4" />
-                          <span>Print / Export Report</span>
+                          <span>Print / Export</span>
                         </Button>
                       )}
                     </div>
+                  </div>
 
             {/* VIEW 1: DAILY ATTENDANCE SHEET */}
             {attendanceSubView === "daily" && (
@@ -1855,53 +1950,53 @@ function AdminDashboardPage() {
                   });
 
                   return (
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                      <div className="p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between">
-                        <div>
-                          <p className="text-xs font-extrabold text-[#5B6B7F]">Department Employees</p>
-                          <h4 className="text-2xl font-black text-[#10233F] mt-1">{filteredByCat.length}</h4>
+                    <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
+                      <div className="p-3.5 sm:p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[11px] sm:text-xs font-bold text-[#5B6B7F] truncate" title="Total Employees">Total Employees</p>
+                          <h4 className="text-xl sm:text-2xl font-black text-[#10233F] mt-0.5">{filteredByCat.length}</h4>
                         </div>
-                        <div className="p-3 bg-blue-50 text-[#063B78] rounded-xl">
+                        <div className="p-2.5 bg-blue-50 text-[#063B78] rounded-xl shrink-0">
                           <Users className="size-5" />
                         </div>
                       </div>
 
-                      <div className="p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between">
-                        <div>
-                          <p className="text-xs font-extrabold text-emerald-700">Present Today</p>
-                          <h4 className="text-2xl font-black text-emerald-600 mt-1">{pCount}</h4>
+                      <div className="p-3.5 sm:p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[11px] sm:text-xs font-bold text-emerald-700 truncate" title="Present Today">Present Today</p>
+                          <h4 className="text-xl sm:text-2xl font-black text-emerald-600 mt-0.5">{pCount}</h4>
                         </div>
-                        <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+                        <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl shrink-0">
                           <UserCheck className="size-5" />
                         </div>
                       </div>
 
-                      <div className="p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between">
-                        <div>
-                          <p className="text-xs font-extrabold text-amber-700">Half Day Today</p>
-                          <h4 className="text-2xl font-black text-amber-600 mt-1">{hCount}</h4>
+                      <div className="p-3.5 sm:p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[11px] sm:text-xs font-bold text-amber-700 truncate" title="Half Day Today">Half Day Today</p>
+                          <h4 className="text-xl sm:text-2xl font-black text-amber-600 mt-0.5">{hCount}</h4>
                         </div>
-                        <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
+                        <div className="p-2.5 bg-amber-50 text-amber-600 rounded-xl shrink-0">
                           <Clock className="size-5" />
                         </div>
                       </div>
 
-                      <div className="p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between">
-                        <div>
-                          <p className="text-xs font-extrabold text-rose-700">Absent Today</p>
-                          <h4 className="text-2xl font-black text-rose-600 mt-1">{aCount}</h4>
+                      <div className="p-3.5 sm:p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[11px] sm:text-xs font-bold text-rose-700 truncate" title="Absent Today">Absent Today</p>
+                          <h4 className="text-xl sm:text-2xl font-black text-rose-600 mt-0.5">{aCount}</h4>
                         </div>
-                        <div className="p-3 bg-rose-50 text-rose-600 rounded-xl">
+                        <div className="p-2.5 bg-rose-50 text-rose-600 rounded-xl shrink-0">
                           <UserX className="size-5" />
                         </div>
                       </div>
 
-                      <div className="p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between">
-                        <div>
-                          <p className="text-xs font-extrabold text-[#063B78]">Today's Payable Wages</p>
-                          <h4 className="text-xl font-black text-[#063B78] mt-1">₹{todayWageSum.toLocaleString("en-IN")}</h4>
+                      <div className="p-3.5 sm:p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[11px] sm:text-xs font-bold text-[#063B78] truncate" title="Today's Payable Wages">Payable Wages</p>
+                          <h4 className="text-lg sm:text-xl font-black text-[#063B78] mt-0.5">₹{todayWageSum.toLocaleString("en-IN")}</h4>
                         </div>
-                        <div className="p-3 bg-indigo-50 text-[#063B78] rounded-xl">
+                        <div className="p-2.5 bg-indigo-50 text-[#063B78] rounded-xl shrink-0">
                           <DollarSign className="size-5" />
                         </div>
                       </div>
@@ -1909,12 +2004,12 @@ function AdminDashboardPage() {
                   );
                 })()}
 
-                {/* Date Selector & Search */}
-                <div className="rounded-2xl border border-[#DCE5F0] bg-white p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <div className="flex items-center gap-2 bg-[#F0F4FA] px-3.5 py-2 rounded-xl border border-[#DCE5F0]">
-                      <Calendar className="size-4 text-[#063B78]" />
-                      <span className="text-xs font-extrabold text-[#10233F]">Select Date:</span>
+                {/* Date Selector & Search Bar */}
+                <div className="rounded-2xl border border-[#DCE5F0] bg-white p-4 sm:p-5 shadow-sm flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                    <div className="flex items-center gap-2 bg-[#F8FAFF] px-3 py-1.5 rounded-xl border border-[#DCE5F0]">
+                      <Calendar className="size-4 text-[#063B78] shrink-0" />
+                      <span className="text-xs font-extrabold text-[#10233F] whitespace-nowrap">Select Date:</span>
                       <input
                         type="date"
                         value={selectedAttendanceDate}
@@ -1927,7 +2022,7 @@ function AdminDashboardPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => setSelectedAttendanceDate(new Date().toISOString().split("T")[0]!)}
-                      className={`text-xs font-extrabold rounded-xl border-[#DCE5F0] ${
+                      className={`h-9 text-xs font-extrabold rounded-xl border-[#DCE5F0] shrink-0 ${
                         selectedAttendanceDate === new Date().toISOString().split("T")[0]!
                           ? "bg-[#063B78] text-white hover:bg-[#063B78]"
                           : "bg-white text-[#5B6B7F]"
@@ -1944,7 +2039,7 @@ function AdminDashboardPage() {
                         d.setDate(d.getDate() - 1);
                         setSelectedAttendanceDate(d.toISOString().split("T")[0]!);
                       }}
-                      className={`text-xs font-extrabold rounded-xl border-[#DCE5F0] ${
+                      className={`h-9 text-xs font-extrabold rounded-xl border-[#DCE5F0] shrink-0 ${
                         selectedAttendanceDate ===
                         new Date(Date.now() - 86400000).toISOString().split("T")[0]!
                           ? "bg-[#063B78] text-white hover:bg-[#063B78]"
@@ -1955,13 +2050,13 @@ function AdminDashboardPage() {
                     </Button>
                   </div>
 
-                  <div className="relative w-full md:w-72">
-                    <Search className="absolute left-3.5 top-2.5 size-4 text-[#A0AEC0]" />
+                  <div className="relative w-full sm:w-72 shrink-0">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#A0AEC0]" />
                     <Input
                       placeholder="Search employee name or role..."
                       value={workerSearch}
                       onChange={(e) => setWorkerSearch(e.target.value)}
-                      className="pl-9 text-xs font-semibold h-10 rounded-xl border-[#DCE5F0]"
+                      className="pl-9 h-9 text-xs font-semibold rounded-xl border-[#DCE5F0]"
                     />
                   </div>
                 </div>
@@ -2457,7 +2552,24 @@ function AdminDashboardPage() {
                       ) : (
                         workers.map((w) => (
                           <tr key={w.id} className="hover:bg-[#F8FAFF]">
-                            <td className="p-4 font-black text-[#10233F]">{w.name}</td>
+                            <td className="p-4">
+                              <div className="font-black text-[#10233F]">{w.name}</div>
+                              {(w.workShiftStart || w.workShiftEnd) && (
+                                <div className="text-[10px] text-[#063B78] font-bold mt-0.5 flex items-center gap-1">
+                                  <Clock className="size-3 text-[#063B78]" />
+                                  <span>Shift: {w.workShiftStart || "09:00"} - {w.workShiftEnd || "18:00"}</span>
+                                </div>
+                              )}
+                              {w.customFields && w.customFields.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {w.customFields.map((cf, i) => (
+                                    <span key={i} className="text-[9px] font-black bg-blue-50 text-[#063B78] border border-blue-200 px-1.5 py-0.5 rounded">
+                                      {cf.label}: {cf.value}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </td>
                             <td className="p-4">
                               <Badge className="bg-emerald-50 text-emerald-800 border border-emerald-200 font-extrabold text-[11px]">
                                 {formatCategoryName(w.category || w.trade)}
@@ -2504,19 +2616,146 @@ function AdminDashboardPage() {
                 </div>
               </div>
             )}
-                  </div>
                 </div>
               );
             })()}
           </div>
         )}
+
+        {/* TAB 5: MY PROFILE */}
+        {activeTab === "profile" && (
+          <div className="max-w-4xl mx-auto space-y-6">
+            <div className="bg-white rounded-2xl border border-[#DCE5F0] p-6 sm:p-8 shadow-sm">
+              <div className="flex items-center justify-between pb-5 border-b border-[#EBF1F8] mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-[#F0F4FA] rounded-xl text-[#063B78]">
+                    <User className="size-6 text-[#063B78]" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black text-[#10233F]">Employer Profile Settings</h2>
+                    <p className="text-xs font-semibold text-[#5B6B7F]">Update your organization details, contact person, and profile photo</p>
+                  </div>
+                </div>
+                <Badge className="bg-emerald-600 text-white font-bold text-xs px-3 py-1">
+                  ✓ Verified Employer
+                </Badge>
+              </div>
+
+              <form onSubmit={handleSaveProfile} className="space-y-6">
+                {/* Profile Photo Avatar Section */}
+                <div className="flex flex-col sm:flex-row items-center gap-6 p-5 rounded-2xl bg-[#F8FAFF] border border-[#E0E8F5]">
+                  <div className="relative shrink-0">
+                    {profileForm.profilePhoto ? (
+                      <img
+                        src={profileForm.profilePhoto}
+                        alt="Profile Avatar"
+                        className="size-24 rounded-full object-cover shadow-md ring-4 ring-white border-2 border-[#063B78]"
+                      />
+                    ) : (
+                      <div className="size-24 rounded-full bg-gradient-to-br from-[#063B78] to-[#125BB5] text-white font-black text-3xl flex items-center justify-center shadow-md ring-4 ring-white border-2 border-white">
+                        {(profileForm.fullName || "E").charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 space-y-2 w-full text-center sm:text-left">
+                    <h3 className="text-sm font-black text-[#10233F]">Profile Picture / Logo URL</h3>
+                    <p className="text-xs text-[#5B6B7F]">Provide a valid photo or logo image URL</p>
+                    <Input
+                      type="url"
+                      placeholder="https://example.com/logo.jpg"
+                      value={profileForm.profilePhoto}
+                      onChange={(e) => setProfileForm({ ...profileForm, profilePhoto: e.target.value })}
+                      className="text-xs font-semibold"
+                    />
+                  </div>
+                </div>
+
+                {/* Form Fields Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div>
+                    <label className="block text-xs font-bold text-[#5B6B7F] mb-1.5">Company / Organization Name *</label>
+                    <Input
+                      required
+                      value={profileForm.fullName}
+                      onChange={(e) => setProfileForm({ ...profileForm, fullName: e.target.value })}
+                      placeholder="e.g. Vikas Ropvatika & Nursery"
+                      className="text-xs font-semibold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-[#5B6B7F] mb-1.5">Contact Person Name</label>
+                    <Input
+                      value={profileForm.contactPerson}
+                      onChange={(e) => setProfileForm({ ...profileForm, contactPerson: e.target.value })}
+                      placeholder="e.g. Vikas Patil"
+                      className="text-xs font-semibold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-[#5B6B7F] mb-1.5">Email Address *</label>
+                    <Input
+                      required
+                      type="email"
+                      value={profileForm.email}
+                      onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
+                      placeholder="e.g. ropvatika@gmail.com"
+                      className="text-xs font-semibold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-[#5B6B7F] mb-1.5">Mobile / Phone Number *</label>
+                    <Input
+                      required
+                      value={profileForm.mobile}
+                      onChange={(e) => setProfileForm({ ...profileForm, mobile: e.target.value })}
+                      placeholder="e.g. 9822011223"
+                      className="text-xs font-semibold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-[#5B6B7F] mb-1.5">Location / Address</label>
+                    <Input
+                      value={profileForm.location}
+                      onChange={(e) => setProfileForm({ ...profileForm, location: e.target.value })}
+                      placeholder="e.g. Pune, Maharashtra"
+                      className="text-xs font-semibold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-[#5B6B7F] mb-1.5">Business Industry / Sector</label>
+                    <Input
+                      value={profileForm.industry}
+                      onChange={(e) => setProfileForm({ ...profileForm, industry: e.target.value })}
+                      placeholder="e.g. Plant Nursery & Agricultural Services"
+                      className="text-xs font-semibold"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#EBF1F8]">
+                  <Button
+                    type="submit"
+                    className="px-6 py-2.5 rounded-xl bg-[#063B78] hover:bg-[#0A4F9E] text-white font-black text-xs shadow-md flex items-center gap-2"
+                  >
+                    <CheckCircle2 className="size-4" /> Save Profile Details
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </main>
     </div>
 
-      {/* ── ADD / EDIT WORKER MODAL WITH ROPVATIKA CATEGORIES ── */}
+      {/* ── ADD / EDIT WORKER MODAL WITH CUSTOM FIELDS GENERATOR ── */}
       {showWorkerModal && (
         <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white w-full max-w-lg rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-100 relative max-h-[90vh] overflow-y-auto">
+          <div className="bg-white w-full max-w-xl rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-100 relative max-h-[92vh] overflow-y-auto">
             <button
               onClick={() => setShowWorkerModal(false)}
               className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 font-extrabold text-xl p-2 rounded-full hover:bg-slate-100"
@@ -2524,21 +2763,79 @@ function AdminDashboardPage() {
               ✕
             </button>
 
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-3 rounded-2xl bg-emerald-50 text-emerald-700">
-                <UserPlus className="size-6 text-emerald-600" />
+            {/* Modal Header & TOP + Add Custom Field Button */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-4 border-b border-slate-100 pr-8">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-2xl bg-emerald-50 text-emerald-700 shrink-0">
+                  <UserPlus className="size-6 text-emerald-600" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-[#10233F]">
+                    {editingWorkerId ? "Edit Employee Information" : "Add New Employee"}
+                  </h3>
+                  <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                    Enter employee details, designation, shift timings & custom fields.
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-xl font-black text-[#10233F]">
-                  {editingWorkerId ? "Edit Employee Information" : "Add New Employee"}
-                </h3>
-                <p className="text-xs text-slate-500 font-semibold mt-0.5">
-                  Enter employee details, select department, and assign custom daily wage rate.
-                </p>
-              </div>
+
+              {/* TOP + ADD CUSTOM FIELD BUTTON */}
+              <button
+                type="button"
+                onClick={handleOpenAddFieldPrompt}
+                className="px-3.5 py-2.5 rounded-xl bg-[#063B78] hover:bg-[#0A4F9E] text-white font-extrabold text-xs transition-all flex items-center gap-1.5 shadow-md shrink-0 self-start sm:self-auto"
+              >
+                <Plus className="size-4" /> Add Custom Field
+              </button>
             </div>
 
             <form onSubmit={handleSaveWorker} className="space-y-4">
+              {/* Optional Restore Removed Fields Bar */}
+              {removedStandardFields.length > 0 && (
+                <div className="flex items-center gap-1.5 flex-wrap p-2.5 bg-amber-50/80 rounded-2xl border border-amber-200/80 mb-2">
+                  <span className="text-[11px] font-extrabold text-amber-800 uppercase tracking-wide mr-1">
+                    Restore Hidden Fields:
+                  </span>
+                  {removedStandardFields.includes("trade") && (
+                    <button
+                      type="button"
+                      onClick={() => handleRestoreStandardField("trade")}
+                      className="px-2.5 py-1 bg-white hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 font-bold text-xs rounded-lg border border-slate-200 shadow-2xs transition-all"
+                    >
+                      + Role / Designation
+                    </button>
+                  )}
+                  {removedStandardFields.includes("mobile") && (
+                    <button
+                      type="button"
+                      onClick={() => handleRestoreStandardField("mobile")}
+                      className="px-2.5 py-1 bg-white hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 font-bold text-xs rounded-lg border border-slate-200 shadow-2xs transition-all"
+                    >
+                      + Mobile Number
+                    </button>
+                  )}
+                  {removedStandardFields.includes("joiningDate") && (
+                    <button
+                      type="button"
+                      onClick={() => handleRestoreStandardField("joiningDate")}
+                      className="px-2.5 py-1 bg-white hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 font-bold text-xs rounded-lg border border-slate-200 shadow-2xs transition-all"
+                    >
+                      + Joining Date
+                    </button>
+                  )}
+                  {removedStandardFields.includes("shiftTimes") && (
+                    <button
+                      type="button"
+                      onClick={() => handleRestoreStandardField("shiftTimes")}
+                      className="px-2.5 py-1 bg-white hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 font-bold text-xs rounded-lg border border-slate-200 shadow-2xs transition-all"
+                    >
+                      + Work Shift Times
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* 1. EMPLOYEE NAME */}
               <div>
                 <Label className="text-xs font-extrabold text-slate-700 uppercase mb-1 block">
                   Employee Name *
@@ -2552,51 +2849,185 @@ function AdminDashboardPage() {
                 />
               </div>
 
+              {/* 2. DEPARTMENT / CATEGORY */}
               <div>
-                <Label className="text-xs font-extrabold text-slate-700 uppercase mb-1 block">
-                  Department / Category *
-                </Label>
-                <select
-                  value={workerForm.category}
-                  onChange={(e) => setWorkerForm((p) => ({ ...p, category: e.target.value }))}
-                  className="w-full h-11 px-3 rounded-xl text-xs font-bold border border-slate-300 bg-white text-[#10233F] focus:outline-none focus:ring-2 focus:ring-[#063B78]"
-                >
-                  <option value="Plant Nursery & Care">🌱 Plant Nursery & Care</option>
-                  <option value="Tractor & Machinery">🚜 Tractor & Machinery</option>
-                  <option value="Grafting & Propagation">✂️ Grafting & Propagation</option>
-                  <option value="Packing & Loading">📦 Packing & Loading</option>
-                  <option value="Irrigation & Spraying">💧 Irrigation & Spraying</option>
-                  <option value="Soil & Fertilizer">🌿 Soil & Fertilizer</option>
-                  <option value="General Labour">🛠️ General Labour</option>
-                </select>
+                <div className="flex items-center justify-between mb-1">
+                  <Label className="text-xs font-extrabold text-slate-700 uppercase block">
+                    Department / Category *
+                  </Label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsCategoryDropdownOpen(true);
+                      setShowOtherCategoryInput(true);
+                    }}
+                    className="text-[#063B78] hover:underline text-[11px] font-bold flex items-center gap-1"
+                  >
+                    <Plus className="size-3" /> Add Custom Category
+                  </button>
+                </div>
+
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIsCategoryDropdownOpen((prev) => !prev)}
+                    className="w-full h-11 px-3 rounded-xl text-xs font-bold border border-slate-300 bg-white text-[#10233F] flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-[#063B78] shadow-xs"
+                  >
+                    <span className="truncate">{workerForm.category || "Select Category"}</span>
+                    <ChevronDown className={`size-4 text-slate-400 transition-transform duration-200 ${isCategoryDropdownOpen ? "rotate-180" : ""}`} />
+                  </button>
+
+                  {/* Dropdown Menu Popup with ✕ delete buttons directly on custom category options! */}
+                  {isCategoryDropdownOpen && (
+                    <div className="absolute left-0 right-0 top-12 z-50 bg-white border border-slate-200 rounded-2xl shadow-xl max-h-72 overflow-y-auto p-1.5 space-y-0.5 animate-fade-in">
+                      {[
+                        "Plant Nursery & Care",
+                        "Tractor & Machinery",
+                        "Grafting & Propagation",
+                        "Packing & Loading",
+                        "Irrigation & Spraying",
+                        "Soil & Fertilizer",
+                        "General Labour",
+                        ...customCategories,
+                        "⚙️ Other / Custom",
+                      ]
+                        .filter((catName) => !removedCategories.includes(catName))
+                        .map((catName) => {
+                          const isSelected = workerForm.category === catName;
+                          return (
+                            <div
+                              key={catName}
+                              onClick={() => {
+                                setWorkerForm((p) => ({ ...p, category: catName }));
+                                setIsCategoryDropdownOpen(false);
+                                setShowOtherCategoryInput(false);
+                              }}
+                              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-colors ${
+                                isSelected ? "bg-[#063B78] text-white" : "hover:bg-slate-100 text-[#10233F]"
+                              }`}
+                            >
+                              <span className="truncate">{catName}</span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRemoveCategory(catName);
+                                }}
+                                className={`p-1 rounded-lg hover:bg-red-500 hover:text-white transition-colors ml-2 shrink-0 ${
+                                  isSelected ? "text-white/80 hover:text-white" : "text-slate-400 hover:text-red-600"
+                                }`}
+                                title={`Remove category "${catName}"`}
+                              >
+                                <X className="size-3.5" />
+                              </button>
+                            </div>
+                          );
+                        })}
+
+                      {/* Textbox inside the dropdown when adding a new custom category */}
+                      {showOtherCategoryInput ? (
+                        <div
+                          onClick={(e) => e.stopPropagation()}
+                          className="p-2 bg-blue-50/90 rounded-xl border border-blue-200 mt-1 flex items-center gap-1.5 animate-fade-in"
+                        >
+                          <Input
+                            autoFocus
+                            placeholder="Type new category..."
+                            value={newCustomCategoryInput}
+                            onChange={(e) => setNewCustomCategoryInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                handleAddCustomCategory();
+                              }
+                            }}
+                            className="h-9 text-xs font-bold bg-white border-blue-300 focus:border-[#063B78]"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleAddCustomCategory}
+                            className="px-3 py-2 rounded-lg bg-[#063B78] hover:bg-[#0A4F9E] text-white font-extrabold text-xs shrink-0 shadow-xs"
+                          >
+                            + Add
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setShowOtherCategoryInput(false)}
+                            className="p-1 text-slate-400 hover:text-slate-700 text-xs font-bold shrink-0"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowOtherCategoryInput(true);
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-black text-[#063B78] hover:bg-blue-50 transition-colors border-t border-slate-100 mt-1"
+                        >
+                          <Plus className="size-3.5" />
+                          <span>➕ Add New Custom Category...</span>
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
 
+              {/* 3. ROLE / DESIGNATION & MOBILE */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-xs font-extrabold text-slate-700 uppercase mb-1 block">
-                    Role / Designation
-                  </Label>
-                  <Input
-                    placeholder="e.g. Tractor Driver / Grafting Specialist"
-                    value={workerForm.trade}
-                    onChange={(e) => setWorkerForm((p) => ({ ...p, trade: e.target.value }))}
-                    className="h-11 rounded-xl text-xs font-bold border-slate-300"
-                  />
-                </div>
+                {!removedStandardFields.includes("trade") ? (
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <Label className="text-xs font-extrabold text-slate-700 uppercase block">
+                        Role / Designation
+                      </Label>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveStandardField("trade")}
+                        className="text-rose-500 hover:text-rose-700 text-[11px] font-bold flex items-center gap-1 hover:bg-rose-50 px-1.5 py-0.5 rounded transition-colors"
+                        title="Remove Field"
+                      >
+                        <Trash2 className="size-3.5" /> Remove
+                      </button>
+                    </div>
+                    <Input
+                      placeholder="e.g. Tractor Driver / Grafting Specialist"
+                      value={workerForm.trade}
+                      onChange={(e) => setWorkerForm((p) => ({ ...p, trade: e.target.value }))}
+                      className="h-11 rounded-xl text-xs font-bold border-slate-300"
+                    />
+                  </div>
+                ) : null}
 
-                <div>
-                  <Label className="text-xs font-extrabold text-slate-700 uppercase mb-1 block">
-                    Mobile Number
-                  </Label>
-                  <Input
-                    placeholder="e.g. 9822112233"
-                    value={workerForm.mobile}
-                    onChange={(e) => setWorkerForm((p) => ({ ...p, mobile: e.target.value }))}
-                    className="h-11 rounded-xl text-xs font-bold border-slate-300"
-                  />
-                </div>
+                {!removedStandardFields.includes("mobile") ? (
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <Label className="text-xs font-extrabold text-slate-700 uppercase block">
+                        Mobile Number
+                      </Label>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveStandardField("mobile")}
+                        className="text-rose-500 hover:text-rose-700 text-[11px] font-bold flex items-center gap-1 hover:bg-rose-50 px-1.5 py-0.5 rounded transition-colors"
+                        title="Remove Field"
+                      >
+                        <Trash2 className="size-3.5" /> Remove
+                      </button>
+                    </div>
+                    <Input
+                      placeholder="e.g. 9822112233"
+                      value={workerForm.mobile}
+                      onChange={(e) => setWorkerForm((p) => ({ ...p, mobile: e.target.value }))}
+                      className="h-11 rounded-xl text-xs font-bold border-slate-300"
+                    />
+                  </div>
+                ) : null}
               </div>
 
+              {/* 4. DAILY WAGE RATE & JOINING DATE */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-xs font-extrabold text-slate-700 uppercase mb-1 block">
@@ -2612,19 +3043,96 @@ function AdminDashboardPage() {
                   />
                 </div>
 
-                <div>
-                  <Label className="text-xs font-extrabold text-slate-700 uppercase mb-1 block">
-                    Joining Date
-                  </Label>
+                {!removedStandardFields.includes("joiningDate") ? (
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <Label className="text-xs font-extrabold text-slate-700 uppercase block">
+                        Joining Date
+                      </Label>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveStandardField("joiningDate")}
+                        className="text-rose-500 hover:text-rose-700 text-[11px] font-bold flex items-center gap-1 hover:bg-rose-50 px-1.5 py-0.5 rounded transition-colors"
+                        title="Remove Field"
+                      >
+                        <Trash2 className="size-3.5" /> Remove
+                      </button>
+                    </div>
+                    <Input
+                      type="date"
+                      value={workerForm.joiningDate}
+                      onChange={(e) => setWorkerForm((p) => ({ ...p, joiningDate: e.target.value }))}
+                      className="h-11 rounded-xl text-xs font-bold border-slate-300"
+                    />
+                  </div>
+                ) : null}
+              </div>
+
+              {/* 5. WORK TIMING / SHIFT */}
+              {!removedStandardFields.includes("shiftTimes") ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-xs font-extrabold text-slate-700 uppercase mb-1 flex items-center gap-1">
+                      <Clock className="size-3.5 text-[#063B78]" /> Work Start Time (shift)
+                    </Label>
+                    <Input
+                      type="time"
+                      value={workerForm.workShiftStart}
+                      onChange={(e) => setWorkerForm((p) => ({ ...p, workShiftStart: e.target.value }))}
+                      className="h-11 rounded-xl text-xs font-bold border-slate-300"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <Label className="text-xs font-extrabold text-slate-700 uppercase flex items-center gap-1">
+                        <Clock className="size-3.5 text-[#063B78]" /> Work End Time (shift)
+                      </Label>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveStandardField("shiftTimes")}
+                        className="text-rose-500 hover:text-rose-700 text-[11px] font-bold flex items-center gap-1 hover:bg-rose-50 px-1.5 py-0.5 rounded transition-colors"
+                        title="Remove Field"
+                      >
+                        <Trash2 className="size-3.5" /> Remove
+                      </button>
+                    </div>
+                    <Input
+                      type="time"
+                      value={workerForm.workShiftEnd}
+                      onChange={(e) => setWorkerForm((p) => ({ ...p, workShiftEnd: e.target.value }))}
+                      className="h-11 rounded-xl text-xs font-bold border-slate-300"
+                    />
+                  </div>
+                </div>
+              ) : null}
+
+              {/* 6. DYNAMIC ADDED CUSTOM FIELDS (Rendered AT THE VERY BOTTOM OF ALL INPUT FIELDS) */}
+              {customFields.map((field, idx) => (
+                <div key={idx} className="animate-fade-in pt-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <Label className="text-xs font-extrabold text-slate-700 uppercase block flex items-center gap-1.5">
+                      <Sparkles className="size-3.5 text-[#063B78]" /> {field.label || "CUSTOM FIELD"}
+                    </Label>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveCustomField(idx)}
+                      className="text-rose-500 hover:text-rose-700 text-[11px] font-bold flex items-center gap-1 hover:bg-rose-50 px-2 py-0.5 rounded transition-colors"
+                      title="Remove Field"
+                    >
+                      <Trash2 className="size-3.5" /> Remove Field
+                    </button>
+                  </div>
                   <Input
-                    type="date"
-                    value={workerForm.joiningDate}
-                    onChange={(e) => setWorkerForm((p) => ({ ...p, joiningDate: e.target.value }))}
+                    placeholder={`e.g. Enter ${field.label || "detail"}...`}
+                    value={field.value}
+                    onChange={(e) => handleCustomFieldChange(idx, "value", e.target.value)}
                     className="h-11 rounded-xl text-xs font-bold border-slate-300"
                   />
                 </div>
-              </div>
+              ))}
 
+              {/* 7. FORM ACTION BUTTONS */}
               <div className="flex gap-3 pt-4">
                 <Button
                   type="button"
@@ -2642,6 +3150,84 @@ function AdminDashboardPage() {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── INTERACTIVE ADD CUSTOM FIELD MODAL DIALOG ── */}
+      {showAddFieldPrompt && (
+        <div className="fixed inset-0 z-60 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-slate-100 relative space-y-4">
+            <button
+              type="button"
+              onClick={() => setShowAddFieldPrompt(false)}
+              className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 font-extrabold text-lg p-1.5 rounded-full hover:bg-slate-100"
+            >
+              ✕
+            </button>
+
+            <div>
+              <h4 className="text-lg font-black text-[#10233F] flex items-center gap-2">
+                <Sparkles className="size-5 text-[#063B78]" /> Add New Custom Field
+              </h4>
+              <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                Type the field name (e.g. Aadhaar Card ID, Education, PF Number).
+              </p>
+            </div>
+
+            <div>
+              <Label className="text-xs font-extrabold text-slate-700 uppercase mb-1 block">
+                Field Name / Title *
+              </Label>
+              <Input
+                autoFocus
+                placeholder="e.g. Aadhaar Card ID / Education / PF No"
+                value={newFieldNameInput}
+                onChange={(e) => setNewFieldNameInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleConfirmAddCustomField();
+                  }
+                }}
+                className="h-11 rounded-xl text-xs font-bold border-slate-300 focus:border-[#063B78]"
+              />
+            </div>
+
+            {/* Quick Suggestion Chips */}
+            <div className="space-y-1.5">
+              <span className="text-[11px] font-bold text-slate-500 uppercase">Quick Suggestions:</span>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {["Aadhaar Card ID", "Education", "Alternate Mobile", "Bank Details", "PF Number"].map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => handleConfirmAddCustomField(preset)}
+                    className="px-2.5 py-1 bg-slate-100 hover:bg-[#063B78] hover:text-white text-slate-700 font-bold text-xs rounded-lg transition-colors"
+                  >
+                    + {preset}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowAddFieldPrompt(false)}
+                className="flex-1 py-4 rounded-xl font-bold text-xs border-slate-300"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={() => handleConfirmAddCustomField()}
+                className="flex-1 py-4 rounded-xl font-black bg-[#063B78] hover:bg-[#0A4F9E] text-white text-xs shadow-md"
+              >
+                + Add to Form
+              </Button>
+            </div>
           </div>
         </div>
       )}
