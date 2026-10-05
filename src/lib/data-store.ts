@@ -214,9 +214,14 @@ export type EmployerWorker = {
   mobile: string;
   trade: string;
   category?: string;
+  education?: string;
   dailyRate: number;
   joiningDate: string;
   status: "Active" | "Inactive";
+  workShiftStart?: string;
+  workShiftEnd?: string;
+  notes?: string;
+  customFields?: Array<{ label: string; value: string }>;
 };
 
 export type DailyAttendanceRecord = {
