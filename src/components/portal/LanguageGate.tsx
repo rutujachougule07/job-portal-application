@@ -13,7 +13,6 @@ export function LanguageGate() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(() => {
     if (!hasShownGateThisSession) {
-      hasShownGateThisSession = true;
       return true;
     }
     return false;
@@ -51,6 +50,7 @@ export function LanguageGate() {
       window.localStorage.setItem("realjob-gate-done", "true");
       window.localStorage.setItem("karyam-onboarding-done", "true");
     }
+    hasShownGateThisSession = true;
     setOpen(false);
 
     if (role === "admin") {
