@@ -864,29 +864,30 @@ export function JobCard({
       {/* Interactive Apply Full Page */}
       {showApplyModal && (
         <div className="fixed inset-0 z-[100] flex flex-col bg-[#F5F8FC] overflow-y-auto animate-in fade-in duration-200">
-          <div className="bg-white border-b border-[#DCE5F0] sticky top-0 z-10 px-4 sm:px-8 py-3 flex items-center justify-between shadow-sm">
-            <div className="flex items-center gap-2">
-              <div className="size-8 rounded-xl bg-gradient-to-br from-[#125BB5] to-[#063B78] flex items-center justify-center text-white font-black shadow-md">
+          <div className="bg-white border-b border-[#DCE5F0] sticky top-0 z-50 px-4 sm:px-8 py-3.5 flex items-center justify-between shadow-xs">
+            <div className="flex items-center gap-2.5">
+              <div className="size-9 rounded-xl bg-gradient-to-br from-[#125BB5] to-[#063B78] flex items-center justify-center text-white font-black text-sm shadow-md shrink-0">
                 J
               </div>
-              <span className="font-black text-[#082F63] text-xl tracking-tight hidden sm:block">
+              <span className="font-black text-[#082F63] text-lg sm:text-xl tracking-tight">
                 JobPortal
               </span>
             </div>
             <button
+              type="button"
               onClick={() => setShowApplyModal(false)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#F5F8FC] text-[#5B6B7F] hover:text-[#10233F] hover:bg-[#EBF1F8] font-bold text-sm transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-[#F5F8FC] text-[#5B6B7F] hover:text-[#10233F] hover:bg-[#EBF1F8] font-bold text-xs sm:text-sm transition-colors border border-[#DCE5F0]"
             >
               <X className="size-4" /> {lang === "mr" ? "बंद करा" : "Close"}
             </button>
           </div>
 
-          <div className="flex-1 w-full max-w-7xl mx-auto px-4 py-8">
+          <div className="flex-1 w-full max-w-7xl mx-auto px-4 py-4 sm:py-8">
             <div className="flex flex-col lg:flex-row gap-8 items-start">
               {/* Left Form Area */}
-              <div className="flex-1 w-full bg-white rounded-3xl border border-[#DCE5F0] p-6 sm:p-10 shadow-sm">
-                <h2 className="text-3xl font-black text-[#082F63] mb-2">{lang === "mr" ? "नोकरीसाठी अर्ज करा" : "Apply for Job"}</h2>
-                <p className="text-[#5B6B7F] font-semibold text-sm mb-8">{lang === "mr" ? "खालील माहिती काळजीपूर्वक भरा." : "Fill in the details below to apply for this job. Make sure all information is correct."}</p>
+              <div className="flex-1 w-full bg-white rounded-3xl border border-[#DCE5F0] p-4 sm:p-8 shadow-sm">
+                <h2 className="text-2xl sm:text-3xl font-black text-[#082F63] mb-2">{lang === "mr" ? "नोकरीसाठी अर्ज करा" : "Apply for Job"}</h2>
+                <p className="text-[#5B6B7F] font-semibold text-xs sm:text-sm mb-6">{lang === "mr" ? "खालील माहिती काळजीपूर्वक भरा." : "Fill in the details below to apply for this job. Make sure all information is correct."}</p>
 
                 {applied ? (
                   <div className="text-center py-12">
@@ -911,11 +912,11 @@ export function JobCard({
                       category={job.category}
                     />
 
-                    <div className="pt-8 flex justify-end gap-4 mt-8">
-                      <Button type="button" onClick={() => setShowApplyModal(false)} variant="outline" className="h-12 px-8 font-bold text-sm rounded-xl border-[#DCE5F0] text-[#5B6B7F]">
+                    <div className="pt-6 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3 mt-6 border-t border-[#DCE5F0]">
+                      <Button type="button" onClick={() => setShowApplyModal(false)} variant="outline" className="h-12 w-full sm:w-auto px-6 font-bold text-sm rounded-xl border-[#DCE5F0] text-[#5B6B7F]">
                         {lang === "mr" ? "रद्द करा" : "Cancel"}
                       </Button>
-                      <Button type="submit" className="btn-yellow h-12 px-8 font-black text-sm shadow-md rounded-xl">
+                      <Button type="submit" className="btn-yellow h-12 w-full sm:w-auto px-8 font-black text-sm shadow-md rounded-xl flex items-center justify-center">
                         {lang === "mr" ? "अंतिम अर्ज सादर करा" : "Submit Application"} <Send className="ml-2 size-4" />
                       </Button>
                     </div>

@@ -38,7 +38,9 @@ import {
   Bell,
   LogOut,
   ChevronDown,
+  MapPin,
   X,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -117,6 +119,8 @@ function AdminDashboardPage() {
   const [applications, setApplications] = useState<ApplicationRecord[]>([]);
   const [userSearch, setUserSearch] = useState("");
   const [jobSearch, setJobSearch] = useState("");
+  const [jobsPage, setJobsPage] = useState(1);
+  const JOBS_PER_PAGE = 5;
   const [appSearch, setAppSearch] = useState("");
   const [filterJobId, setFilterJobId] = useState<string | null>(null);
   const [expandedApp, setExpandedApp] = useState<string | null>(null);
@@ -129,6 +133,8 @@ function AdminDashboardPage() {
   const [dailyAttendanceRecords, setDailyAttendanceRecords] = useState<DailyAttendanceRecord[]>([]);
   const [workerSearch, setWorkerSearch] = useState("");
   const [showWorkerModal, setShowWorkerModal] = useState(false);
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [locationLinkInput, setLocationLinkInput] = useState("");
   const [editingWorkerId, setEditingWorkerId] = useState<string | null>(null);
 
   // Category & Reports Sub-States
@@ -160,6 +166,9 @@ function AdminDashboardPage() {
     workShiftStart: "09:00",
     workShiftEnd: "18:00",
     notes: "",
+    pin: "1234",
+    locationType: "fixed" as "fixed" | "field",
+    attendanceMode: "punch" as "punch" | "manual",
   });
 
   // Dynamic Custom Fields State (With Persistence across sessions)
@@ -217,7 +226,7 @@ function AdminDashboardPage() {
       toast.error("Please enter department / category name");
       return;
     }
-    const catName = trimmed.startsWith("✨") || trimmed.startsWith("🌱") || trimmed.startsWith("🚜") || trimmed.startsWith("⚙️") ? trimmed : `✨ ${trimmed}`;
+    const catName = trimmed.startsWith("✨") || trimmed.startsWith("🌱") || trimmed.startsWith("🚜") || trimmed.startsWith("⚙️️") ? trimmed : `✨ ${trimmed}`;
     const updated = Array.from(new Set([...customCategories, catName]));
     setCustomCategories(updated);
     setRemovedCategories((prev) => prev.filter((c) => c !== catName));
@@ -258,7 +267,7 @@ function AdminDashboardPage() {
       const allPossible = [
         ...getIndustryDefaultCategories(),
         ...customCategories,
-        "⚙️ Other / Custom",
+        "⚙️️ Other / Custom",
       ];
       const remaining = allPossible.filter((c) => c !== catToRemove && !removedCategories.includes(c));
       setWorkerForm((p) => ({ ...p, category: remaining[0] || getIndustryDefaultCategories()[0] || "General Work" }));
@@ -393,15 +402,15 @@ function AdminDashboardPage() {
           "🧱 Masonry & Brickwork",
           "⚡ Electrical & Wiring",
           "🚰 Plumbing & Piping",
-          "🪚 Carpentry & Woodwork",
+          "🪵 Carpentry & Woodwork",
           "🎨 Painting & Finishing",
           "🛠️ General Labour & Helper",
         ];
       case "factory":
         return [
-          "⚙️ Machine Operator",
+          "⚙️️ Machine Operator",
           "🔧 Assembly & Fitting",
-          "🔩 Welding & Fabrication",
+          "🔨 Welding & Fabrication",
           "📦 Packing & Warehouse",
           "🔍 Quality Inspection",
           "🛠️ Helper & Maintenance",
@@ -438,7 +447,7 @@ function AdminDashboardPage() {
           "💼 Office Staff & Admin",
           "🏗️ Construction & Site Work",
           "🌱 Plant Nursery & Agriculture",
-          "⚙️ Machine Operator & Factory",
+          "⚙️️ Machine Operator & Factory",
           "🚚 Logistics & Transport",
           "🛠️ Skilled Labour",
           "🧹 Cleaning & Housekeeping",
@@ -450,7 +459,13 @@ function AdminDashboardPage() {
   // Category display cleaner helper
   const formatCategoryName = (cat?: string) => {
     if (!cat) return getIndustryDefaultCategories()[0] || "General Work";
-    return cat;
+    const cleaned = cat
+      .replace(/ðŸ[^\s]*\s*/g, "")
+      .replace(/â[^\s]*\s*/g, "")
+      .replace(/ï¸/g, "")
+      .replace(/”€”/g, "")
+      .trim();
+    return cleaned || cat;
   };
 
   const getWorkerReportMetrics = (worker: EmployerWorker, period: "week" | "month" | "all") => {
@@ -761,6 +776,27 @@ function AdminDashboardPage() {
   const isSuperAdmin = currentUser?.email?.toLowerCase() === "supera@gmail.com" || currentUser?.email?.toLowerCase() === "superadmin";
   const empIdentifier = currentUser?.fullName || currentUser?.email || "admin-001";
 
+  // Worksite Location persistent reactive state
+  const [savedLocationLink, setSavedLocationLink] = useState<string>(() => {
+    try {
+      const direct = localStorage.getItem(`emp_worksite_link_${empIdentifier}`) || localStorage.getItem("emp_worksite_link_global");
+      if (direct) return direct;
+      return (currentUser as any)?.worksiteLocationLink || "";
+    } catch {
+      return (currentUser as any)?.worksiteLocationLink || "";
+    }
+  });
+
+  const [savedLocationCoords, setSavedLocationCoords] = useState<{ lat: number; lng: number } | null>(() => {
+    try {
+      const direct = localStorage.getItem(`emp_worksite_coords_${empIdentifier}`) || localStorage.getItem("emp_worksite_coords_global");
+      if (direct) return JSON.parse(direct);
+      return (currentUser as any)?.worksiteLocation || null;
+    } catch {
+      return (currentUser as any)?.worksiteLocation || null;
+    }
+  });
+
   // Profile Edit Form state
   const [profileForm, setProfileForm] = useState({
     fullName: currentUser?.fullName || "",
@@ -864,6 +900,9 @@ function AdminDashboardPage() {
       workShiftStart: "09:00",
       workShiftEnd: "18:00",
       notes: "",
+      pin: "1234",
+      locationType: "fixed",
+      attendanceMode: "punch",
     });
     // Restore persistent custom fields & custom categories so they don't disappear when modal opens!
     setCustomCategories(getStoredCustomCats());
@@ -874,6 +913,8 @@ function AdminDashboardPage() {
   const handleOpenEditWorker = (w: EmployerWorker) => {
     setEditingWorkerId(w.id);
     setCustomCategories(getStoredCustomCats());
+    const locType = (w.locationType || (w.attendanceMode === "manual" ? "field" : "fixed")) as "fixed" | "field";
+    const attMode = (w.attendanceMode || (locType === "field" ? "manual" : "punch")) as "punch" | "manual";
     setWorkerForm({
       name: w.name,
       mobile: w.mobile,
@@ -885,6 +926,9 @@ function AdminDashboardPage() {
       workShiftStart: w.workShiftStart || "09:00",
       workShiftEnd: w.workShiftEnd || "18:00",
       notes: w.notes || "",
+      pin: (w as any).pin || "1234",
+      locationType: locType,
+      attendanceMode: attMode,
     });
     const existing = w.customFields || [];
     const merged = [...existing];
@@ -917,8 +961,11 @@ function AdminDashboardPage() {
       workShiftStart: workerForm.workShiftStart,
       workShiftEnd: workerForm.workShiftEnd,
       notes: workerForm.notes.trim(),
+      pin: workerForm.pin || "1234",
+      locationType: workerForm.locationType,
+      attendanceMode: workerForm.attendanceMode,
       customFields: customFields.filter((f) => f.label.trim() !== ""),
-    });
+    } as any);
     setShowWorkerModal(false);
     setEditingWorkerId(null);
     loadAttendanceData();
@@ -1167,6 +1214,8 @@ function AdminDashboardPage() {
       j.company.toLowerCase().includes(jobSearch.toLowerCase()) ||
       j.location.toLowerCase().includes(jobSearch.toLowerCase())
   );
+  const totalJobPages = Math.max(1, Math.ceil(filteredJobs.length / JOBS_PER_PAGE));
+  const pagedJobs = filteredJobs.slice((jobsPage - 1) * JOBS_PER_PAGE, jobsPage * JOBS_PER_PAGE);
 
   const activeSelectedPlan = activeJobPackages.find((p) => p.id === selectedPlanId) || activeJobPackages[0]!;
 
@@ -1382,11 +1431,11 @@ function AdminDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F0F4FA] flex font-sans">
+    <div className="h-screen bg-[#F0F4FA] flex font-sans w-full overflow-hidden">
       {/* ── LEFT DARK NAVY SIDEBAR ── */}
-      <aside className="w-64 bg-[#021D3D] text-white flex flex-col hidden md:flex h-screen sticky top-0 shrink-0 border-r border-white/10 overflow-y-auto">
+      <aside className="w-64 bg-[#021D3D] text-white flex flex-col justify-between hidden md:flex h-full shrink-0 border-r border-white/10 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
         {/* Logo / Company Name Header */}
-        <div className="p-5 border-b border-white/10">
+        <div className="p-5 border-b border-white/10 shrink-0">
           <div className="flex items-center gap-3 text-white">
             <div className="size-10 bg-gradient-to-br from-[#FFC400] to-[#FFA500] rounded-xl flex items-center justify-center shadow-lg border-[2px] border-white/10 shrink-0">
               <Building2 className="size-5 text-[#021D3D]" />
@@ -1401,7 +1450,7 @@ function AdminDashboardPage() {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
+        <div className="flex-1 py-4 px-3 space-y-1 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
           <div className="text-[10px] font-black uppercase text-[#9DAEC5] tracking-widest px-3 mb-2">Main Navigation</div>
           {[
             { id: "overview", label: "Dashboard Overview", icon: BarChart3 },
@@ -1436,7 +1485,7 @@ function AdminDashboardPage() {
         </div>
 
         {/* Bottom Sign Out Action */}
-        <div className="p-4 border-t border-white/10">
+        <div className="p-4 border-t border-white/10 shrink-0 mt-auto">
           <button
             onClick={() => {
               dataStore.logout("employer");
@@ -1453,9 +1502,9 @@ function AdminDashboardPage() {
       </aside>
 
       {/* ── RIGHT MAIN CONTENT AREA ── */}
-      <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
+      <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
         {/* Top Navbar Header */}
-        <header className="h-20 bg-white border-b border-[#E0E8F5] flex items-center justify-between px-6 sm:px-8 sticky top-0 z-30 shadow-sm shrink-0">
+        <header className="h-20 bg-white border-b border-[#E0E8F5] flex items-center justify-between px-6 sm:px-8 shrink-0 z-30 shadow-xs">
           <div className="flex items-center gap-4 min-w-0">
             <h2 className="text-xl font-black text-[#063B78] whitespace-nowrap leading-tight">
               {activeTab === "overview" && "Dashboard Overview"}
@@ -1521,7 +1570,7 @@ function AdminDashboardPage() {
         </header>
 
         {/* Scrollable Body Content Area */}
-        <main className="flex-1 p-6 sm:p-8 overflow-y-auto">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto overflow-x-hidden min-w-0 max-w-full">
 
           {/* TAB 1: OVERVIEW */}
           {activeTab === "overview" && (
@@ -1717,14 +1766,24 @@ function AdminDashboardPage() {
                   </p>
                 </div>
 
-                <div className="w-full sm:w-72 relative">
-                  <Search className="absolute left-3 top-3 size-4 text-[#5B6B7F]" />
-                  <Input
-                    placeholder="Search job title, company, or location..."
-                    value={jobSearch}
-                    onChange={(e) => setJobSearch(e.target.value)}
-                    className="pl-9 text-xs font-bold"
-                  />
+                <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                  <Button
+                    onClick={handleAddNewJobClick}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs px-4 py-2.5 rounded-xl flex items-center gap-2 shadow-md hover:shadow-lg transition-all w-full sm:w-auto shrink-0 cursor-pointer"
+                  >
+                    <Plus className="size-4" />
+                    <span>+ Post New Job</span>
+                  </Button>
+
+                  <div className="w-full sm:w-72 relative">
+                    <Search className="absolute left-3 top-3 size-4 text-[#5B6B7F]" />
+                    <Input
+                      placeholder="Search job title, company, or location..."
+                      value={jobSearch}
+                      onChange={(e) => { setJobSearch(e.target.value); setJobsPage(1); }}
+                      className="pl-9 text-xs font-bold"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -1742,7 +1801,7 @@ function AdminDashboardPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#DCE5F0] font-semibold text-[#10233F]">
-                    {filteredJobs.map((j) => (
+                    {pagedJobs.map((j) => (
                       <tr key={j.id} className="hover:bg-[#F5F8FC]">
                         <td className="p-3.5">
                           <strong className="block font-black text-[#063B78]">{j.title}</strong>
@@ -1828,6 +1887,44 @@ function AdminDashboardPage() {
                   </tbody>
                 </table>
               </div>
+
+              {/* ── Pagination Controls ── */}
+              {totalJobPages > 1 && (
+                <div className="flex items-center justify-between mt-4 pt-4 border-t border-[#DCE5F0]">
+                  <p className="text-xs font-bold text-[#5B6B7F]">
+                    Showing {(jobsPage - 1) * JOBS_PER_PAGE + 1}–{Math.min(jobsPage * JOBS_PER_PAGE, filteredJobs.length)} of {filteredJobs.length} jobs
+                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      disabled={jobsPage === 1}
+                      onClick={() => setJobsPage((p) => p - 1)}
+                      className="px-3 py-1.5 rounded-lg text-xs font-black border border-[#DCE5F0] bg-white text-[#063B78] hover:bg-[#EBF3FF] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                    >
+                      ← Prev
+                    </button>
+                    {Array.from({ length: totalJobPages }, (_, i) => i + 1).map((pg) => (
+                      <button
+                        key={pg}
+                        onClick={() => setJobsPage(pg)}
+                        className={`w-8 h-8 rounded-lg text-xs font-black transition-all ${
+                          pg === jobsPage
+                            ? "bg-[#063B78] text-white shadow-md"
+                            : "border border-[#DCE5F0] bg-white text-[#063B78] hover:bg-[#EBF3FF]"
+                        }`}
+                      >
+                        {pg}
+                      </button>
+                    ))}
+                    <button
+                      disabled={jobsPage === totalJobPages}
+                      onClick={() => setJobsPage((p) => p + 1)}
+                      className="px-3 py-1.5 rounded-lg text-xs font-black border border-[#DCE5F0] bg-white text-[#063B78] hover:bg-[#EBF3FF] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                    >
+                      Next →
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -1925,7 +2022,7 @@ function AdminDashboardPage() {
                                 className="h-8 px-2 rounded-lg border border-[#DCE5F0] text-xs font-black focus:outline-none focus:border-[#063B78]"
                               >
                                 <option value="Applied">📝 Applied</option>
-                                <option value="Viewed">👀 Viewed</option>
+                                <option value="Viewed">👁️ Viewed</option>
                                 <option value="Shortlisted">⭐ Shortlisted</option>
                                 <option value="Interview">📅 Interview Scheduled</option>
                                 <option value="Selected">✅ Selected / Hired</option>
@@ -1966,35 +2063,35 @@ function AdminDashboardPage() {
                                     ))}
                                     {(!a.fieldValues && !a.customAnswers) && (
                                       <div className="text-sm font-semibold text-[#5B6B7F]">No additional application details provided.</div>
-                                     )}
+                                    )}
 
-                                   {/* Employer Reply / Message to Candidate Box */}
-                                   <div className="mt-5 pt-4 border-t border-[#DCE5F0]">
-                                     <label className="block text-xs font-black text-[#063B78] mb-2">
-                                       💬 Candidate Reply / Employer Response (या उमेदवाराला संदेश / रिप्लाय पाठवा):
-                                     </label>
-                                     <div className="flex flex-col sm:flex-row gap-2">
-                                       <input
-                                         type="text"
-                                         placeholder="e.g. Selected! Please bring original documents on Monday at 10 AM."
-                                         value={replyInputs[a.id] !== undefined ? replyInputs[a.id] : (a.replyMessage || "")}
-                                         onChange={(e) => setReplyInputs(prev => ({ ...prev, [a.id]: e.target.value }))}
-                                         className="flex-1 h-10 px-3.5 rounded-xl border border-[#DCE5F0] bg-[#F8FAFC] text-xs font-bold text-[#10233F] focus:outline-none focus:border-[#063B78]"
-                                       />
-                                       <Button
-                                         onClick={() => handleSaveReply(a.id, replyInputs[a.id] !== undefined ? replyInputs[a.id]! : (a.replyMessage || ""))}
-                                         className="bg-[#063B78] hover:bg-[#082F63] text-white font-black text-xs px-5 h-10 rounded-xl shadow-xs shrink-0 cursor-pointer"
-                                       >
-                                         Save & Send Reply
-                                       </Button>
-                                     </div>
-                                     {a.replyMessage && (
-                                       <div className="mt-2.5 text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-3.5 py-2 rounded-xl flex items-center justify-between">
-                                         <span>✓ Sent Reply: "{a.replyMessage}"</span>
-                                         {a.replyDate && <span className="text-[10px] text-emerald-600 font-semibold">{a.replyDate}</span>}
-                                       </div>
-                                     )}
-                                   </div>
+                                    {/* Employer Reply / Message to Candidate Box */}
+                                    <div className="mt-5 pt-4 border-t border-[#DCE5F0]">
+                                      <label className="block text-xs font-black text-[#063B78] mb-2">
+                                        💬 Candidate Reply / Employer Response (या उमेदवाराला संदेश / रिप्लाय पाठवा):
+                                      </label>
+                                      <div className="flex flex-col sm:flex-row gap-2">
+                                        <input
+                                          type="text"
+                                          placeholder="e.g. Selected! Please bring original documents on Monday at 10 AM."
+                                          value={replyInputs[a.id] !== undefined ? replyInputs[a.id] : (a.replyMessage || "")}
+                                          onChange={(e) => setReplyInputs(prev => ({ ...prev, [a.id]: e.target.value }))}
+                                          className="flex-1 h-10 px-3.5 rounded-xl border border-[#DCE5F0] bg-[#F8FAFC] text-xs font-bold text-[#10233F] focus:outline-none focus:border-[#063B78]"
+                                        />
+                                        <Button
+                                          onClick={() => handleSaveReply(a.id, replyInputs[a.id] !== undefined ? replyInputs[a.id]! : (a.replyMessage || ""))}
+                                          className="bg-[#063B78] hover:bg-[#082F63] text-white font-black text-xs px-5 h-10 rounded-xl shadow-xs shrink-0 cursor-pointer"
+                                        >
+                                          Save & Send Reply
+                                        </Button>
+                                      </div>
+                                      {a.replyMessage && (
+                                        <div className="mt-2.5 text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-3.5 py-2 rounded-xl flex items-center justify-between">
+                                          <span>✓ Sent Reply: "{a.replyMessage}"</span>
+                                          {a.replyDate && <span className="text-[10px] text-emerald-600 font-semibold">{a.replyDate}</span>}
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
                               </td>
@@ -2033,7 +2130,58 @@ function AdminDashboardPage() {
                   </p>
                 </div>
 
-                <div className="flex flex-wrap gap-2 shrink-0">
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  {(savedLocationLink || savedLocationCoords || (currentUser as any)?.worksiteLocationLink || (currentUser as any)?.worksiteLocation) ? (
+                    <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-300 p-1.5 pl-3 rounded-xl shadow-xs">
+                      <a
+                        href={
+                          (savedLocationLink || (currentUser as any)?.worksiteLocationLink)
+                            ? ((savedLocationLink || (currentUser as any)?.worksiteLocationLink || "").startsWith("http")
+                                ? (savedLocationLink || (currentUser as any)?.worksiteLocationLink || "")
+                                : `https://${savedLocationLink || (currentUser as any)?.worksiteLocationLink}`)
+                            : (savedLocationCoords || (currentUser as any)?.worksiteLocation)
+                            ? `https://maps.google.com/?q=${(savedLocationCoords || (currentUser as any)?.worksiteLocation)?.lat},${(savedLocationCoords || (currentUser as any)?.worksiteLocation)?.lng}`
+                            : "#"
+                        }
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-emerald-900 hover:text-emerald-950 font-black text-xs flex items-center gap-1.5 max-w-[220px] sm:max-w-[340px] truncate group"
+                        title={savedLocationLink || (currentUser as any)?.worksiteLocationLink || "View Worksite Location on Map"}
+                      >
+                        <MapPin className="size-4 text-emerald-600 shrink-0 group-hover:scale-110 transition-transform" />
+                        <span className="truncate underline underline-offset-2">
+                          📍 {savedLocationLink || (currentUser as any)?.worksiteLocationLink || `GPS: ${savedLocationCoords?.lat.toFixed(4)}, ${savedLocationCoords?.lng.toFixed(4)}`}
+                        </span>
+                        <ExternalLink className="size-3.5 text-emerald-600 shrink-0" />
+                      </a>
+                      <Button
+                        onClick={() => {
+                          setLocationLinkInput(savedLocationLink || (currentUser as any)?.worksiteLocationLink || "");
+                          setShowLocationModal(true);
+                        }}
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2.5 text-xs font-extrabold text-emerald-700 hover:bg-emerald-100 hover:text-emerald-900 rounded-lg ml-1 shrink-0"
+                        title="Edit Worksite Location Link"
+                      >
+                        <Edit className="size-3.5 mr-1" />
+                        <span>Edit</span>
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      onClick={() => {
+                        setLocationLinkInput(savedLocationLink || (currentUser as any)?.worksiteLocationLink || "");
+                        setShowLocationModal(true);
+                      }}
+                      variant="outline"
+                      className="border-[#DCE5F0] text-[#5B6B7F] hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 font-extrabold text-xs px-5 py-3 rounded-xl shadow-sm flex items-center gap-2"
+                    >
+                      <MapPin className="size-4 text-emerald-600" />
+                      <span>📍 Set Worksite Location</span>
+                    </Button>
+                  )}
+
                   <Button
                     onClick={handleOpenAddWorker}
                     className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-5 py-3 rounded-xl shadow-md flex items-center gap-2"
@@ -2048,7 +2196,7 @@ function AdminDashboardPage() {
               {(() => {
                 const defaultCategories = [
                   ...getIndustryDefaultCategories(),
-                  "⚙️ Other / Custom",
+                  "⚙️️ Other / Custom",
                 ];
                 const customWorkerCats = workers.map((w) => w.category || w.trade || getIndustryDefaultCategories()[0] || "General Work");
                 const allCategories = Array.from(new Set([...defaultCategories, ...customCategories, ...customWorkerCats]))
@@ -2094,7 +2242,7 @@ function AdminDashboardPage() {
                             onChange={(e) => setSelectedCategoryFilter(e.target.value)}
                             className="bg-transparent font-bold text-xs text-[#10233F] focus:outline-none cursor-pointer outline-none max-w-[200px] truncate"
                           >
-                            <option value="ALL">🌐 All Categories ({workers.length})</option>
+                            <option value="ALL">🏷️ All Categories ({workers.length})</option>
                             {allCategories.map((cat) => {
                               const count = categoryCounts.get(cat) || 0;
                               const cleanName = formatCategoryName(cat);
@@ -2143,7 +2291,18 @@ function AdminDashboardPage() {
 
                           filteredByCat.forEach((w) => {
                             const rec = attMap.get(w.id);
-                            const st = rec?.status || "Present";
+                            const isFixed = w.locationType !== "field" && w.attendanceMode !== "manual";
+                            let st: "Present" | "HalfDay" | "Absent" | "Overtime" = "Absent";
+                            if (isFixed) {
+                              if (rec?.punchInTime) {
+                                st = rec.status || "Present";
+                              } else {
+                                st = "Absent";
+                              }
+                            } else {
+                              st = rec?.status || "Present";
+                            }
+
                             if (st === "Present") {
                               pCount++;
                               todayWageSum += w.dailyRate;
@@ -2294,6 +2453,7 @@ function AdminDashboardPage() {
                                   <th className="p-4">Department / Category</th>
                                   <th className="p-4">Role / Designation</th>
                                   <th className="p-4">Daily Wage Rate</th>
+                                  <th className="p-4 text-center">Punch Times</th>
                                   <th className="p-4 text-center min-w-[390px]">Mark Attendance</th>
                                   <th className="p-4 text-right rounded-r-xl">Today's Pay</th>
                                 </tr>
@@ -2346,7 +2506,20 @@ function AdminDashboardPage() {
 
                                   return list.map((worker) => {
                                     const record = attMap.get(worker.id);
-                                    const currentStatus = record?.status || "Present";
+                                    const isFixed = worker.locationType !== "field" && worker.attendanceMode !== "manual";
+
+                                    let currentStatus: "Present" | "HalfDay" | "Absent" | "Overtime" = "Absent";
+                                    if (isFixed) {
+                                      // Automatic through GPS Punch In / Punch Out
+                                      if (record?.punchInTime) {
+                                        currentStatus = record.status || "Present";
+                                      } else {
+                                        currentStatus = "Absent";
+                                      }
+                                    } else {
+                                      // Field / Site worker: manually marked by employer
+                                      currentStatus = record?.status || "Present";
+                                    }
 
                                     let earnedAmount = worker.dailyRate;
                                     if (currentStatus === "HalfDay") earnedAmount = Math.round(worker.dailyRate / 2);
@@ -2383,56 +2556,98 @@ function AdminDashboardPage() {
                                           ₹{worker.dailyRate} <span className="text-[10px] font-semibold text-[#5B6B7F]">/ day</span>
                                         </td>
 
-                                        <td className="p-4 text-center min-w-[390px]">
-                                          <div className="inline-flex items-center gap-1 bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80 shadow-inner whitespace-nowrap">
-                                            <button
-                                              type="button"
-                                              onClick={() => handleMarkAttendance(worker, "Present")}
-                                              className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 ${currentStatus === "Present"
-                                                ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/30 scale-[1.02]"
-                                                : "text-slate-600 hover:text-emerald-700 hover:bg-emerald-50/80"
-                                                }`}
-                                            >
-                                              <CheckCircle2 className="size-3.5" />
-                                              <span>Present</span>
-                                            </button>
+                                        <td className="p-4 text-center">
+                                          {isFixed && record?.punchInTime ? (
+                                            <div className="flex flex-col gap-1 items-center justify-center text-[10px] font-black">
+                                              <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 w-full text-center whitespace-nowrap">
+                                                IN: {record.punchInTime}
+                                              </span>
+                                              {record.punchOutTime ? (
+                                                <span className="text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 w-full text-center whitespace-nowrap">
+                                                  OUT: {record.punchOutTime}
+                                                </span>
+                                              ) : null}
+                                            </div>
+                                          ) : (
+                                            <span className="text-xs text-slate-400 font-extrabold">--</span>
+                                          )}
+                                        </td>
 
-                                            <button
-                                              type="button"
-                                              onClick={() => handleMarkAttendance(worker, "HalfDay")}
-                                              className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 ${currentStatus === "HalfDay"
-                                                ? "bg-amber-500 text-white shadow-md shadow-amber-500/30 scale-[1.02]"
-                                                : "text-slate-600 hover:text-amber-700 hover:bg-amber-50/80"
-                                                }`}
-                                            >
-                                              <Clock className="size-3.5" />
-                                              <span>Half Day</span>
-                                            </button>
+                                        <td className="p-4 text-center min-w-[360px]">
+                                          {isFixed ? (
+                                            /* FIXED LOCATION: AUTOMATIC ATTENDANCE STATUS (NO MANUAL BUTTONS) */
+                                            <div className="flex flex-col items-center justify-center gap-1">
+                                              {record?.punchInTime ? (
+                                                <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-300 text-emerald-800 px-3.5 py-1.5 rounded-2xl shadow-xs">
+                                                  <CheckCircle2 className="size-4 text-emerald-600" />
+                                                  <span className="font-black text-xs">
+                                                    Auto: Present {record.punchOutTime ? "(Shift Completed)" : "(Punched In via GPS)"}
+                                                  </span>
+                                                </div>
+                                              ) : (
+                                                <div className="inline-flex items-center gap-2 bg-slate-100 border border-slate-300 text-slate-600 px-3.5 py-1.5 rounded-2xl">
+                                                  <Clock className="size-4 text-slate-400" />
+                                                  <span className="font-extrabold text-xs">
+                                                    Auto: Absent (Not Punched In Yet)
+                                                  </span>
+                                                </div>
+                                              )}
+                                              <span className="text-[10px] text-slate-400 font-semibold">
+                                                ⚡ GPS लोकेशनवरून ऑटोमॅटिक हजेरी
+                                              </span>
+                                            </div>
+                                          ) : (
+                                            /* FIELD / SITE WORKER: MANUAL BUTTONS ONLY (AS IN IMAGE 2) */
+                                            <div className="inline-flex items-center gap-1 bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80 shadow-inner whitespace-nowrap">
+                                              <button
+                                                type="button"
+                                                onClick={() => handleMarkAttendance(worker, "Present")}
+                                                className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 ${currentStatus === "Present"
+                                                  ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/30 scale-[1.02]"
+                                                  : "text-slate-600 hover:text-emerald-700 hover:bg-emerald-50/80"
+                                                  }`}
+                                              >
+                                                <CheckCircle2 className="size-3.5" />
+                                                <span>Present</span>
+                                              </button>
 
-                                            <button
-                                              type="button"
-                                              onClick={() => handleMarkAttendance(worker, "Absent")}
-                                              className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 ${currentStatus === "Absent"
-                                                ? "bg-rose-600 text-white shadow-md shadow-rose-600/30 scale-[1.02]"
-                                                : "text-slate-600 hover:text-rose-700 hover:bg-rose-50/80"
-                                                }`}
-                                            >
-                                              <XCircle className="size-3.5" />
-                                              <span>Absent</span>
-                                            </button>
+                                              <button
+                                                type="button"
+                                                onClick={() => handleMarkAttendance(worker, "HalfDay")}
+                                                className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 ${currentStatus === "HalfDay"
+                                                  ? "bg-amber-500 text-white shadow-md shadow-amber-500/30 scale-[1.02]"
+                                                  : "text-slate-600 hover:text-amber-700 hover:bg-amber-50/80"
+                                                  }`}
+                                              >
+                                                <Clock className="size-3.5" />
+                                                <span>Half Day</span>
+                                              </button>
 
-                                            <button
-                                              type="button"
-                                              onClick={() => handleMarkAttendance(worker, "Overtime")}
-                                              className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 ${currentStatus === "Overtime"
-                                                ? "bg-[#063B78] text-white shadow-md shadow-[#063B78]/30 scale-[1.02]"
-                                                : "text-slate-600 hover:text-[#063B78] hover:bg-blue-50/80"
-                                                }`}
-                                            >
-                                              <Zap className="size-3.5 text-amber-400 fill-amber-400" />
-                                              <span>Overtime</span>
-                                            </button>
-                                          </div>
+                                              <button
+                                                type="button"
+                                                onClick={() => handleMarkAttendance(worker, "Absent")}
+                                                className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 ${currentStatus === "Absent"
+                                                  ? "bg-rose-600 text-white shadow-md shadow-rose-600/30 scale-[1.02]"
+                                                  : "text-slate-600 hover:text-rose-700 hover:bg-rose-50/80"
+                                                  }`}
+                                              >
+                                                <XCircle className="size-3.5" />
+                                                <span>Absent</span>
+                                              </button>
+
+                                              <button
+                                                type="button"
+                                                onClick={() => handleMarkAttendance(worker, "Overtime")}
+                                                className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 ${currentStatus === "Overtime"
+                                                  ? "bg-[#063B78] text-white shadow-md shadow-[#063B78]/30 scale-[1.02]"
+                                                  : "text-slate-600 hover:text-[#063B78] hover:bg-blue-50/80"
+                                                  }`}
+                                              >
+                                                <Zap className="size-3.5 text-amber-400 fill-amber-400" />
+                                                <span>Overtime</span>
+                                              </button>
+                                            </div>
+                                          )}
                                         </td>
 
                                         <td className="p-4 text-right font-black text-emerald-700 text-sm">
@@ -2753,7 +2968,18 @@ function AdminDashboardPage() {
                                 workers.map((w) => (
                                   <tr key={w.id} className="hover:bg-[#F8FAFF]">
                                     <td className="p-4">
-                                      <div className="font-black text-[#10233F]">{w.name}</div>
+                                      <div className="flex items-center gap-2">
+                                        <div className="font-black text-[#10233F]">{w.name}</div>
+                                        {w.locationType === "field" || w.attendanceMode === "manual" ? (
+                                          <span className="text-[9px] font-extrabold text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">
+                                            🏗️ Field / Site
+                                          </span>
+                                        ) : (
+                                          <span className="text-[9px] font-extrabold text-[#063B78] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded-full">
+                                            🏢 Fixed Location
+                                          </span>
+                                        )}
+                                      </div>
                                       {(w.workShiftStart || w.workShiftEnd) && (
                                         <div className="text-[10px] text-[#063B78] font-bold mt-0.5 flex items-center gap-1">
                                           <Clock className="size-3 text-[#063B78]" />
@@ -2952,6 +3178,196 @@ function AdminDashboardPage() {
         </main>
       </div>
 
+      {/* ── SET WORKSITE LOCATION MODAL ── */}
+      {showLocationModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-100 relative">
+            <button
+              onClick={() => setShowLocationModal(false)}
+              className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 font-extrabold text-xl p-2 rounded-full hover:bg-slate-100"
+            >
+              <X className="size-5" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-3 rounded-2xl bg-emerald-50 text-emerald-700 shrink-0">
+                <MapPin className="size-6" />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-[#10233F]">
+                  Set Worksite Location
+                </h3>
+                <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                  Set the official location for Employee Punch-in.
+                </p>
+              </div>
+            </div>
+
+            {(savedLocationLink || savedLocationCoords) && (
+              <div className="mb-4 p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl">
+                <p className="text-[11px] font-black text-emerald-900 uppercase tracking-wide">
+                  📍 Current Saved Location:
+                </p>
+                <div className="flex items-center justify-between gap-2 mt-1">
+                  <span className="text-xs font-bold text-emerald-800 truncate">
+                    {savedLocationLink || `GPS: ${savedLocationCoords?.lat.toFixed(4)}, ${savedLocationCoords?.lng.toFixed(4)}`}
+                  </span>
+                  <a
+                    href={
+                      savedLocationLink
+                        ? (savedLocationLink.startsWith("http") ? savedLocationLink : `https://${savedLocationLink}`)
+                        : `https://maps.google.com/?q=${savedLocationCoords?.lat},${savedLocationCoords?.lng}`
+                    }
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs font-black text-emerald-700 hover:underline shrink-0 flex items-center gap-1"
+                  >
+                    Open Map <ExternalLink className="size-3" />
+                  </a>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-6">
+              {/* Option 1: Auto GPS */}
+              <div className="p-4 rounded-xl border border-emerald-100 bg-emerald-50/50">
+                <p className="text-sm font-bold text-emerald-900 mb-2">Option 1: Use Current GPS (Recommended)</p>
+                <p className="text-xs text-emerald-700 font-semibold mb-3">If you are currently at the factory or worksite, click below to auto-detect.</p>
+                <Button
+                  onClick={() => {
+                    if (!navigator.geolocation) {
+                      toast.error("Geolocation is not supported by your browser");
+                      return;
+                    }
+                    navigator.geolocation.getCurrentPosition(
+                      (position) => {
+                        const { latitude, longitude } = position.coords;
+                        const coordsObj = { lat: latitude, lng: longitude };
+                        setSavedLocationCoords(coordsObj);
+                        try {
+                          localStorage.setItem(`emp_worksite_coords_${empIdentifier}`, JSON.stringify(coordsObj));
+                          localStorage.setItem("emp_worksite_coords_global", JSON.stringify(coordsObj));
+                        } catch (e) {}
+
+                        if (currentUser?.id) {
+                          const updated = dataStore.updateRegisteredAccount(currentUser.id, {
+                            worksiteLocation: coordsObj,
+                          }) || { ...currentUser, worksiteLocation: coordsObj };
+                          dataStore.setCurrentUser(updated);
+                          try {
+                            sessionStorage.setItem("realjob_tab_user", JSON.stringify(updated));
+                            localStorage.setItem("realjob-user", JSON.stringify(updated));
+                            if (currentUser.role === "employer") localStorage.setItem("realjob-user-employer", JSON.stringify(updated));
+                            if (currentUser.role === "admin") localStorage.setItem("realjob-user-admin", JSON.stringify(updated));
+                          } catch (e) {}
+                        }
+                        toast.success("✅ Worksite Location Set Successfully!");
+                        setShowLocationModal(false);
+                      },
+                      () => toast.error("Unable to get location. Please allow permissions.")
+                    );
+                  }}
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs py-2.5 rounded-xl shadow-sm"
+                >
+                  📍 Use Current Location
+                </Button>
+              </div>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-slate-200" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-white px-2 text-slate-500 font-bold">OR</span>
+                </div>
+              </div>
+
+              {/* Option 2: Paste Link */}
+              <div>
+                <label className="block text-sm font-bold text-[#10233F] mb-1.5">Option 2: Paste Maps Link / Location</label>
+                <p className="text-xs text-slate-500 font-semibold mb-3">
+                  Paste any Google Maps, Bing Maps link or location URL below.
+                </p>
+                <Input
+                  value={locationLinkInput}
+                  onChange={(e) => setLocationLinkInput(e.target.value)}
+                  placeholder="Paste Google Maps, Bing Maps link or location..."
+                  className="text-xs font-semibold mb-3"
+                />
+                <Button
+                  onClick={() => {
+                    const rawInput = locationLinkInput.trim();
+                    if (!rawInput) {
+                      toast.error("Please enter or paste a map location link.");
+                      return;
+                    }
+
+                    // 1. Immediately update React state for instant UI re-render
+                    setSavedLocationLink(rawInput);
+                    try {
+                      localStorage.setItem(`emp_worksite_link_${empIdentifier}`, rawInput);
+                      localStorage.setItem("emp_worksite_link_global", rawInput);
+                    } catch (e) {}
+
+                    // 2. Parse coordinates if possible
+                    let lat = 18.5204;
+                    let lng = 73.8567;
+                    const matchAt = rawInput.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+                    const matchParam = rawInput.match(/[?&](?:q|ll|center|where|cp|location)=(-?\d+\.?\d*)[,~](-?\d+\.?\d*)/i);
+                    const matchCoords = rawInput.match(/(-?\d{1,2}\.\d+)\s*[,~\s]\s*(-?\d{1,3}\.\d+)/);
+                    const matchInts = rawInput.match(/(-?\d{1,2})\s*,\s*(-?\d{1,3})/);
+
+                    if (matchAt && matchAt[1] && matchAt[2]) {
+                      lat = parseFloat(matchAt[1]);
+                      lng = parseFloat(matchAt[2]);
+                    } else if (matchParam && matchParam[1] && matchParam[2]) {
+                      lat = parseFloat(matchParam[1]);
+                      lng = parseFloat(matchParam[2]);
+                    } else if (matchCoords && matchCoords[1] && matchCoords[2]) {
+                      lat = parseFloat(matchCoords[1]);
+                      lng = parseFloat(matchCoords[2]);
+                    } else if (matchInts && matchInts[1] && matchInts[2]) {
+                      lat = parseFloat(matchInts[1]);
+                      lng = parseFloat(matchInts[2]);
+                    }
+
+                    const coordsObj = { lat, lng };
+                    setSavedLocationCoords(coordsObj);
+                    try {
+                      localStorage.setItem(`emp_worksite_coords_${empIdentifier}`, JSON.stringify(coordsObj));
+                      localStorage.setItem("emp_worksite_coords_global", JSON.stringify(coordsObj));
+                    } catch (e) {}
+
+                    // 3. Update currentUser session objects
+                    if (currentUser) {
+                      const updated = (currentUser.id ? dataStore.updateRegisteredAccount(currentUser.id, {
+                        worksiteLocation: coordsObj,
+                        worksiteLocationLink: rawInput,
+                      }) : null) || { ...currentUser, worksiteLocation: coordsObj, worksiteLocationLink: rawInput };
+
+                      dataStore.setCurrentUser(updated);
+                      try {
+                        sessionStorage.setItem("realjob_tab_user", JSON.stringify(updated));
+                        localStorage.setItem("realjob-user", JSON.stringify(updated));
+                        if (currentUser.role === "employer") localStorage.setItem("realjob-user-employer", JSON.stringify(updated));
+                        if (currentUser.role === "admin") localStorage.setItem("realjob-user-admin", JSON.stringify(updated));
+                      } catch (e) {}
+                    }
+
+                    toast.success("✅ Worksite Location Link Saved Successfully!");
+                    setShowLocationModal(false);
+                  }}
+                  variant="outline"
+                  className="w-full border-[#DCE5F0] text-[#5B6B7F] hover:bg-slate-50 font-extrabold text-xs py-2.5 rounded-xl cursor-pointer"
+                >
+                  🔗 Save Link
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── ADD / EDIT WORKER MODAL WITH CUSTOM FIELDS GENERATOR ── */}
       {showWorkerModal && (
         <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
@@ -3083,7 +3499,7 @@ function AdminDashboardPage() {
                       {[
                         ...getIndustryDefaultCategories(),
                         ...customCategories,
-                        "⚙️ Other / Custom",
+                        "⚙️️ Other / Custom",
                       ]
                         .filter((catName) => !removedCategories.includes(catName))
                         .map((catName) => {
@@ -3217,6 +3633,90 @@ function AdminDashboardPage() {
                     />
                   </div>
                 ) : null}
+              </div>
+
+              {/* WORK LOCATION & ATTENDANCE MODE SELECTOR */}
+              <div className="space-y-2 p-4 bg-slate-50/80 rounded-2xl border border-slate-200">
+                <Label className="text-xs font-extrabold text-slate-800 uppercase block tracking-wider">
+                  Work Location & Attendance Type (कामाचे ठिकाण व हजेरी पद्धत) *
+                </Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div
+                    onClick={() => setWorkerForm((p) => ({ ...p, locationType: "fixed", attendanceMode: "punch" }))}
+                    className={`p-3.5 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${
+                      workerForm.locationType === "fixed"
+                        ? "border-[#063B78] bg-white ring-2 ring-[#063B78]/20 shadow-xs"
+                        : "border-slate-200 bg-white/60 hover:bg-white"
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-black text-xs text-[#063B78] flex items-center gap-1.5">
+                          🏢 Company / Fixed Location
+                        </span>
+                        {workerForm.locationType === "fixed" && (
+                          <span className="size-4 rounded-full bg-[#063B78] text-white flex items-center justify-center text-[10px] font-black">✓</span>
+                        )}
+                      </div>
+                      <p className="text-[11px] font-medium text-slate-600">
+                        एकाच ठिकाणी काम (Self Punch In/Out via Mobile GPS + Camera)
+                      </p>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md mt-2 w-fit">
+                      📱 Employee Self Punch
+                    </span>
+                  </div>
+
+                  <div
+                    onClick={() => setWorkerForm((p) => ({ ...p, locationType: "field", attendanceMode: "manual" }))}
+                    className={`p-3.5 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${
+                      workerForm.locationType === "field"
+                        ? "border-amber-600 bg-white ring-2 ring-amber-600/20 shadow-xs"
+                        : "border-slate-200 bg-white/60 hover:bg-white"
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-black text-xs text-amber-900 flex items-center gap-1.5">
+                          🏗️ Field / Site Worker
+                        </span>
+                        {workerForm.locationType === "field" && (
+                          <span className="size-4 rounded-full bg-amber-600 text-white flex items-center justify-center text-[10px] font-black">✓</span>
+                        )}
+                      </div>
+                      <p className="text-[11px] font-medium text-slate-600">
+                        लोकेशन फिक्स नसते (मालक डॅशबोर्डवरून मॅन्युअली हजेरी लावणार)
+                      </p>
+                    </div>
+                    <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md mt-2 w-fit">
+                      ✍️ Manual Attendance by Owner
+                    </span>
+                  </div>
+                </div>
+
+                {workerForm.locationType === "fixed" ? (
+                  <div className="mt-3 pt-3 border-t border-slate-200">
+                    <Label className="text-xs font-extrabold text-slate-700 uppercase mb-1 block">
+                      Employee Login 4-Digit PIN *
+                    </Label>
+                    <Input
+                      required
+                      placeholder="1234"
+                      maxLength={4}
+                      minLength={4}
+                      value={workerForm.pin}
+                      onChange={(e) => setWorkerForm((p) => ({ ...p, pin: e.target.value.replace(/\D/g, "") }))}
+                      className="h-10 w-44 rounded-xl text-xs font-black border-slate-300 tracking-widest text-[#063B78]"
+                    />
+                    <p className="text-[10px] text-slate-500 mt-1 font-semibold">
+                      कर्मचारी मोबाईल नंबर आणि या 4-Digit PIN द्वारे लॉगिन करून स्वतः पंच इन/आउट करतील.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="mt-3 pt-3 border-t border-slate-200 text-[11px] font-semibold text-amber-800 flex items-center gap-2">
+                    <span>💡 या कर्मचाऱ्याचे लोकेशन फिक्स नसल्यामुळे त्यांना मोबाईलवरून पंच करण्याची गरज नाही. तुम्ही खालील Attendance Sheet मधून त्यांची मॅन्युअल हजेरी नोंदवू शकता.</span>
+                  </div>
+                )}
               </div>
 
               {/* 4. DAILY WAGE RATE & JOINING DATE */}

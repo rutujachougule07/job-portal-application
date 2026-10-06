@@ -11,7 +11,7 @@ function fbSync(fn: () => Promise<unknown>) {
   if (typeof window !== "undefined") fn().catch(console.error);
 }
 
-export type UserRole = "worker" | "employer" | "admin";
+export type UserRole = "worker" | "employer" | "admin" | "employee";
 
 export type JobSeekerProfile = {
   id: string;
@@ -40,6 +40,7 @@ export type EmployerProfile = {
   contactPerson: string;
   mobile: string;
   location: string;
+  worksiteLocation?: { lat: number; lng: number };
   businessInfo: string;
   industry: string;
   size: string;
@@ -223,8 +224,10 @@ export type EmployerWorker = {
   status: "Active" | "Inactive";
   workShiftStart?: string;
   workShiftEnd?: string;
-  notes?: string;
   customFields?: Array<{ label: string; value: string }>;
+  pin?: string;
+  attendanceMode?: "punch" | "manual";
+  locationType?: "fixed" | "field";
 };
 
 export type DailyAttendanceRecord = {
@@ -234,6 +237,10 @@ export type DailyAttendanceRecord = {
   workerName: string;
   date: string;
   status: "Present" | "HalfDay" | "Absent" | "Overtime";
+  punchInTime?: string;
+  punchOutTime?: string;
+  punchInLocation?: { lat: number; lng: number };
+  punchOutLocation?: { lat: number; lng: number };
   notes?: string;
   updatedAt: string;
 };
@@ -320,7 +327,7 @@ export class DataStoreManager {
   }
 
 
-  public getRegisteredUserAccounts(): Array<{ id: string; email: string; password?: string; mobile?: string; role: UserRole; fullName: string; createdAt?: string }> {
+  public getRegisteredUserAccounts(): Array<{ id: string; email: string; password?: string; mobile?: string; role: UserRole; fullName: string; createdAt?: string; worksiteLocation?: { lat: number; lng: number } }> {
     if (typeof window === "undefined") return [];
     const raw = localStorage.getItem("realjob_db_registered_users");
     if (!raw) return [];
@@ -335,11 +342,11 @@ export class DataStoreManager {
     }
   }
 
-  public getRegisteredUsers(): Array<{ id: string; email: string; mobile?: string; role: UserRole; fullName: string; createdAt?: string }> {
+  public getRegisteredUsers(): Array<{ id: string; email: string; mobile?: string; role: UserRole; fullName: string; createdAt?: string; worksiteLocation?: { lat: number; lng: number } }> {
     return this.getRegisteredUserAccounts();
   }
 
-  public registerAccount(user: { email: string; password?: string; mobile?: string; role: UserRole; fullName: string; profilePhoto?: string }): { id: string; email: string; password?: string; mobile?: string; role: UserRole; fullName: string; profilePhoto?: string; createdAt?: string } {
+  public registerAccount(user: { email: string; password?: string; mobile?: string; role: UserRole; fullName: string; profilePhoto?: string }): { id: string; email: string; password?: string; mobile?: string; role: UserRole; fullName: string; profilePhoto?: string; createdAt?: string; worksiteLocation?: { lat: number; lng: number } } {
     const list = this.getRegisteredUserAccounts();
     const cleanEmail = user.email.trim().toLowerCase();
     const existingIndex = list.findIndex(u => u.email.toLowerCase() === cleanEmail);
@@ -369,15 +376,33 @@ export class DataStoreManager {
     return account;
   }
 
+  public updateRegisteredAccount(userId: string, updates: Partial<{ email: string; password?: string; mobile?: string; role: UserRole; fullName: string; profilePhoto?: string; worksiteLocation?: { lat: number; lng: number } }>): any {
+    const list = this.getRegisteredUserAccounts();
+    const index = list.findIndex(u => u.id === userId);
+    if (index >= 0) {
+      const updated = { ...list[index], ...updates } as any;
+      list[index] = updated;
+      if (typeof window !== "undefined") {
+        localStorage.setItem("realjob_db_registered_users", JSON.stringify(list));
+        fbSync(() => updateDoc(doc(db, "users", userId), updated));
+      }
+      return updated;
+    }
+    return null;
+  }
+
   public findRegisteredAccount(identifier: string) {
     const clean = identifier.trim().toLowerCase();
     const cleanDigits = clean.replace(/\D/g, "");
     const list = this.getRegisteredUserAccounts();
     return list.find((u) => {
       const emailMatch = u.email.toLowerCase() === clean;
+      // Strict mobile match — digits must be exactly equal (no partial includes)
+      const storedMobileDigits = (u.mobile || "").replace(/\D/g, "");
       const mobileMatch =
-        (u.mobile && cleanDigits && cleanDigits.length >= 7 && u.mobile.replace(/\D/g, "").includes(cleanDigits)) ||
-        (u.email && cleanDigits && cleanDigits.length >= 7 && u.email.replace(/\D/g, "").includes(cleanDigits));
+        cleanDigits.length >= 10 &&
+        storedMobileDigits.length >= 10 &&
+        storedMobileDigits === cleanDigits;
       return emailMatch || mobileMatch;
     });
   }
@@ -423,16 +448,18 @@ export class DataStoreManager {
   public getCurrentUser(rolePreference?: UserRole | "worker" | "employer" | "admin"): { email: string; role: UserRole; fullName?: string; id?: string; mobile?: string; profilePhoto?: string } | null {
     if (typeof window === "undefined") return null;
 
+    const savedRole = localStorage.getItem("realjob-role");
+    const activeRole = rolePreference || (savedRole === "admin" ? "employer" : savedRole === "user" || savedRole === "worker" ? "worker" : undefined);
+
     // 1. Check tab-specific session if present
     const sessionRaw = sessionStorage.getItem("realjob_tab_user");
     if (sessionRaw) {
       try {
         const u = JSON.parse(sessionRaw);
         if (
-          !rolePreference ||
-          u.role === rolePreference ||
-          (rolePreference === "employer" && (u.role === "admin" || u.role === "employer")) ||
-          (rolePreference === "admin" && (u.role === "admin" || u.role === "employer"))
+          !activeRole ||
+          u.role === activeRole ||
+          ((activeRole === "employer" || activeRole === "admin") && (u.role === "admin" || u.role === "employer"))
         ) {
           return u;
         }
@@ -440,13 +467,20 @@ export class DataStoreManager {
     }
 
     // 2. Role-specific storage lookup
-    if (rolePreference) {
-      const prefKey = rolePreference === "worker" ? "realjob-user-worker" : "realjob-user-admin";
+    if (activeRole) {
+      const prefKey = activeRole === "worker" ? "realjob-user-worker" : "realjob-user-admin";
       const roleRaw = localStorage.getItem(prefKey);
       if (roleRaw) {
         try {
           const u = JSON.parse(roleRaw);
-          if (u && u.email) return u;
+          if (
+            u &&
+            u.email &&
+            ((activeRole === "worker" && u.role === "worker") ||
+              ((activeRole === "employer" || activeRole === "admin") && (u.role === "admin" || u.role === "employer")))
+          ) {
+            return u;
+          }
         } catch {}
       }
     }
@@ -456,15 +490,14 @@ export class DataStoreManager {
     if (!raw) return null;
     try {
       const u = JSON.parse(raw);
-      if (rolePreference) {
-        if (rolePreference === "worker" && u.role !== "worker") {
-          const wRaw = localStorage.getItem("realjob-user-worker");
-          return wRaw ? JSON.parse(wRaw) : null;
+      if (activeRole) {
+        if (
+          (activeRole === "worker" && u.role === "worker") ||
+          ((activeRole === "employer" || activeRole === "admin") && (u.role === "admin" || u.role === "employer"))
+        ) {
+          return u;
         }
-        if ((rolePreference === "employer" || rolePreference === "admin") && u.role === "worker") {
-          const aRaw = localStorage.getItem("realjob-user-admin");
-          return aRaw ? JSON.parse(aRaw) : null;
-        }
+        return null;
       }
       return u;
     } catch {
@@ -481,19 +514,29 @@ export class DataStoreManager {
       if (targetRole === "worker") {
         localStorage.removeItem("realjob-user-worker");
         sessionStorage.removeItem("realjob_tab_user");
-        const main = this.getCurrentUser();
-        if (main && main.role === "worker") {
-          localStorage.removeItem(this.STORAGE_KEYS.USER);
-          localStorage.removeItem("realjob-user");
+        const raw = localStorage.getItem("realjob-user") || localStorage.getItem(this.STORAGE_KEYS.USER);
+        if (raw) {
+          try {
+            const u = JSON.parse(raw);
+            if (u.role === "worker") {
+              localStorage.removeItem(this.STORAGE_KEYS.USER);
+              localStorage.removeItem("realjob-user");
+            }
+          } catch {}
         }
       } else if (targetRole === "employer" || targetRole === "admin") {
         localStorage.removeItem("realjob-user-admin");
         localStorage.removeItem("realjob-user-employer");
         sessionStorage.removeItem("realjob_tab_user");
-        const main = this.getCurrentUser();
-        if (main && (main.role === "employer" || main.role === "admin")) {
-          localStorage.removeItem(this.STORAGE_KEYS.USER);
-          localStorage.removeItem("realjob-user");
+        const raw = localStorage.getItem("realjob-user") || localStorage.getItem(this.STORAGE_KEYS.USER);
+        if (raw) {
+          try {
+            const u = JSON.parse(raw);
+            if (u.role === "employer" || u.role === "admin") {
+              localStorage.removeItem(this.STORAGE_KEYS.USER);
+              localStorage.removeItem("realjob-user");
+            }
+          } catch {}
         }
       } else {
         localStorage.removeItem(this.STORAGE_KEYS.USER);
@@ -516,6 +559,7 @@ export class DataStoreManager {
         localStorage.setItem("realjob-user-employer", str);
       }
     }
+    window.dispatchEvent(new Event("realjob-auth-change"));
   }
 
   public logout(targetRole?: string) {
@@ -1123,6 +1167,17 @@ export class DataStoreManager {
     }
   }
 
+  public getAllEmployerWorkers(): EmployerWorker[] {
+    if (typeof window === "undefined") return [];
+    const raw = localStorage.getItem(this.STORAGE_KEYS.EMP_WORKERS);
+    if (!raw) return [];
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return [];
+    }
+  }
+
   public saveEmployerWorker(worker: Omit<EmployerWorker, "id"> & { id?: string }): EmployerWorker {
     const raw = typeof window !== "undefined" ? localStorage.getItem(this.STORAGE_KEYS.EMP_WORKERS) : null;
     const all: EmployerWorker[] = raw ? JSON.parse(raw) : [];
@@ -1199,27 +1254,52 @@ export class DataStoreManager {
     workerName: string,
     date: string,
     status: "Present" | "HalfDay" | "Absent" | "Overtime",
-    notes?: string
+    notes?: string,
+    punchData?: {
+      punchInTime?: string;
+      punchOutTime?: string;
+      punchInLocation?: { lat: number; lng: number };
+      punchOutLocation?: { lat: number; lng: number };
+    }
   ): DailyAttendanceRecord {
     const raw = typeof window !== "undefined" ? localStorage.getItem(this.STORAGE_KEYS.ATTENDANCE) : null;
     const all: DailyAttendanceRecord[] = raw ? JSON.parse(raw) : [];
     const recordId = `att-${workerId}-${date}`;
-    const newRecord: DailyAttendanceRecord = {
-      id: recordId,
-      employerId,
-      workerId,
-      workerName,
-      date,
-      status,
-      notes: notes || "",
-      updatedAt: new Date().toISOString(),
-    };
     const index = all.findIndex((a) => a.id === recordId || (a.workerId === workerId && a.date === date));
+    
+    let newRecord: DailyAttendanceRecord;
+    
     if (index >= 0) {
+      const existing = all[index] as DailyAttendanceRecord;
+      newRecord = {
+        ...existing,
+        status: status,
+        notes: notes ? (existing.notes ? existing.notes + " | " + notes : notes) : existing.notes,
+        punchInTime: punchData?.punchInTime || existing.punchInTime,
+        punchOutTime: punchData?.punchOutTime || existing.punchOutTime,
+        punchInLocation: punchData?.punchInLocation || existing.punchInLocation,
+        punchOutLocation: punchData?.punchOutLocation || existing.punchOutLocation,
+        updatedAt: new Date().toISOString(),
+      } as DailyAttendanceRecord;
       all[index] = newRecord;
     } else {
+      newRecord = {
+        id: recordId,
+        employerId,
+        workerId,
+        workerName,
+        date,
+        status,
+        notes: notes || "",
+        punchInTime: punchData?.punchInTime,
+        punchOutTime: punchData?.punchOutTime,
+        punchInLocation: punchData?.punchInLocation,
+        punchOutLocation: punchData?.punchOutLocation,
+        updatedAt: new Date().toISOString(),
+      } as DailyAttendanceRecord;
       all.push(newRecord);
     }
+    
     if (typeof window !== "undefined") {
       localStorage.setItem(this.STORAGE_KEYS.ATTENDANCE, JSON.stringify(all));
     }

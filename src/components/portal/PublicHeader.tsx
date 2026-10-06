@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { Brand } from "./Brand";
+import { LoginDropdown } from "./LoginDropdown";
 
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
@@ -33,17 +34,15 @@ export function PublicHeader() {
     };
     checkUser();
     window.addEventListener("storage", checkUser);
+    window.addEventListener("realjob-auth-change", checkUser);
     return () => {
       window.removeEventListener("storage", checkUser);
+      window.removeEventListener("realjob-auth-change", checkUser);
     };
   }, []);
 
   const handleLogout = () => {
-    if (typeof window !== "undefined") {
-      window.localStorage.removeItem("realjob-user");
-      window.localStorage.removeItem("realjob_current_user");
-    }
-    dataStore.setCurrentUser(null);
+    dataStore.logout();
     setUser(null);
     toast.info("Logged out successfully!");
     if (typeof window !== "undefined") {
@@ -75,7 +74,7 @@ export function PublicHeader() {
         )}
 
         {/* Action Buttons & Utilities */}
-        <div className="flex items-center gap-2 sm:gap-2.5">
+        <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
 
           {user ? (
             <div className="flex items-center gap-2">
@@ -109,21 +108,30 @@ export function PublicHeader() {
             </div>
           ) : (
             <>
-              {/* User Login */}
-              <Button asChild variant="outline" className="hidden sm:inline-flex border-[#063B78] text-[#063B78] font-extrabold hover:bg-[#063B78] hover:text-white text-xs px-3 sm:px-3.5 h-9.5 rounded-lg shadow-2xs">
+              {/* Desktop Login Buttons */}
+              <Button asChild variant="outline" className="hidden lg:inline-flex border-[#063B78] text-[#063B78] font-extrabold hover:bg-[#063B78] hover:text-white text-xs px-2.5 h-9 rounded-lg shadow-2xs shrink-0 whitespace-nowrap">
                 <Link to="/auth" search={{ mode: "login", role: "worker" }} className="inline-flex items-center gap-1.5">
                   <UserRound className="size-3.5" />
-                  <span>{t("userLogin")}</span>
+                  <span>{t("seekerLogin")}</span>
+                </Link>
+              </Button>
+              
+              <Button asChild variant="outline" className="hidden lg:inline-flex border-emerald-600 text-emerald-700 font-extrabold hover:bg-emerald-600 hover:text-white text-xs px-2.5 h-9 rounded-lg shadow-2xs shrink-0 whitespace-nowrap">
+                <Link to="/auth" search={{ mode: "login", role: "employee" }} className="inline-flex items-center gap-1.5">
+                  <Briefcase className="size-3.5" />
+                  <span>{t("employeeLogin")}</span>
                 </Link>
               </Button>
 
-              {/* Admin Login */}
-              <Button asChild className="hidden sm:inline-flex bg-[#063B78] hover:bg-[#082F63] text-white font-extrabold text-xs px-3 sm:px-3.5 h-9.5 rounded-lg shadow-xs">
+              <Button asChild className="hidden lg:inline-flex bg-[#063B78] hover:bg-[#082F63] text-white font-extrabold text-xs px-2.5 h-9 rounded-lg shadow-xs shrink-0 whitespace-nowrap">
                 <Link to="/auth" search={{ mode: "login", role: "admin" }} className="inline-flex items-center gap-1.5">
                   <ShieldCheck className="size-3.5 text-[#FFC400]" />
                   <span>{t("adminLogin")}</span>
                 </Link>
               </Button>
+
+              {/* Mobile / Tablet Single Hoverable Login Dropdown */}
+              <LoginDropdown className="lg:hidden" />
             </>
           )}
 
@@ -146,7 +154,6 @@ export function PublicHeader() {
           <div className="bg-white border-b border-[#DCE5F0] p-6 shadow-xl space-y-4 max-h-[calc(100vh-5rem)] overflow-y-auto">
             <div className="flex items-center justify-between pb-4 border-b border-[#DCE5F0]">
               <span className="text-xs font-bold uppercase tracking-wider text-[#5B6B7F]">Navigation</span>
-
             </div>
 
             {user && (
@@ -216,17 +223,24 @@ export function PublicHeader() {
                   </Button>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-2.5">
-                  <Button asChild variant="outline" className="w-full border-[#063B78] text-[#063B78] font-extrabold text-xs">
+                <div className="flex flex-col gap-2.5">
+                  <Button asChild variant="outline" className="w-full justify-start border-[#063B78] text-[#063B78] font-extrabold text-xs h-10 px-4">
                     <Link to="/auth" search={{ mode: "login", role: "worker" }} onClick={() => setMobileMenuOpen(false)}>
-                      <UserRound className="size-3.5 mr-1" />
-                      {t("userLogin")}
+                      <UserRound className="size-4 mr-2" />
+                      {t("seekerLogin")}
                     </Link>
                   </Button>
 
-                  <Button asChild className="w-full bg-[#063B78] text-white font-extrabold text-xs">
+                  <Button asChild variant="outline" className="w-full justify-start border-emerald-600 text-emerald-700 font-extrabold text-xs h-10 px-4">
+                    <Link to="/auth" search={{ mode: "login", role: "employee" }} onClick={() => setMobileMenuOpen(false)}>
+                      <Briefcase className="size-4 mr-2" />
+                      {t("employeeLogin")}
+                    </Link>
+                  </Button>
+
+                  <Button asChild className="w-full justify-start bg-[#063B78] hover:bg-[#082F63] text-white font-extrabold text-xs h-10 px-4">
                     <Link to="/auth" search={{ mode: "login", role: "admin" }} onClick={() => setMobileMenuOpen(false)}>
-                      <ShieldCheck className="size-3.5 mr-1 text-[#FFC400]" />
+                      <ShieldCheck className="size-4 mr-2 text-[#FFC400]" />
                       {t("adminLogin")}
                     </Link>
                   </Button>

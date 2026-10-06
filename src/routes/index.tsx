@@ -43,6 +43,7 @@ const THEMES: Record<string, any> = {
 import careerTeam from "@/assets/career-team.jpg";
 import { Brand } from "@/components/portal/Brand";
 import { LanguageGate } from "@/components/portal/LanguageGate";
+import { LoginDropdown } from "@/components/portal/LoginDropdown";
 
 import { PublicFooter } from "@/components/portal/PublicFooter";
 import { Button } from "@/components/ui/button";
@@ -184,11 +185,25 @@ function LandingGatewayPage() {
 
   const [currentUser, setCurrentUser] = useState<any>(() => dataStore.getCurrentUser());
 
+  useEffect(() => {
+    const syncUser = () => {
+      setCurrentUser(dataStore.getCurrentUser());
+    };
+    syncUser();
+    window.addEventListener("realjob-auth-change", syncUser);
+    window.addEventListener("storage", syncUser);
+    return () => {
+      window.removeEventListener("realjob-auth-change", syncUser);
+      window.removeEventListener("storage", syncUser);
+    };
+  }, []);
+
   const handleLogout = () => {
-    window.localStorage.removeItem("realjob-user");
-    dataStore.setCurrentUser(null);
+    localStorage.removeItem("realjob-role");
+    dataStore.logout();
     setCurrentUser(null);
     toast.info("Logged out successfully!");
+    window.location.reload();
   };
 
   const handleQuickUserEntry = () => {
@@ -224,48 +239,75 @@ function LandingGatewayPage() {
       <LanguageGate />
       
       {/* LANDING HEADER */}
-      <header className="absolute top-0 w-full z-50 bg-transparent p-4">
+      <header className="absolute top-0 w-full z-50 bg-transparent p-3 sm:p-4">
         <div className="mx-auto flex max-w-[1400px] items-center justify-between">
-          <Brand className="h-12 sm:h-16" />
+          <Brand className="h-12 sm:h-16 shrink-0" />
 
           <div className="flex items-center gap-2 sm:gap-3">
             {currentUser ? (
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#EBF1F8] border border-[#B8D3F2] text-xs font-black text-[#063B78]">
+                <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#EBF1F8] border border-[#B8D3F2] text-xs font-black text-[#063B78]">
                   <span>👤 {currentUser.fullName || currentUser.email?.split("@")[0]}</span>
                 </div>
                 <Button
+                  onClick={() => navigate({ to: currentUser.role === "admin" || currentUser.role === "employer" ? "/admin" : "/dashboard" })}
+                  size="sm"
+                  className="bg-[#063B78] hover:bg-[#082F63] text-white font-extrabold text-xs px-3 h-9.5 rounded-lg shadow-xs"
+                >
+                  Dashboard (डॅशबोर्ड)
+                </Button>
+                <Button
                   onClick={handleLogout}
                   size="sm"
-                  className="bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs px-3 h-9.5 rounded-lg shadow-xs"
+                  variant="outline"
+                  className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 font-extrabold text-xs px-3 h-9.5 rounded-lg shadow-xs"
                 >
                   Logout (लॉग आउट)
                 </Button>
               </div>
             ) : (
-              <>
-                <Button
-                  asChild
-                  variant="outline"
-                  className="bg-white border-[#063B78] text-[#063B78] font-extrabold hover:bg-[#063B78] hover:text-white text-xs px-3 sm:px-4 h-9.5 rounded-lg shadow-xs"
-                >
-                  <Link to="/auth" search={{ mode: "login", role: "worker" }}>
-                    <UserCheck className="size-4 mr-1.5 text-[#063B78]" />
-                    {t("userLogin")}
-                  </Link>
-                </Button>
+              <div className="flex items-center gap-2">
+                {/* Desktop view 3 inline buttons */}
+                <div className="hidden lg:flex items-center gap-2">
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="bg-white border-[#063B78] text-[#063B78] font-extrabold hover:bg-[#063B78] hover:text-white text-xs px-3 h-9 rounded-lg shadow-xs whitespace-nowrap"
+                  >
+                    <Link to="/auth" search={{ mode: "login", role: "worker" }}>
+                      <UserCheck className="size-4 mr-1.5" />
+                      {t("seekerLogin")}
+                    </Link>
+                  </Button>
 
-                <Button
-                  asChild
-                  variant="outline"
-                  className="bg-white border-[#063B78] text-[#063B78] font-extrabold hover:bg-[#063B78] hover:text-white text-xs px-3 sm:px-4 h-9.5 rounded-lg shadow-xs"
-                >
-                  <Link to="/auth" search={{ mode: "login", role: "admin" }}>
-                    <ShieldCheck className="size-4 mr-1.5 text-[#063B78]" />
-                    {t("adminLogin")}
-                  </Link>
-                </Button>
-              </>
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="bg-white border-emerald-600 text-emerald-700 font-extrabold hover:bg-emerald-600 hover:text-white text-xs px-3 h-9 rounded-lg shadow-xs whitespace-nowrap"
+                  >
+                    <Link to="/auth" search={{ mode: "login", role: "employee" }}>
+                      <Briefcase className="size-4 mr-1.5" />
+                      {t("employeeLogin")}
+                    </Link>
+                  </Button>
+
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="bg-white border-[#063B78] text-[#063B78] font-extrabold hover:bg-[#063B78] hover:text-white text-xs px-3 h-9 rounded-lg shadow-xs whitespace-nowrap"
+                  >
+                    <Link to="/auth" search={{ mode: "login", role: "admin" }}>
+                      <ShieldCheck className="size-4 mr-1.5 text-[#FFC400]" />
+                      {t("adminLogin")}
+                    </Link>
+                  </Button>
+                </div>
+
+                {/* Mobile / Compact Single Hoverable Dropdown Menu on Top Right */}
+                <div className="lg:hidden">
+                  <LoginDropdown />
+                </div>
+              </div>
             )}
           </div>
         </div>
@@ -292,37 +334,45 @@ function LandingGatewayPage() {
         {/* METRICS & ADVANTAGES */}
         <section className="relative z-20 pt-8 pb-16 bg-white">
           <div className="w-full px-4 sm:px-8 lg:px-12">
-            <div className="flex flex-wrap justify-center md:justify-evenly xl:justify-around items-center gap-6 bg-white rounded-[2rem] md:rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-gray-100 p-6 md:p-8 mx-auto w-full max-w-[1800px] -mt-4">
+            <div className="flex flex-wrap justify-center sm:justify-between items-center gap-6 sm:gap-4 bg-white rounded-[2rem] md:rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-gray-100 p-6 md:p-8 mx-auto w-full max-w-[1400px] -mt-4">
 
-              <div className="flex items-center gap-4">
-                <div className="text-[#D4AF37]"><Users className="size-12 fill-current" /></div>
-                <div>
-                  <strong className="block text-2xl md:text-3xl font-black text-[#10233F]">{metrics[0]?.value}</strong>
-                  <span className="text-[10px] md:text-xs font-bold text-gray-500 leading-tight block">{metrics[0]?.label}</span>
+              <div className="flex items-center gap-3 md:gap-4 w-full sm:w-auto justify-center sm:justify-start">
+                <div className="flex shrink-0 items-center justify-center size-12 md:size-14 rounded-full bg-[#D4AF37]/10 text-[#D4AF37]">
+                  <Users className="size-6 md:size-7 stroke-[2]" />
+                </div>
+                <div className="text-left">
+                  <strong className="block text-2xl md:text-3xl font-black text-[#10233F] leading-tight">{metrics[0]?.value}</strong>
+                  <span className="text-xs font-bold text-gray-500 block">{metrics[0]?.label}</span>
                 </div>
               </div>
 
-              <div className="flex items-center gap-4">
-                <div className="text-[#D4AF37]"><Briefcase className="size-12 fill-current" /></div>
-                <div>
-                  <strong className="block text-2xl md:text-3xl font-black text-[#10233F]">{metrics[1]?.value}</strong>
-                  <span className="text-[10px] md:text-xs font-bold text-gray-500 leading-tight block">{metrics[1]?.label}</span>
+              <div className="flex items-center gap-3 md:gap-4 w-full sm:w-auto justify-center sm:justify-start">
+                <div className="flex shrink-0 items-center justify-center size-12 md:size-14 rounded-full bg-[#D4AF37]/10 text-[#D4AF37]">
+                  <Briefcase className="size-6 md:size-7 stroke-[2]" />
+                </div>
+                <div className="text-left">
+                  <strong className="block text-2xl md:text-3xl font-black text-[#10233F] leading-tight">{metrics[1]?.value}</strong>
+                  <span className="text-xs font-bold text-gray-500 block">{metrics[1]?.label}</span>
                 </div>
               </div>
 
-              <div className="flex items-center gap-4">
-                <div className="text-[#D4AF37]"><Building2 className="size-12 fill-current" /></div>
-                <div>
-                  <strong className="block text-2xl md:text-3xl font-black text-[#10233F]">{metrics[2]?.value}</strong>
-                  <span className="text-[10px] md:text-xs font-bold text-gray-500 leading-tight block">{metrics[2]?.label}</span>
+              <div className="flex items-center gap-3 md:gap-4 w-full sm:w-auto justify-center sm:justify-start">
+                <div className="flex shrink-0 items-center justify-center size-12 md:size-14 rounded-full bg-[#D4AF37]/10 text-[#D4AF37]">
+                  <Building2 className="size-6 md:size-7 stroke-[2]" />
+                </div>
+                <div className="text-left">
+                  <strong className="block text-2xl md:text-3xl font-black text-[#10233F] leading-tight">{metrics[2]?.value}</strong>
+                  <span className="text-xs font-bold text-gray-500 block">{metrics[2]?.label}</span>
                 </div>
               </div>
 
-              <div className="flex items-center gap-4">
-                <div className="text-[#D4AF37]"><ShieldCheck className="size-12 fill-current" /></div>
-                <div>
-                  <strong className="block text-2xl md:text-3xl font-black text-[#10233F]">{metrics[3]?.value}</strong>
-                  <span className="text-[10px] md:text-xs font-bold text-gray-500 leading-tight block">{metrics[3]?.label}</span>
+              <div className="flex items-center gap-3 md:gap-4 w-full sm:w-auto justify-center sm:justify-start">
+                <div className="flex shrink-0 items-center justify-center size-12 md:size-14 rounded-full bg-[#D4AF37]/10 text-[#D4AF37]">
+                  <ShieldCheck className="size-6 md:size-7 stroke-[2]" />
+                </div>
+                <div className="text-left">
+                  <strong className="block text-2xl md:text-3xl font-black text-[#10233F] leading-tight">{metrics[3]?.value}</strong>
+                  <span className="text-xs font-bold text-gray-500 block">{metrics[3]?.label}</span>
                 </div>
               </div>
 
@@ -388,45 +438,49 @@ function LandingGatewayPage() {
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {/* Mission */}
-                    <div className="bg-white rounded-2xl p-5 shadow-[0_4px_20px_rgb(0,0,0,0.06)] border border-gray-50 flex flex-col items-center text-center hover:-translate-y-1 transition-transform">
-                      <div className="size-12 rounded-full border-2 border-[#D4AF37] flex items-center justify-center mb-4">
-                        <Target className="size-6 text-[#D4AF37]" />
+                    <div className="group bg-white rounded-2xl p-5 shadow-[0_4px_20px_rgb(0,0,0,0.06)] border border-gray-100 flex flex-col items-center text-center transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_15px_30px_rgba(212,175,55,0.15)] hover:border-[#D4AF37]/40 relative overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                      <div className="size-12 rounded-full border-2 border-[#D4AF37] flex items-center justify-center mb-4 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-12 group-hover:bg-[#D4AF37] z-10">
+                        <Target className="size-6 text-[#D4AF37] group-hover:text-white transition-colors duration-300" />
                       </div>
-                      <h4 className="text-[14px] font-black text-[#082F63] mb-2">Our Mission</h4>
-                      <p className="text-[11px] font-semibold text-gray-500 leading-snug">
+                      <h4 className="text-[14px] font-black text-[#082F63] mb-2 z-10 relative">Our Mission</h4>
+                      <p className="text-[11px] font-semibold text-gray-500 leading-snug z-10 relative">
                         To provide the right employment opportunity to everyone.
                       </p>
                     </div>
 
                     {/* Vision */}
-                    <div className="bg-white rounded-2xl p-5 shadow-[0_4px_20px_rgb(0,0,0,0.06)] border border-gray-50 flex flex-col items-center text-center hover:-translate-y-1 transition-transform">
-                      <div className="size-12 rounded-full border-2 border-[#D4AF37] flex items-center justify-center mb-4">
-                        <Eye className="size-6 text-[#D4AF37]" />
+                    <div className="group bg-white rounded-2xl p-5 shadow-[0_4px_20px_rgb(0,0,0,0.06)] border border-gray-100 flex flex-col items-center text-center transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_15px_30px_rgba(212,175,55,0.15)] hover:border-[#D4AF37]/40 relative overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                      <div className="size-12 rounded-full border-2 border-[#D4AF37] flex items-center justify-center mb-4 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-12 group-hover:bg-[#D4AF37] z-10">
+                        <Eye className="size-6 text-[#D4AF37] group-hover:text-white transition-colors duration-300" />
                       </div>
-                      <h4 className="text-[14px] font-black text-[#082F63] mb-2">Our Vision</h4>
-                      <p className="text-[11px] font-semibold text-gray-500 leading-snug">
+                      <h4 className="text-[14px] font-black text-[#082F63] mb-2 z-10 relative">Our Vision</h4>
+                      <p className="text-[11px] font-semibold text-gray-500 leading-snug z-10 relative">
                         To become the most trusted employment portal in India.
                       </p>
                     </div>
 
                     {/* Values */}
-                    <div className="bg-white rounded-2xl p-5 shadow-[0_4px_20px_rgb(0,0,0,0.06)] border border-gray-50 flex flex-col items-center text-center hover:-translate-y-1 transition-transform">
-                      <div className="size-12 rounded-full border-2 border-[#D4AF37] flex items-center justify-center mb-4">
-                        <Users className="size-6 text-[#D4AF37]" />
+                    <div className="group bg-white rounded-2xl p-5 shadow-[0_4px_20px_rgb(0,0,0,0.06)] border border-gray-100 flex flex-col items-center text-center transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_15px_30px_rgba(212,175,55,0.15)] hover:border-[#D4AF37]/40 relative overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                      <div className="size-12 rounded-full border-2 border-[#D4AF37] flex items-center justify-center mb-4 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-12 group-hover:bg-[#D4AF37] z-10">
+                        <Users className="size-6 text-[#D4AF37] group-hover:text-white transition-colors duration-300" />
                       </div>
-                      <h4 className="text-[14px] font-black text-[#082F63] mb-2">Our Values</h4>
-                      <p className="text-[11px] font-semibold text-gray-500 leading-snug">
+                      <h4 className="text-[14px] font-black text-[#082F63] mb-2 z-10 relative">Our Values</h4>
+                      <p className="text-[11px] font-semibold text-gray-500 leading-snug z-10 relative">
                         Trust, transparency, quality, and consistent service.
                       </p>
                     </div>
 
                     {/* Belief */}
-                    <div className="bg-white rounded-2xl p-5 shadow-[0_4px_20px_rgb(0,0,0,0.06)] border border-gray-50 flex flex-col items-center text-center hover:-translate-y-1 transition-transform">
-                      <div className="size-12 rounded-full border-2 border-[#D4AF37] flex items-center justify-center mb-4">
-                        <Handshake className="size-6 text-[#D4AF37]" />
+                    <div className="group bg-white rounded-2xl p-5 shadow-[0_4px_20px_rgb(0,0,0,0.06)] border border-gray-100 flex flex-col items-center text-center transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_15px_30px_rgba(212,175,55,0.15)] hover:border-[#D4AF37]/40 relative overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                      <div className="size-12 rounded-full border-2 border-[#D4AF37] flex items-center justify-center mb-4 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-12 group-hover:bg-[#D4AF37] z-10">
+                        <Handshake className="size-6 text-[#D4AF37] group-hover:text-white transition-colors duration-300" />
                       </div>
-                      <h4 className="text-[14px] font-black text-[#082F63] mb-2">Our Belief</h4>
-                      <p className="text-[11px] font-semibold text-gray-500 leading-snug">
+                      <h4 className="text-[14px] font-black text-[#082F63] mb-2 z-10 relative">Our Belief</h4>
+                      <p className="text-[11px] font-semibold text-gray-500 leading-snug z-10 relative">
                         Right Person<br />Right Job<br />Right Opportunity.
                       </p>
                     </div>
@@ -438,65 +492,65 @@ function LandingGatewayPage() {
         </section>
 
         {/* POPULAR JOB CATEGORIES */}
-        <section className="relative py-20 bg-white overflow-hidden">
+        <section className="relative py-14 bg-gradient-to-b from-[#F5F8FC] via-white to-[#F5F8FC] overflow-hidden">
           <div className="relative z-10 mx-auto max-w-[1600px] px-4 text-center">
 
             {/* Eyebrow Pill */}
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#FEF9E7] border border-[#FDE68A] text-[#B45309] font-black text-xs uppercase tracking-wider mb-4 shadow-2xs">
-              <Briefcase className="size-4 text-[#D97706]" />
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#FEF9E7] border border-[#FDE68A] text-[#B45309] font-black text-xs uppercase tracking-wider mb-3 shadow-sm hover:scale-105 transition-transform duration-300">
+              <Briefcase className="size-4 text-[#D97706] animate-bounce" />
               EXPLORE BY CATEGORY
             </div>
 
             {/* Main Section Heading */}
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#082F63] mb-3 tracking-tight">
-              Popular Job <span className="text-[#D4AF37]">Categories</span>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#082F63] mb-2 tracking-tight">
+              Popular Job <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#D4AF37] to-[#FDE047] animate-pulse">Categories</span>
             </h2>
 
             {/* Subtitle with accent lines */}
-            <div className="flex items-center justify-center gap-3 mb-12">
-              <div className="h-[1.5px] w-12 md:w-20 bg-[#D4AF37]/60"></div>
-              <p className="text-xs md:text-sm font-extrabold text-[#5B6B7F]">Right opportunity for you - in your field!</p>
-              <div className="h-[1.5px] w-12 md:w-20 bg-[#D4AF37]/60"></div>
+            <div className="flex items-center justify-center gap-3 mb-10">
+              <div className="h-[1.5px] w-12 md:w-20 bg-gradient-to-r from-transparent to-[#D4AF37]/60"></div>
+              <p className="text-xs md:text-sm font-extrabold text-[#5B6B7F]">Right opportunity for you — in your field!</p>
+              <div className="h-[1.5px] w-12 md:w-20 bg-gradient-to-l from-transparent to-[#D4AF37]/60"></div>
             </div>
 
-            {/* 5 Animated Category Cards Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 max-w-[1450px] mx-auto px-4">
-              {categories.map((catData, i) => {
-                const IconComponent = ICONS[catData.iconName] || Briefcase;
-                return (
-                  <div
-                    key={catData.id || i}
-                    onClick={() => navigate({ to: '/auth', search: { mode: 'login', role: 'worker' } })}
-                    className={`group relative rounded-3xl border border-[#DCE5F0] bg-white p-7 flex flex-col items-center justify-between text-center cursor-pointer transition-all duration-500 shadow-sm hover:shadow-2xl hover:-translate-y-3.5 hover:scale-[1.02] ${catData.hoverBorder || "group-hover:border-blue-400"} overflow-hidden min-h-[240px]`}
-                  >
-                    {/* Background Radial Glow */}
-                    <div className={`absolute -top-16 -left-16 size-40 rounded-full bg-gradient-to-br ${catData.gradient || "from-blue-500/15 to-transparent"} blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none`} />
+            {/* INFINITE AUTO-SCROLLER CONTAINER */}
+            <div className="relative w-full overflow-hidden py-6">
+              
+              {/* Fade masks for elegant left & right edge blending */}
+              <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-20 sm:w-32 bg-gradient-to-r from-[#F5F8FC] via-[#F5F8FC]/80 to-transparent z-20" />
+              <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-20 sm:w-32 bg-gradient-to-l from-[#F5F8FC] via-[#F5F8FC]/80 to-transparent z-20" />
 
-                    {/* Top Animated Circle Icon Container */}
-                    <div className={`relative size-20 rounded-2xl flex items-center justify-center transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-xs ${catData.iconBg || "bg-blue-100 text-blue-700"}`}>
-                      <IconComponent className="size-9 stroke-[1.9] transition-transform duration-500 group-hover:scale-110" />
-                    </div>
+              {/* Marquee Row */}
+              <div className="animate-marquee-slow flex items-center gap-6 sm:gap-8 px-4">
+                {[...categories, ...categories, ...categories, ...categories].map((catData, i) => {
+                  const IconComponent = ICONS[catData.iconName] || Briefcase;
+                  return (
+                    <div
+                      key={`${catData.id || i}-${i}`}
+                      onClick={() => navigate({ to: '/jobs', search: { category: catData.id } })}
+                      className={`group relative shrink-0 w-[220px] sm:w-[250px] h-[100px] sm:h-[110px] rounded-[1.5rem] border border-white/60 bg-white/40 backdrop-blur-md p-4 flex items-center justify-center gap-4 cursor-pointer transition-all duration-500 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgba(212,175,55,0.15)] hover:-translate-y-2 hover:scale-[1.03] overflow-hidden`}
+                    >
+                      {/* Animated Border Gradient on Hover */}
+                      <div className="absolute inset-0 rounded-[1.5rem] border-2 border-transparent bg-gradient-to-br from-[#D4AF37]/0 via-[#D4AF37]/0 to-[#D4AF37]/40 opacity-0 transition-opacity duration-500 group-hover:opacity-100 pointer-events-none" />
 
-                    {/* Title & Job Count Badge */}
-                    <div className="my-4 flex flex-col items-center">
-                      <h3 className="font-black text-base sm:text-lg text-[#10233F] group-hover:text-[#063B78] transition-colors leading-tight">
-                        {catData.label}
-                      </h3>
-                      <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black border tracking-wide mt-2 shadow-2xs ${catData.badgeStyle || "bg-blue-50 text-blue-700 border-blue-200"}`}>
-                        <Sparkles className="size-3 animate-pulse" />
-                        {catData.jobsCount || "1K+ Jobs"}
-                      </span>
-                    </div>
+                      {/* Radial Ambient Glow */}
+                      <div className={`absolute -top-12 -left-12 size-36 rounded-full bg-gradient-to-br ${catData.gradient || "from-blue-500/20 to-transparent"} blur-2xl opacity-40 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none group-hover:animate-pulse`} />
 
-                    {/* Bottom Animated Arrow Circle Button */}
-                    <div className="w-full flex justify-end mt-auto">
-                      <div className={`size-10 rounded-full flex items-center justify-center transition-all duration-500 shadow-2xs ${catData.btnStyle || "bg-blue-100 text-blue-700"} group-hover:scale-110 group-hover:shadow-md`}>
-                        <ArrowRight className="size-5 transition-transform duration-300 group-hover:translate-x-1" />
+                      {/* Icon Box */}
+                      <div className={`relative size-12 sm:size-14 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-500 group-hover:scale-110 group-hover:rotate-12 shadow-sm group-hover:shadow-lg ${catData.iconBg || "bg-blue-600 text-white"}`}>
+                        <IconComponent className="size-6 sm:size-7 stroke-[2.5]" />
+                      </div>
+
+                      {/* Category Title */}
+                      <div className="flex-1 text-left flex flex-col justify-center overflow-hidden z-10">
+                        <h3 className="font-black text-sm sm:text-base text-[#082F63] group-hover:text-[#125BB5] transition-colors truncate leading-tight">
+                          {catData.label}
+                        </h3>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
 
           </div>

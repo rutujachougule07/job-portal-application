@@ -438,9 +438,9 @@ function JobsListingPage() {
             {/* Compact Filter Bar */}
             <div className="bg-white p-4 rounded-2xl border border-[#DCE5F0] shadow-sm flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2 flex-wrap">
-                <div className="flex items-center gap-2 px-3 py-2 bg-[#063B78]/10 text-[#063B78] rounded-xl text-xs font-black mr-1">
+                <div className="flex items-center gap-2 px-3.5 py-2 bg-[#063B78]/10 text-[#063B78] rounded-xl text-xs font-black mr-1">
                   <SlidersHorizontal className="size-3.5" />
-                  <span>{t("filters")}</span>
+                  <span>{lang === "mr" ? "फिल्टर" : "Filter"}</span>
                 </div>
 
                 {/* Experience Filter */}
@@ -450,8 +450,8 @@ function JobsListingPage() {
                     onChange={(e) => setExperienceFilter(e.target.value)}
                     className="h-10 rounded-xl border border-[#DCE5F0] bg-[#F5F8FC] pl-3 pr-8 text-xs font-bold text-[#10233F] focus:border-[#063B78] appearance-none cursor-pointer"
                   >
-                    <option value="all">🎓 {lang === "mr" ? "अनुभव (सर्व)" : "Experience: All"}</option>
-                    <option value="Fresher">Fresher / फ्रेसर</option>
+                    <option value="all">🎓 {lang === "mr" ? "अनुभव: सर्व" : "Experience: All"}</option>
+                    <option value="Fresher">{lang === "mr" ? "फ्रेसर (Fresher)" : "Fresher"}</option>
                     <option value="1-3">1-3 {lang === "mr" ? "वर्षे" : "Years"}</option>
                     <option value="3-5">3-5 {lang === "mr" ? "वर्षे" : "Years"}</option>
                     <option value="5+">5+ {lang === "mr" ? "वर्षे" : "Years"}</option>
@@ -466,7 +466,7 @@ function JobsListingPage() {
                     onChange={(e) => setSalaryFilter(e.target.value)}
                     className="h-10 rounded-xl border border-[#DCE5F0] bg-[#F5F8FC] pl-3 pr-8 text-xs font-bold text-[#10233F] focus:border-[#063B78] appearance-none cursor-pointer"
                   >
-                    <option value="all">💰 {lang === "mr" ? "पगार (सर्व)" : "Salary: All"}</option>
+                    <option value="all">💰 {lang === "mr" ? "पगार: सर्व" : "Salary: All"}</option>
                     <option value="10000">₹10,000+ / mo</option>
                     <option value="15000">₹15,000+ / mo</option>
                     <option value="20000">₹20,000+ / mo</option>
@@ -482,10 +482,10 @@ function JobsListingPage() {
                     onChange={(e) => setTypeFilter(e.target.value)}
                     className="h-10 rounded-xl border border-[#DCE5F0] bg-[#F5F8FC] pl-3 pr-8 text-xs font-bold text-[#10233F] focus:border-[#063B78] appearance-none cursor-pointer"
                   >
-                    <option value="all">💼 {t("allTypes")}</option>
-                    <option value="Full Time">{t("fullTime")}</option>
-                    <option value="Part Time">{t("partTime")}</option>
-                    <option value="Contract">{t("contract")}</option>
+                    <option value="all">💼 {lang === "mr" ? "प्रकार: सर्व" : "Job Type: All"}</option>
+                    <option value="Full Time">{lang === "mr" ? "फुल टाईम (Full Time)" : "Full Time"}</option>
+                    <option value="Part Time">{lang === "mr" ? "पार्ट टाईम (Part Time)" : "Part Time"}</option>
+                    <option value="Contract">{lang === "mr" ? "कंत्राटी (Contract)" : "Contract"}</option>
                   </select>
                   <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 text-[#5B6B7F] pointer-events-none" />
                 </div>
@@ -497,10 +497,10 @@ function JobsListingPage() {
                     onChange={(e) => setWorkModeFilter(e.target.value)}
                     className="h-10 rounded-xl border border-[#DCE5F0] bg-[#F5F8FC] pl-3 pr-8 text-xs font-bold text-[#10233F] focus:border-[#063B78] appearance-none cursor-pointer"
                   >
-                    <option value="all">🏢 {lang === "mr" ? "मोड (सर्व)" : "Mode: All"}</option>
-                    <option value="Work From Home">🏠 WFH / Remote</option>
-                    <option value="On-site">🏢 On-site</option>
-                    <option value="Hybrid">🔄 Hybrid</option>
+                    <option value="all">🏢 {lang === "mr" ? "मोड: सर्व" : "Mode: All"}</option>
+                    <option value="Work From Home">🏠 {lang === "mr" ? "वर्क फ्रॉम होम (WFH)" : "Work From Home"}</option>
+                    <option value="On-site">🏢 {lang === "mr" ? "ऑन-साईट (On-site)" : "On-site"}</option>
+                    <option value="Hybrid">🔄 {lang === "mr" ? "हायब्रिड (Hybrid)" : "Hybrid"}</option>
                   </select>
                   <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 text-[#5B6B7F] pointer-events-none" />
                 </div>
@@ -512,7 +512,7 @@ function JobsListingPage() {
                     onChange={(e) => setLocationFilter(e.target.value)}
                     className="h-10 rounded-xl border border-[#DCE5F0] bg-[#F5F8FC] pl-3 pr-8 text-xs font-bold text-[#10233F] focus:border-[#063B78] appearance-none cursor-pointer"
                   >
-                    <option value="all">📍 {t("allLocations")}</option>
+                    <option value="all">📍 {lang === "mr" ? "ठिकाण: सर्व" : "Location: All"}</option>
                     {dynamicLocations.map((loc) => (
                       <option key={loc} value={loc.toLowerCase()}>
                         {loc}
@@ -529,27 +529,27 @@ function JobsListingPage() {
                     className="h-10 px-3.5 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 text-xs font-extrabold hover:bg-amber-100 transition-colors flex items-center gap-1.5 cursor-pointer"
                   >
                     <RotateCcw className="size-3.5" />
-                    {t("reset")}
+                    {lang === "mr" ? "रीसेट" : "Reset"}
                   </button>
                 )}
               </div>
 
               {/* Total Count & Sort By */}
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 flex-wrap">
                 <span className="text-xs font-extrabold text-[#10233F] flex items-center gap-1.5">
                   <List className="size-3.5 text-[#063B78]" />
-                  {t("totalJobsCount")}: <span className="text-[#063B78] font-black text-sm">{n(filteredJobs.length)}</span>
+                  {lang === "mr" ? "एकूण नोकऱ्या:" : "Total Jobs:"} <span className="text-[#063B78] font-black text-sm">{n(filteredJobs.length)}</span>
                 </span>
 
                 <div className="flex items-center gap-1.5 bg-[#F5F8FC] rounded-xl p-1 border border-[#DCE5F0]/50">
-                  <span className="text-xs font-bold text-[#5B6B7F] pl-2">{t("sortByLabel")}</span>
+                  <span className="text-xs font-bold text-[#5B6B7F] pl-2">{lang === "mr" ? "क्रमवारी:" : "Sort By:"}</span>
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as any)}
                     className="h-8 rounded-lg border-none bg-white shadow-xs px-2.5 text-xs font-bold text-[#10233F] focus:ring-0 appearance-none cursor-pointer"
                   >
-                    <option value="newest">{t("newestFirst")}</option>
-                    <option value="title">{t("byTitle")}</option>
+                    <option value="newest">{lang === "mr" ? "नवीनतम प्रथम" : "Newest First"}</option>
+                    <option value="title">{lang === "mr" ? "नावानुसार" : "By Title"}</option>
                   </select>
                 </div>
               </div>

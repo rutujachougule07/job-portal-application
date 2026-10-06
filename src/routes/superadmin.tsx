@@ -364,11 +364,20 @@ function SuperAdminPage() {
     if (typeof window !== "undefined") window.scrollTo(0, 0);
   };
 
+  const totalUsersCount = allUsers.length;
+  
+  const totalRevenueNumber = packagePurchases.reduce((acc, tx) => acc + (tx.price || 0), 0);
+  const formattedRevenue = totalRevenueNumber >= 1000000 
+    ? `₹${(totalRevenueNumber / 1000000).toFixed(1)}M` 
+    : totalRevenueNumber >= 1000 
+      ? `₹${(totalRevenueNumber / 1000).toFixed(1)}K` 
+      : `₹${totalRevenueNumber}`;
+
   const stats = [
-    { label: "Total Users", value: "24,592", trend: "+12%", color: "text-blue-500", bg: "bg-blue-100" },
-    { label: "Active Jobs", value: "8,143", trend: "+5%", color: "text-emerald-500", bg: "bg-emerald-100" },
-    { label: "Total Revenue", value: "₹4.2M", trend: "+18%", color: "text-purple-500", bg: "bg-purple-100" },
-    { label: "System Health", value: "99.9%", trend: "Stable", color: "text-[#D4AF37]", bg: "bg-[#D4AF37]/10" },
+    { label: "Total Users", value: totalUsersCount.toLocaleString(), trend: "Live Tracking", color: "text-blue-500", bg: "bg-blue-100" },
+    { label: "Active Jobs", value: approvedJobsCount.toLocaleString(), trend: "Live Tracking", color: "text-emerald-500", bg: "bg-emerald-100" },
+    { label: "Total Revenue", value: formattedRevenue, trend: "Actual Revenue", color: "text-purple-500", bg: "bg-purple-100" },
+    { label: "System Health", value: "100%", trend: "Stable", color: "text-[#D4AF37]", bg: "bg-[#D4AF37]/10" },
   ];
 
   if (!isAuthenticated) {
@@ -433,10 +442,10 @@ function SuperAdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F0F4FA] flex font-sans">
+    <div className="h-screen bg-[#F0F4FA] flex font-sans w-full overflow-hidden">
       {/* Sidebar */}
-      <div className="w-64 bg-[#021D3D] text-white flex flex-col hidden md:flex h-screen sticky top-0">
-        <div className="p-6 border-b border-white/10">
+      <div className="w-64 bg-[#021D3D] text-white flex flex-col justify-between hidden md:flex h-full shrink-0 border-r border-white/10 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
+        <div className="p-6 border-b border-white/10 shrink-0">
           <div className="flex items-center gap-3 text-white">
             <div className="size-10 bg-gradient-to-br from-[#D4AF37] to-[#F1C40F] rounded-xl flex items-center justify-center shadow-lg border-[2px] border-white/10">
               <ShieldAlert className="size-5 text-[#021D3D]" />
@@ -448,7 +457,7 @@ function SuperAdminPage() {
           </div>
         </div>
 
-        <div className="flex-1 py-6 px-4 space-y-1 overflow-y-auto">
+        <div className="flex-1 py-6 px-4 space-y-1 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
           {[
             { id: "dashboard", label: "Dashboard Overview", icon: BarChart3 },
             { id: "job-approvals", label: "Job Approvals", icon: CheckCircle2, count: pendingJobsCount },
@@ -479,7 +488,7 @@ function SuperAdminPage() {
           ))}
         </div>
 
-        <div className="p-4 border-t border-white/10">
+        <div className="p-4 border-t border-white/10 shrink-0 mt-auto">
           <button 
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-[#9DAEC5] hover:bg-red-500/10 hover:text-red-400 transition-all"
@@ -491,9 +500,9 @@ function SuperAdminPage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
+      <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
         {/* Top Navbar */}
-        <header className="h-20 bg-white border-b border-[#E0E8F5] flex items-center justify-between px-8 sticky top-0 z-30 shadow-sm">
+        <header className="h-20 bg-white border-b border-[#E0E8F5] flex items-center justify-between px-8 shrink-0 z-30 shadow-xs">
           <div className="flex items-center gap-4">
             <h2 className="text-xl font-black text-[#063B78] capitalize">{activeTab.replace('-', ' ')}</h2>
           </div>
@@ -510,7 +519,6 @@ function SuperAdminPage() {
               <Bell className="size-5 text-[#5B6B7F]" />
               <span className="absolute top-2 right-2 size-2 bg-[#D4AF37] rounded-full border border-white"></span>
             </div>
-            <LanguageSwitcher />
             <div className="flex items-center gap-3 pl-4 border-l border-[#E0E8F5] cursor-pointer">
               <div className="text-right hidden sm:block">
                 <div className="text-sm font-bold text-[#063B78]">System Root</div>

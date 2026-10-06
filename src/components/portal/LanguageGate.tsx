@@ -78,6 +78,7 @@ export function LanguageGate() {
       window.localStorage.setItem("realjob-role", role);
       window.localStorage.setItem("realjob-gate-done", "true");
       window.localStorage.setItem("karyam-onboarding-done", "true");
+      window.dispatchEvent(new Event("realjob-auth-change"));
     }
     hasShownGateThisSession = true;
     setOpen(false);

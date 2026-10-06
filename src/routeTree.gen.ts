@@ -17,6 +17,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CategoriesRouteImport } from './routes/categories'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as EmployeeDashboardRouteImport } from './routes/employee-dashboard'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
@@ -85,6 +86,11 @@ const ContactRoute = ContactRouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EmployeeDashboardRoute = EmployeeDashboardRouteImport.update({
+  id: '/employee-dashboard',
+  path: '/employee-dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FaqRoute = FaqRouteImport.update({
@@ -260,6 +266,7 @@ export interface FileRoutesByFullPath {
   '/categories': typeof CategoriesRoute
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
+  '/employee-dashboard': typeof EmployeeDashboardRoute
   '/faq': typeof FaqRoute
   '/home': typeof HomeRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -299,6 +306,7 @@ export interface FileRoutesByTo {
   '/categories': typeof CategoriesRoute
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
+  '/employee-dashboard': typeof EmployeeDashboardRoute
   '/faq': typeof FaqRoute
   '/home': typeof HomeRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -340,6 +348,7 @@ export interface FileRoutesById {
   '/categories': typeof CategoriesRoute
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
+  '/employee-dashboard': typeof EmployeeDashboardRoute
   '/faq': typeof FaqRoute
   '/home': typeof HomeRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -381,6 +390,7 @@ export interface FileRouteTypes {
     | '/categories'
     | '/contact'
     | '/dashboard'
+    | '/employee-dashboard'
     | '/faq'
     | '/home'
     | '/reset-password'
@@ -420,6 +430,7 @@ export interface FileRouteTypes {
     | '/categories'
     | '/contact'
     | '/dashboard'
+    | '/employee-dashboard'
     | '/faq'
     | '/home'
     | '/reset-password'
@@ -460,6 +471,7 @@ export interface FileRouteTypes {
     | '/categories'
     | '/contact'
     | '/dashboard'
+    | '/employee-dashboard'
     | '/faq'
     | '/home'
     | '/reset-password'
@@ -501,6 +513,7 @@ export interface RootRouteChildren {
   CategoriesRoute: typeof CategoriesRoute
   ContactRoute: typeof ContactRoute
   DashboardRoute: typeof DashboardRoute
+  EmployeeDashboardRoute: typeof EmployeeDashboardRoute
   FaqRoute: typeof FaqRoute
   HomeRoute: typeof HomeRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -569,6 +582,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/employee-dashboard': {
+      id: '/employee-dashboard'
+      path: '/employee-dashboard'
+      fullPath: '/employee-dashboard'
+      preLoaderRoute: typeof EmployeeDashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/faq': {
@@ -862,6 +882,7 @@ const rootRouteChildren: RootRouteChildren = {
   CategoriesRoute: CategoriesRoute,
   ContactRoute: ContactRoute,
   DashboardRoute: DashboardRoute,
+  EmployeeDashboardRoute: EmployeeDashboardRoute,
   FaqRoute: FaqRoute,
   HomeRoute: HomeRoute,
   ResetPasswordRoute: ResetPasswordRoute,

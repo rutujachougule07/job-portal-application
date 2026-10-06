@@ -49,7 +49,7 @@ function AuthPage() {
   const { lang } = useI18n();
 
   const [mode, setMode] = useState<"login" | "register" | "forgot">((search.mode as any) || "login");
-  const [role, setRole] = useState<"worker" | "employer" | "admin">((search.role as any) || "worker");
+  const [role, setRole] = useState<"worker" | "employer" | "admin" | "employee">((search.role as any) || "worker");
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
@@ -70,6 +70,9 @@ function AuthPage() {
     setEmail("");
     setPassword("");
     setProfilePhoto("");
+    if (role === "employee") {
+      setMode("login");
+    }
   }, [mode, role]);
 
   // Handle live camera stream attachment when camera open
@@ -248,22 +251,49 @@ function AuthPage() {
         return;
       }
 
-      // Regular Employer / Worker Login with registered Email & Password
-      const existingAccount = dataStore.findRegisteredAccount(enteredEmail);
+      let existingAccount: any = undefined;
+      
+      if (role === "employee") {
+         // for employee, enteredEmail is actually their mobile number
+         const searchMobile = enteredEmail.replace(/\D/g, "");
+         const allEmployerWorkers = (dataStore as any).getAllEmployerWorkers ? (dataStore as any).getAllEmployerWorkers() : [];
+         
+         // In employee login case, existingAccount becomes the EmployerWorker object
+         existingAccount = allEmployerWorkers.find((w: any) => w.mobile?.replace(/\D/g, "") === searchMobile);
+         
+         if (existingAccount) {
+            // Compare the entered password (PIN) with worker's PIN
+            const workerPin = existingAccount.pin || "1234"; // fallback to 1234 if pin wasn't saved initially
+            if (password !== workerPin) {
+               toast.error("❌ चुकीचा पासकोड! (Wrong PIN. Please enter correct PIN.)");
+               setBusy(false);
+               return;
+            }
+         }
+      } else {
+         existingAccount = dataStore.findRegisteredAccount(enteredEmail);
+         
+         if (existingAccount) {
+           // Strictly match password — even if stored password is empty, entered must match exactly
+           if (existingAccount.password !== password) {
+             toast.error("❌ चुकीचा पासवर्ड! (Wrong password. Please enter correct password.)");
+             setBusy(false);
+             return;
+           }
+         }
+      }
 
       if (existingAccount) {
-        if (existingAccount.password && existingAccount.password !== password) {
-          toast.error("❌ चुकीचा पासवर्ड! (Wrong password. Please enter correct password.)");
-          setBusy(false);
-          return;
-        }
-
-        const userObj = {
+        const userObj: any = {
           id: existingAccount.id,
-          email: existingAccount.email,
-          role: (role === "admin" ? "employer" : role) as any,
-          fullName: existingAccount.fullName || "User",
+          employerId: existingAccount.employerId || "",
+          email: existingAccount.email || `${existingAccount.mobile}@employee.local`,
+          role: role === "employee" ? "employee" : (role === "admin" ? "employer" : role) as any,
+          fullName: existingAccount.fullName || existingAccount.name || "User",
           mobile: existingAccount.mobile || "",
+          profilePhoto: existingAccount.profilePhoto || "",
+          locationType: existingAccount.locationType || "fixed",
+          attendanceMode: existingAccount.attendanceMode || "punch",
         };
 
         window.localStorage.setItem("realjob-user", JSON.stringify(userObj));
@@ -272,35 +302,15 @@ function AuthPage() {
         const isEmpOrAdmin = userObj.role === "employer" || userObj.role === "admin" || role === "admin" || role === "employer";
         if (isEmpOrAdmin) {
           navigate({ to: "/admin" });
+        } else if (userObj.role === "employee" || role === "employee") {
+          navigate({ to: "/employee-dashboard" as any });
         } else {
           navigate({ to: "/dashboard", search: { tab: "overview" }, replace: true });
         }
       } else {
-        // Auto-register new user on first login with entered credentials
-        const newAcc = dataStore.registerAccount({
-          email: enteredEmail,
-          password: password,
-          role: role === "admin" ? "employer" : role,
-          fullName: enteredEmail.split("@")[0] || "Company Admin",
-        });
-
-        const userObj = {
-          id: newAcc.id,
-          email: newAcc.email,
-          role: newAcc.role,
-          fullName: newAcc.fullName || "Company Admin",
-          mobile: newAcc.mobile || "",
-        };
-
-        window.localStorage.setItem("realjob-user", JSON.stringify(userObj));
-        dataStore.setCurrentUser(userObj);
-        toast.success("✅ लॉगिन यशस्वी झाले! Welcome to REAL JOB!");
-        const isEmpOrAdmin = userObj.role === "employer" || userObj.role === "admin" || role === "admin" || role === "employer";
-        if (isEmpOrAdmin) {
-          navigate({ to: "/admin" });
-        } else {
-          navigate({ to: "/dashboard", search: { tab: "overview" }, replace: true });
-        }
+        toast.error("❌ खाते अस्तित्वात नाही! कृपया प्रथम नोंदणी (Register) करा.");
+        setBusy(false);
+        return;
       }
     } catch (err: any) {
       const code = err?.code || "";
@@ -363,6 +373,8 @@ function AuthPage() {
                 : mode === "forgot"
                   ? "Reset Password"
                   : "Employer / Admin Login"
+              : role === "employee"
+                ? "Employee Login"
               : mode === "register"
                 ? "Worker / User Registration"
                 : mode === "forgot"
@@ -375,6 +387,8 @@ function AuthPage() {
               ? mode === "register"
                 ? "For employers & companies: Register an account to find workers."
                 : "For employers & admins: Login to post jobs and search candidates."
+              : role === "employee"
+                ? "For existing factory employees: Enter mobile number & PIN to punch in."
               : mode === "register"
                 ? "For job seekers: Create a new profile and start finding jobs."
                 : "Please enter your email and password to log in and find jobs."}
@@ -382,7 +396,7 @@ function AuthPage() {
         </div>
 
         {/* Mode Pill Toggle (Login / Register) */}
-        {mode !== "forgot" && (
+        {mode !== "forgot" && role !== "employee" && (
           <div className="bg-gray-200/80 backdrop-blur-md p-1 rounded-full border border-white/70 flex items-center shadow-inner mb-2.5">
             <button
               type="button"
@@ -531,7 +545,11 @@ function AuthPage() {
           {/* EMAIL OR MOBILE FIELD */}
           <div>
             <Label htmlFor="email" className="text-[10px] sm:text-[11px] font-extrabold text-gray-800 mb-0.5 block">
-              {mode === "login" ? "Email Address or Mobile Number *" : "Email Address (Optional / ऐच्छिक)"}
+              {role === "employee" 
+                ? "Mobile Number (मोबाईल नंबर) *"
+                : mode === "login" 
+                  ? "Email Address or Mobile Number *" 
+                  : "Email Address (Optional / ऐच्छिक)"}
             </Label>
             <div className="relative">
               {mode === "login" && /^\d+$/.test(email.replace(/\D/g, "")) && email.length >= 5 ? (
@@ -541,10 +559,10 @@ function AuthPage() {
               )}
               <input
                 id="email"
-                type={mode === "login" ? "text" : "email"}
-                required={mode === "login"}
+                type={mode === "login" || role === "employee" ? "text" : "email"}
+                required={mode === "login" || role === "employee"}
                 autoComplete="off"
-                placeholder={mode === "login" ? "Email or Mobile (e.g. 98220 00000 / user@gmail.com)" : "name@example.com (Optional)"}
+                placeholder={role === "employee" ? "e.g. 98220 00000" : mode === "login" ? "Email or Mobile (e.g. 98220 00000 / user@gmail.com)" : "name@example.com (Optional)"}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full h-8.5 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B] shadow-xs"
@@ -557,9 +575,9 @@ function AuthPage() {
             <div>
               <div className="flex justify-between items-center mb-0.5">
                 <Label htmlFor="password" className="text-[11px] font-extrabold text-gray-800">
-                  Password *
+                  {role === "employee" ? "4-Digit PIN (पासकोड) *" : "Password *"}
                 </Label>
-                {mode === "login" && (
+                {mode === "login" && role !== "employee" && (
                   <button
                     type="button"
                     onClick={() => setMode("forgot")}
@@ -577,8 +595,9 @@ function AuthPage() {
                   type={showPassword ? "text" : "password"}
                   required
                   autoComplete="new-password"
-                  placeholder="••••••••"
-                  minLength={6}
+                  placeholder={role === "employee" ? "e.g. 1234" : "••••••••"}
+                  minLength={role === "employee" ? 4 : 6}
+                  maxLength={role === "employee" ? 4 : undefined}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full h-9.5 pl-9 pr-9 bg-white rounded-lg border border-gray-200 text-xs font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B] shadow-xs"

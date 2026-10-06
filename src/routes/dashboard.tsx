@@ -448,6 +448,7 @@ function UserDashboard() {
         <UserProfileSection user={user} />
       )}
 
+
       {/* Settings Tab Placeholder */}
       {activeTab === "settings" && (
         <div className="space-y-6 animate-in fade-in duration-300">
@@ -923,3 +924,19 @@ function UserProfileSection({ user }: { user: any }) {
     </div>
   );
 }
+
+// Distance Calculation (Haversine formula in meters)
+function getDistanceFromLatLonInM(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371e3; // Radius of the earth in m
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * 
+    Math.sin(dLon / 2) * Math.sin(dLon / 2); 
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); 
+  const d = R * c; // Distance in m
+  return d;
+}
+
+

@@ -73,24 +73,22 @@ export function PublicFooter() {
             </div>
           </div>
 
-          {/* Col 2: For Workers */}
+          {/* Col 2: For Candidates */}
           <div>
             <h3 className="text-sm font-black text-white tracking-wide">
-              I Want a Job
+              For Candidates
             </h3>
             <div className="mt-1.5 h-[2px] w-8 bg-[#FFC400] rounded-full mb-4" />
 
             <ul className="space-y-2 text-xs font-semibold text-slate-300">
               {[
-                { label: "Find Jobs", to: "/jobs" },
-                { label: "My Applications", to: "/auth" },
-                { label: "My Profile", to: "/auth" },
-                { label: "About Us", to: "/about" },
-                { label: "FAQ", to: "/faq" },
-              ].map(({ label, to }) => (
+                { label: "Find Jobs" },
+                { label: "Login / Register" },
+              ].map(({ label }) => (
                 <li key={label}>
                   <Link
-                    to={to}
+                    to="/auth"
+                    search={{ mode: "login", role: "worker" }}
                     className="inline-flex items-center gap-1 hover:text-[#FFC400] hover:translate-x-1 transition-all duration-150"
                   >
                     <ChevronRight className="size-3 text-[#FFC400] shrink-0" />
@@ -104,21 +102,19 @@ export function PublicFooter() {
           {/* Col 3: For Employers */}
           <div>
             <h3 className="text-sm font-black text-white tracking-wide">
-              I Need Workers
+              For Employers
             </h3>
             <div className="mt-1.5 h-[2px] w-8 bg-[#FFC400] rounded-full mb-4" />
 
             <ul className="space-y-2 text-xs font-semibold text-slate-300">
               {[
-                { label: "Hire Talent", to: "/auth" },
-                { label: "Search Workers", to: "/workers" },
-                { label: "View Profiles", to: "/workers" },
-                { label: "Contact Us", to: "/contact" },
-                { label: "Register", to: "/auth" },
-              ].map(({ label, to }) => (
+                { label: "Search Workers" },
+                { label: "Employer Login" },
+              ].map(({ label }) => (
                 <li key={label}>
                   <Link
-                    to={to}
+                    to="/auth"
+                    search={{ mode: "login", role: "employer" }}
                     className="inline-flex items-center gap-1 hover:text-[#FFC400] hover:translate-x-1 transition-all duration-150"
                   >
                     <ChevronRight className="size-3 text-[#FFC400] shrink-0" />
@@ -138,18 +134,19 @@ export function PublicFooter() {
 
             <ul className="space-y-2 text-xs font-semibold text-slate-300">
               {[
-                { id: "factory-workers", to: "/jobs" },
-                { id: "construction-workers", to: "/jobs" },
-                { id: "technical-staff", to: "/jobs" },
-                { id: "logistics-drivers", to: "/jobs" },
-                { id: "electricians", to: "/jobs" },
-                { id: "security", to: "/jobs" },
-              ].map(({ id, to }) => {
+                { id: "factory-workers" },
+                { id: "construction-workers" },
+                { id: "technical-staff" },
+                { id: "logistics-drivers" },
+                { id: "electricians" },
+                { id: "security" },
+              ].map(({ id }) => {
                 const label = getCategoryTitle(id, "en");
                 return (
                   <li key={id}>
                     <Link
-                      to={to}
+                      to="/auth"
+                      search={{ mode: "login", role: "worker" }}
                       className="inline-flex items-center gap-1 hover:text-[#FFC400] hover:translate-x-1 transition-all duration-150"
                     >
                       <ChevronRight className="size-3 text-[#FFC400] shrink-0" />
@@ -170,13 +167,14 @@ export function PublicFooter() {
 
             <ul className="space-y-2 text-xs font-semibold text-slate-300">
               {[
-                { label: "About Us", to: "/about" },
-                { label: "Contact Us", to: "/contact" },
-                { label: "FAQ", to: "/faq" },
-              ].map(({ label, to }) => (
+                { label: "About Us" },
+                { label: "Contact Us" },
+                { label: "FAQ" },
+              ].map(({ label }) => (
                 <li key={label}>
                   <Link
-                    to={to}
+                    to="/auth"
+                    search={{ mode: "login", role: "worker" }}
                     className="inline-flex items-center gap-1 hover:text-[#FFC400] hover:translate-x-1 transition-all duration-150"
                   >
                     <ChevronRight className="size-3 text-[#FFC400] shrink-0" />
