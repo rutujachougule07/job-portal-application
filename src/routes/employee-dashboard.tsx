@@ -4,6 +4,7 @@ import { dataStore } from "@/lib/data-store";
 import { LogIn, LogOut, MapPin, Clock, Calendar, CheckCircle2, User, Home, Camera, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { parseMapCoordinates } from "@/lib/location-utils";
 
 export const Route = createFileRoute("/employee-dashboard")({
   validateSearch: (search: Record<string, unknown>) => {
@@ -145,6 +146,17 @@ function EmployeeDashboard() {
         const employerProfile = accounts.find(a => a.id === user.employerId || a.fullName === user.employerId || a.email === user.employerId);
 
         let worksiteLoc = (employerProfile as any)?.worksiteLocation;
+
+        // Try dynamically extracting exact GPS coordinates from worksiteLocationLink (Bing Maps, Google Maps, etc.)
+        const worksiteLink =
+          (employerProfile as any)?.worksiteLocationLink ||
+          localStorage.getItem(`emp_worksite_link_${user.employerId}`) ||
+          localStorage.getItem("emp_worksite_link_global");
+
+        if (worksiteLink) {
+          const parsedFromLink = parseMapCoordinates(worksiteLink);
+          if (parsedFromLink) worksiteLoc = parsedFromLink;
+        }
 
         // Fallback 1: Check employer specific or global stored worksite coordinates from localStorage
         if (!worksiteLoc || !worksiteLoc.lat) {

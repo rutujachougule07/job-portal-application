@@ -43,6 +43,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { parseMapCoordinates } from "@/lib/location-utils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -3309,29 +3310,16 @@ function AdminDashboardPage() {
                       localStorage.setItem("emp_worksite_link_global", rawInput);
                     } catch (e) {}
 
-                    // 2. Parse coordinates if possible
-                    let lat = 18.5204;
-                    let lng = 73.8567;
-                    const matchAt = rawInput.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
-                    const matchParam = rawInput.match(/[?&](?:q|ll|center|where|cp|location)=(-?\d+\.?\d*)[,~](-?\d+\.?\d*)/i);
-                    const matchCoords = rawInput.match(/(-?\d{1,2}\.\d+)\s*[,~\s]\s*(-?\d{1,3}\.\d+)/);
-                    const matchInts = rawInput.match(/(-?\d{1,2})\s*,\s*(-?\d{1,3})/);
+                    // 2. Parse coordinates using robust multi-map parser
+                    const parsed = parseMapCoordinates(rawInput);
+                    let coordsObj = parsed || { lat: 18.5204, lng: 73.8567 };
 
-                    if (matchAt && matchAt[1] && matchAt[2]) {
-                      lat = parseFloat(matchAt[1]);
-                      lng = parseFloat(matchAt[2]);
-                    } else if (matchParam && matchParam[1] && matchParam[2]) {
-                      lat = parseFloat(matchParam[1]);
-                      lng = parseFloat(matchParam[2]);
-                    } else if (matchCoords && matchCoords[1] && matchCoords[2]) {
-                      lat = parseFloat(matchCoords[1]);
-                      lng = parseFloat(matchCoords[2]);
-                    } else if (matchInts && matchInts[1] && matchInts[2]) {
-                      lat = parseFloat(matchInts[1]);
-                      lng = parseFloat(matchInts[2]);
+                    if (parsed) {
+                      toast.info(`📍 Recognized Location: ${parsed.lat.toFixed(6)}, ${parsed.lng.toFixed(6)}`);
+                    } else {
+                      toast.warning("Could not auto-extract GPS from link, saved link for reference.");
                     }
 
-                    const coordsObj = { lat, lng };
                     setSavedLocationCoords(coordsObj);
                     try {
                       localStorage.setItem(`emp_worksite_coords_${empIdentifier}`, JSON.stringify(coordsObj));
