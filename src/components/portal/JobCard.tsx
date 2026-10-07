@@ -401,7 +401,21 @@ export function JobCard({
   };
 
   // Other jobs by the same company
-  const companyJobs = jobs.filter((j) => j.company === job.company);
+  const companyJobs = dataStore.getActiveJobs().filter((j) => j.company === job.company && j.id !== job.id).map(dj => ({
+      id: dj.id,
+      title: dj.title,
+      company: dj.company,
+      location: dj.location,
+      salary: dj.salary,
+      experience: dj.experience,
+      type: dj.jobType,
+      workMode: (dj.workMode as any) || "On-site",
+      posted: dj.postedAgo || "Recently",
+      initials: dj.initials || dj.company.slice(0, 2).toUpperCase(),
+      category: dj.category,
+      featured: dj.featured ?? false,
+      openings: dj.vacancies ?? 1,
+    }));
 
   return (
     <>
@@ -668,16 +682,18 @@ export function JobCard({
                   📋 {lang === "mr" ? "नोकरी सविस्तर माहिती" : "Job Details"}
                 </button>
 
-                <button
-                  onClick={() => setActiveModalTab("openings")}
-                  className={`pb-2.5 px-3 text-xs sm:text-sm font-black transition-all border-b-2 ${
-                    activeModalTab === "openings"
-                      ? "border-[#FFC400] text-[#FFC400]"
-                      : "border-transparent text-white/70 hover:text-white"
-                  }`}
-                >
-                  🚀 {lang === "mr" ? "इतर जागा" : "Active Openings"} ({companyJobs.length})
-                </button>
+                {companyJobs.length > 0 && (
+                  <button
+                    onClick={() => setActiveModalTab("openings")}
+                    className={`pb-2.5 px-3 text-xs sm:text-sm font-black transition-all border-b-2 ${
+                      activeModalTab === "openings"
+                        ? "border-[#FFC400] text-[#FFC400]"
+                        : "border-transparent text-white/70 hover:text-white"
+                    }`}
+                  >
+                    🚀 {lang === "mr" ? "इतर जागा" : "Active Openings"} ({companyJobs.length})
+                  </button>
+                )}
               </div>
             </div>
 

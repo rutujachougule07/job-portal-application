@@ -1,4 +1,4 @@
-import { useState, useEffect, Fragment } from "react";
+import { useState, useEffect, Fragment, useMemo } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   ShieldCheck,
@@ -41,6 +41,8 @@ import {
   MapPin,
   X,
   ExternalLink,
+  Menu,
+  IndianRupee,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { parseMapCoordinates } from "@/lib/location-utils";
@@ -69,6 +71,127 @@ import {
   XAxis,
   YAxis
 } from "recharts";
+
+function parseTimeStringToMinutes(timeStr?: string): number | null {
+  if (!timeStr) return null;
+  const clean = timeStr.trim().toUpperCase();
+  const match = clean.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/);
+  if (!match || !match[1] || !match[2]) return null;
+  let hours = parseInt(match[1], 10);
+  const minutes = parseInt(match[2], 10);
+  const meridiem = match[3];
+
+  if (meridiem) {
+    if (meridiem === "PM" && hours < 12) hours += 12;
+    if (meridiem === "AM" && hours === 12) hours = 0;
+  }
+  return hours * 60 + minutes;
+}
+
+function formatTime12Hr(timeStr?: string): string {
+  if (!timeStr) return "";
+  const clean = timeStr.trim();
+  if (!clean) return "";
+  if (/AM|PM/i.test(clean)) return clean;
+  const parts = clean.split(":");
+  if (parts.length < 2) return clean;
+  let hours = parseInt(parts[0]!, 10);
+  const minutes = parts[1]!.padStart(2, "0");
+  if (isNaN(hours)) return clean;
+  const ampm = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12;
+  if (hours === 0) hours = 12;
+  const hoursStr = hours.toString().padStart(2, "0");
+  return `${hoursStr}:${minutes} ${ampm}`;
+}
+
+function calculateWorkAndOvertime(
+  punchInTime?: string,
+  punchOutTime?: string,
+  standardShiftMinutes: number = 540 // Standard 9 hours (9:00 AM - 6:00 PM)
+) {
+  if (!punchInTime) {
+    return {
+      statusText: "Not Punched In",
+      workedText: "--",
+      overtimeText: null,
+      totalMinutes: 0,
+      overtimeMinutes: 0,
+      isCurrentlyWorking: false,
+    };
+  }
+
+  const inMins = parseTimeStringToMinutes(punchInTime);
+  if (inMins === null) {
+    return {
+      statusText: "Invalid Punch In",
+      workedText: "--",
+      overtimeText: null,
+      totalMinutes: 0,
+      overtimeMinutes: 0,
+      isCurrentlyWorking: false,
+    };
+  }
+
+  let outMins: number | null = null;
+  let isCurrentlyWorking = false;
+
+  if (punchOutTime) {
+    outMins = parseTimeStringToMinutes(punchOutTime);
+  }
+
+  // If punchOutTime is earlier than punchInTime (stale punchOut from re-punching in on same day), ignore stale punchOut
+  if (outMins !== null && outMins < inMins) {
+    outMins = null;
+  }
+
+  if (outMins === null) {
+    const now = new Date();
+    outMins = now.getHours() * 60 + now.getMinutes();
+    isCurrentlyWorking = true;
+  } else {
+    isCurrentlyWorking = false;
+  }
+
+  const diffMins = Math.max(0, outMins - inMins);
+  const workHrs = Math.floor(diffMins / 60);
+  const workMins = diffMins % 60;
+
+  let workedText = "";
+  if (workHrs > 0 && workMins > 0) {
+    workedText = `${workHrs} hr${workHrs > 1 ? "s" : ""} ${workMins} min${workMins > 1 ? "s" : ""}`;
+  } else if (workHrs > 0) {
+    workedText = `${workHrs} hr${workHrs > 1 ? "s" : ""}`;
+  } else {
+    workedText = `${workMins} min${workMins > 1 ? "s" : ""}`;
+  }
+
+  const otDiff = diffMins - standardShiftMinutes;
+  let overtimeText: string | null = null;
+  let overtimeMinutes = 0;
+
+  if (otDiff > 0) {
+    overtimeMinutes = otDiff;
+    const otHrs = Math.floor(otDiff / 60);
+    const otMins = otDiff % 60;
+    if (otHrs > 0 && otMins > 0) {
+      overtimeText = `${otHrs} hr${otHrs > 1 ? "s" : ""} ${otMins} min${otMins > 1 ? "s" : ""}`;
+    } else if (otHrs > 0) {
+      overtimeText = `${otHrs} hr${otHrs > 1 ? "s" : ""}`;
+    } else {
+      overtimeText = `${otMins} min${otMins > 1 ? "s" : ""}`;
+    }
+  }
+
+  return {
+    statusText: isCurrentlyWorking ? "Working Now (Active)" : "Shift Completed",
+    workedText,
+    overtimeText,
+    totalMinutes: diffMins,
+    overtimeMinutes,
+    isCurrentlyWorking,
+  };
+}
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -113,7 +236,7 @@ function formatCallNumber(phone: string): string {
 function AdminDashboardPage() {
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState<"overview" | "jobs" | "applications" | "attendance" | "profile">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "jobs" | "applications" | "attendance" | "packages" | "profile">("overview");
 
   // Data states
   const [jobs, setJobs] = useState<JobRecord[]>([]);
@@ -768,19 +891,36 @@ function AdminDashboardPage() {
   const [upiId, setUpiId] = useState("");
   const [isProcessingPackage, setIsProcessingPackage] = useState(false);
   const [userCredits, setUserCredits] = useState<number>(0);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // User Accounts for Admin View (Live Dynamic Data)
   const [registeredUsers, setRegisteredUsers] = useState<
     Array<{ id: string; name: string; role: string; mobile: string; city: string; trade: string; status: string; createdAt?: string | undefined }>
   >([]);
-  const currentUser = dataStore.getCurrentUser("employer") || dataStore.getCurrentUser("admin");
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    const user = dataStore.getCurrentUser("employer") || dataStore.getCurrentUser("admin");
+    if (user) {
+      setCurrentUser(user);
+      setProfileForm((prev) => ({
+        ...prev,
+        fullName: user.fullName || prev.fullName,
+        contactPerson: user.fullName || prev.fullName,
+        email: user.email || prev.email,
+        mobile: user.mobile || prev.mobile,
+        profilePhoto: user.profilePhoto || prev.profilePhoto,
+      }));
+    }
+  }, []);
+
   const isSuperAdmin = currentUser?.email?.toLowerCase() === "supera@gmail.com" || currentUser?.email?.toLowerCase() === "superadmin";
   const empIdentifier = currentUser?.fullName || currentUser?.email || "admin-001";
 
   // Worksite Location persistent reactive state
   const [savedLocationLink, setSavedLocationLink] = useState<string>(() => {
     try {
-      const direct = localStorage.getItem(`emp_worksite_link_${empIdentifier}`) || localStorage.getItem("emp_worksite_link_global");
+      const direct = localStorage.getItem(`emp_worksite_link_${empIdentifier}`);
       if (direct) return direct;
       return (currentUser as any)?.worksiteLocationLink || "";
     } catch {
@@ -790,7 +930,7 @@ function AdminDashboardPage() {
 
   const [savedLocationCoords, setSavedLocationCoords] = useState<{ lat: number; lng: number } | null>(() => {
     try {
-      const direct = localStorage.getItem(`emp_worksite_coords_${empIdentifier}`) || localStorage.getItem("emp_worksite_coords_global");
+      const direct = localStorage.getItem(`emp_worksite_coords_${empIdentifier}`);
       if (direct) return JSON.parse(direct);
       return (currentUser as any)?.worksiteLocation || null;
     } catch {
@@ -798,28 +938,32 @@ function AdminDashboardPage() {
     }
   });
 
+  // Automatic Attendance Mode: Text Analysis of Company Name / Registered Business Name
+  const attendanceMode: "fixed" | "field" = useMemo(() => {
+    try {
+      const text = `${currentUser?.fullName || ""} ${empIdentifier || ""}`.toLowerCase();
+      const isField = [
+        "farming", "farm", "agro", "agriculture", "nursery", "शेती", "शेत", "फार्मिंग", "कृषी", "शेतकूप",
+        "construction", "site", "baukam", "बांधकाम", "साइट", "मजूर", "लेबर", "labour", "labor",
+        "field", "driver", "moving", "delivery", "security", "guard", "हमाल"
+      ].some(kw => text.includes(kw));
+
+      return isField ? "field" : "fixed";
+    } catch {
+      return "fixed";
+    }
+  }, [currentUser?.fullName, empIdentifier]);
+
   // Profile Edit Form state
   const [profileForm, setProfileForm] = useState({
-    fullName: currentUser?.fullName || "",
-    contactPerson: currentUser?.fullName || "",
-    email: currentUser?.email || "",
-    mobile: currentUser?.mobile || "",
-    profilePhoto: currentUser?.profilePhoto || "",
+    fullName: "",
+    contactPerson: "",
+    email: "",
+    mobile: "",
+    profilePhoto: "",
     location: "Maharashtra",
     industry: "Plant Nursery & Workforce Services",
   });
-
-  useEffect(() => {
-    if (currentUser) {
-      setProfileForm((prev) => ({
-        ...prev,
-        fullName: currentUser.fullName || prev.fullName,
-        email: currentUser.email || prev.email,
-        mobile: currentUser.mobile || prev.mobile,
-        profilePhoto: currentUser.profilePhoto || prev.profilePhoto,
-      }));
-    }
-  }, [currentUser?.email]);
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
@@ -888,7 +1032,56 @@ function AdminDashboardPage() {
     toast.success(`Attendance updated: ${worker.name} marked as ${status}`);
   };
 
+  const handleExportAttendanceCSV = () => {
+    const headers = ["Employee Name", "Mobile", "Category", "Designation", "Date", "Punch In", "Punch Out", "Status", "Daily Wage (Rs)"];
+    const rows: string[][] = [];
+
+    workers.forEach(w => {
+      const rec = dailyAttendanceRecords.find(r => r.workerId === w.id);
+      rows.push([
+        `"${w.name}"`,
+        `"${w.mobile || 'N/A'}"`,
+        `"${w.category || w.trade || 'General'}"`,
+        `"${w.trade || 'Worker'}"`,
+        `"${selectedAttendanceDate}"`,
+        `"${rec?.punchInTime || '--'}"`,
+        `"${rec?.punchOutTime || '--'}"`,
+        `"${rec?.status || 'Absent'}"`,
+        `"${w.dailyRate}"`
+      ]);
+    });
+
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `Attendance_Report_${selectedAttendanceDate}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success(`📊 Attendance CSV Report Downloaded for ${selectedAttendanceDate}!`);
+  };
+
   const handleOpenAddWorker = () => {
+    const userId = currentUser?.id || currentUser?.email || empIdentifier;
+    const allowedLimit = dataStore.getUserWorkerCredits(userId);
+    if (allowedLimit === 0) {
+      toast.error(
+        "⚠️ Active package required to add employees! Please purchase a package to continue.",
+        { duration: 6000 }
+      );
+      setShowPackageModal(true);
+      return;
+    }
+    if (workers.length >= allowedLimit) {
+      toast.error(
+        `⚠️ Employee limit reached for your active package! (Current Limit: ${allowedLimit} employees). Please upgrade package to add more employees!`,
+        { duration: 6000 }
+      );
+      setShowPackageModal(true);
+      return;
+    }
+
     setEditingWorkerId(null);
     setWorkerForm({
       name: "",
@@ -902,8 +1095,8 @@ function AdminDashboardPage() {
       workShiftEnd: "18:00",
       notes: "",
       pin: "1234",
-      locationType: "fixed",
-      attendanceMode: "punch",
+      locationType: attendanceMode === "field" ? "field" : "fixed",
+      attendanceMode: attendanceMode === "field" ? "manual" : "punch",
     });
     // Restore persistent custom fields & custom categories so they don't disappear when modal opens!
     setCustomCategories(getStoredCustomCats());
@@ -1071,10 +1264,14 @@ function AdminDashboardPage() {
     setTimeout(() => {
       dataStore.addPackagePurchase({
         userId: userId,
+        userEmail: currentUser.email || "",
+        userName: currentUser.fullName || currentUser.email || "Employer",
+        companyName: currentUser.companyName || currentUser.fullName || "Employer",
         planId: selectedPlan.id,
         planName: selectedPlan.name,
         price: selectedPlan.price,
         jobCount: selectedPlan.jobCount,
+        workerCount: selectedPlan.workerCount || 3,
         paymentMethod: paymentMethod.toUpperCase(),
       });
 
@@ -1432,8 +1629,116 @@ function AdminDashboardPage() {
   }
 
   return (
-    <div className="h-screen bg-[#F0F4FA] flex font-sans w-full overflow-hidden">
-      {/* ── LEFT DARK NAVY SIDEBAR ── */}
+    <div className="h-screen bg-[#F0F4FA] flex flex-col md:flex-row font-sans w-full overflow-hidden">
+      {/* ── MOBILE TOP NAVBAR HEADER (Visible on < md) ── */}
+      <header className="md:hidden bg-[#021D3D] text-white px-4 py-3 sticky top-0 z-40 flex items-center justify-between shadow-md border-b border-white/10 shrink-0 w-full">
+        <div className="flex items-center gap-3 min-w-0 pr-2">
+          <div className="size-9 bg-gradient-to-br from-[#FFC400] to-[#FFA500] rounded-xl flex items-center justify-center shadow-md border border-white/10 shrink-0">
+            <Building2 className="size-5 text-[#021D3D]" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h1 suppressHydrationWarning className="font-black text-xs text-white truncate leading-tight">
+              {currentUser?.fullName || "Employer Portal"}
+            </h1>
+            <span className="text-[10px] text-[#FFC400] font-black uppercase block tracking-wider leading-tight mt-0.5">
+              Employer Portal
+            </span>
+          </div>
+        </div>
+
+        <button
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="p-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-all cursor-pointer shrink-0 ml-1"
+          aria-label="Toggle menu"
+        >
+          {isMobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+        </button>
+      </header>
+
+      {/* ── MOBILE DRAWER SLIDE-OVER MENU ── */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-50 md:hidden flex">
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
+            onClick={() => setIsMobileMenuOpen(false)}
+          ></div>
+          <aside className="relative w-4/5 max-w-xs bg-[#021D3D] text-white flex flex-col justify-between h-full p-5 shadow-2xl z-10 overflow-y-auto">
+            <div>
+              <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="size-10 bg-gradient-to-br from-[#FFC400] to-[#FFA500] rounded-xl flex items-center justify-center font-black text-[#021D3D] shrink-0">
+                    <Building2 className="size-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <h2 suppressHydrationWarning className="font-black text-sm text-white truncate">
+                      {currentUser?.fullName || "Employer"}
+                    </h2>
+                    <p className="text-[11px] text-[#FFC400] font-bold">Verified Employer</p>
+                  </div>
+                </div>
+                <button onClick={() => setIsMobileMenuOpen(false)} className="p-1.5 rounded-lg text-white/60 hover:text-white hover:bg-white/10">
+                  <X className="size-5" />
+                </button>
+              </div>
+
+              <nav className="space-y-1.5">
+                {[
+                  { id: "overview", label: "Dashboard Overview", icon: BarChart3 },
+                  { id: "jobs", label: "Job Listings", icon: BriefcaseBusiness, count: jobs.length },
+                  { id: "applications", label: "Job Applications", icon: FileText, count: applications.length },
+                  { id: "attendance", label: "Attendance & Payroll", icon: CalendarCheck, count: workers.length },
+                  { id: "packages", label: "My Packages & Billing", icon: IndianRupee },
+                  { id: "profile", label: "My Profile", icon: User },
+                ].map((item) => {
+                  const isActive = activeTab === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setActiveTab(item.id as any);
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-bold transition-all ${isActive
+                        ? "bg-[#FFC400] text-[#021D3D] font-extrabold shadow-md"
+                        : "text-white/70 hover:bg-white/5 hover:text-white"
+                        }`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <item.icon className={`size-4 ${isActive ? "text-[#021D3D]" : "text-white/60"}`} />
+                        <span className="truncate">{item.label}</span>
+                      </div>
+                      {item.count !== undefined && (
+                        <span className={`px-2 py-0.5 text-[10px] font-black rounded-full ${isActive ? "bg-[#021D3D] text-[#FFC400]" : "bg-amber-500/20 text-amber-300 border border-amber-400/30"
+                          }`}>
+                          {item.count}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
+
+            <div className="pt-4 border-t border-white/10">
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  dataStore.logout("employer");
+                  toast.info("Logged out successfully");
+                  navigate({ to: "/", hash: "main", replace: true });
+                  if (typeof window !== "undefined") window.scrollTo(0, 0);
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold text-rose-400 hover:bg-rose-500/10 transition-colors"
+              >
+                <LogOut className="size-4" />
+                <span>Sign Out</span>
+              </button>
+            </div>
+          </aside>
+        </div>
+      )}
+
+      {/* ── LEFT DARK NAVY SIDEBAR (Visible on md+) ── */}
       <aside className="w-64 bg-[#021D3D] text-white flex flex-col justify-between hidden md:flex h-full shrink-0 border-r border-white/10 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
         {/* Logo / Company Name Header */}
         <div className="p-5 border-b border-white/10 shrink-0">
@@ -1442,7 +1747,7 @@ function AdminDashboardPage() {
               <Building2 className="size-5 text-[#021D3D]" />
             </div>
             <div className="min-w-0 flex-1">
-              <h1 className="font-black text-sm leading-tight tracking-tight uppercase truncate text-white" title={currentUser?.fullName || "Employer Portal"}>
+              <h1 suppressHydrationWarning className="font-black text-sm leading-tight tracking-tight uppercase truncate text-white" title={currentUser?.fullName || "Employer Portal"}>
                 {currentUser?.fullName || "Company Portal"}
               </h1>
               <span className="text-[10px] text-[#FFC400] font-black uppercase tracking-widest block">Employer Portal</span>
@@ -1458,6 +1763,7 @@ function AdminDashboardPage() {
             { id: "jobs", label: "Job Listings", icon: BriefcaseBusiness, count: jobs.length },
             { id: "applications", label: "Job Applications", icon: FileText, count: applications.length },
             { id: "attendance", label: "Attendance & Payroll", icon: CalendarCheck, count: workers.length },
+            { id: "packages", label: "My Packages & Billing", icon: IndianRupee },
             { id: "profile", label: "My Profile", icon: User },
           ].map((item) => {
             const isActive = activeTab === item.id;
@@ -1505,52 +1811,37 @@ function AdminDashboardPage() {
       {/* ── RIGHT MAIN CONTENT AREA ── */}
       <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
         {/* Top Navbar Header */}
-        <header className="h-20 bg-white border-b border-[#E0E8F5] flex items-center justify-between px-6 sm:px-8 shrink-0 z-30 shadow-xs">
-          <div className="flex items-center gap-4 min-w-0">
-            <h2 className="text-xl font-black text-[#063B78] whitespace-nowrap leading-tight">
+        <header className="h-16 sm:h-20 bg-white border-b border-[#E0E8F5] flex items-center justify-between px-3 sm:px-8 shrink-0 z-30 shadow-2xs min-w-0">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1 mr-2">
+            <h2 className="text-sm sm:text-xl font-black text-[#063B78] truncate leading-tight">
               {activeTab === "overview" && "Dashboard Overview"}
               {activeTab === "jobs" && "Job Listings"}
               {activeTab === "applications" && "Job Applications"}
               {activeTab === "attendance" && "Attendance & Payroll"}
+              {activeTab === "packages" && "My Packages & Billing"}
               {activeTab === "profile" && "My Profile Settings"}
             </h2>
           </div>
 
-          <div className="flex items-center gap-3 sm:gap-4 shrink-0">
-            {/* Job Credits Indicator */}
+          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+            {/* Job Credits Indicator - Hidden on extra small mobile header */}
             {!isSuperAdmin && (
-              <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl text-xs font-black text-amber-800 shrink-0">
+              <div className="hidden sm:flex items-center gap-2 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl text-xs font-black text-amber-800 shrink-0">
                 <Zap className="size-4 fill-amber-400 text-amber-500" />
                 <span>Credits: {userCredits >= 999 ? "Unlimited" : userCredits}</span>
                 <button
                   onClick={() => setShowPackageModal(true)}
-                  className="ml-1 bg-amber-400 hover:bg-amber-500 text-[#063B78] px-2 py-0.5 rounded text-[10px] font-black transition-all"
+                  className="ml-1 bg-amber-400 hover:bg-amber-500 text-[#063B78] px-2 py-0.5 rounded text-[10px] font-black transition-all cursor-pointer"
                 >
                   + Add
                 </button>
               </div>
             )}
 
-            {/* Global Search input */}
-            <div className="relative hidden md:block">
-              <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#9DAEC5]" />
-              <input
-                type="text"
-                placeholder="Global search..."
-                className="w-44 lg:w-56 h-10 pl-10 pr-4 rounded-full bg-[#F8FAFF] border border-[#DCE5F0] text-sm font-semibold focus:ring-2 focus:ring-[#FFC400]/50 focus:border-[#FFC400] outline-none transition-all text-[#063B78]"
-              />
-            </div>
-
-            {/* Notification Bell */}
-            <div className="size-10 bg-[#F8FAFF] border border-[#DCE5F0] rounded-full flex items-center justify-center relative cursor-pointer hover:bg-gray-100 transition-colors shrink-0">
-              <Bell className="size-5 text-[#5B6B7F]" />
-              <span className="absolute top-2 right-2 size-2 bg-[#FFC400] rounded-full border border-white"></span>
-            </div>
-
             {/* Employer Profile Pill */}
-            <div className="flex items-center gap-3 pl-3 sm:pl-4 border-l border-[#E0E8F5] shrink-0">
+            <div className="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-4 border-l border-[#E0E8F5] shrink-0">
               <div className="text-right hidden sm:block">
-                <div className="text-sm font-bold text-[#063B78]">{currentUser?.fullName || "Employer Account"}</div>
+                <div suppressHydrationWarning className="text-sm font-bold text-[#063B78]">{currentUser?.fullName || "Employer Account"}</div>
                 <div className="text-[10px] font-bold text-amber-600 flex items-center justify-end gap-1">
                   <ShieldCheck className="size-3" /> Verified Employer
                 </div>
@@ -1559,10 +1850,10 @@ function AdminDashboardPage() {
                 <img
                   src={currentUser.profilePhoto}
                   alt={currentUser.fullName || "Employer"}
-                  className="size-10 rounded-xl object-cover shadow-md border-b-[2px] border-[#021D3D]"
+                  className="size-8 sm:size-10 rounded-xl object-cover shadow-sm border-b-[2px] border-[#021D3D]"
                 />
               ) : (
-                <div className="size-10 bg-gradient-to-br from-[#063B78] to-[#0A4F9E] rounded-xl flex items-center justify-center text-white font-black shadow-md border-b-[2px] border-[#021D3D]">
+                <div className="size-8 sm:size-10 bg-gradient-to-br from-[#063B78] to-[#0A4F9E] rounded-xl flex items-center justify-center text-white font-black text-xs sm:text-base shadow-sm border-b-[2px] border-[#021D3D]">
                   {(currentUser?.fullName || "E").charAt(0).toUpperCase()}
                 </div>
               )}
@@ -1571,11 +1862,69 @@ function AdminDashboardPage() {
         </header>
 
         {/* Scrollable Body Content Area */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto overflow-x-hidden min-w-0 max-w-full">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto overflow-x-hidden min-w-0 max-w-full pb-20 md:pb-8">
 
           {/* TAB 1: OVERVIEW */}
           {activeTab === "overview" && (
             <div className="space-y-6">
+              {/* Active Package Banner */}
+              {(() => {
+                const userId = currentUser?.id || currentUser?.email || empIdentifier;
+                const userPkgs = dataStore.getUserPackages(userId);
+                const workerLimit = dataStore.getUserWorkerCredits(userId);
+                const jobCredits = dataStore.getUserJobCredits(userId);
+                const latestPkg = userPkgs.length > 0 ? userPkgs[0] : null;
+
+                return (
+                  <div className="bg-gradient-to-r from-[#021D3D] via-[#063B78] to-[#0A4F9E] rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-white shadow-xl border border-amber-400/20 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-6 relative overflow-hidden">
+                    <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 size-48 bg-amber-400/10 rounded-full blur-2xl pointer-events-none"></div>
+                    <div className="space-y-2.5 z-10 w-full md:w-auto">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[11px] sm:text-xs font-black bg-gradient-to-r from-amber-400 to-yellow-300 text-[#021D3D] px-2.5 sm:px-3 py-1 rounded-full uppercase tracking-wider shadow-md">
+                          {latestPkg ? `Active Plan: ${latestPkg.planName}` : "No Active Package"}
+                        </span>
+                        {latestPkg && (
+                          <span className="text-[10px] sm:text-xs font-bold text-amber-200 bg-white/10 px-2.5 py-0.5 rounded-full border border-white/15">
+                            Purchased for ₹{latestPkg.price} on {latestPkg.purchaseDate}
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="text-lg sm:text-xl font-black tracking-tight text-white leading-snug">
+                        {latestPkg ? `Your ${latestPkg.planName} is Active` : "Purchase a Package to Start Posting Jobs & Adding Employees"}
+                      </h3>
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 text-xs text-slate-200 font-semibold pt-1">
+                        <span className="flex items-center justify-between sm:justify-start gap-1.5 bg-white/10 px-3 py-2 rounded-xl border border-white/15">
+                          <span>💼 Job Post Credits:</span>
+                          <strong className="text-amber-300 text-xs sm:text-sm">{jobCredits} Available</strong>
+                        </span>
+                        <span className="flex items-center justify-between sm:justify-start gap-1.5 bg-white/10 px-3 py-2 rounded-xl border border-white/15">
+                          <span>👥 Employee Addition Limit:</span>
+                          <strong className="text-emerald-300 text-xs sm:text-sm">{workerLimit === 0 ? "0 (Package Required)" : (workerLimit >= 9999 ? "Unlimited" : `${workers.length} / ${workerLimit} Added`)}</strong>
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="z-10 flex flex-col sm:flex-row items-center gap-2.5 sm:gap-3 shrink-0 w-full md:w-auto pt-2 sm:pt-0">
+                      <Button
+                        onClick={() => setShowPackageModal(true)}
+                        className="w-full md:w-auto bg-gradient-to-r from-[#FFC400] to-[#FFA500] hover:from-[#FFA500] hover:to-[#FFC400] text-[#021D3D] font-black text-xs px-5 py-3 rounded-xl sm:rounded-2xl shadow-lg border-b-[3px] border-amber-600 transition-all active:scale-95 justify-center"
+                      >
+                        {userPkgs.length > 0 ? "⚡ Upgrade Package" : "🛒 Buy Package Now"}
+                      </Button>
+                      {userPkgs.length > 0 && (
+                        <Button
+                          variant="outline"
+                          onClick={() => setActiveTab("packages")}
+                          className="w-full md:w-auto bg-white/10 hover:bg-white/20 text-white font-bold text-xs px-4 py-3 rounded-xl sm:rounded-2xl border-white/20 justify-center"
+                        >
+                          View Billing History
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Top 4 Stat Cards Grid */}
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {/* Card 1: Total Jobs */}
@@ -1907,11 +2256,10 @@ function AdminDashboardPage() {
                       <button
                         key={pg}
                         onClick={() => setJobsPage(pg)}
-                        className={`w-8 h-8 rounded-lg text-xs font-black transition-all ${
-                          pg === jobsPage
-                            ? "bg-[#063B78] text-white shadow-md"
-                            : "border border-[#DCE5F0] bg-white text-[#063B78] hover:bg-[#EBF3FF]"
-                        }`}
+                        className={`w-8 h-8 rounded-lg text-xs font-black transition-all ${pg === jobsPage
+                          ? "bg-[#063B78] text-white shadow-md"
+                          : "border border-[#DCE5F0] bg-white text-[#063B78] hover:bg-[#EBF3FF]"
+                          }`}
                       >
                         {pg}
                       </button>
@@ -2115,38 +2463,57 @@ function AdminDashboardPage() {
 
           {/* TAB 4: ATTENDANCE & WORKER MANAGEMENT */}
           {activeTab === "attendance" && (
-            <div className="space-y-8 animate-fade-in">
+            <div className="space-y-6 sm:space-y-8 animate-fade-in min-w-0">
               {/* Top Attendance Header Banner */}
-              <div className="rounded-2xl border border-[#DCE5F0] bg-white p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                  <div className="inline-flex items-center gap-2 rounded-full bg-[#063B78]/10 px-3.5 py-1 text-xs font-black text-[#063B78] mb-2">
-                    <CalendarCheck className="size-4 text-[#063B78]" />
-                    <span>Employee Attendance & Payroll Management</span>
+              <div className="rounded-2xl border border-[#DCE5F0] bg-white p-4 sm:p-6 shadow-xs flex flex-col xl:flex-row xl:items-center justify-between gap-4 sm:gap-5 min-w-0 overflow-hidden">
+                <div className="space-y-1.5 min-w-0 flex-1">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-[#063B78]/10 px-3 py-1 text-[11px] sm:text-xs font-black text-[#063B78] max-w-full truncate">
+                    <CalendarCheck className="size-3.5 text-[#063B78] shrink-0" />
+                    <span className="truncate">Employee Attendance & Payroll Management</span>
                   </div>
-                  <h2 className="text-xl sm:text-2xl font-black text-[#10233F]">
+                  <h2 className="text-base sm:text-2xl font-black text-[#10233F] tracking-tight leading-snug break-words">
                     Employee Attendance & Payroll Register
                   </h2>
-                  <p className="text-xs sm:text-sm font-semibold text-[#5B6B7F] mt-1">
+                  <p className="text-xs sm:text-sm font-semibold text-[#5B6B7F] max-w-2xl leading-relaxed">
                     Manage employee details by department, set custom daily wage rates, mark daily attendance, and generate weekly/monthly payroll reports.
                   </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2 shrink-0">
-                  {(savedLocationLink || savedLocationCoords || (currentUser as any)?.worksiteLocationLink || (currentUser as any)?.worksiteLocation) ? (
-                    <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-300 p-1.5 pl-3 rounded-xl shadow-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 shrink-0 w-full sm:w-auto min-w-0 max-w-full">
+                  {/* Auto-Detected Attendance Mode Display */}
+                  {attendanceMode === "field" ? (
+                    <div
+                      className="min-h-10 py-2 px-3.5 flex items-center gap-2 bg-gradient-to-r from-amber-500/15 to-amber-600/10 border border-amber-500/40 rounded-xl text-[11px] sm:text-xs font-black text-amber-950 shadow-2xs w-full sm:w-auto min-w-0 max-w-full"
+                      title="Auto-detected from company name: Attendance is marked manually by employer."
+                    >
+                      <span className="size-2 rounded-full bg-amber-500 animate-pulse shrink-0"></span>
+                      <span className="leading-snug flex-1 min-w-0 break-words">🚜 Field / Moving Worksite (Auto-Detected: Employer Attendance)</span>
+                    </div>
+                  ) : (
+                    <div
+                      className="min-h-10 py-2 px-3.5 flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/90 rounded-xl text-[11px] sm:text-xs font-black text-[#063B78] shadow-2xs w-full sm:w-auto min-w-0 max-w-full"
+                      title="Auto-detected from company name: Employees punch in/out via mobile app."
+                    >
+                      <span className="size-2 rounded-full bg-blue-600 animate-pulse shrink-0"></span>
+                      <span className="leading-snug flex-1 min-w-0 break-words">🏢 Fixed Worksite (Auto-Detected: App Punch In/Out)</span>
+                    </div>
+                  )}
+
+                  {attendanceMode === "fixed" && ((savedLocationLink || savedLocationCoords || (currentUser as any)?.worksiteLocationLink || (currentUser as any)?.worksiteLocation) ? (
+                    <div className="h-10 flex items-center gap-1.5 bg-emerald-50/90 border border-emerald-300 p-1 pl-3 rounded-xl shadow-2xs w-full sm:w-auto min-w-0 max-w-full">
                       <a
                         href={
                           (savedLocationLink || (currentUser as any)?.worksiteLocationLink)
                             ? ((savedLocationLink || (currentUser as any)?.worksiteLocationLink || "").startsWith("http")
-                                ? (savedLocationLink || (currentUser as any)?.worksiteLocationLink || "")
-                                : `https://${savedLocationLink || (currentUser as any)?.worksiteLocationLink}`)
+                              ? (savedLocationLink || (currentUser as any)?.worksiteLocationLink || "")
+                              : `https://${savedLocationLink || (currentUser as any)?.worksiteLocationLink}`)
                             : (savedLocationCoords || (currentUser as any)?.worksiteLocation)
-                            ? `https://maps.google.com/?q=${(savedLocationCoords || (currentUser as any)?.worksiteLocation)?.lat},${(savedLocationCoords || (currentUser as any)?.worksiteLocation)?.lng}`
-                            : "#"
+                              ? `https://maps.google.com/?q=${(savedLocationCoords || (currentUser as any)?.worksiteLocation)?.lat},${(savedLocationCoords || (currentUser as any)?.worksiteLocation)?.lng}`
+                              : "#"
                         }
                         target="_blank"
                         rel="noreferrer"
-                        className="text-emerald-900 hover:text-emerald-950 font-black text-xs flex items-center gap-1.5 max-w-[220px] sm:max-w-[340px] truncate group"
+                        className="text-emerald-900 hover:text-emerald-950 font-black text-xs flex items-center gap-1.5 max-w-[200px] sm:max-w-[280px] truncate group"
                         title={savedLocationLink || (currentUser as any)?.worksiteLocationLink || "View Worksite Location on Map"}
                       >
                         <MapPin className="size-4 text-emerald-600 shrink-0 group-hover:scale-110 transition-transform" />
@@ -2176,16 +2543,16 @@ function AdminDashboardPage() {
                         setShowLocationModal(true);
                       }}
                       variant="outline"
-                      className="border-[#DCE5F0] text-[#5B6B7F] hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 font-extrabold text-xs px-5 py-3 rounded-xl shadow-sm flex items-center gap-2"
+                      className="h-10 border-[#DCE5F0] text-[#5B6B7F] hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 font-extrabold text-xs px-4 rounded-xl shadow-2xs flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer w-full sm:w-auto"
                     >
                       <MapPin className="size-4 text-emerald-600" />
                       <span>📍 Set Worksite Location</span>
                     </Button>
-                  )}
+                  ))}
 
                   <Button
                     onClick={handleOpenAddWorker}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-5 py-3 rounded-xl shadow-md flex items-center gap-2"
+                    className="h-10 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-5 rounded-xl shadow-sm flex items-center justify-center gap-2 w-full sm:w-auto cursor-pointer shrink-0"
                   >
                     <UserPlus className="size-4" />
                     <span>+ Add Employee</span>
@@ -2193,63 +2560,55 @@ function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* 2-Column Layout: Left Category Sidebar + Right Content Area */}
+              {/* Attendance Sub-View Navigation Tabs + Department Dropdown Filter */}
               {(() => {
-                const defaultCategories = [
-                  ...getIndustryDefaultCategories(),
-                  "⚙️️ Other / Custom",
-                ];
-                const customWorkerCats = workers.map((w) => w.category || w.trade || getIndustryDefaultCategories()[0] || "General Work");
-                const allCategories = Array.from(new Set([...defaultCategories, ...customCategories, ...customWorkerCats]))
-                  .filter((c) => !removedCategories.includes(c) || customWorkerCats.includes(c));
-
                 const categoryCounts = new Map<string, number>();
                 workers.forEach((w) => {
                   const cat = w.category || w.trade || "Plant Nursery & Care";
                   categoryCounts.set(cat, (categoryCounts.get(cat) || 0) + 1);
                 });
+                const allCategories = Array.from(categoryCounts.keys());
 
                 return (
-                  <div className="space-y-6 w-full">
-                    {/* Attendance Sub-View Navigation Tabs + Department Dropdown Filter (Single Row at 100% Zoom) */}
-                    <div className="flex flex-wrap lg:flex-nowrap items-center justify-between gap-2.5 bg-white p-2.5 rounded-2xl border border-[#DCE5F0] shadow-sm overflow-hidden">
-                      <div className="flex flex-nowrap items-center gap-2 overflow-x-auto shrink-0">
+                  <div className="space-y-6">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 bg-white p-2 sm:p-3 rounded-2xl border border-[#DCE5F0] shadow-sm min-w-0">
+                      <div className="grid grid-cols-3 gap-1.5 w-full sm:w-auto sm:flex sm:items-center min-w-0">
                         {[
-                          { id: "daily", label: "📋 Daily Attendance", icon: CalendarCheck },
-                          { id: "reports", label: "📊 Reports", icon: PieChart },
-                          { id: "directory", label: `👥 Employee Directory (${workers.length})`, icon: Users },
+                          { id: "daily", fullLabel: "📋 Daily Attendance", shortLabel: "📋 Daily", icon: CalendarCheck },
+                          { id: "reports", fullLabel: "📊 Reports", shortLabel: "📊 Reports", icon: PieChart },
+                          { id: "directory", fullLabel: `👥 Employees (${workers.length})`, shortLabel: `👥 Staff (${workers.length})`, icon: Users },
                         ].map((tab) => (
                           <button
                             key={tab.id}
                             onClick={() => setAttendanceSubView(tab.id as any)}
-                            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-extrabold text-xs whitespace-nowrap transition-all ${attendanceSubView === tab.id
+                            className={`flex items-center justify-center gap-1 sm:gap-1.5 px-1.5 sm:px-3 py-2 rounded-xl font-extrabold text-[11px] sm:text-xs transition-all w-full sm:w-auto ${attendanceSubView === tab.id
                               ? "bg-[#063B78] text-white shadow-md shadow-[#063B78]/20"
                               : "bg-[#F8FAFF] text-[#5B6B7F] border border-[#DCE5F0] hover:bg-[#EBF1F8] hover:text-[#063B78]"
                               }`}
                           >
-                            <tab.icon className="size-4 shrink-0" />
-                            <span>{tab.label}</span>
+                            <tab.icon className="size-3.5 sm:size-4 shrink-0" />
+                            <span className="hidden sm:inline">{tab.fullLabel}</span>
+                            <span className="sm:hidden">{tab.shortLabel}</span>
                           </button>
                         ))}
                       </div>
 
-                      <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 min-w-0">
                         {/* Department Filter Dropdown Selector */}
-                        <div className="flex items-center gap-1.5 bg-[#F8FAFF] px-3 py-1.5 rounded-xl border border-[#DCE5F0] shrink-0">
+                        <div className="flex items-center gap-1.5 bg-[#F8FAFF] px-3 py-2 rounded-xl border border-[#DCE5F0] w-full sm:w-auto min-w-0">
                           <Layers className="size-4 text-[#063B78] shrink-0" />
                           <span className="text-xs font-black text-[#063B78] whitespace-nowrap">Department:</span>
                           <select
                             value={selectedCategoryFilter}
                             onChange={(e) => setSelectedCategoryFilter(e.target.value)}
-                            className="bg-transparent font-bold text-xs text-[#10233F] focus:outline-none cursor-pointer outline-none max-w-[200px] truncate"
+                            className="bg-transparent font-bold text-xs text-[#10233F] focus:outline-none cursor-pointer outline-none w-full sm:max-w-[200px] truncate min-w-0"
                           >
-                            <option value="ALL">🏷️ All Categories ({workers.length})</option>
+                            <option value="ALL">🏷️ All Categories ({workers.length})</option>
                             {allCategories.map((cat) => {
                               const count = categoryCounts.get(cat) || 0;
-                              const cleanName = formatCategoryName(cat);
                               return (
                                 <option key={cat} value={cat}>
-                                  {cleanName} ({count})
+                                  {formatCategoryName(cat)} ({count})
                                 </option>
                               );
                             })}
@@ -2261,7 +2620,7 @@ function AdminDashboardPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => window.print()}
-                            className="text-xs font-black border-[#063B78] text-[#063B78] hover:bg-blue-50 flex items-center gap-1.5 h-8 shrink-0"
+                            className="text-xs font-black border-[#063B78] text-[#063B78] hover:bg-blue-50 flex items-center gap-1.5 h-9 shrink-0 cursor-pointer"
                           >
                             <Printer className="size-3.5" />
                             <span>Print</span>
@@ -2319,7 +2678,7 @@ function AdminDashboardPage() {
                           });
 
                           return (
-                            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
+                            <div className="grid gap-3 grid-cols-2 sm:grid-cols-2 lg:grid-cols-5">
                               <div className="p-3.5 sm:p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between gap-2">
                                 <div className="min-w-0 flex-1">
                                   <p className="text-[11px] sm:text-xs font-bold text-[#5B6B7F] truncate" title="Total Employees">Total Employees</p>
@@ -2454,8 +2813,8 @@ function AdminDashboardPage() {
                                   <th className="p-4">Department / Category</th>
                                   <th className="p-4">Role / Designation</th>
                                   <th className="p-4">Daily Wage Rate</th>
-                                  <th className="p-4 text-center">Punch Times</th>
-                                  <th className="p-4 text-center min-w-[390px]">Mark Attendance</th>
+                                  {attendanceMode === "fixed" && <th className="p-4 text-center">Punch Times</th>}
+                                  <th className="p-4 text-center min-w-[360px]">{attendanceMode === "fixed" ? "Work Duration & Overtime" : "Mark Attendance & Overtime"}</th>
                                   <th className="p-4 text-right rounded-r-xl">Today's Pay</th>
                                 </tr>
                               </thead>
@@ -2482,7 +2841,7 @@ function AdminDashboardPage() {
                                   if (list.length === 0) {
                                     return (
                                       <tr>
-                                        <td colSpan={6} className="py-12 text-center text-xs font-bold text-[#5B6B7F]">
+                                        <td colSpan={attendanceMode === "fixed" ? 7 : 6} className="py-12 text-center text-xs font-bold text-[#5B6B7F]">
                                           <div className="max-w-md mx-auto">
                                             <Users className="size-10 text-[#A0AEC0] mx-auto mb-3" />
                                             <p className="text-sm font-extrabold text-[#10233F]">
@@ -2509,23 +2868,36 @@ function AdminDashboardPage() {
                                     const record = attMap.get(worker.id);
                                     const isFixed = worker.locationType !== "field" && worker.attendanceMode !== "manual";
 
+                                    const workInfo = calculateWorkAndOvertime(record?.punchInTime, record?.punchOutTime, 540);
+
                                     let currentStatus: "Present" | "HalfDay" | "Absent" | "Overtime" = "Absent";
                                     if (isFixed) {
-                                      // Automatic through GPS Punch In / Punch Out
                                       if (record?.punchInTime) {
-                                        currentStatus = record.status || "Present";
+                                        if (workInfo.overtimeMinutes > 0) {
+                                          currentStatus = "Overtime";
+                                        } else {
+                                          currentStatus = record.status || "Present";
+                                        }
                                       } else {
                                         currentStatus = "Absent";
                                       }
                                     } else {
-                                      // Field / Site worker: manually marked by employer
                                       currentStatus = record?.status || "Present";
                                     }
 
                                     let earnedAmount = worker.dailyRate;
                                     if (currentStatus === "HalfDay") earnedAmount = Math.round(worker.dailyRate / 2);
                                     if (currentStatus === "Absent") earnedAmount = 0;
-                                    if (currentStatus === "Overtime") earnedAmount = Math.round(worker.dailyRate * 1.5);
+                                    if (currentStatus === "Overtime" || workInfo.overtimeMinutes > 0) {
+                                      const baseRate = worker.dailyRate;
+                                      if (workInfo.overtimeMinutes > 0) {
+                                        const hourlyRate = baseRate / 9;
+                                        const otPay = Math.round((workInfo.overtimeMinutes / 60) * hourlyRate * 1.5);
+                                        earnedAmount = baseRate + otPay;
+                                      } else {
+                                        earnedAmount = Math.round(baseRate * 1.5);
+                                      }
+                                    }
 
                                     return (
                                       <tr key={worker.id} className="hover:bg-[#F8FAFF] transition-colors">
@@ -2557,33 +2929,57 @@ function AdminDashboardPage() {
                                           ₹{worker.dailyRate} <span className="text-[10px] font-semibold text-[#5B6B7F]">/ day</span>
                                         </td>
 
-                                        <td className="p-4 text-center">
-                                          {isFixed && record?.punchInTime ? (
-                                            <div className="flex flex-col gap-1 items-center justify-center text-[10px] font-black">
-                                              <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 w-full text-center whitespace-nowrap">
-                                                IN: {record.punchInTime}
-                                              </span>
-                                              {record.punchOutTime ? (
-                                                <span className="text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 w-full text-center whitespace-nowrap">
-                                                  OUT: {record.punchOutTime}
+                                        {attendanceMode === "fixed" && (
+                                          <td className="p-4 text-center">
+                                            {isFixed && record?.punchInTime ? (
+                                              <div className="flex flex-col gap-1 items-center justify-center text-[10px] font-black">
+                                                <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 w-full text-center whitespace-nowrap">
+                                                  IN: {record.punchInTime}
                                                 </span>
-                                              ) : null}
-                                            </div>
-                                          ) : (
-                                            <span className="text-xs text-slate-400 font-extrabold">--</span>
-                                          )}
-                                        </td>
+                                                {!workInfo.isCurrentlyWorking && record.punchOutTime ? (
+                                                  <span className="text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 w-full text-center whitespace-nowrap">
+                                                    OUT: {record.punchOutTime}
+                                                  </span>
+                                                ) : (
+                                                  <span className="text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 w-full text-center whitespace-nowrap">
+                                                    Active (Working)
+                                                  </span>
+                                                )}
+                                              </div>
+                                            ) : (
+                                              <span className="text-xs text-slate-400 font-extrabold">--</span>
+                                            )}
+                                          </td>
+                                        )}
 
                                         <td className="p-4 text-center min-w-[360px]">
                                           {isFixed ? (
-                                            /* FIXED LOCATION: AUTOMATIC ATTENDANCE STATUS (NO MANUAL BUTTONS) */
-                                            <div className="flex flex-col items-center justify-center gap-1">
+                                            /* FIXED LOCATION: AUTOMATIC WORK DURATION & OVERTIME DISPLAY */
+                                            <div className="flex flex-col items-center justify-center gap-1.5">
                                               {record?.punchInTime ? (
-                                                <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-300 text-emerald-800 px-3.5 py-1.5 rounded-2xl shadow-xs">
-                                                  <CheckCircle2 className="size-4 text-emerald-600" />
-                                                  <span className="font-black text-xs">
-                                                    Auto: Present {record.punchOutTime ? "(Shift Completed)" : "(Punched In via GPS)"}
-                                                  </span>
+                                                <div className="flex flex-col items-center gap-1">
+                                                  {/* Total Work Time Badge */}
+                                                  <div className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-300 text-emerald-900 px-3 py-1 rounded-xl shadow-xs font-black text-xs">
+                                                    <Clock className="size-3.5 text-emerald-600" />
+                                                    <span>
+                                                      {workInfo.isCurrentlyWorking ? "⏳ Live Work: " : "⏱️ Worked: "}
+                                                      <strong className="text-emerald-950 font-black">{workInfo.workedText}</strong>
+                                                    </span>
+                                                  </div>
+
+                                                  {/* Overtime Badge (if worked > 9 hrs or has overtime) */}
+                                                  {workInfo.overtimeText ? (
+                                                    <div className="inline-flex items-center gap-1.5 bg-amber-100 border border-amber-400 text-amber-950 px-3 py-1 rounded-xl shadow-xs font-black text-xs animate-pulse">
+                                                      <Zap className="size-3.5 text-amber-600 fill-amber-500" />
+                                                      <span>
+                                                        🔥 Overtime: <strong className="text-amber-950 font-black">{workInfo.overtimeText}</strong>
+                                                      </span>
+                                                    </div>
+                                                  ) : (
+                                                    <span className="text-[10px] font-bold text-slate-400">
+                                                      (Shift: 9 AM - 6 PM)
+                                                    </span>
+                                                  )}
                                                 </div>
                                               ) : (
                                                 <div className="inline-flex items-center gap-2 bg-slate-100 border border-slate-300 text-slate-600 px-3.5 py-1.5 rounded-2xl">
@@ -2593,60 +2989,74 @@ function AdminDashboardPage() {
                                                   </span>
                                                 </div>
                                               )}
-                                              <span className="text-[10px] text-slate-400 font-semibold">
-                                                ⚡ GPS लोकेशनवरून ऑटोमॅटिक हजेरी
-                                              </span>
                                             </div>
                                           ) : (
-                                            /* FIELD / SITE WORKER: MANUAL BUTTONS ONLY (AS IN IMAGE 2) */
-                                            <div className="inline-flex items-center gap-1 bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80 shadow-inner whitespace-nowrap">
-                                              <button
-                                                type="button"
-                                                onClick={() => handleMarkAttendance(worker, "Present")}
-                                                className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 ${currentStatus === "Present"
-                                                  ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/30 scale-[1.02]"
-                                                  : "text-slate-600 hover:text-emerald-700 hover:bg-emerald-50/80"
-                                                  }`}
-                                              >
-                                                <CheckCircle2 className="size-3.5" />
-                                                <span>Present</span>
-                                              </button>
+                                            /* FIELD / SITE WORKER: MANUAL ATTENDANCE WITH DURATION */
+                                            <div className="flex flex-col items-center gap-2">
+                                              {record?.punchInTime ? (
+                                                <div className="flex items-center gap-2">
+                                                  <div className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-300 text-emerald-900 px-2.5 py-1 rounded-xl font-black text-xs">
+                                                    <Clock className="size-3.5 text-emerald-600" />
+                                                    <span>⏱️ Worked: {workInfo.workedText}</span>
+                                                  </div>
+                                                  {workInfo.overtimeText && (
+                                                    <div className="inline-flex items-center gap-1 bg-amber-100 border border-amber-400 text-amber-900 px-2.5 py-1 rounded-xl font-black text-xs">
+                                                      <Zap className="size-3.5 text-amber-600 fill-amber-500" />
+                                                      <span>🔥 OT: {workInfo.overtimeText}</span>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              ) : null}
 
-                                              <button
-                                                type="button"
-                                                onClick={() => handleMarkAttendance(worker, "HalfDay")}
-                                                className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 ${currentStatus === "HalfDay"
-                                                  ? "bg-amber-500 text-white shadow-md shadow-amber-500/30 scale-[1.02]"
-                                                  : "text-slate-600 hover:text-amber-700 hover:bg-amber-50/80"
-                                                  }`}
-                                              >
-                                                <Clock className="size-3.5" />
-                                                <span>Half Day</span>
-                                              </button>
+                                              <div className="inline-flex items-center gap-1 bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80 shadow-inner whitespace-nowrap">
+                                                <button
+                                                  type="button"
+                                                  onClick={() => handleMarkAttendance(worker, "Present")}
+                                                  className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 ${currentStatus === "Present"
+                                                    ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/30 scale-[1.02]"
+                                                    : "text-slate-600 hover:text-emerald-700 hover:bg-emerald-50/80"
+                                                    }`}
+                                                >
+                                                  <CheckCircle2 className="size-3.5" />
+                                                  <span>Present</span>
+                                                </button>
 
-                                              <button
-                                                type="button"
-                                                onClick={() => handleMarkAttendance(worker, "Absent")}
-                                                className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 ${currentStatus === "Absent"
-                                                  ? "bg-rose-600 text-white shadow-md shadow-rose-600/30 scale-[1.02]"
-                                                  : "text-slate-600 hover:text-rose-700 hover:bg-rose-50/80"
-                                                  }`}
-                                              >
-                                                <XCircle className="size-3.5" />
-                                                <span>Absent</span>
-                                              </button>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => handleMarkAttendance(worker, "HalfDay")}
+                                                  className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 ${currentStatus === "HalfDay"
+                                                    ? "bg-amber-500 text-white shadow-md shadow-amber-500/30 scale-[1.02]"
+                                                    : "text-slate-600 hover:text-amber-700 hover:bg-amber-50/80"
+                                                    }`}
+                                                >
+                                                  <Clock className="size-3.5" />
+                                                  <span>Half Day</span>
+                                                </button>
 
-                                              <button
-                                                type="button"
-                                                onClick={() => handleMarkAttendance(worker, "Overtime")}
-                                                className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 ${currentStatus === "Overtime"
-                                                  ? "bg-[#063B78] text-white shadow-md shadow-[#063B78]/30 scale-[1.02]"
-                                                  : "text-slate-600 hover:text-[#063B78] hover:bg-blue-50/80"
-                                                  }`}
-                                              >
-                                                <Zap className="size-3.5 text-amber-400 fill-amber-400" />
-                                                <span>Overtime</span>
-                                              </button>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => handleMarkAttendance(worker, "Absent")}
+                                                  className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 ${currentStatus === "Absent"
+                                                    ? "bg-rose-600 text-white shadow-md shadow-rose-600/30 scale-[1.02]"
+                                                    : "text-slate-600 hover:text-rose-700 hover:bg-rose-50/80"
+                                                    }`}
+                                                >
+                                                  <XCircle className="size-3.5" />
+                                                  <span>Absent</span>
+                                                </button>
+
+                                                <button
+                                                  type="button"
+                                                  onClick={() => handleMarkAttendance(worker, "Overtime")}
+                                                  className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 ${currentStatus === "Overtime"
+                                                    ? "bg-[#063B78] text-white shadow-md shadow-[#063B78]/30 scale-[1.02]"
+                                                    : "text-slate-600 hover:text-[#063B78] hover:bg-blue-50/80"
+                                                    }`}
+                                                >
+                                                  <Zap className="size-3.5 text-amber-400 fill-amber-400" />
+                                                  <span>Overtime</span>
+                                                </button>
+                                              </div>
                                             </div>
                                           )}
                                         </td>
@@ -2971,20 +3381,12 @@ function AdminDashboardPage() {
                                     <td className="p-4">
                                       <div className="flex items-center gap-2">
                                         <div className="font-black text-[#10233F]">{w.name}</div>
-                                        {w.locationType === "field" || w.attendanceMode === "manual" ? (
-                                          <span className="text-[9px] font-extrabold text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">
-                                            🏗️ Field / Site
-                                          </span>
-                                        ) : (
-                                          <span className="text-[9px] font-extrabold text-[#063B78] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded-full">
-                                            🏢 Fixed Location
-                                          </span>
-                                        )}
+
                                       </div>
                                       {(w.workShiftStart || w.workShiftEnd) && (
                                         <div className="text-[10px] text-[#063B78] font-bold mt-0.5 flex items-center gap-1">
                                           <Clock className="size-3 text-[#063B78]" />
-                                          <span>Shift: {w.workShiftStart || "09:00"} - {w.workShiftEnd || "18:00"}</span>
+                                          <span>Shift: {formatTime12Hr(w.workShiftStart || "09:00")} - {formatTime12Hr(w.workShiftEnd || "18:00")}</span>
                                         </div>
                                       )}
                                       {w.customFields && w.customFields.length > 0 && (
@@ -3176,6 +3578,126 @@ function AdminDashboardPage() {
               </div>
             </div>
           )}
+
+          {/* TAB 6: MY PACKAGES & BILLING */}
+          {activeTab === "packages" && (
+            <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in duration-300">
+              {(() => {
+                const userId = currentUser?.id || currentUser?.email || empIdentifier;
+                const userPkgs = dataStore.getUserPackages(userId);
+                const workerLimit = dataStore.getUserWorkerCredits(userId);
+                const jobCredits = dataStore.getUserJobCredits(userId);
+
+                return (
+                  <>
+                    <div className="bg-white rounded-2xl border border-[#DCE5F0] p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div>
+                        <h2 className="text-xl font-black text-[#10233F] flex items-center gap-2">
+                          <span>💳 Active Package & Subscription Status</span>
+                          <span className="text-xs bg-emerald-100 text-emerald-800 border border-emerald-300 font-extrabold px-3 py-0.5 rounded-full">
+                            {userPkgs.length} Active Purchases
+                          </span>
+                        </h2>
+                        <p className="text-xs font-semibold text-[#5B6B7F] mt-1">
+                          Manage your active posting credits, worker limits, and view full transaction history.
+                        </p>
+                      </div>
+
+                      <Button
+                        onClick={() => setShowPackageModal(true)}
+                        className="bg-[#063B78] hover:bg-[#0A4F9E] text-white font-black text-xs px-5 py-2.5 rounded-xl shadow-md shrink-0"
+                      >
+                        + Buy / Upgrade Package
+                      </Button>
+                    </div>
+
+                    {/* Active Plan Overview Cards Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="bg-white p-5 rounded-2xl border border-[#DCE5F0] shadow-sm space-y-1">
+                        <span className="text-[11px] font-black uppercase text-[#5B6B7F] tracking-wider">Current Job Post Credits</span>
+                        <div className="text-3xl font-black text-amber-600">{jobCredits} Available</div>
+                        <p className="text-xs text-slate-500 font-medium">Job postings remaining</p>
+                      </div>
+
+                      <div className="bg-white p-5 rounded-2xl border border-[#DCE5F0] shadow-sm space-y-1">
+                        <span className="text-[11px] font-black uppercase text-[#5B6B7F] tracking-wider">Employee Addition Limit</span>
+                        <div className="text-3xl font-black text-indigo-700">
+                          {workerLimit === 0 ? "0 Allowed" : (workerLimit >= 9999 ? "Unlimited" : `${workerLimit} Employees`)}
+                        </div>
+                        <p className="text-xs text-slate-500 font-medium">{workers.length} Employees Currently Added</p>
+                      </div>
+
+                      <div className="bg-white p-5 rounded-2xl border border-[#DCE5F0] shadow-sm space-y-1">
+                        <span className="text-[11px] font-black uppercase text-[#5B6B7F] tracking-wider">Total Amount Spent</span>
+                        <div className="text-3xl font-black text-emerald-600">
+                          ₹{userPkgs.reduce((sum, p) => sum + (p.price || 0), 0)}
+                        </div>
+                        <p className="text-xs text-slate-500 font-medium">Across {userPkgs.length} transaction(s)</p>
+                      </div>
+                    </div>
+
+                    {/* Transaction History Table */}
+                    <div className="bg-white rounded-2xl border border-[#DCE5F0] p-6 shadow-sm space-y-4">
+                      <h3 className="text-base font-black text-[#10233F]">Package Purchase History</h3>
+
+                      {userPkgs.length === 0 ? (
+                        <div className="py-12 text-center border-2 border-dashed border-[#E0E8F5] rounded-xl bg-[#F8FAFF]">
+                          <IndianRupee className="size-10 text-slate-300 mx-auto mb-2" />
+                          <p className="text-sm font-bold text-[#10233F]">No package purchases found</p>
+                          <p className="text-xs text-slate-500 mt-1 mb-4">Click below to choose a package and unlock job posting & employee addition.</p>
+                          <Button
+                            onClick={() => setShowPackageModal(true)}
+                            className="bg-[#063B78] text-white font-black text-xs px-6 py-2.5 rounded-xl shadow-md"
+                          >
+                            Choose Package Plan
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left text-xs">
+                            <thead>
+                              <tr className="bg-[#F8FAFF] border-b border-[#E0E8F5] text-[#5B6B7F] font-black uppercase tracking-wider text-[11px]">
+                                <th className="p-3 whitespace-nowrap">Transaction ID</th>
+                                <th className="p-3 whitespace-nowrap">Package Name</th>
+                                <th className="p-3 whitespace-nowrap">Price Paid (₹)</th>
+                                <th className="p-3 whitespace-nowrap">Job Credits</th>
+                                <th className="p-3 whitespace-nowrap">Employee Limit</th>
+                                <th className="p-3 whitespace-nowrap">Payment Method</th>
+                                <th className="p-3 whitespace-nowrap">Purchase Date</th>
+                                <th className="p-3 whitespace-nowrap">Status</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-[#E0E8F5] font-semibold text-[#10233F]">
+                              {userPkgs.map((tx) => (
+                                <tr key={tx.id} className="hover:bg-[#F8FAFF] transition-colors">
+                                  <td className="p-3 font-mono text-[11px] text-[#063B78] whitespace-nowrap">{tx.id}</td>
+                                  <td className="p-3 whitespace-nowrap">
+                                    <span className="px-3 py-1 rounded-xl bg-blue-50 text-[#063B78] border border-blue-200 font-black text-xs inline-block whitespace-nowrap shadow-2xs">
+                                      {tx.planName}
+                                    </span>
+                                  </td>
+                                  <td className="p-3 font-black text-emerald-700 text-sm whitespace-nowrap">₹{tx.price}</td>
+                                  <td className="p-3 font-extrabold text-amber-700 whitespace-nowrap">{tx.jobCount >= 999 ? "Unlimited" : tx.jobCount}</td>
+                                  <td className="p-3 font-extrabold text-indigo-700 whitespace-nowrap">{tx.workerCount ? (tx.workerCount >= 9999 ? "Unlimited" : `${tx.workerCount} Employees`) : "3 Employees"}</td>
+                                  <td className="p-3 font-bold uppercase text-slate-600 whitespace-nowrap">{tx.paymentMethod}</td>
+                                  <td className="p-3 text-[#5B6B7F] font-medium whitespace-nowrap">{tx.purchaseDate}</td>
+                                  <td className="p-3 whitespace-nowrap">
+                                    <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black inline-block whitespace-nowrap">
+                                      Active / Completed
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          )}
         </main>
       </div>
 
@@ -3229,71 +3751,18 @@ function AdminDashboardPage() {
               </div>
             )}
 
-            <div className="space-y-6">
-              {/* Option 1: Auto GPS */}
-              <div className="p-4 rounded-xl border border-emerald-100 bg-emerald-50/50">
-                <p className="text-sm font-bold text-emerald-900 mb-2">Option 1: Use Current GPS (Recommended)</p>
-                <p className="text-xs text-emerald-700 font-semibold mb-3">If you are currently at the factory or worksite, click below to auto-detect.</p>
-                <Button
-                  onClick={() => {
-                    if (!navigator.geolocation) {
-                      toast.error("Geolocation is not supported by your browser");
-                      return;
-                    }
-                    navigator.geolocation.getCurrentPosition(
-                      (position) => {
-                        const { latitude, longitude } = position.coords;
-                        const coordsObj = { lat: latitude, lng: longitude };
-                        setSavedLocationCoords(coordsObj);
-                        try {
-                          localStorage.setItem(`emp_worksite_coords_${empIdentifier}`, JSON.stringify(coordsObj));
-                          localStorage.setItem("emp_worksite_coords_global", JSON.stringify(coordsObj));
-                        } catch (e) {}
-
-                        if (currentUser?.id) {
-                          const updated = dataStore.updateRegisteredAccount(currentUser.id, {
-                            worksiteLocation: coordsObj,
-                          }) || { ...currentUser, worksiteLocation: coordsObj };
-                          dataStore.setCurrentUser(updated);
-                          try {
-                            sessionStorage.setItem("realjob_tab_user", JSON.stringify(updated));
-                            localStorage.setItem("realjob-user", JSON.stringify(updated));
-                            if (currentUser.role === "employer") localStorage.setItem("realjob-user-employer", JSON.stringify(updated));
-                            if (currentUser.role === "admin") localStorage.setItem("realjob-user-admin", JSON.stringify(updated));
-                          } catch (e) {}
-                        }
-                        toast.success("✅ Worksite Location Set Successfully!");
-                        setShowLocationModal(false);
-                      },
-                      () => toast.error("Unable to get location. Please allow permissions.")
-                    );
-                  }}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs py-2.5 rounded-xl shadow-sm"
-                >
-                  📍 Use Current Location
-                </Button>
-              </div>
-
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-slate-200" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-white px-2 text-slate-500 font-bold">OR</span>
-                </div>
-              </div>
-
-              {/* Option 2: Paste Link */}
+            <div className="space-y-4">
+              {/* Paste Maps Link / Location */}
               <div>
-                <label className="block text-sm font-bold text-[#10233F] mb-1.5">Option 2: Paste Maps Link / Location</label>
+                <label className="block text-sm font-bold text-[#10233F] mb-1.5">Paste Maps Link / Location</label>
                 <p className="text-xs text-slate-500 font-semibold mb-3">
-                  Paste any Google Maps, Bing Maps link or location URL below.
+                  Paste any Google Maps or Bing Maps share link / location URL below.
                 </p>
                 <Input
                   value={locationLinkInput}
                   onChange={(e) => setLocationLinkInput(e.target.value)}
-                  placeholder="Paste Google Maps, Bing Maps link or location..."
-                  className="text-xs font-semibold mb-3"
+                  placeholder="Paste Google Maps or Bing Maps location link here..."
+                  className="text-xs font-semibold mb-3.5"
                 />
                 <Button
                   onClick={() => {
@@ -3307,8 +3776,7 @@ function AdminDashboardPage() {
                     setSavedLocationLink(rawInput);
                     try {
                       localStorage.setItem(`emp_worksite_link_${empIdentifier}`, rawInput);
-                      localStorage.setItem("emp_worksite_link_global", rawInput);
-                    } catch (e) {}
+                    } catch (e) { }
 
                     // 2. Parse coordinates using robust multi-map parser
                     const parsed = parseMapCoordinates(rawInput);
@@ -3317,14 +3785,13 @@ function AdminDashboardPage() {
                     if (parsed) {
                       toast.info(`📍 Recognized Location: ${parsed.lat.toFixed(6)}, ${parsed.lng.toFixed(6)}`);
                     } else {
-                      toast.warning("Could not auto-extract GPS from link, saved link for reference.");
+                      toast.warning("Saved link for reference.");
                     }
 
                     setSavedLocationCoords(coordsObj);
                     try {
                       localStorage.setItem(`emp_worksite_coords_${empIdentifier}`, JSON.stringify(coordsObj));
-                      localStorage.setItem("emp_worksite_coords_global", JSON.stringify(coordsObj));
-                    } catch (e) {}
+                    } catch (e) { }
 
                     // 3. Update currentUser session objects
                     if (currentUser) {
@@ -3339,7 +3806,7 @@ function AdminDashboardPage() {
                         localStorage.setItem("realjob-user", JSON.stringify(updated));
                         if (currentUser.role === "employer") localStorage.setItem("realjob-user-employer", JSON.stringify(updated));
                         if (currentUser.role === "admin") localStorage.setItem("realjob-user-admin", JSON.stringify(updated));
-                      } catch (e) {}
+                      } catch (e) { }
                     }
 
                     toast.success("✅ Worksite Location Link Saved Successfully!");
@@ -3623,86 +4090,49 @@ function AdminDashboardPage() {
                 ) : null}
               </div>
 
-              {/* WORK LOCATION & ATTENDANCE MODE SELECTOR */}
-              <div className="space-y-2 p-4 bg-slate-50/80 rounded-2xl border border-slate-200">
+              {/* WORK LOCATION & ATTENDANCE MODE (Auto-Detected) */}
+              <div className="space-y-3 p-4 bg-slate-50/90 rounded-2xl border border-slate-200">
                 <Label className="text-xs font-extrabold text-slate-800 uppercase block tracking-wider">
-                  Work Location & Attendance Type (कामाचे ठिकाण व हजेरी पद्धत) *
+                  Work Location & Attendance Type (Auto-Detected)
                 </Label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div
-                    onClick={() => setWorkerForm((p) => ({ ...p, locationType: "fixed", attendanceMode: "punch" }))}
-                    className={`p-3.5 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${
-                      workerForm.locationType === "fixed"
-                        ? "border-[#063B78] bg-white ring-2 ring-[#063B78]/20 shadow-xs"
-                        : "border-slate-200 bg-white/60 hover:bg-white"
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-black text-xs text-[#063B78] flex items-center gap-1.5">
-                          🏢 Company / Fixed Location
-                        </span>
-                        {workerForm.locationType === "fixed" && (
-                          <span className="size-4 rounded-full bg-[#063B78] text-white flex items-center justify-center text-[10px] font-black">✓</span>
-                        )}
-                      </div>
-                      <p className="text-[11px] font-medium text-slate-600">
-                        एकाच ठिकाणी काम (Self Punch In/Out via Mobile GPS + Camera)
-                      </p>
-                    </div>
-                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md mt-2 w-fit">
-                      📱 Employee Self Punch
-                    </span>
-                  </div>
 
-                  <div
-                    onClick={() => setWorkerForm((p) => ({ ...p, locationType: "field", attendanceMode: "manual" }))}
-                    className={`p-3.5 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${
-                      workerForm.locationType === "field"
-                        ? "border-amber-600 bg-white ring-2 ring-amber-600/20 shadow-xs"
-                        : "border-slate-200 bg-white/60 hover:bg-white"
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-black text-xs text-amber-900 flex items-center gap-1.5">
-                          🏗️ Field / Site Worker
-                        </span>
-                        {workerForm.locationType === "field" && (
-                          <span className="size-4 rounded-full bg-amber-600 text-white flex items-center justify-center text-[10px] font-black">✓</span>
-                        )}
-                      </div>
-                      <p className="text-[11px] font-medium text-slate-600">
-                        लोकेशन फिक्स नसते (मालक डॅशबोर्डवरून मॅन्युअली हजेरी लावणार)
-                      </p>
+                {attendanceMode === "field" ? (
+                  <div className="p-3.5 bg-amber-50 rounded-xl border border-amber-200/90 space-y-1.5">
+                    <div className="flex items-center gap-2 text-xs font-black text-amber-950">
+                      <span className="size-2 rounded-full bg-amber-500 animate-pulse shrink-0"></span>
+                      <span>🚜 Field / Site Worksite (Auto-Detected: Employer Attendance)</span>
                     </div>
-                    <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md mt-2 w-fit">
-                      ✍️ Manual Attendance by Owner
-                    </span>
-                  </div>
-                </div>
-
-                {workerForm.locationType === "fixed" ? (
-                  <div className="mt-3 pt-3 border-t border-slate-200">
-                    <Label className="text-xs font-extrabold text-slate-700 uppercase mb-1 block">
-                      Employee Login 4-Digit PIN *
-                    </Label>
-                    <Input
-                      required
-                      placeholder="1234"
-                      maxLength={4}
-                      minLength={4}
-                      value={workerForm.pin}
-                      onChange={(e) => setWorkerForm((p) => ({ ...p, pin: e.target.value.replace(/\D/g, "") }))}
-                      className="h-10 w-44 rounded-xl text-xs font-black border-slate-300 tracking-widest text-[#063B78]"
-                    />
-                    <p className="text-[10px] text-slate-500 mt-1 font-semibold">
-                      कर्मचारी मोबाईल नंबर आणि या 4-Digit PIN द्वारे लॉगिन करून स्वतः पंच इन/आउट करतील.
+                    <p className="text-[11px] text-amber-900/90 font-medium leading-relaxed">
+                      Auto-detected from company name. Mobile GPS & selfie punch-in are not required. Daily attendance will be marked directly by employer.
                     </p>
                   </div>
                 ) : (
-                  <div className="mt-3 pt-3 border-t border-slate-200 text-[11px] font-semibold text-amber-800 flex items-center gap-2">
-                    <span>💡 या कर्मचाऱ्याचे लोकेशन फिक्स नसल्यामुळे त्यांना मोबाईलवरून पंच करण्याची गरज नाही. तुम्ही खालील Attendance Sheet मधून त्यांची मॅन्युअल हजेरी नोंदवू शकता.</span>
+                  <div className="p-3.5 bg-blue-50/90 rounded-xl border border-blue-200/90 space-y-3">
+                    <div className="flex items-center gap-2 text-xs font-black text-[#063B78]">
+                      <span className="size-2 rounded-full bg-blue-600 animate-pulse shrink-0"></span>
+                      <span>🏢 Fixed Location Worksite (Auto-Detected: App Punch In/Out)</span>
+                    </div>
+                    <p className="text-[11px] text-blue-900/90 font-medium leading-relaxed">
+                      Auto-detected from company name. Employee punches in/out via mobile app (GPS + Camera).
+                    </p>
+
+                    <div className="pt-3 border-t border-blue-200/70">
+                      <Label className="text-xs font-extrabold text-slate-700 uppercase mb-1 block">
+                        Employee Login 4-Digit PIN *
+                      </Label>
+                      <Input
+                        required
+                        placeholder="1234"
+                        maxLength={4}
+                        minLength={4}
+                        value={workerForm.pin}
+                        onChange={(e) => setWorkerForm((p) => ({ ...p, pin: e.target.value.replace(/\D/g, "") }))}
+                        className="h-10 w-44 rounded-xl text-xs font-black border-slate-300 tracking-widest text-[#063B78]"
+                      />
+                      <p className="text-[10px] text-slate-500 mt-1 font-semibold">
+                        Employee uses Mobile Number and this 4-digit PIN to login to the app.
+                      </p>
+                    </div>
                   </div>
                 )}
               </div>
@@ -3961,7 +4391,9 @@ function AdminDashboardPage() {
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-slate-500 font-medium mt-0.5">{pkg.description || `${pkg.jobCount >= 999 ? "Unlimited Job Postings" : `${pkg.jobCount} Job Posting Credits`}`}</p>
+                      <p className="text-xs text-slate-600 font-semibold mt-0.5">
+                        {pkg.description || `${pkg.jobCount >= 999 ? "Unlimited Jobs" : `${pkg.jobCount} Job Posting`} + ${pkg.workerCount ? (pkg.workerCount >= 9999 ? "Unlimited Employees" : `${pkg.workerCount} Employees`) : "3 Employees"}`}
+                      </p>
                     </div>
                   </div>
 
@@ -4243,6 +4675,32 @@ function AdminDashboardPage() {
           </div>
         </div>
       )}
+      {/* ── MOBILE BOTTOM NAVIGATION BAR (Visible on < md) ── */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[#021D3D] text-white border-t border-white/10 z-40 px-2 py-1.5 flex items-center justify-around shadow-2xl">
+        {[
+          { id: "overview", label: "Dashboard", icon: BarChart3 },
+          { id: "jobs", label: "Jobs", icon: BriefcaseBusiness, count: jobs.length },
+          { id: "applications", label: "Applications", icon: FileText, count: applications.length },
+          { id: "attendance", label: "Attendance", icon: CalendarCheck },
+          { id: "profile", label: "Profile", icon: User },
+        ].map((item) => {
+          const isActive = activeTab === item.id;
+          return (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id as any)}
+              className={`flex flex-col items-center gap-0.5 px-2.5 py-1 rounded-xl text-[10px] font-bold transition-all relative ${isActive ? "text-[#FFC400] bg-white/10" : "text-white/60 hover:text-white"
+                }`}
+            >
+              <item.icon className={`size-4.5 ${isActive ? "text-[#FFC400]" : "text-white/60"}`} />
+              <span className="truncate max-w-[68px]">{item.label}</span>
+              {isActive && (
+                <span className="absolute -top-1 size-1 bg-[#FFC400] rounded-full"></span>
+              )}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

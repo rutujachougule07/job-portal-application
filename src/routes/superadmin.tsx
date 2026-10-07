@@ -120,6 +120,7 @@ function SuperAdminPage() {
 
   const [appSearchQuery, setAppSearchQuery] = useState("");
   const [appStatusFilter, setAppStatusFilter] = useState<string>("all");
+  const [pkgSearchQuery, setPkgSearchQuery] = useState("");
 
   const refreshData = () => {
     setAllJobs(dataStore.getAllJobs());
@@ -1547,25 +1548,45 @@ function SuperAdminPage() {
                         </div>
                       </div>
 
-                      <div>
-                        <label className="block text-[10px] font-bold text-[#5B6B7F] mb-1">Badge Tag</label>
-                        <input
-                          type="text"
-                          value={pkg.badge || ""}
-                          placeholder="e.g. BEST VALUE / UNLIMITED"
-                          onChange={(e) => {
-                            const updated = [...dynamicPackages];
-                            updated[idx]!.badge = e.target.value;
-                            setDynamicPackages(updated);
-                          }}
-                          className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-bold text-[#5B6B7F]"
-                        />
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[10px] font-bold text-[#5B6B7F] mb-1">Employee Limit</label>
+                          <input
+                            type="number"
+                            value={pkg.workerCount !== undefined ? pkg.workerCount : 3}
+                            placeholder="e.g. 3"
+                            onChange={(e) => {
+                              const updated = [...dynamicPackages];
+                              updated[idx]!.workerCount = Number(e.target.value) || 0;
+                              setDynamicPackages(updated);
+                            }}
+                            className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-black text-indigo-700"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-bold text-[#5B6B7F] mb-1">Badge Tag</label>
+                          <input
+                            type="text"
+                            value={pkg.badge || ""}
+                            placeholder="e.g. BEST VALUE"
+                            onChange={(e) => {
+                              const updated = [...dynamicPackages];
+                              updated[idx]!.badge = e.target.value;
+                              setDynamicPackages(updated);
+                            }}
+                            className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-bold text-[#5B6B7F]"
+                          />
+                        </div>
                       </div>
                     </div>
 
-                    <div className="pt-3 border-t border-[#E0E8F5]">
-                      <span className="text-[11px] font-bold text-[#063B78]">
-                        ⚡ ₹{pkg.price} for {pkg.jobCount >= 999 ? "Unlimited" : `${pkg.jobCount} Job Credits`}
+                    <div className="pt-3 border-t border-[#E0E8F5] space-y-0.5">
+                      <span className="text-[11px] font-bold text-[#063B78] block">
+                        ⚡ ₹{pkg.price} • {pkg.jobCount >= 999 ? "Unlimited Jobs" : `${pkg.jobCount} Job Credit(s)`}
+                      </span>
+                      <span className="text-[11px] font-bold text-indigo-700 block">
+                        👥 {pkg.workerCount ? (pkg.workerCount >= 9999 ? "Unlimited Employees" : `${pkg.workerCount} Employees Limit`) : "3 Employees Limit"}
                       </span>
                     </div>
                   </div>
@@ -1574,7 +1595,7 @@ function SuperAdminPage() {
 
               {/* Employer Package Purchases History */}
               <div className="bg-white rounded-2xl border border-[#E0E8F5] shadow-sm p-6 space-y-4">
-                <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center justify-between flex-wrap gap-3">
                   <div>
                     <h3 className="text-lg font-black text-[#063B78]">Employer Package Purchases History</h3>
                     <p className="text-xs font-semibold text-[#5B6B7F]">
@@ -1596,6 +1617,20 @@ function SuperAdminPage() {
                   </div>
                 </div>
 
+                {/* Package Search Header */}
+                {packagePurchases.length > 0 && (
+                  <div className="relative max-w-md">
+                    <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#9DAEC5]" />
+                    <input
+                      type="text"
+                      placeholder="Search by Employer Name, Company, Email or Package..."
+                      value={pkgSearchQuery}
+                      onChange={(e) => setPkgSearchQuery(e.target.value)}
+                      className="w-full h-10 pl-10 pr-4 rounded-xl bg-[#F8FAFF] border border-[#DCE5F0] text-xs font-bold text-[#063B78] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
+                    />
+                  </div>
+                )}
+
                 {packagePurchases.length === 0 ? (
                   <div className="py-8 text-center border-2 border-dashed border-[#E0E8F5] rounded-xl bg-[#F8FAFF]">
                     <IndianRupee className="size-10 text-[#9DAEC5] mx-auto mb-2" />
@@ -1606,38 +1641,65 @@ function SuperAdminPage() {
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs">
                       <thead>
-                        <tr className="bg-[#F8FAFF] border-b border-[#E0E8F5] text-[#5B6B7F] font-black uppercase tracking-wider">
-                          <th className="p-3">Transaction ID</th>
-                          <th className="p-3">Employer / User</th>
-                          <th className="p-3">Package Name</th>
-                          <th className="p-3">Amount (₹)</th>
-                          <th className="p-3">Credits Granted</th>
-                          <th className="p-3">Payment Method</th>
-                          <th className="p-3">Date</th>
-                          <th className="p-3 text-right">Action</th>
+                        <tr className="bg-[#F8FAFF] border-b border-[#E0E8F5] text-[#5B6B7F] font-black uppercase tracking-wider text-[11px]">
+                          <th className="p-3 whitespace-nowrap">Transaction ID</th>
+                          <th className="p-3 whitespace-nowrap">Employer / Company Name</th>
+                          <th className="p-3 whitespace-nowrap">Contact Email</th>
+                          <th className="p-3 whitespace-nowrap">Package Name</th>
+                          <th className="p-3 whitespace-nowrap">Amount Paid (₹)</th>
+                          <th className="p-3 whitespace-nowrap">Included Allowance</th>
+                          <th className="p-3 whitespace-nowrap">Payment Method</th>
+                          <th className="p-3 whitespace-nowrap">Purchase Date</th>
+                          <th className="p-3 text-right whitespace-nowrap">Action</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-[#E0E8F5] font-semibold text-[#10233F]">
-                        {packagePurchases.map((tx) => (
-                          <tr key={tx.id} className="hover:bg-[#F8FAFF] transition-colors">
-                            <td className="p-3 font-mono text-[11px] text-[#063B78]">{tx.id}</td>
-                            <td className="p-3 font-bold">{tx.userId}</td>
-                            <td className="p-3">{tx.planName}</td>
-                            <td className="p-3 font-black text-emerald-600">₹{tx.price}</td>
-                            <td className="p-3 font-extrabold text-amber-600">{tx.jobCount >= 999 ? "Unlimited" : tx.jobCount}</td>
-                            <td className="p-3 font-bold uppercase">{tx.paymentMethod}</td>
-                            <td className="p-3 text-[#5B6B7F]">{tx.purchaseDate}</td>
-                            <td className="p-3 text-right">
-                              <button
-                                onClick={() => handleDeletePackagePurchase(tx.id)}
-                                className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors"
-                                title="Delete Transaction"
-                              >
-                                <Trash2 className="size-4" />
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
+                        {packagePurchases
+                          .filter((tx) => {
+                            if (!pkgSearchQuery.trim()) return true;
+                            const q = pkgSearchQuery.toLowerCase();
+                            return (
+                              (tx.userName || "").toLowerCase().includes(q) ||
+                              (tx.companyName || "").toLowerCase().includes(q) ||
+                              (tx.userEmail || "").toLowerCase().includes(q) ||
+                              (tx.planName || "").toLowerCase().includes(q) ||
+                              (tx.userId || "").toLowerCase().includes(q)
+                            );
+                          })
+                          .map((tx) => (
+                            <tr key={tx.id} className="hover:bg-[#F8FAFF] transition-colors">
+                              <td className="p-3 font-mono text-[11px] text-[#063B78] whitespace-nowrap">{tx.id}</td>
+                              <td className="p-3 whitespace-nowrap">
+                                <strong className="block font-black text-[#063B78] text-xs">{tx.companyName || tx.userName || tx.userId}</strong>
+                                {tx.userName && tx.userName !== tx.companyName && (
+                                  <span className="text-[10px] text-[#5B6B7F] block">Contact: {tx.userName}</span>
+                                )}
+                              </td>
+                              <td className="p-3 font-bold text-[#063B78] whitespace-nowrap">{tx.userEmail || "N/A"}</td>
+                              <td className="p-3 whitespace-nowrap">
+                                <span className="px-3 py-1 rounded-xl bg-blue-50 text-[#063B78] border border-blue-200 font-black text-xs inline-block whitespace-nowrap shadow-2xs">
+                                  {tx.planName}
+                                </span>
+                              </td>
+                              <td className="p-3 font-black text-emerald-700 text-sm whitespace-nowrap">₹{tx.price}</td>
+                              <td className="p-3 font-bold text-slate-700 whitespace-nowrap">
+                                <span className="text-amber-700 font-extrabold">{tx.jobCount >= 999 ? "Unlimited Jobs" : `${tx.jobCount} Jobs`}</span>
+                                {" • "}
+                                <span className="text-indigo-700 font-extrabold">{tx.workerCount ? (tx.workerCount >= 9999 ? "Unlimited Employees" : `${tx.workerCount} Employees`) : "3 Employees"}</span>
+                              </td>
+                              <td className="p-3 font-bold uppercase text-slate-600 whitespace-nowrap">{tx.paymentMethod}</td>
+                              <td className="p-3 text-[#5B6B7F] font-medium whitespace-nowrap">{tx.purchaseDate}</td>
+                              <td className="p-3 text-right whitespace-nowrap">
+                                <button
+                                  onClick={() => handleDeletePackagePurchase(tx.id)}
+                                  className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors"
+                                  title="Delete Transaction"
+                                >
+                                  <Trash2 className="size-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
                       </tbody>
                     </table>
                   </div>

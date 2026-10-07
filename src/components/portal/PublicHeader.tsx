@@ -46,7 +46,7 @@ export function PublicHeader() {
     setUser(null);
     toast.info("Logged out successfully!");
     if (typeof window !== "undefined") {
-      window.location.replace("/#main");
+      window.location.replace("/");
     }
   };
 

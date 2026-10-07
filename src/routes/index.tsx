@@ -199,11 +199,12 @@ function LandingGatewayPage() {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("realjob-role");
     dataStore.logout();
     setCurrentUser(null);
     toast.info("Logged out successfully!");
-    window.location.reload();
+    if (typeof window !== "undefined") {
+      window.location.replace("/");
+    }
   };
 
   const handleQuickUserEntry = () => {

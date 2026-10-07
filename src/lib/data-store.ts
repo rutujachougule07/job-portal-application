@@ -156,10 +156,14 @@ export type UserResumeRecord = {
 export type PackageTransaction = {
   id: string;
   userId: string;
+  userEmail?: string;
+  userName?: string;
+  companyName?: string;
   planId: string;
   planName: string;
   price: number;
   jobCount: number;
+  workerCount?: number;
   purchaseDate: string;
   paymentMethod: string;
   status: "Completed" | "Pending";
@@ -170,6 +174,7 @@ export type JobPackagePlan = {
   name: string;
   price: number;
   jobCount: number;
+  workerCount?: number;
   description?: string;
   popular?: boolean;
   features: string[];
@@ -178,35 +183,43 @@ export type JobPackagePlan = {
 
 export const DEFAULT_JOB_PACKAGES: JobPackagePlan[] = [
   {
-    id: "plan-100",
+    id: "plan-200",
     name: "Starter Package",
-    price: 100,
+    price: 200,
     jobCount: 1,
-    features: ["1 Active Job Posting", "Direct Candidate Contacts", "Zero Commission", "Instant Activation"],
+    workerCount: 3,
+    description: "1 Job Posting + 3 Employees Included",
+    features: ["1 Active Job Posting", "Add up to 3 Employees", "Attendance Register Access", "Zero Commission"],
   },
   {
-    id: "plan-200",
+    id: "plan-300",
     name: "Growth Package",
-    price: 200,
+    price: 300,
     jobCount: 2,
+    workerCount: 6,
     popular: true,
     badge: "BEST VALUE",
-    features: ["2 Active Job Postings", "Featured Badge on Listings", "Direct Candidate Calls", "Priority Support"],
+    description: "2 Job Postings + 6 Employees Included",
+    features: ["2 Active Job Postings", "Add up to 6 Employees", "Featured Badge on Listings", "Priority Support"],
   },
   {
-    id: "plan-400",
+    id: "plan-500",
     name: "Business Package",
-    price: 400,
+    price: 500,
     jobCount: 5,
-    features: ["5 Active Job Postings", "Highlighted Listings", "Direct WhatsApp & Call Connect", "Candidate Resume Access"],
+    workerCount: 15,
+    description: "5 Job Postings + 15 Employees Included",
+    features: ["5 Active Job Postings", "Add up to 15 Employees", "Highlighted Listings", "Direct WhatsApp & Call Connect"],
   },
   {
     id: "plan-999",
     name: "Enterprise Unlimited",
     price: 999,
-    jobCount: 999,
+    jobCount: 10,
+    workerCount: 9999,
     badge: "UNLIMITED",
-    features: ["Unlimited Job Postings", "Top Priority Ranking", "Dedicated Hiring Account Manager", "Unlimited Contact Access"],
+    description: "10 Job Postings + Unlimited Employees Included",
+    features: ["10 Active Job Postings", "Unlimited Employees Addition", "Top Priority Ranking", "Dedicated Account Manager"],
   },
 ];
 
@@ -228,6 +241,7 @@ export type EmployerWorker = {
   pin?: string;
   attendanceMode?: "punch" | "manual";
   locationType?: "fixed" | "field";
+  notes?: string;
 };
 
 export type DailyAttendanceRecord = {
@@ -243,6 +257,19 @@ export type DailyAttendanceRecord = {
   punchOutLocation?: { lat: number; lng: number };
   notes?: string;
   updatedAt: string;
+};
+
+export type RegisteredUser = {
+  id: string;
+  email: string;
+  password?: string;
+  mobile?: string;
+  role: UserRole;
+  fullName: string;
+  profilePhoto?: string;
+  createdAt?: string;
+  worksiteLocation?: { lat: number; lng: number };
+  worksiteLocationLink?: string;
 };
 
 const INITIAL_JOBS: JobRecord[] = [];
@@ -327,7 +354,7 @@ export class DataStoreManager {
   }
 
 
-  public getRegisteredUserAccounts(): Array<{ id: string; email: string; password?: string; mobile?: string; role: UserRole; fullName: string; createdAt?: string; worksiteLocation?: { lat: number; lng: number } }> {
+  public getRegisteredUserAccounts(): RegisteredUser[] {
     if (typeof window === "undefined") return [];
     const raw = localStorage.getItem("realjob_db_registered_users");
     if (!raw) return [];
@@ -342,17 +369,17 @@ export class DataStoreManager {
     }
   }
 
-  public getRegisteredUsers(): Array<{ id: string; email: string; mobile?: string; role: UserRole; fullName: string; createdAt?: string; worksiteLocation?: { lat: number; lng: number } }> {
+  public getRegisteredUsers(): RegisteredUser[] {
     return this.getRegisteredUserAccounts();
   }
 
-  public registerAccount(user: { email: string; password?: string; mobile?: string; role: UserRole; fullName: string; profilePhoto?: string }): { id: string; email: string; password?: string; mobile?: string; role: UserRole; fullName: string; profilePhoto?: string; createdAt?: string; worksiteLocation?: { lat: number; lng: number } } {
+  public registerAccount(user: { email: string; password?: string; mobile?: string; role: UserRole; fullName: string; profilePhoto?: string }): RegisteredUser {
     const list = this.getRegisteredUserAccounts();
     const cleanEmail = user.email.trim().toLowerCase();
     const existingIndex = list.findIndex(u => u.email.toLowerCase() === cleanEmail);
     const fallbackName = cleanEmail.split("@")[0] || "User";
     
-    const account: { id: string; email: string; password?: string; mobile?: string; role: UserRole; fullName: string; profilePhoto?: string; createdAt?: string } = {
+    const account: RegisteredUser = {
       id: `usr-${Date.now()}`,
       email: cleanEmail,
       password: user.password || "",
@@ -376,11 +403,11 @@ export class DataStoreManager {
     return account;
   }
 
-  public updateRegisteredAccount(userId: string, updates: Partial<{ email: string; password?: string; mobile?: string; role: UserRole; fullName: string; profilePhoto?: string; worksiteLocation?: { lat: number; lng: number } }>): any {
+  public updateRegisteredAccount(userId: string, updates: Partial<RegisteredUser>): RegisteredUser | null {
     const list = this.getRegisteredUserAccounts();
     const index = list.findIndex(u => u.id === userId);
     if (index >= 0) {
-      const updated = { ...list[index], ...updates } as any;
+      const updated = { ...list[index], ...updates } as RegisteredUser;
       list[index] = updated;
       if (typeof window !== "undefined") {
         localStorage.setItem("realjob_db_registered_users", JSON.stringify(list));
@@ -445,7 +472,7 @@ export class DataStoreManager {
 
 
   // --- USER AUTHENTICATION & CURRENT SESSION ---
-  public getCurrentUser(rolePreference?: UserRole | "worker" | "employer" | "admin"): { email: string; role: UserRole; fullName?: string; id?: string; mobile?: string; profilePhoto?: string } | null {
+  public getCurrentUser(rolePreference?: UserRole | "worker" | "employer" | "admin"): { email: string; role: UserRole; fullName?: string; id?: string; mobile?: string; profilePhoto?: string; worksiteLocation?: { lat: number; lng: number }; worksiteLocationLink?: string } | null {
     if (typeof window === "undefined") return null;
 
     const savedRole = localStorage.getItem("realjob-role");
@@ -511,45 +538,18 @@ export class DataStoreManager {
   ) {
     if (typeof window === "undefined") return;
     if (!userData) {
-      if (targetRole === "worker") {
-        localStorage.removeItem("realjob-user-worker");
-        sessionStorage.removeItem("realjob_tab_user");
-        const raw = localStorage.getItem("realjob-user") || localStorage.getItem(this.STORAGE_KEYS.USER);
-        if (raw) {
-          try {
-            const u = JSON.parse(raw);
-            if (u.role === "worker") {
-              localStorage.removeItem(this.STORAGE_KEYS.USER);
-              localStorage.removeItem("realjob-user");
-            }
-          } catch {}
-        }
-      } else if (targetRole === "employer" || targetRole === "admin") {
-        localStorage.removeItem("realjob-user-admin");
-        localStorage.removeItem("realjob-user-employer");
-        sessionStorage.removeItem("realjob_tab_user");
-        const raw = localStorage.getItem("realjob-user") || localStorage.getItem(this.STORAGE_KEYS.USER);
-        if (raw) {
-          try {
-            const u = JSON.parse(raw);
-            if (u.role === "employer" || u.role === "admin") {
-              localStorage.removeItem(this.STORAGE_KEYS.USER);
-              localStorage.removeItem("realjob-user");
-            }
-          } catch {}
-        }
-      } else {
-        localStorage.removeItem(this.STORAGE_KEYS.USER);
-        localStorage.removeItem("realjob-user");
-        localStorage.removeItem("realjob-user-worker");
-        localStorage.removeItem("realjob-user-admin");
-        localStorage.removeItem("realjob-user-employer");
-        sessionStorage.removeItem("realjob_tab_user");
-      }
+      localStorage.removeItem(this.STORAGE_KEYS.USER);
+      localStorage.removeItem("realjob-user");
+      localStorage.removeItem("realjob-user-worker");
+      localStorage.removeItem("realjob-user-admin");
+      localStorage.removeItem("realjob-user-employer");
+      localStorage.removeItem("realjob-role");
+      sessionStorage.removeItem("realjob_tab_user");
     } else {
       const str = JSON.stringify(userData);
       localStorage.setItem(this.STORAGE_KEYS.USER, str);
       localStorage.setItem("realjob-user", str);
+      localStorage.setItem("realjob-role", userData.role);
       sessionStorage.setItem("realjob_tab_user", str);
 
       if (userData.role === "worker") {
@@ -560,6 +560,7 @@ export class DataStoreManager {
       }
     }
     window.dispatchEvent(new Event("realjob-auth-change"));
+    window.dispatchEvent(new Event("storage"));
   }
 
   public logout(targetRole?: string) {
@@ -1154,6 +1155,39 @@ export class DataStoreManager {
     }
   }
 
+  /**
+   * Get total allowed employee limit for employer based on active package purchases
+   */
+  public getUserWorkerCredits(userId: string): number {
+    if (typeof window === "undefined" || !userId) return 0;
+    try {
+      const purchases = this.getAllPackagePurchases().filter((p: PackageTransaction) => p.userId === userId);
+      if (!purchases || purchases.length === 0) {
+        // Require active package purchase to add employees!
+        return 0;
+      }
+      const livePackages = this.getJobPackages();
+      let totalWorkerLimit = 0;
+      purchases.forEach((p: PackageTransaction) => {
+        if (typeof p.workerCount === "number" && p.workerCount > 0) {
+          totalWorkerLimit += p.workerCount;
+        } else {
+          const matchingPlan = livePackages.find(
+            (dp) => dp.id === p.planId || dp.name.toLowerCase() === p.planName.toLowerCase()
+          );
+          if (matchingPlan && matchingPlan.workerCount) {
+            totalWorkerLimit += matchingPlan.workerCount;
+          } else {
+            totalWorkerLimit += 3;
+          }
+        }
+      });
+      return totalWorkerLimit;
+    } catch {
+      return 0;
+    }
+  }
+
   // --- EMPLOYER WORKER & ATTENDANCE MANAGEMENT ---
   public getEmployerWorkers(employerId: string): EmployerWorker[] {
     if (typeof window === "undefined" || !employerId) return [];
@@ -1223,7 +1257,28 @@ export class DataStoreManager {
       if (date) {
         res = res.filter((a) => a.date === date);
       }
-      return res;
+      return res.map(r => {
+        if (r.punchInTime && r.punchOutTime) {
+          const parseM = (t: string) => {
+            const match = t.trim().toUpperCase().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/);
+            if (!match || !match[1] || !match[2]) return null;
+            let h = parseInt(match[1], 10);
+            const min = parseInt(match[2], 10);
+            if (match[3] === "PM" && h < 12) h += 12;
+            if (match[3] === "AM" && h === 12) h = 0;
+            return h * 60 + min;
+          };
+          const inM = parseM(r.punchInTime);
+          const outM = parseM(r.punchOutTime);
+          if (inM !== null && outM !== null && outM < inM) {
+            const copy = { ...r };
+            delete copy.punchOutTime;
+            delete copy.punchOutLocation;
+            return copy;
+          }
+        }
+        return r;
+      });
     } catch {
       return [];
     }
@@ -1271,16 +1326,27 @@ export class DataStoreManager {
     
     if (index >= 0) {
       const existing = all[index] as DailyAttendanceRecord;
+      const isRePunchIn = !!punchData?.punchInTime && !punchData?.punchOutTime;
       newRecord = {
         ...existing,
         status: status,
-        notes: notes ? (existing.notes ? existing.notes + " | " + notes : notes) : existing.notes,
-        punchInTime: punchData?.punchInTime || existing.punchInTime,
-        punchOutTime: punchData?.punchOutTime || existing.punchOutTime,
-        punchInLocation: punchData?.punchInLocation || existing.punchInLocation,
-        punchOutLocation: punchData?.punchOutLocation || existing.punchOutLocation,
         updatedAt: new Date().toISOString(),
-      } as DailyAttendanceRecord;
+      };
+      const finalNotes = notes ? (existing.notes ? existing.notes + " | " + notes : notes) : existing.notes;
+      if (finalNotes) newRecord.notes = finalNotes;
+      const inTime = punchData?.punchInTime || existing.punchInTime;
+      const inLoc = punchData?.punchInLocation || existing.punchInLocation;
+      if (inTime) newRecord.punchInTime = inTime;
+      if (inLoc) newRecord.punchInLocation = inLoc;
+      if (isRePunchIn) {
+        delete newRecord.punchOutTime;
+        delete newRecord.punchOutLocation;
+      } else {
+        const outTime = punchData?.punchOutTime || existing.punchOutTime;
+        const outLoc = punchData?.punchOutLocation || existing.punchOutLocation;
+        if (outTime) newRecord.punchOutTime = outTime;
+        if (outLoc) newRecord.punchOutLocation = outLoc;
+      }
       all[index] = newRecord;
     } else {
       newRecord = {
