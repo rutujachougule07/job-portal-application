@@ -382,7 +382,7 @@ function LandingGatewayPage() {
         </section>
 
         {/* ABOUT COMPANY */}
-        <section className="relative bg-[#f8f9fa] py-20 lg:py-28 overflow-hidden">
+        <section className="relative bg-[#f8f9fa] pt-20 pb-10 lg:pt-28 lg:pb-12 overflow-hidden">
           <div className="relative z-10 mx-auto max-w-[1500px] px-4">
             <div className="bg-white rounded-[30px] border border-gray-100 shadow-[0_10px_40px_rgb(0,0,0,0.05)] overflow-hidden">
               <div className="grid grid-cols-1 lg:grid-cols-12">
@@ -493,7 +493,7 @@ function LandingGatewayPage() {
         </section>
 
         {/* POPULAR JOB CATEGORIES */}
-        <section className="relative py-14 bg-gradient-to-b from-[#F5F8FC] via-white to-[#F5F8FC] overflow-hidden">
+        <section className="relative pt-6 pb-14 bg-gradient-to-b from-[#F5F8FC] via-white to-[#F5F8FC] overflow-hidden">
           <div className="relative z-10 mx-auto max-w-[1600px] px-4 text-center">
 
             {/* Eyebrow Pill */}
