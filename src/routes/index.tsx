@@ -335,45 +335,45 @@ function LandingGatewayPage() {
         {/* METRICS & ADVANTAGES */}
         <section className="relative z-20 pt-8 pb-16 bg-white">
           <div className="w-full px-4 sm:px-8 lg:px-12">
-            <div className="flex flex-wrap justify-center sm:justify-between items-center gap-6 sm:gap-4 bg-white rounded-[2rem] md:rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-gray-100 p-6 md:p-8 mx-auto w-full max-w-[1400px] -mt-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:flex lg:flex-wrap lg:justify-between items-start sm:items-center gap-y-8 gap-x-2 sm:gap-4 bg-white rounded-[2rem] md:rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-gray-100 p-6 md:p-8 mx-auto w-full max-w-[1400px] -mt-4">
 
-              <div className="flex items-center gap-3 md:gap-4 w-full sm:w-auto justify-center sm:justify-start">
-                <div className="flex shrink-0 items-center justify-center size-12 md:size-14 rounded-full bg-[#D4AF37]/10 text-[#D4AF37]">
-                  <Users className="size-6 md:size-7 stroke-[2]" />
+              <div className="flex flex-col sm:flex-row items-center text-center sm:text-left gap-2 sm:gap-3 md:gap-4 justify-center sm:justify-start">
+                <div className="flex shrink-0 items-center justify-center size-10 sm:size-12 md:size-14 rounded-full bg-[#D4AF37]/10 text-[#D4AF37]">
+                  <Users className="size-5 sm:size-6 md:size-7 stroke-[2]" />
                 </div>
-                <div className="text-left">
-                  <strong className="block text-2xl md:text-3xl font-black text-[#10233F] leading-tight">{metrics[0]?.value}</strong>
-                  <span className="text-xs font-bold text-gray-500 block">{metrics[0]?.label}</span>
+                <div>
+                  <strong className="block text-xl sm:text-2xl md:text-3xl font-black text-[#10233F] leading-tight">{metrics[0]?.value}</strong>
+                  <span className="text-[10px] sm:text-xs font-bold text-gray-500 block">{metrics[0]?.label}</span>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 md:gap-4 w-full sm:w-auto justify-center sm:justify-start">
-                <div className="flex shrink-0 items-center justify-center size-12 md:size-14 rounded-full bg-[#D4AF37]/10 text-[#D4AF37]">
-                  <Briefcase className="size-6 md:size-7 stroke-[2]" />
+              <div className="flex flex-col sm:flex-row items-center text-center sm:text-left gap-2 sm:gap-3 md:gap-4 justify-center sm:justify-start">
+                <div className="flex shrink-0 items-center justify-center size-10 sm:size-12 md:size-14 rounded-full bg-[#D4AF37]/10 text-[#D4AF37]">
+                  <Briefcase className="size-5 sm:size-6 md:size-7 stroke-[2]" />
                 </div>
-                <div className="text-left">
-                  <strong className="block text-2xl md:text-3xl font-black text-[#10233F] leading-tight">{metrics[1]?.value}</strong>
-                  <span className="text-xs font-bold text-gray-500 block">{metrics[1]?.label}</span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 md:gap-4 w-full sm:w-auto justify-center sm:justify-start">
-                <div className="flex shrink-0 items-center justify-center size-12 md:size-14 rounded-full bg-[#D4AF37]/10 text-[#D4AF37]">
-                  <Building2 className="size-6 md:size-7 stroke-[2]" />
-                </div>
-                <div className="text-left">
-                  <strong className="block text-2xl md:text-3xl font-black text-[#10233F] leading-tight">{metrics[2]?.value}</strong>
-                  <span className="text-xs font-bold text-gray-500 block">{metrics[2]?.label}</span>
+                <div>
+                  <strong className="block text-xl sm:text-2xl md:text-3xl font-black text-[#10233F] leading-tight">{metrics[1]?.value}</strong>
+                  <span className="text-[10px] sm:text-xs font-bold text-gray-500 block">{metrics[1]?.label}</span>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 md:gap-4 w-full sm:w-auto justify-center sm:justify-start">
-                <div className="flex shrink-0 items-center justify-center size-12 md:size-14 rounded-full bg-[#D4AF37]/10 text-[#D4AF37]">
-                  <ShieldCheck className="size-6 md:size-7 stroke-[2]" />
+              <div className="flex flex-col sm:flex-row items-center text-center sm:text-left gap-2 sm:gap-3 md:gap-4 justify-center sm:justify-start">
+                <div className="flex shrink-0 items-center justify-center size-10 sm:size-12 md:size-14 rounded-full bg-[#D4AF37]/10 text-[#D4AF37]">
+                  <Building2 className="size-5 sm:size-6 md:size-7 stroke-[2]" />
                 </div>
-                <div className="text-left">
-                  <strong className="block text-2xl md:text-3xl font-black text-[#10233F] leading-tight">{metrics[3]?.value}</strong>
-                  <span className="text-xs font-bold text-gray-500 block">{metrics[3]?.label}</span>
+                <div>
+                  <strong className="block text-xl sm:text-2xl md:text-3xl font-black text-[#10233F] leading-tight">{metrics[2]?.value}</strong>
+                  <span className="text-[10px] sm:text-xs font-bold text-gray-500 block">{metrics[2]?.label}</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center text-center sm:text-left gap-2 sm:gap-3 md:gap-4 justify-center sm:justify-start">
+                <div className="flex shrink-0 items-center justify-center size-10 sm:size-12 md:size-14 rounded-full bg-[#D4AF37]/10 text-[#D4AF37]">
+                  <ShieldCheck className="size-5 sm:size-6 md:size-7 stroke-[2]" />
+                </div>
+                <div>
+                  <strong className="block text-xl sm:text-2xl md:text-3xl font-black text-[#10233F] leading-tight">{metrics[3]?.value}</strong>
+                  <span className="text-[10px] sm:text-xs font-bold text-gray-500 block">{metrics[3]?.label}</span>
                 </div>
               </div>
 
