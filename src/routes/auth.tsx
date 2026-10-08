@@ -178,23 +178,29 @@ function AuthPage() {
         }
         const nameString = (rawName && rawName.trim()) ? rawName.trim() : (finalEmail ? (finalEmail.split("@")[0] || "User") : "User");
 
-        const registeredAccount = dataStore.registerAccount({
+        const { getAuth, createUserWithEmailAndPassword } = await import("firebase/auth");
+        const { getFirestore, doc, setDoc } = await import("firebase/firestore");
+        const auth = getAuth();
+        const db = getFirestore();
+
+        const credential = await createUserWithEmailAndPassword(auth, finalEmail, password);
+        const uid = credential.user.uid;
+
+        const userObj = {
+          id: uid,
           email: finalEmail,
-          password,
+          password, // Optionally keeping this if needed for local compatibility
           role: role === "admin" ? "employer" : role,
           fullName: nameString,
           mobile: userMobile || "",
           profilePhoto: profilePhoto || "",
-        });
-
-        const userObj = {
-          id: registeredAccount.id,
-          email: registeredAccount.email,
-          role: registeredAccount.role,
-          fullName: registeredAccount.fullName || "User",
-          mobile: registeredAccount.mobile || userMobile || "",
-          profilePhoto: registeredAccount.profilePhoto || profilePhoto || "",
         };
+
+        // Save to Firestore
+        await setDoc(doc(db, "users", uid), userObj);
+
+        // Also save to dataStore for backwards compatibility across the app
+        dataStore.registerAccount(userObj);
 
         window.localStorage.setItem("realjob-user", JSON.stringify(userObj));
         dataStore.setCurrentUser(userObj);
@@ -271,10 +277,38 @@ function AuthPage() {
             }
          }
       } else {
-         existingAccount = dataStore.findRegisteredAccount(enteredEmail);
+         const { getAuth, signInWithEmailAndPassword } = await import("firebase/auth");
+         const { getFirestore, doc, getDoc } = await import("firebase/firestore");
+         const auth = getAuth();
+         const db = getFirestore();
          
-         if (existingAccount) {
-           // Strictly match password — even if stored password is empty, entered must match exactly
+         try {
+           const credential = await signInWithEmailAndPassword(auth, enteredEmail, password);
+           const uid = credential.user.uid;
+           const userDoc = await getDoc(doc(db, "users", uid));
+           
+           if (userDoc.exists()) {
+             existingAccount = userDoc.data();
+             // Keep local store in sync
+             if (!dataStore.findRegisteredAccount(enteredEmail)) {
+                dataStore.registerAccount(existingAccount as any);
+             }
+           } else {
+             // Fallback to local store if they somehow exist locally but not in Firestore 
+             // (e.g. legacy localhost accounts)
+             existingAccount = dataStore.findRegisteredAccount(enteredEmail);
+             if (existingAccount && existingAccount.password !== password) {
+               toast.error("❌ चुकीचा पासवर्ड! (Wrong password. Please enter correct password.)");
+               setBusy(false);
+               return;
+             }
+           }
+         } catch (firebaseErr: any) {
+           // Fallback to local store for backward compatibility
+           existingAccount = dataStore.findRegisteredAccount(enteredEmail);
+           if (!existingAccount) {
+              throw firebaseErr; // Throw back to outer catch block if not found locally
+           }
            if (existingAccount.password !== password) {
              toast.error("❌ चुकीचा पासवर्ड! (Wrong password. Please enter correct password.)");
              setBusy(false);
