@@ -1092,7 +1092,16 @@ export class DataStoreManager {
     if (!raw) return DEFAULT_JOB_PACKAGES;
     try {
       const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_JOB_PACKAGES;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.map((pkg: any) => ({
+          ...pkg,
+          description: pkg.description ? pkg.description.replace(/Employees Included/g, "CRM Included").replace(/Employees/g, "CRM") : pkg.description,
+          features: Array.isArray(pkg.features) 
+            ? pkg.features.map((f: string) => f.replace(/Employees Addition/g, "CRM Users").replace(/Employees/g, "CRM Users")) 
+            : pkg.features
+        }));
+      }
+      return DEFAULT_JOB_PACKAGES;
     } catch {
       return DEFAULT_JOB_PACKAGES;
     }
