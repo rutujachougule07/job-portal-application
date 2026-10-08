@@ -36,16 +36,16 @@ export function PublicFooter() {
       <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-[#FFC400] to-transparent" />
 
       {/* Main Footer Content */}
-      <div className="mx-auto max-w-7xl px-4 pt-14 pb-10 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-[1.3fr_0.8fr_0.8fr_0.8fr_0.8fr_1.5fr] items-start">
+      <div className="mx-auto max-w-7xl px-4 pt-8 pb-6 sm:pt-14 sm:pb-10 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-2 gap-y-6 gap-x-4 sm:grid-cols-3 lg:grid-cols-[1.3fr_0.8fr_0.8fr_0.8fr_0.8fr_1.5fr] items-start">
           
           {/* Col 1: REAL JOB Brand Info */}
-          <div className="space-y-4">
+          <div className="space-y-4 col-span-2 sm:col-span-1 lg:col-span-1">
             <Link to="/" className="inline-flex items-center gap-3 group">
               <img
                 src="/logo.png"
                 alt="REAL JOB Logo"
-                className="h-20 object-contain bg-white/95 p-2 rounded-xl shadow-md transition-transform group-hover:scale-105"
+                className="h-16 sm:h-20 object-contain bg-white/95 p-2 rounded-xl shadow-md transition-transform group-hover:scale-105"
               />
             </Link>
 
@@ -78,7 +78,7 @@ export function PublicFooter() {
             <h3 className="text-sm font-black text-white tracking-wide">
               For Candidates
             </h3>
-            <div className="mt-1.5 h-[2px] w-8 bg-[#FFC400] rounded-full mb-4" />
+            <div className="mt-1.5 h-[2px] w-8 bg-[#FFC400] rounded-full mb-3 sm:mb-4" />
 
             <ul className="space-y-2 text-xs font-semibold text-slate-300">
               {[
@@ -104,7 +104,7 @@ export function PublicFooter() {
             <h3 className="text-sm font-black text-white tracking-wide">
               For Employers
             </h3>
-            <div className="mt-1.5 h-[2px] w-8 bg-[#FFC400] rounded-full mb-4" />
+            <div className="mt-1.5 h-[2px] w-8 bg-[#FFC400] rounded-full mb-3 sm:mb-4" />
 
             <ul className="space-y-2 text-xs font-semibold text-slate-300">
               {[
@@ -130,7 +130,7 @@ export function PublicFooter() {
             <h3 className="text-sm font-black text-white tracking-wide">
               Categories
             </h3>
-            <div className="mt-1.5 h-[2px] w-8 bg-[#FFC400] rounded-full mb-4" />
+            <div className="mt-1.5 h-[2px] w-8 bg-[#FFC400] rounded-full mb-3 sm:mb-4" />
 
             <ul className="space-y-2 text-xs font-semibold text-slate-300">
               {[
@@ -150,7 +150,7 @@ export function PublicFooter() {
                       className="inline-flex items-center gap-1 hover:text-[#FFC400] hover:translate-x-1 transition-all duration-150"
                     >
                       <ChevronRight className="size-3 text-[#FFC400] shrink-0" />
-                      <span>{label}</span>
+                      <span className="truncate pr-2">{label}</span>
                     </Link>
                   </li>
                 );
@@ -163,7 +163,7 @@ export function PublicFooter() {
             <h3 className="text-sm font-black text-white tracking-wide">
               REAL JOB
             </h3>
-            <div className="mt-1.5 h-[2px] w-8 bg-[#FFC400] rounded-full mb-4" />
+            <div className="mt-1.5 h-[2px] w-8 bg-[#FFC400] rounded-full mb-3 sm:mb-4" />
 
             <ul className="space-y-2 text-xs font-semibold text-slate-300">
               {[
@@ -186,7 +186,7 @@ export function PublicFooter() {
           </div>
 
           {/* Col 6: Stay Updated & Download */}
-          <div className="lg:border-l lg:border-white/10 lg:pl-6 space-y-5">
+          <div className="col-span-2 sm:col-span-1 lg:col-span-1 lg:border-l lg:border-white/10 lg:pl-6 space-y-5 pt-2 lg:pt-0">
             <div>
               <h3 className="text-lg font-black text-white tracking-wide">
                 Download the REAL JOB App
