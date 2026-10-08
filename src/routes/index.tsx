@@ -333,9 +333,9 @@ function LandingGatewayPage() {
         </section>
 
         {/* METRICS & ADVANTAGES */}
-        <section className="relative z-20 pt-8 pb-16 bg-white">
+        <section className="relative z-20 pt-8 lg:pt-12 pb-4 lg:pb-8 bg-[#f8f9fa]">
           <div className="w-full px-4 sm:px-8 lg:px-12">
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:flex lg:flex-wrap lg:justify-between items-start sm:items-center gap-y-8 gap-x-2 sm:gap-4 bg-white rounded-[2rem] md:rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-gray-100 p-6 md:p-8 mx-auto w-full max-w-[1400px] -mt-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:flex lg:flex-wrap lg:justify-between items-start sm:items-center gap-y-8 gap-x-2 sm:gap-4 bg-white rounded-[2rem] md:rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-gray-100 p-6 md:p-8 mx-auto w-full max-w-[1400px]">
 
               <div className="flex flex-col sm:flex-row items-center text-center sm:text-left gap-2 sm:gap-3 md:gap-4 justify-center sm:justify-start">
                 <div className="flex shrink-0 items-center justify-center size-10 sm:size-12 md:size-14 rounded-full bg-[#D4AF37]/10 text-[#D4AF37]">
