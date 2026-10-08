@@ -309,12 +309,20 @@ export class DataStoreManager {
     if (!localStorage.getItem(this.STORAGE_KEYS.JOB_ALERTS)) {
       localStorage.setItem(this.STORAGE_KEYS.JOB_ALERTS, JSON.stringify([]));
     }
+    if (!localStorage.getItem(this.STORAGE_KEYS.EMP_WORKERS)) {
+      localStorage.setItem(this.STORAGE_KEYS.EMP_WORKERS, JSON.stringify([]));
+    }
+    if (!localStorage.getItem(this.STORAGE_KEYS.ATTENDANCE)) {
+      localStorage.setItem(this.STORAGE_KEYS.ATTENDANCE, JSON.stringify([]));
+    }
     
     // Bidirectional sync with Firebase
     fbSync(async () => {
       const jobsSnap = await getDocs(collection(db, "jobs"));
       const appsSnap = await getDocs(collection(db, "applications"));
       const usersSnap = await getDocs(collection(db, "users"));
+      const workersSnap = await getDocs(collection(db, "workers"));
+      const attendanceSnap = await getDocs(collection(db, "attendance"));
 
       if (!jobsSnap.empty) {
         // Firebase has jobs → use Firebase as source of truth
@@ -345,6 +353,26 @@ export class DataStoreManager {
         const localUsers: RegisteredUser[] = JSON.parse(localStorage.getItem("realjob_db_registered_users") || "[]");
         for (const user of localUsers) {
           await setDoc(doc(db, "users", user.id), user);
+        }
+      }
+
+      if (!workersSnap.empty) {
+        const fbWorkers = workersSnap.docs.map(d => d.data());
+        localStorage.setItem(this.STORAGE_KEYS.EMP_WORKERS, JSON.stringify(fbWorkers));
+      } else {
+        const localWorkers: EmployerWorker[] = JSON.parse(localStorage.getItem(this.STORAGE_KEYS.EMP_WORKERS) || "[]");
+        for (const w of localWorkers) {
+          await setDoc(doc(db, "workers", w.id), w);
+        }
+      }
+
+      if (!attendanceSnap.empty) {
+        const fbAtt = attendanceSnap.docs.map(d => d.data());
+        localStorage.setItem(this.STORAGE_KEYS.ATTENDANCE, JSON.stringify(fbAtt));
+      } else {
+        const localAtt: DailyAttendanceRecord[] = JSON.parse(localStorage.getItem(this.STORAGE_KEYS.ATTENDANCE) || "[]");
+        for (const a of localAtt) {
+          await setDoc(doc(db, "attendance", a.id), a);
         }
       }
     });
@@ -1251,6 +1279,7 @@ export class DataStoreManager {
     }
     if (typeof window !== "undefined") {
       localStorage.setItem(this.STORAGE_KEYS.EMP_WORKERS, JSON.stringify(all));
+      fbSync(() => setDoc(doc(db, "workers", newWorker.id), newWorker));
     }
     return newWorker;
   }
@@ -1263,6 +1292,7 @@ export class DataStoreManager {
       const all: EmployerWorker[] = JSON.parse(raw);
       const filtered = all.filter((w) => w.id !== workerId);
       localStorage.setItem(this.STORAGE_KEYS.EMP_WORKERS, JSON.stringify(filtered));
+      fbSync(() => deleteDoc(doc(db, "workers", workerId)));
       return true;
     } catch {
       return false;
@@ -1390,6 +1420,7 @@ export class DataStoreManager {
     
     if (typeof window !== "undefined") {
       localStorage.setItem(this.STORAGE_KEYS.ATTENDANCE, JSON.stringify(all));
+      fbSync(() => setDoc(doc(db, "attendance", newRecord.id), newRecord));
     }
     return newRecord;
   }
