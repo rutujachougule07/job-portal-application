@@ -316,7 +316,7 @@ function LandingGatewayPage() {
 
       <main className="flex-1">
         {/* HERO SECTION */}
-        <section className="relative isolate overflow-hidden h-screen min-h-[600px] flex items-center pt-20 pb-24">
+        <section className="relative isolate overflow-hidden h-screen min-h-[600px] flex items-center justify-center pt-20 pb-24">
           {/* Background Image Slider */}
           <div className="absolute inset-0 z-0 bg-transparent">
             {images.map((img, index) => (
@@ -328,7 +328,52 @@ function LandingGatewayPage() {
                   }`}
               />
             ))}
+            {/* Dark Gradient Overlay for text readability */}
+            <div className="absolute inset-0 bg-gradient-to-b from-[#021D3D]/90 via-[#021D3D]/60 to-[#021D3D]/90 mix-blend-multiply"></div>
+          </div>
 
+          {/* Hero Content Overlay */}
+          <div className="relative z-10 mx-auto max-w-[1400px] px-4 w-full flex flex-col items-center text-center mt-12 sm:mt-0">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white font-bold text-[10px] sm:text-xs uppercase tracking-widest mb-6 shadow-lg">
+              <Sparkles className="size-3.5 text-[#D4AF37]" />
+              INDIA'S MOST TRUSTED JOB PORTAL
+            </div>
+            
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white tracking-tight leading-[1.1] max-w-4xl drop-shadow-2xl whitespace-pre-wrap">
+              {heroTitle.split('\n').map((line, i) => (
+                <span key={i} className="block">
+                  {i === 1 ? <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#D4AF37] to-[#FDE047]">{line}</span> : line}
+                </span>
+              ))}
+            </h1>
+            
+            <p className="mt-6 text-base sm:text-lg md:text-xl font-medium text-gray-200 max-w-2xl drop-shadow-lg">
+              {heroSubtitle}
+            </p>
+
+            <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
+              <Button
+                asChild
+                size="lg"
+                className="w-full sm:w-auto bg-gradient-to-r from-[#D4AF37] to-[#F1C40F] hover:from-[#F1C40F] hover:to-[#D4AF37] text-[#021D3D] font-black text-sm sm:text-base px-8 h-12 sm:h-14 rounded-xl shadow-[0_10px_30px_rgba(212,175,55,0.4)] border-b-[3px] border-[#B8962E] transition-all hover:scale-105 active:scale-95"
+              >
+                <Link to="/auth" search={{ mode: "login", role: "worker" }}>
+                  <Search className="size-5 mr-2" />
+                  Find Jobs Now
+                </Link>
+              </Button>
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="w-full sm:w-auto bg-white/10 hover:bg-white/20 backdrop-blur-md border-white/30 text-white font-black text-sm sm:text-base px-8 h-12 sm:h-14 rounded-xl shadow-lg transition-all hover:scale-105 active:scale-95"
+              >
+                <Link to="/auth" search={{ mode: "login", role: "employee" }}>
+                  <Users className="size-5 mr-2" />
+                  Hire Staff
+                </Link>
+              </Button>
+            </div>
           </div>
         </section>
 
