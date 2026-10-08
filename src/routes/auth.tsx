@@ -215,7 +215,12 @@ function AuthPage() {
       }
 
       // ── LOGIN MODE ──
-      const enteredEmail = email.trim().toLowerCase();
+      let enteredEmail = email.trim().toLowerCase();
+      // If user entered only digits (a mobile number), append @realjob.com for Firebase Auth compatibility
+      const justDigits = enteredEmail.replace(/\D/g, "");
+      if (justDigits.length >= 10 && enteredEmail.replace(/[\s\-\+\(\)]/g, "") === justDigits) {
+        enteredEmail = `${justDigits}@realjob.com`;
+      }
 
       if (enteredEmail === "supera@gmail.com" || enteredEmail === "superadmin") {
         // Super Admin Master Account
@@ -349,7 +354,7 @@ function AuthPage() {
     } catch (err: any) {
       const code = err?.code || "";
       if (code === "auth/wrong-password" || code === "auth/invalid-credential") {
-        toast.error("❌ चुकीचा पासवर्ड! Superadmin password is 'supera123'.");
+        toast.error("❌ चुकीचा पासवर्ड किंवा ईमेल! (Invalid Password or Email)");
       } else if (code === "auth/user-not-found") {
         toast.error("❌ हा यूझर सापडला नाही. User not found.");
       } else if (code === "auth/too-many-requests") {

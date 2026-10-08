@@ -314,6 +314,7 @@ export class DataStoreManager {
     fbSync(async () => {
       const jobsSnap = await getDocs(collection(db, "jobs"));
       const appsSnap = await getDocs(collection(db, "applications"));
+      const usersSnap = await getDocs(collection(db, "users"));
 
       if (!jobsSnap.empty) {
         // Firebase has jobs → use Firebase as source of truth
@@ -334,6 +335,16 @@ export class DataStoreManager {
         const localApps: ApplicationRecord[] = JSON.parse(localStorage.getItem(this.STORAGE_KEYS.APPLICATIONS) || "[]");
         for (const app of localApps) {
           await setDoc(doc(db, "applications", app.id), app);
+        }
+      }
+
+      if (!usersSnap.empty) {
+        const fbUsers = usersSnap.docs.map(d => d.data());
+        localStorage.setItem("realjob_db_registered_users", JSON.stringify(fbUsers));
+      } else {
+        const localUsers: RegisteredUser[] = JSON.parse(localStorage.getItem("realjob_db_registered_users") || "[]");
+        for (const user of localUsers) {
+          await setDoc(doc(db, "users", user.id), user);
         }
       }
     });
