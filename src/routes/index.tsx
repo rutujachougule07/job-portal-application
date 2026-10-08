@@ -316,7 +316,8 @@ function LandingGatewayPage() {
 
       <main className="flex-1">
         {/* HERO SECTION */}
-        <section className="relative isolate overflow-hidden h-[50vh] min-h-[350px] md:h-[75vh] md:min-h-[500px] flex items-center justify-center pt-20 pb-16 md:pb-24">
+        {/* HERO SECTION */}
+        <section className="relative isolate overflow-hidden h-[50vh] min-h-[350px] md:h-screen md:min-h-[600px] flex items-center justify-center pt-20 pb-16 md:pb-24">
           {/* Background Image Slider */}
           <div className="absolute inset-0 z-0 bg-transparent">
             {images.map((img, index) => (
@@ -334,7 +335,12 @@ function LandingGatewayPage() {
 
           {/* Hero Content Overlay */}
           <div className="relative z-10 mx-auto max-w-[1400px] px-4 w-full flex flex-col items-center text-center mt-12 sm:mt-0">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight leading-[1.2] max-w-3xl drop-shadow-2xl whitespace-pre-wrap">
+            <div className="hidden md:inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white font-bold text-[10px] sm:text-xs uppercase tracking-widest mb-6 shadow-lg">
+              <Sparkles className="size-3.5 text-[#D4AF37]" />
+              INDIA'S MOST TRUSTED JOB PORTAL
+            </div>
+            
+            <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-black text-white tracking-tight leading-[1.2] md:leading-[1.1] max-w-4xl drop-shadow-2xl whitespace-pre-wrap">
               {heroTitle.split('\n').map((line, i) => (
                 <span key={i} className="block">
                   {i === 1 ? <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#D4AF37] to-[#FDE047]">{line}</span> : line}
@@ -342,11 +348,11 @@ function LandingGatewayPage() {
               ))}
             </h1>
             
-            <p className="mt-4 text-sm sm:text-base font-medium text-gray-200 max-w-xl drop-shadow-lg">
+            <p className="mt-4 md:mt-6 text-sm sm:text-base md:text-xl font-medium text-gray-200 max-w-2xl drop-shadow-lg">
               {heroSubtitle}
             </p>
 
-            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
+            <div className="mt-8 md:mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
               <Button
                 asChild
                 size="lg"
