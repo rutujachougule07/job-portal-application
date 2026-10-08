@@ -1180,12 +1180,14 @@ export class DataStoreManager {
       purchases.forEach((p: PackageTransaction) => {
         if (typeof p.workerCount === "number" && p.workerCount > 0) {
           totalWorkerLimit += p.workerCount;
+        } else if (typeof p.workerCount === "string") {
+          totalWorkerLimit += isNaN(Number(p.workerCount)) ? 9999 : Number(p.workerCount);
         } else {
           const matchingPlan = livePackages.find(
             (dp) => dp.id === p.planId || dp.name.toLowerCase() === p.planName.toLowerCase()
           );
           if (matchingPlan && matchingPlan.workerCount) {
-            totalWorkerLimit += matchingPlan.workerCount;
+            totalWorkerLimit += typeof matchingPlan.workerCount === "string" ? (isNaN(Number(matchingPlan.workerCount)) ? 9999 : Number(matchingPlan.workerCount)) : matchingPlan.workerCount;
           } else {
             totalWorkerLimit += 3;
           }
