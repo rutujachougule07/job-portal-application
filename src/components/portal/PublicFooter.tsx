@@ -23,54 +23,46 @@ export function PublicFooter() {
       <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-[#FFC400] to-transparent" />
 
       {/* Main Footer Content */}
-      <div className="mx-auto max-w-7xl px-4 pt-8 pb-6 sm:pt-10 sm:pb-8 sm:px-6 lg:px-8">
-        <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-6 sm:gap-10">
+      <div className="mx-auto max-w-4xl px-4 pt-12 pb-10 sm:pt-16 sm:pb-12 text-center">
+        
+        {/* Brand */}
+        <Link to="/" className="inline-block group mb-6">
+          <div className="bg-white/95 p-3 rounded-2xl shadow-lg transition-transform duration-300 group-hover:scale-105 inline-flex items-center justify-center">
+            <img
+              src="/logo.png"
+              alt="REAL JOB Logo"
+              className="h-16 sm:h-20 object-contain"
+            />
+          </div>
+        </Link>
+        
+        <p className="text-sm font-medium text-slate-300 max-w-md mx-auto mb-8">
+          Right Person • Right Job • Right Opportunity<br />
+          Connecting Workers and Employers across India
+        </p>
+
+        {/* Contact Info & Links Grid */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-12 pt-6 border-t border-white/10">
           
-          {/* Brand & Contact Info */}
-          <div className="flex flex-col items-center sm:items-start space-y-4">
-            <Link to="/" className="inline-flex items-center gap-3 group">
-              <img
-                src="/logo.png"
-                alt="REAL JOB Logo"
-                className="h-16 sm:h-20 object-contain bg-white/95 p-2 rounded-xl shadow-md transition-transform group-hover:scale-105"
-              />
-            </Link>
-
-            <div className="space-y-1.5 text-center sm:text-left mt-2">
-              <p className="text-sm font-semibold text-slate-300 flex items-center justify-center sm:justify-start gap-2">
-                <span className="text-[#FFC400]">✉</span> rjsgroup108@gmail.com
-              </p>
-              <p className="text-sm font-semibold text-slate-300 flex items-center justify-center sm:justify-start gap-2">
-                <span className="text-[#FFC400]">📞</span> 8722739355
-              </p>
-            </div>
+          <div className="flex items-center gap-2 text-sm font-semibold text-slate-200 hover:text-[#FFC400] transition-colors">
+            <span className="flex items-center justify-center size-8 rounded-full bg-white/10 text-[#FFC400]">✉</span>
+            rjsgroup108@gmail.com
           </div>
-
-          {/* Links */}
-          <div className="flex flex-col items-center sm:items-end">
-            <h3 className="text-sm font-black text-white tracking-wide mb-3">
-              Important Links
-            </h3>
-            
-            <ul className="space-y-3 text-sm font-semibold text-slate-300 text-center sm:text-right">
-              <li>
-                <Link
-                  to="/"
-                  className="hover:text-[#FFC400] transition-colors duration-150"
-                >
-                  Terms & Conditions
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/"
-                  className="hover:text-[#FFC400] transition-colors duration-150"
-                >
-                  Privacy Policy
-                </Link>
-              </li>
-            </ul>
+          
+          <div className="flex items-center gap-2 text-sm font-semibold text-slate-200 hover:text-[#FFC400] transition-colors">
+            <span className="flex items-center justify-center size-8 rounded-full bg-white/10 text-[#FFC400]">📞</span>
+            8722739355
           </div>
+          
+          <div className="w-1 h-1 rounded-full bg-slate-500 hidden sm:block"></div>
+
+          <Link to="/" className="text-sm font-semibold text-slate-200 hover:text-[#FFC400] transition-colors">
+            Terms & Conditions
+          </Link>
+          
+          <Link to="/" className="text-sm font-semibold text-slate-200 hover:text-[#FFC400] transition-colors">
+            Privacy Policy
+          </Link>
 
         </div>
       </div>
