@@ -1550,14 +1550,15 @@ function SuperAdminPage() {
 
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <label className="block text-[10px] font-bold text-[#5B6B7F] mb-1">Employee Limit</label>
+                          <label className="block text-[10px] font-bold text-[#5B6B7F] mb-1">CRM Limit</label>
                           <input
-                            type="number"
-                            value={pkg.workerCount !== undefined ? pkg.workerCount : 3}
-                            placeholder="e.g. 3"
+                            type="text"
+                            value={pkg.workerCount !== undefined ? pkg.workerCount : "3"}
+                            placeholder="e.g. 3 or Unlimited"
                             onChange={(e) => {
                               const updated = [...dynamicPackages];
-                              updated[idx]!.workerCount = Number(e.target.value) || 0;
+                              const val = e.target.value;
+                              updated[idx]!.workerCount = isNaN(Number(val)) || val === "" ? val : Number(val);
                               setDynamicPackages(updated);
                             }}
                             className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-black text-indigo-700"
@@ -1586,7 +1587,7 @@ function SuperAdminPage() {
                         ⚡ ₹{pkg.price} • {pkg.jobCount >= 999 ? "Unlimited Jobs" : `${pkg.jobCount} Job Credit(s)`}
                       </span>
                       <span className="text-[11px] font-bold text-indigo-700 block">
-                        👥 {pkg.workerCount ? (pkg.workerCount >= 9999 ? "Unlimited Employees" : `${pkg.workerCount} Employees Limit`) : "3 Employees Limit"}
+                        👥 {pkg.workerCount ? (pkg.workerCount >= 9999 ? "Unlimited CRM" : `${pkg.workerCount} CRM Limit`) : "3 CRM Limit"}
                       </span>
                     </div>
                   </div>

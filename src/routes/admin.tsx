@@ -4392,7 +4392,7 @@ function AdminDashboardPage() {
                         )}
                       </div>
                       <p className="text-xs text-slate-600 font-semibold mt-0.5">
-                        {pkg.description || `${pkg.jobCount >= 999 ? "Unlimited Jobs" : `${pkg.jobCount} Job Posting`} + ${pkg.workerCount ? (pkg.workerCount >= 9999 ? "Unlimited Employees" : `${pkg.workerCount} Employees`) : "3 Employees"}`}
+                        {pkg.description || `${pkg.jobCount >= 999 ? "Unlimited Jobs" : `${pkg.jobCount} Job Posting`} + ${pkg.workerCount ? (pkg.workerCount >= 9999 ? "Unlimited CRM" : `${pkg.workerCount} CRM`) : "3 CRM"}`}
                       </p>
                     </div>
                   </div>

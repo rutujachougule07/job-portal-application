@@ -163,7 +163,7 @@ export type PackageTransaction = {
   planName: string;
   price: number;
   jobCount: number;
-  workerCount?: number;
+  workerCount?: number | string;
   purchaseDate: string;
   paymentMethod: string;
   status: "Completed" | "Pending";
@@ -174,7 +174,7 @@ export type JobPackagePlan = {
   name: string;
   price: number;
   jobCount: number;
-  workerCount?: number;
+  workerCount?: number | string;
   description?: string;
   popular?: boolean;
   features: string[];
@@ -188,8 +188,8 @@ export const DEFAULT_JOB_PACKAGES: JobPackagePlan[] = [
     price: 200,
     jobCount: 1,
     workerCount: 3,
-    description: "1 Job Posting + 3 Employees Included",
-    features: ["1 Active Job Posting", "Add up to 3 Employees", "Attendance Register Access", "Zero Commission"],
+    description: "1 Job Posting + 3 CRM Included",
+    features: ["1 Active Job Posting", "Add up to 3 CRM Users", "Attendance Register Access", "Zero Commission"],
   },
   {
     id: "plan-300",
@@ -199,8 +199,8 @@ export const DEFAULT_JOB_PACKAGES: JobPackagePlan[] = [
     workerCount: 6,
     popular: true,
     badge: "BEST VALUE",
-    description: "2 Job Postings + 6 Employees Included",
-    features: ["2 Active Job Postings", "Add up to 6 Employees", "Featured Badge on Listings", "Priority Support"],
+    description: "2 Job Postings + 6 CRM Included",
+    features: ["2 Active Job Postings", "Add up to 6 CRM Users", "Featured Badge on Listings", "Priority Support"],
   },
   {
     id: "plan-500",
@@ -208,8 +208,8 @@ export const DEFAULT_JOB_PACKAGES: JobPackagePlan[] = [
     price: 500,
     jobCount: 5,
     workerCount: 15,
-    description: "5 Job Postings + 15 Employees Included",
-    features: ["5 Active Job Postings", "Add up to 15 Employees", "Highlighted Listings", "Direct WhatsApp & Call Connect"],
+    description: "5 Job Postings + 15 CRM Included",
+    features: ["5 Active Job Postings", "Add up to 15 CRM Users", "Highlighted Listings", "Direct WhatsApp & Call Connect"],
   },
   {
     id: "plan-999",
@@ -218,8 +218,8 @@ export const DEFAULT_JOB_PACKAGES: JobPackagePlan[] = [
     jobCount: 10,
     workerCount: 9999,
     badge: "UNLIMITED",
-    description: "10 Job Postings + Unlimited Employees Included",
-    features: ["10 Active Job Postings", "Unlimited Employees Addition", "Top Priority Ranking", "Dedicated Account Manager"],
+    description: "10 Job Postings + Unlimited CRM Included",
+    features: ["10 Active Job Postings", "Unlimited CRM Users", "Top Priority Ranking", "Dedicated Account Manager"],
   },
 ];
 
