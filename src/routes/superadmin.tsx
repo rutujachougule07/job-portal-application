@@ -1587,7 +1587,7 @@ function SuperAdminPage() {
                         ⚡ ₹{pkg.price} • {pkg.jobCount >= 999 ? "Unlimited Jobs" : `${pkg.jobCount} Job Credit(s)`}
                       </span>
                       <span className="text-[11px] font-bold text-indigo-700 block">
-                        👥 {pkg.workerCount ? (pkg.workerCount >= 9999 ? "Unlimited CRM" : `${pkg.workerCount} CRM Limit`) : "3 CRM Limit"}
+                        👥 {pkg.workerCount ? (Number(pkg.workerCount) >= 9999 ? "Unlimited CRM" : `${pkg.workerCount} CRM Limit`) : "3 CRM Limit"}
                       </span>
                     </div>
                   </div>
@@ -1686,7 +1686,7 @@ function SuperAdminPage() {
                               <td className="p-3 font-bold text-slate-700 whitespace-nowrap">
                                 <span className="text-amber-700 font-extrabold">{tx.jobCount >= 999 ? "Unlimited Jobs" : `${tx.jobCount} Jobs`}</span>
                                 {" • "}
-                                <span className="text-indigo-700 font-extrabold">{tx.workerCount ? (tx.workerCount >= 9999 ? "Unlimited Employees" : `${tx.workerCount} Employees`) : "3 Employees"}</span>
+                                <span className="text-indigo-700 font-extrabold">{tx.workerCount ? (Number(tx.workerCount) >= 9999 ? "Unlimited CRM" : `${tx.workerCount} CRM Limit`) : "3 CRM Limit"}</span>
                               </td>
                               <td className="p-3 font-bold uppercase text-slate-600 whitespace-nowrap">{tx.paymentMethod}</td>
                               <td className="p-3 text-[#5B6B7F] font-medium whitespace-nowrap">{tx.purchaseDate}</td>

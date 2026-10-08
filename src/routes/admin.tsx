@@ -3678,7 +3678,7 @@ function AdminDashboardPage() {
                                   </td>
                                   <td className="p-3 font-black text-emerald-700 text-sm whitespace-nowrap">₹{tx.price}</td>
                                   <td className="p-3 font-extrabold text-amber-700 whitespace-nowrap">{tx.jobCount >= 999 ? "Unlimited" : tx.jobCount}</td>
-                                  <td className="p-3 font-extrabold text-indigo-700 whitespace-nowrap">{tx.workerCount ? (tx.workerCount >= 9999 ? "Unlimited" : `${tx.workerCount} Employees`) : "3 Employees"}</td>
+                                  <td className="p-3 font-extrabold text-indigo-700 whitespace-nowrap">{tx.workerCount ? (Number(tx.workerCount) >= 9999 ? "Unlimited" : `${tx.workerCount} Employees`) : "3 Employees"}</td>
                                   <td className="p-3 font-bold uppercase text-slate-600 whitespace-nowrap">{tx.paymentMethod}</td>
                                   <td className="p-3 text-[#5B6B7F] font-medium whitespace-nowrap">{tx.purchaseDate}</td>
                                   <td className="p-3 whitespace-nowrap">
@@ -4392,7 +4392,7 @@ function AdminDashboardPage() {
                         )}
                       </div>
                       <p className="text-xs text-slate-600 font-semibold mt-0.5">
-                        {pkg.description || `${pkg.jobCount >= 999 ? "Unlimited Jobs" : `${pkg.jobCount} Job Posting`} + ${pkg.workerCount ? (pkg.workerCount >= 9999 ? "Unlimited CRM" : `${pkg.workerCount} CRM`) : "3 CRM"}`}
+                        {pkg.description || `${pkg.jobCount >= 999 ? "Unlimited Jobs" : `${pkg.jobCount} Job Posting`} + ${pkg.workerCount ? (Number(pkg.workerCount) >= 9999 ? "Unlimited CRM" : `${pkg.workerCount} CRM`) : "3 CRM"}`}
                       </p>
                     </div>
                   </div>
