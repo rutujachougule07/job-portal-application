@@ -316,7 +316,7 @@ function LandingGatewayPage() {
 
       <main className="flex-1">
         {/* HERO SECTION */}
-        <section className="relative isolate overflow-hidden h-screen min-h-[600px] flex items-center justify-center pt-20 pb-24">
+        <section className="relative isolate overflow-hidden h-[85vh] min-h-[450px] md:h-screen md:min-h-[600px] flex items-center justify-center pt-20 pb-16 md:pb-24">
           {/* Background Image Slider */}
           <div className="absolute inset-0 z-0 bg-transparent">
             {images.map((img, index) => (
