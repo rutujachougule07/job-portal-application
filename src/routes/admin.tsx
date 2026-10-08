@@ -2465,13 +2465,13 @@ function AdminDashboardPage() {
           {activeTab === "attendance" && (
             <div className="space-y-6 sm:space-y-8 animate-fade-in min-w-0">
               {/* Top Attendance Header Banner */}
-              <div className="rounded-2xl border border-[#DCE5F0] bg-white p-4 sm:p-6 shadow-xs flex flex-col xl:flex-row xl:items-center justify-between gap-4 sm:gap-5 min-w-0 overflow-hidden">
-                <div className="space-y-1.5 min-w-0 flex-1">
+              <div className="rounded-2xl border border-[#DCE5F0] bg-white p-4 sm:p-6 shadow-xs flex flex-col xl:flex-row xl:items-center justify-between gap-6 min-w-0 overflow-hidden flex-wrap">
+                <div className="space-y-1.5 min-w-[280px] flex-1">
                   <div className="inline-flex items-center gap-2 rounded-full bg-[#063B78]/10 px-3 py-1 text-[11px] sm:text-xs font-black text-[#063B78] max-w-full truncate">
                     <CalendarCheck className="size-3.5 text-[#063B78] shrink-0" />
                     <span className="truncate">Employee Attendance & Payroll Management</span>
                   </div>
-                  <h2 className="text-base sm:text-2xl font-black text-[#10233F] tracking-tight leading-snug break-words">
+                  <h2 className="text-xl sm:text-2xl font-black text-[#10233F] tracking-tight leading-snug break-words">
                     Employee Attendance & Payroll Register
                   </h2>
                   <p className="text-xs sm:text-sm font-semibold text-[#5B6B7F] max-w-2xl leading-relaxed">
@@ -2479,7 +2479,7 @@ function AdminDashboardPage() {
                   </p>
                 </div>
 
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 shrink-0 w-full sm:w-auto min-w-0 max-w-full">
+                <div className="flex flex-col sm:flex-row sm:flex-wrap xl:flex-nowrap sm:items-center gap-2.5 shrink-0 w-full xl:w-auto min-w-0 max-w-full">
                   {/* Auto-Detected Attendance Mode Display */}
                   {attendanceMode === "field" ? (
                     <div
