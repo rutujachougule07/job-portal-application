@@ -106,7 +106,7 @@ export function LanguageGate() {
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-6 animate-fade-in overflow-y-auto">
       {/* Blurred Poster Background */}
-      <div 
+      <div
         className="fixed inset-0 z-[-2] bg-cover bg-center bg-no-repeat blur-sm scale-105"
         style={{ backgroundImage: `url('/portal-bg.png')` }}
       />
@@ -114,11 +114,11 @@ export function LanguageGate() {
       <div className="fixed inset-0 z-[-1] bg-black/40" />
 
       <div className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl border border-white/40 overflow-hidden my-auto p-6 sm:p-10 transition-all duration-300">
-        
+
         {/* Header Branding & Progress Bar */}
         <div className="flex flex-col items-center text-center mb-6 sm:mb-8">
           <LogoIcon className="h-12 sm:h-14 mb-3 object-contain" />
-          
+
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#EBF1F8] border border-[#B8D3F2] text-[11px] font-black text-[#063B78] uppercase tracking-wider">
             <Sparkles className="size-3 text-[#D4AF37]" />
             {step === "language" ? "Step 1 of 2 • Language Selection / भाषा निवडा" : "Step 2 of 2 • Select Your Profile / भूमिका निवडा"}
@@ -146,11 +146,10 @@ export function LanguageGate() {
                     key={item.code}
                     type="button"
                     onClick={() => handleLanguageSelect(item.code)}
-                    className={`relative flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all duration-200 text-center cursor-pointer ${
-                      active
+                    className={`relative flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all duration-200 text-center cursor-pointer ${active
                         ? "border-[#063B78] bg-[#EBF1F8] shadow-md scale-[1.02] ring-2 ring-[#063B78]/20"
                         : "border-gray-200 bg-gray-50/70 hover:bg-white hover:border-[#063B78]/40 hover:shadow-xs"
-                    }`}
+                      }`}
                   >
                     {active && (
                       <div className="absolute top-2.5 right-2.5 size-5 rounded-full bg-[#063B78] text-white flex items-center justify-center">
@@ -193,7 +192,7 @@ export function LanguageGate() {
 
             {/* 2 Profile Option Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              
+
               {/* Option 1: Job Seeker (Worker) */}
               <div
                 onClick={() => handleSelectRole("user")}

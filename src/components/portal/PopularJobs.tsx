@@ -140,8 +140,8 @@ export function PopularJobs() {
         {jobsList.length === 0 ? (
           <div className="mt-8 p-12 text-center bg-white rounded-3xl border border-[#E5E2DA] shadow-sm">
             <Briefcase className="size-12 mx-auto text-[#063B78] mb-3 opacity-60" />
-            <h3 className="text-lg font-black text-[#10233F]">अद्याप कोणतीही नोकरी जोडलेली नाही (No Jobs Posted Yet)</h3>
-            <p className="text-xs font-bold text-[#5B6B7F] mt-1">ॲडमिन कंट्रोल पॅनेलवरून नवीन नोकऱ्या जोडल्यावर त्या येथे थेट दिसतील.</p>
+            <h3 className="text-lg font-black text-[#10233F]">No Jobs Posted Yet</h3>
+            <p className="text-xs font-bold text-[#5B6B7F] mt-1">New jobs added from the admin control panel will appear here directly.</p>
           </div>
         ) : (
           <div className="mt-8 grid gap-6 lg:grid-cols-2">

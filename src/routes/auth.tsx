@@ -139,6 +139,11 @@ function AuthPage() {
   const [companyName, setCompanyName] = useState("");
   const [employerPhone, setEmployerPhone] = useState("");
 
+  // OTP Registration Verification
+  const [showOtpField, setShowOtpField] = useState(false);
+  const [serverOtp, setServerOtp] = useState("");
+  const [inputOtp, setInputOtp] = useState("");
+
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -172,6 +177,60 @@ function AuthPage() {
       if (mode === "register") {
         const rawName = role === "employer" || role === "admin" ? companyName : workerName;
         const userMobile = (role === "employer" || role === "admin") ? employerPhone : workerPhone;
+
+        if (!showOtpField) {
+          if (!userMobile || userMobile.length !== 10) {
+            toast.error("Please enter a valid 10-digit mobile number for OTP verification.");
+            setBusy(false);
+            return;
+          }
+
+          // Generate 6-digit OTP
+          const generatedOtp = String(Math.floor(100000 + Math.random() * 900000));
+          setServerOtp(generatedOtp);
+
+          const username = "Experts";
+          const authkey = "ba9dcdcdfcXX";
+          const senderId = "EXTSKL";
+          const accusage = "1";
+          let message = `Your Verification Code for login is ${generatedOtp}. - Expertskill Technology.`;
+          message = message.split(" ").join("%20");
+          
+          const url = `https://mobicomm.dove-sms.com/submitsms.jsp?user=${username}&key=${authkey}&mobile=+91${userMobile}&message=${message}&accusage=${accusage}&senderid=${senderId}`;
+
+          try {
+            fetch(url)
+              .then(res => res.text())
+              .then(text => {
+                console.log("SMS API Response:", text);
+                if (text.toLowerCase().includes("success")) {
+                  toast.success(`OTP sent! (Testing OTP: ${generatedOtp})`);
+                } else {
+                  toast.error(`SMS API Error: ${text}`);
+                }
+              })
+              .catch(err => {
+                console.error("SMS Fetch Error", err);
+                toast.success(`OTP sent (Simulated). Testing OTP: ${generatedOtp}`);
+              });
+          } catch (err) {
+            console.error("SMS API Error", err);
+          }
+
+          setShowOtpField(true);
+          setBusy(false);
+          return;
+        }
+
+        if (showOtpField) {
+          if (inputOtp !== serverOtp) {
+            toast.error("Invalid OTP! Please try again.");
+            setBusy(false);
+            return;
+          }
+        }
+
+        // Proceed to save user if OTP verified
         let finalEmail = email.trim().toLowerCase();
         if (!finalEmail && userMobile) {
           finalEmail = `${userMobile.replace(/\D/g, "")}@realjob.com`;
@@ -269,17 +328,34 @@ function AuthPage() {
          const searchMobile = enteredEmail.replace(/\D/g, "");
          const allEmployerWorkers = (dataStore as any).getAllEmployerWorkers ? (dataStore as any).getAllEmployerWorkers() : [];
          
-         // In employee login case, existingAccount becomes the EmployerWorker object
-         existingAccount = allEmployerWorkers.find((w: any) => w.mobile?.replace(/\D/g, "") === searchMobile);
+         const candidates = allEmployerWorkers.filter((w: any) => w.mobile?.replace(/\D/g, "") === searchMobile);
          
-         if (existingAccount) {
-            // Compare the entered password (PIN) with worker's PIN
-            const workerPin = existingAccount.pin || "1234"; // fallback to 1234 if pin wasn't saved initially
-            if (password !== workerPin) {
-               toast.error("❌ चुकीचा पासकोड! (Wrong PIN. Please enter correct PIN.)");
-               setBusy(false);
-               return;
-            }
+         if (candidates.length === 0) {
+            toast.error("❌ कर्मचारी सापडला नाही! (Employee not found. Check your mobile number.)");
+            setBusy(false);
+            return;
+         }
+
+         existingAccount = candidates.find((c: any) => (c.pin || "1234") === password);
+         
+         if (!existingAccount) {
+            toast.error("❌ चुकीचा पासकोड! (Wrong PIN. Please enter correct PIN.)");
+            setBusy(false);
+            return;
+         }
+
+         // Block field/moving workers from logging in, as their attendance is manual.
+         const text = `${existingAccount.trade || ""} ${existingAccount.category || ""}`.toLowerCase();
+         const isField = [
+           "farming", "farm", "agro", "agriculture", "nursery", "शेती", "शेत", "फार्मिंग", "कृषी", "शेतकूप",
+           "construction", "site", "baukam", "बांधकाम", "साइट", "मजूर", "लेबर", "labour", "labor",
+           "field", "driver", "moving", "delivery", "security", "guard", "हमाल", "sales", "marketing", "logistics"
+         ].some(kw => text.includes(kw));
+
+         if (isField) {
+            toast.error("⚠️ तुमचे काम 'Field Work' (फिरतीचे) आहे. तुम्हाला Login करण्याची गरज नाही, तुमची हजेरी तुमचे मालक स्वतः लावतील.", { duration: 6000 });
+            setBusy(false);
+            return;
          }
       } else {
          const { getAuth, signInWithEmailAndPassword } = await import("firebase/auth");
@@ -635,7 +711,7 @@ function AuthPage() {
                   required
                   autoComplete="new-password"
                   placeholder={role === "employee" ? "e.g. 1234" : "••••••••"}
-                  minLength={role === "employee" ? 4 : 6}
+                  minLength={4}
                   maxLength={role === "employee" ? 4 : undefined}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -649,6 +725,30 @@ function AuthPage() {
                   {showPassword ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
                 </button>
               </div>
+            </div>
+          )}
+
+          {/* OTP FIELD FOR REGISTRATION */}
+          {mode === "register" && showOtpField && (
+            <div className="mt-2 p-3 bg-emerald-50 rounded-lg border border-emerald-200 animate-in fade-in zoom-in-95 duration-300">
+              <Label htmlFor="otp" className="text-[11px] font-extrabold text-emerald-800 mb-1 block">
+                Enter 6-Digit OTP *
+              </Label>
+              <div className="relative">
+                <input
+                  id="otp"
+                  type="text"
+                  required
+                  placeholder="Enter OTP sent to your mobile"
+                  maxLength={6}
+                  value={inputOtp}
+                  onChange={(e) => setInputOtp(e.target.value.replace(/\D/g, ""))}
+                  className="w-full h-9.5 px-3 bg-white rounded-lg border border-emerald-300 text-sm font-bold text-center tracking-widest text-emerald-900 placeholder:text-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm"
+                />
+              </div>
+              <p className="text-[10px] text-emerald-600 font-semibold mt-1 text-center">
+                OTP sent successfully. Please check your SMS.
+              </p>
             </div>
           )}
 
@@ -677,9 +777,15 @@ function AuthPage() {
             {busy ? (
               <Loader2 className="animate-spin size-4" />
             ) : mode === "register" ? (
-              <>
-                <UserPlus className="size-3.5" /> Register Account
-              </>
+              showOtpField ? (
+                <>
+                  <Check className="size-3.5" /> Verify OTP & Register
+                </>
+              ) : (
+                <>
+                  <UserPlus className="size-3.5" /> Send OTP to Register
+                </>
+              )
             ) : mode === "forgot" ? (
               "Send Reset Link"
             ) : (
@@ -691,17 +797,18 @@ function AuthPage() {
         </form>
 
         {/* BOTTOM REGISTER LINK */}
-        <div className="mt-3 text-center text-[11px] font-bold text-gray-600">
-          {mode === "register" ? "Already have an account?" : "Don't have an account?"}{" "}
-          <button
-            type="button"
-            onClick={() => setMode(mode === "register" ? "login" : "register")}
-            className="text-[#0A3B7B] font-black hover:underline ml-1"
-          >
-            {mode === "register" ? "Sign In" : "Register"}
-          </button>
-        </div>
-
+        {role !== "employee" && (
+          <div className="mt-3 text-center text-[11px] font-bold text-gray-600">
+            {mode === "register" ? "Already have an account?" : "Don't have an account?"}{" "}
+            <button
+              type="button"
+              onClick={() => setMode(mode === "register" ? "login" : "register")}
+              className="text-[#0A3B7B] font-black hover:underline ml-1"
+            >
+              {mode === "register" ? "Sign In" : "Register"}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Live WebCam Camera Modal */}

@@ -256,6 +256,7 @@ export type DailyAttendanceRecord = {
   punchInLocation?: { lat: number; lng: number };
   punchOutLocation?: { lat: number; lng: number };
   notes?: string;
+  punchLog?: Array<{ type: "in" | "out"; time: string; location: { lat: number; lng: number } }>;
   updatedAt: string;
 };
 
@@ -1376,12 +1377,24 @@ export class DataStoreManager {
     
     let newRecord: DailyAttendanceRecord;
     
+    // Create new punch log entry if punchData is provided
+    const newPunchLogEntry = punchData?.punchInTime && punchData.punchInLocation 
+      ? { type: "in" as const, time: punchData.punchInTime, location: punchData.punchInLocation } 
+      : punchData?.punchOutTime && punchData.punchOutLocation 
+        ? { type: "out" as const, time: punchData.punchOutTime, location: punchData.punchOutLocation }
+        : null;
+    
     if (index >= 0) {
       const existing = all[index] as DailyAttendanceRecord;
       const isRePunchIn = !!punchData?.punchInTime && !punchData?.punchOutTime;
+      
+      const updatedPunchLog = existing.punchLog ? [...existing.punchLog] : [];
+      if (newPunchLogEntry) updatedPunchLog.unshift(newPunchLogEntry); // Keep newest at the top
+      
       newRecord = {
         ...existing,
         status: status,
+        punchLog: updatedPunchLog,
         updatedAt: new Date().toISOString(),
       };
       const finalNotes = notes ? (existing.notes ? existing.notes + " | " + notes : notes) : existing.notes;
@@ -1413,6 +1426,7 @@ export class DataStoreManager {
         punchOutTime: punchData?.punchOutTime,
         punchInLocation: punchData?.punchInLocation,
         punchOutLocation: punchData?.punchOutLocation,
+        punchLog: newPunchLogEntry ? [newPunchLogEntry] : [],
         updatedAt: new Date().toISOString(),
       } as DailyAttendanceRecord;
       all.push(newRecord);

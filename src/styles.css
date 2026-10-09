@@ -223,3 +223,8 @@ input[type="number"] {
     animation-duration: 0.01ms !important;
   }
 }
+
+/* Hide Google Translate Banner */
+body { top: 0 !important; }
+.skiptranslate iframe { display: none !important; }
+.goog-te-banner-frame { display: none !important; }

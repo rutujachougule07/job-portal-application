@@ -304,6 +304,31 @@ const en = {
   ageLabel: "Age",
   yearsOld: "Years",
   copyright: "All rights reserved.",
+  dashboardOverview: "Dashboard Overview",
+  jobListings: "Job Listings",
+  jobApplications: "Job Applications",
+  attendancePayroll: "Attendance & Payroll",
+  eSalarySlips: "E-Salary / Slips",
+  myPackagesBilling: "My Packages & Billing",
+  signOut: "Sign Out",
+  activePlan: "ACTIVE PLAN",
+  yourPackageIsActive: "Your Package is Active",
+  jobPostCredits: "Job Post Credits",
+  available: "Available",
+  employeeAdditionLimit: "Employee Addition Limit",
+  added: "Added",
+  totalPostedJobs: "TOTAL POSTED JOBS",
+  activeJobsLabel: "Active Jobs",
+  totalApplications: "TOTAL APPLICATIONS",
+  applicantsLabel: "Applicants",
+  totalEmployeesLabel: "TOTAL EMPLOYEES",
+  registeredStaff: "Registered Staff",
+  presentToday: "PRESENT TODAY",
+  attendanceShift: "Attendance Shift",
+  recentCandidatesTitle: "Recent Job Candidates & Applications",
+  recentCandidatesDesc: "Candidates who applied to your posted jobs on the portal.",
+  viewAllBtn: "View All",
+  myProfile: "My Profile",
 };
 
 export type TranslationKeys = keyof typeof en;
@@ -593,6 +618,31 @@ const partial: Record<string, Partial<Record<TranslationKeys, string>>> = {
     ageLabel: "वय",
     yearsOld: "वर्षे",
     copyright: "सर्व हक्क सुरक्षित.",
+    dashboardOverview: "डॅशबोर्ड",
+    jobListings: "नोकरीच्या जाहिराती (Jobs)",
+    jobApplications: "नोकरीचे अर्ज (Applications)",
+    attendancePayroll: "हजेरी आणि पगार",
+    eSalarySlips: "सॅलरी स्लिप (E-Salary)",
+    myPackagesBilling: "माझे प्लॅन्स आणि बिलिंग",
+    signOut: "लॉग आउट (Sign Out)",
+    activePlan: "सक्रिय प्लॅन",
+    yourPackageIsActive: "तुमचा प्लॅन ॲक्टिव्ह आहे",
+    jobPostCredits: "नोकरी पोस्ट करण्यासाठी क्रेडीट्स",
+    available: "शिल्लक",
+    employeeAdditionLimit: "कर्मचारी जोडण्याची मर्यादा",
+    added: "जोडले",
+    totalPostedJobs: "एकूण पोस्ट केलेल्या नोकऱ्या",
+    activeJobsLabel: "सक्रिय नोकऱ्या",
+    totalApplications: "एकूण आलेले अर्ज",
+    applicantsLabel: "अर्जदार",
+    totalEmployeesLabel: "एकूण कर्मचारी",
+    registeredStaff: "नोंदणीकृत कर्मचारी",
+    presentToday: "आजची उपस्थिती",
+    attendanceShift: "हजेरी (शिफ्ट)",
+    recentCandidatesTitle: "अलीकडील उमेदवार आणि अर्ज",
+    recentCandidatesDesc: "पोर्टलवर तुमच्या पोस्ट केलेल्या नोकऱ्यांसाठी ज्यांनी अर्ज केला आहे ते उमेदवार.",
+    viewAllBtn: "सर्व पहा",
+    myProfile: "माझी प्रोफाइल",
   },
   hi: {
     brand: "REAL JOB",
@@ -878,6 +928,31 @@ const partial: Record<string, Partial<Record<TranslationKeys, string>>> = {
     ageLabel: "उम्र",
     yearsOld: "वर्ष",
     copyright: "सर्वाधिकार सुरक्षित।",
+    dashboardOverview: "डैशबोर्ड",
+    jobListings: "नौकरियां (Jobs)",
+    jobApplications: "आवेदन (Applications)",
+    attendancePayroll: "उपस्थिति और वेतन (Payroll)",
+    eSalarySlips: "सैलरी स्लिप (E-Salary)",
+    myPackagesBilling: "मेरे प्लान्स और बिलिंग",
+    signOut: "लॉग आउट (Sign Out)",
+    activePlan: "सक्रिय प्लान",
+    yourPackageIsActive: "आपका प्लान एक्टिव है",
+    jobPostCredits: "नौकरी पोस्ट क्रेडिट्स",
+    available: "बचे हैं",
+    employeeAdditionLimit: "कर्मचारी जोड़ने की सीमा",
+    added: "जोड़े गए",
+    totalPostedJobs: "कुल पोस्ट की गई नौकरियां",
+    activeJobsLabel: "सक्रिय नौकरियां",
+    totalApplications: "कुल आवेदन",
+    applicantsLabel: "आवेदक",
+    totalEmployeesLabel: "कुल कर्मचारी",
+    registeredStaff: "पंजीकृत कर्मचारी",
+    presentToday: "आज की उपस्थिति",
+    attendanceShift: "हाजिरी (शिफ्ट)",
+    recentCandidatesTitle: "हाल के उम्मीदवार और आवेदन",
+    recentCandidatesDesc: "वे उम्मीदवार जिन्होंने आपकी पोस्ट की गई नौकरियों के लिए आवेदन किया है।",
+    viewAllBtn: "सभी देखें",
+    myProfile: "मेरी प्रोफ़ाइल",
   },
   gu: {
     brand: "REAL JOB",
@@ -2325,6 +2400,16 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const setLang = (value: LanguageCode) => {
     setLangState(value);
     window.localStorage.setItem("realjob-language", value);
+    
+    // Also set Google Translate cookie so it translates the whole DOM automatically
+    if (value === "en") {
+      document.cookie = `googtrans=/en/en; path=/`;
+      document.cookie = `googtrans=/en/en; domain=${window.location.hostname}; path=/`;
+    } else {
+      document.cookie = `googtrans=/en/${value}; path=/`;
+      document.cookie = `googtrans=/en/${value}; domain=${window.location.hostname}; path=/`;
+    }
+    window.location.reload();
   };
 
   const value = useMemo(

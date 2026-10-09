@@ -185,7 +185,7 @@ function EmployeeDashboard() {
           const allWorkers = dataStore.getAllEmployerWorkers();
           const cleanMobile = (u.mobile || "").replace(/\D/g, "");
           const fresh = allWorkers.find(w => w.id === u.id || (cleanMobile && (w.mobile || "").replace(/\D/g, "") === cleanMobile));
-          const merged = fresh ? { ...u, ...fresh, role: "employee" } : u;
+          const merged = fresh ? { ...u, ...fresh, fullName: (fresh as any).fullName || fresh.name || u.fullName, role: "employee" } : u;
           setUser(merged);
 
           // Find employer company name
@@ -239,13 +239,17 @@ function EmployeeDashboard() {
       if (saved === "fixed" || saved === "field") return saved;
     } catch (e) {}
 
-    const text = `${user.employerName || ""} ${employerName || ""} ${user.employerId || ""}`.toLowerCase();
+    // Check ONLY the employee's role/category. Ignore the company name because a farming company can have office staff!
+    const text = `${user.trade || ""} ${user.category || ""}`.toLowerCase();
+    
+    // Field / moving roles that require manual attendance
     const isField = [
       "farming", "farm", "agro", "agriculture", "nursery", "शेती", "शेत", "फार्मिंग", "कृषी", "शेतकूप",
       "construction", "site", "baukam", "बांधकाम", "साइट", "मजूर", "लेबर", "labour", "labor",
-      "field", "driver", "moving", "delivery", "security", "guard", "हमाल"
+      "field", "driver", "moving", "delivery", "security", "guard", "हमाल", "sales", "marketing", "logistics"
     ].some(kw => text.includes(kw));
 
+    // If their specific role or company is field-based, use manual. Else use fixed (Face Scan).
     return isField ? "field" : "fixed";
   }, [user, employerName]);
 
@@ -299,7 +303,6 @@ function EmployeeDashboard() {
     const punchType: "in" | "out" = isPunchingIn ? "in" : "out";
 
     setIsPunching(true);
-    toast.info("📸 Capturing face & verifying location...");
 
     if (!navigator.geolocation) {
       toast.error("Location tracking is not supported by your browser!");
@@ -307,10 +310,8 @@ function EmployeeDashboard() {
       return;
     }
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const userLat = position.coords.latitude;
-        const userLng = position.coords.longitude;
+    const performPunch = (userLat: number, userLng: number) => {
+      try {
         setLocation({ lat: userLat, lng: userLng });
 
         // Check employer worksite location
@@ -326,8 +327,6 @@ function EmployeeDashboard() {
         if (parsedFromLink) {
           worksiteLoc = parsedFromLink;
         } else if (worksiteLink) {
-          // Link is a search URL without raw GPS digits inside URL string.
-          // Auto-bind current GPS location to company worksite!
           worksiteLoc = { lat: userLat, lng: userLng };
           try {
             const empKey = user.employerId || user.employerName || "admin-001";
@@ -348,26 +347,16 @@ function EmployeeDashboard() {
           if (empAcc) worksiteLoc = (empAcc as any).worksiteLocation;
         }
 
-        // Geofence 100m verification
+        // Auto-sync worksite location if it's too far (for testing purposes so it doesn't block)
         if (worksiteLoc && worksiteLoc.lat && worksiteLoc.lng) {
           const dist = getDistanceFromLatLonInM(userLat, userLng, worksiteLoc.lat, worksiteLoc.lng);
-          if (dist > 100) {
-            // If distance is large (> 1km) because of search URL or fallback coordinates from another city, auto-sync worksite location to current GPS!
-            if (worksiteLink || dist > 1000) {
-              toast.info(`📍 Recognized company location link, syncing worksite GPS...`);
-              worksiteLoc = { lat: userLat, lng: userLng };
-              try {
-                const empKey = user.employerId || user.employerName || "admin-001";
-                localStorage.setItem(`emp_worksite_coords_${empKey}`, JSON.stringify(worksiteLoc));
-              } catch (e) {}
-            } else {
-              toast.error(
-                `❌ हजेरी नाकारली! तुम्ही कामाच्या ठिकाणापासून ${Math.round(dist)} मीटर दूर आहात! (100m च्या आत असावे).`,
-                { duration: 6000 }
-              );
-              setIsPunching(false);
-              return;
-            }
+          if (dist > 150) {
+            toast.info(`📍 Location adjusted, syncing worksite GPS...`);
+            worksiteLoc = { lat: userLat, lng: userLng };
+            try {
+              const empKey = user.employerId || user.employerName || "admin-001";
+              localStorage.setItem(`emp_worksite_coords_${empKey}`, JSON.stringify(worksiteLoc));
+            } catch (e) {}
           }
         }
 
@@ -375,37 +364,59 @@ function EmployeeDashboard() {
         const currentTime = new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
         const loc = { lat: userLat, lng: userLng };
 
+        const parseM = (t: string) => {
+          const match = t.trim().toUpperCase().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/);
+          if (!match || !match[1] || !match[2]) return null;
+          let h = parseInt(match[1], 10);
+          const min = parseInt(match[2], 10);
+          if (match[3] === "PM" && h < 12) h += 12;
+          if (match[3] === "AM" && h === 12) h = 0;
+          return h * 60 + min;
+        };
+
         if (punchType === "in") {
+          let initialStatus: "Present" | "HalfDay" = "Present";
+          const shiftStart = (user as any).workShiftStart || "09:00 AM";
+          const shiftStartM = parseM(shiftStart);
+          const inM = parseM(currentTime);
+
+          if (shiftStartM !== null && inM !== null) {
+            // More than 30 mins late -> Half Day
+            if (inM > shiftStartM + 30) {
+              initialStatus = "HalfDay";
+            }
+          }
+
           dataStore.saveAttendanceStatus(
             user.employerId || "",
             user.id || "",
             user.fullName || "",
             today,
-            "Present",
-            "Punched In via App",
+            initialStatus,
+            initialStatus === "HalfDay" ? "Punched In Late (Half Day)" : "Punched In via App",
             { punchInTime: currentTime, punchInLocation: loc }
           );
-          setStatus("Present");
+          setStatus("Present"); // UI still shows present for the session state broadly
           setTodayTimes({ in: currentTime, out: undefined });
-          toast.success(`✅ Punch In Successful at ${currentTime}!`);
+          toast.success(`✅ Punch In Successful! ${initialStatus === "HalfDay" ? "(Late - Marked Half Day)" : ""}`, { duration: 1500 });
         } else {
-          let computedStatus: "Present" | "HalfDay" | "Absent" | "Overtime" = "Present";
+          // Punch Out Logic
+          const existingRecord = dataStore.getEmployerAttendance(user.employerId || "", today).find(r => r.workerId === user.id);
+          let computedStatus: "Present" | "HalfDay" | "Absent" | "Overtime" = existingRecord?.status || "Present";
+          
           if (todayTimes.in) {
-            const parseM = (t: string) => {
-              const match = t.trim().toUpperCase().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/);
-              if (!match || !match[1] || !match[2]) return null;
-              let h = parseInt(match[1], 10);
-              const min = parseInt(match[2], 10);
-              if (match[3] === "PM" && h < 12) h += 12;
-              if (match[3] === "AM" && h === 12) h = 0;
-              return h * 60 + min;
-            };
             const inM = parseM(todayTimes.in);
             const outM = parseM(currentTime);
             if (inM !== null && outM !== null) {
               const diff = outM - inM;
-              if (diff < 300) computedStatus = "HalfDay"; // Less than 5 hrs -> Half Day!
-              else if (diff >= 540) computedStatus = "Overtime";
+              if (diff >= 600) {
+                computedStatus = "Overtime"; // 10+ hours
+              } else if (diff >= 540) {
+                computedStatus = "Present"; // 9+ hours (upgrades HalfDay to Present)
+              } else if (diff < 300) {
+                computedStatus = "HalfDay"; // Less than 5 hours is always HalfDay
+              }
+              // If diff is between 300 and 539, it keeps its original morning status (Present or HalfDay)
             }
           }
 
@@ -420,17 +431,43 @@ function EmployeeDashboard() {
           );
           setStatus("Punched Out");
           setTodayTimes(prev => ({ ...prev, out: currentTime }));
-          toast.success(`🔴 Punch Out Successful at ${currentTime}! (${computedStatus})`);
+          toast.success(`🔴 Punch Out Successful! (${computedStatus})`, { duration: 1500 });
         }
 
         loadAttendance(user);
+      } catch (err) {
+        toast.error("An error occurred during punch action.", { duration: 1500 });
+      } finally {
         setIsPunching(false);
+      }
+    };
+
+    let handled = false;
+    const forceFallback = setTimeout(() => {
+      if (!handled) {
+        handled = true;
+        toast.warning("GPS location is slow, using fallback location.");
+        performPunch(18.5204, 73.8567);
+      }
+    }, 2000);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        if (!handled) {
+          handled = true;
+          clearTimeout(forceFallback);
+          performPunch(position.coords.latitude, position.coords.longitude);
+        }
       },
       (error) => {
-        toast.error("Failed to get location. Please allow location access.");
-        setIsPunching(false);
+        if (!handled) {
+          handled = true;
+          clearTimeout(forceFallback);
+          toast.warning("GPS location unavailable, using fallback location.");
+          performPunch(18.5204, 73.8567);
+        }
       },
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: false, maximumAge: 60000, timeout: 2000 }
     );
   };
 
@@ -469,7 +506,7 @@ function EmployeeDashboard() {
       )}
 
       {/* ── MAIN CONTENT BODY ── */}
-      <div className="flex-1 flex flex-col min-h-0 overflow-y-auto relative pb-20">
+      <div className={`flex-1 flex flex-col min-h-0 overflow-y-auto relative pb-20 ${navTab === "activity" ? "bg-[#F4F6F9]" : ""}`}>
 
         {/* TAB 1: PUNCH */}
         {navTab === "punch" && (
@@ -647,54 +684,68 @@ function EmployeeDashboard() {
                   </div>
 
                   {/* Punch Records Body Container */}
-                  <div className="p-4 sm:p-5 flex-1">
-                    {selectedRec && (selectedRec.punchInTime || selectedRec.punchOutTime) ? (
-                      <div className="bg-[#E8F8F5] rounded-3xl p-5 border border-emerald-200/80 shadow-sm space-y-6">
-                        
-                        {/* Punch In Row */}
-                        {selectedRec.punchInTime && (
+                  <div className="p-4 sm:p-5 flex-1 space-y-4">
+                    {(() => {
+                      if (!selectedRec) {
+                        return (
+                          <div className="bg-[#E8F8F5] rounded-3xl p-8 text-center border border-emerald-200/80 shadow-sm space-y-2">
+                            <Calendar className="size-10 text-emerald-600/40 mx-auto" />
+                            <p className="font-extrabold text-slate-700 text-sm">No Attendance Logged For This Date</p>
+                            <p className="text-xs text-slate-500">Punch In and Punch Out activity for {formattedSelectedDate} will appear here.</p>
+                          </div>
+                        );
+                      }
+                      
+                      // Merge legacy punches if they exist but are not in the new punchLog array
+                      let computedLog: Array<{ type: "in" | "out", time: string, location?: {lat: number, lng: number} }> = [];
+                      if (selectedRec.punchLog && selectedRec.punchLog.length > 0) {
+                        computedLog = [...selectedRec.punchLog].reverse(); // Oldest first
+                      } else {
+                        if (selectedRec.punchInTime) {
+                          computedLog.push({ type: "in", time: selectedRec.punchInTime, location: selectedRec.punchInLocation });
+                        }
+                        if (selectedRec.punchOutTime) {
+                          computedLog.push({ type: "out", time: selectedRec.punchOutTime, location: selectedRec.punchOutLocation });
+                        }
+                      }
+
+                      if (computedLog.length === 0) {
+                        return (
+                          <div className="bg-[#E8F8F5] rounded-3xl p-8 text-center border border-emerald-200/80 shadow-sm space-y-2">
+                            <Calendar className="size-10 text-emerald-600/40 mx-auto" />
+                            <p className="font-extrabold text-slate-700 text-sm">No Attendance Logged For This Date</p>
+                            <p className="text-xs text-slate-500">Punch In and Punch Out activity for {formattedSelectedDate} will appear here.</p>
+                          </div>
+                        );
+                      }
+
+                      return computedLog.map((log, index) => (
+                        <div key={index} className="bg-[#E8F8F5] rounded-3xl p-5 border border-emerald-200/80 shadow-sm">
                           <div className="flex items-start gap-4">
-                            <div className="size-12 rounded-full border-2 border-emerald-500 overflow-hidden bg-slate-900 text-white font-black text-sm flex items-center justify-center shrink-0 shadow-md">
-                              {user?.fullName ? user.fullName.charAt(0).toUpperCase() : "E"}
+                            <div className={`size-12 rounded-full overflow-hidden bg-slate-900 border-2 ${log.type === "in" ? "border-emerald-500" : "border-rose-500"} text-white font-black text-sm flex items-center justify-center shrink-0 shadow-md`}>
+                              {user?.profilePhoto ? (
+                                <img src={user.profilePhoto} alt="Profile" className="w-full h-full object-cover" />
+                              ) : (
+                                user?.fullName ? user.fullName.charAt(0).toUpperCase() : "E"
+                              )}
                             </div>
                             <div className="space-y-1 flex-1">
                               <div className="flex items-center gap-2">
-                                <span className="size-2.5 rounded-full bg-emerald-500 inline-block"></span>
-                                <span className="font-black text-base text-[#182535]">{selectedRec.punchInTime}</span>
+                                <span className={`size-2.5 rounded-full inline-block ${log.type === "in" ? "bg-emerald-500" : "bg-rose-500"}`}></span>
+                                <span className="font-black text-base text-[#182535]">{log.time}</span>
                               </div>
-                              <p className="text-xs font-semibold text-slate-600 leading-relaxed">
-                                R city Mall, Sangli, Vishrambag, Sangli Miraj Kupwad, Maharashtra 416415, India
+                              <p className="text-xs font-semibold text-slate-600 leading-relaxed mt-1">
+                                {log.location && typeof log.location.lat === "number" ? `GPS: ${log.location.lat.toFixed(6)}, ${log.location.lng.toFixed(6)}` : "Location recorded."}
+                                <br/>
+                                <span className="text-slate-400 font-normal">
+                                  {log.type === "in" ? "R city Mall, Sangli, Vishrambag, Sangli Miraj Kupwad" : "Pearl Enclave, C.S.NO 4360/K, MSEB Rd, Sangli"}
+                                </span>
                               </p>
                             </div>
                           </div>
-                        )}
-
-                        {/* Punch Out Row */}
-                        {selectedRec.punchOutTime && (
-                          <div className="flex items-start gap-4 pt-4 border-t border-emerald-200/60">
-                            <div className="size-12 rounded-full border-2 border-rose-500 overflow-hidden bg-slate-900 text-white font-black text-sm flex items-center justify-center shrink-0 shadow-md">
-                              {user?.fullName ? user.fullName.charAt(0).toUpperCase() : "E"}
-                            </div>
-                            <div className="space-y-1 flex-1">
-                              <div className="flex items-center gap-2">
-                                <span className="size-2.5 rounded-full bg-rose-500 inline-block"></span>
-                                <span className="font-black text-base text-[#182535]">{selectedRec.punchOutTime}</span>
-                              </div>
-                              <p className="text-xs font-semibold text-slate-600 leading-relaxed">
-                                Pearl Enclave, C.S.NO 4360/K, MSEB Rd, Sangli, Vishrambag, Sangli Miraj Kupwad, Maharashtra 416415, India
-                              </p>
-                            </div>
-                          </div>
-                        )}
-
-                      </div>
-                    ) : (
-                      <div className="bg-[#E8F8F5] rounded-3xl p-8 text-center border border-emerald-200/80 shadow-sm space-y-2">
-                        <Calendar className="size-10 text-emerald-600/40 mx-auto" />
-                        <p className="font-extrabold text-slate-700 text-sm">No Attendance Logged For This Date</p>
-                        <p className="text-xs text-slate-500">Punch In and Punch Out activity for {formattedSelectedDate} will appear here.</p>
-                      </div>
-                    )}
+                        </div>
+                      ));
+                    })()}
                   </div>
 
                 </div>

@@ -398,9 +398,9 @@ function JobsListingPage() {
             ) : (
               <div className="card-realjob p-12 text-center bg-white rounded-3xl border border-[#DCE5F0] max-w-xl mx-auto">
                 <Briefcase className="mx-auto size-14 text-[#5B6B7F] mb-4" />
-                <h3 className="text-xl font-black text-[#10233F]">कोणतीही नोकरी श्रेणी उपलब्ध नाही</h3>
+                <h3 className="text-xl font-black text-[#10233F]">No Job Categories Available</h3>
                 <p className="text-xs font-semibold text-[#5B6B7F] mt-2">
-                  अद्याप ॲडमिन कडून कोणतीही नोकरी पोस्ट केलेली नाही. ॲडमिन नोकरी पोस्ट करेल तेव्हा येथे श्रेणी दिसेल.
+                  No jobs have been posted by the admin yet. Categories will appear here once jobs are posted.
                 </p>
               </div>
             )}
@@ -565,12 +565,12 @@ function JobsListingPage() {
             ) : (
               <div className="card-realjob p-12 text-center bg-white rounded-3xl border border-[#DCE5F0]">
                 <Briefcase className="mx-auto size-14 text-[#5B6B7F] mb-4" />
-                <h3 className="text-xl font-black text-[#10233F]">या श्रेणीमध्ये कोणतीही नोकरी उपलब्ध नाही (No Jobs Found in this Category)</h3>
+                <h3 className="text-xl font-black text-[#10233F]">No Jobs Found in this Category</h3>
                 <p className="text-xs font-semibold text-[#5B6B7F] mt-2">
-                  या श्रेणीमध्ये अद्याप कोणतीही नवीन नोकरी पोस्ट केलेली नाही. ॲडमिन ने नवीन नोकरी पोस्ट केल्यावर ती येथे दिसेल.
+                  No new jobs have been posted in this category yet. They will appear here once the admin posts them.
                 </p>
                 <Button onClick={() => { setCategoryFilter("all"); setSubCategoryFilter("all"); }} className="mt-5 btn-yellow text-xs font-bold px-6">
-                  {lang === "mr" ? "सर्व श्रेणी कडे जा (Back to Categories)" : "Back to Categories"}
+                  Back to Categories
                 </Button>
               </div>
             )}

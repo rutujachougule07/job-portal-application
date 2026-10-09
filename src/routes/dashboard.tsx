@@ -93,7 +93,7 @@ function UserDashboard() {
 
   return (
     <UserSidebarLayout activeTab={activeTab}>
-      {activeTab === "overview" && (
+      <div className={activeTab === "overview" ? "block" : "hidden"}>
         <div className="space-y-6 animate-in fade-in duration-300">
           
           {/* Main Left Column (Full Width) */}
@@ -331,10 +331,10 @@ function UserDashboard() {
                 </div>
               ) : (
                 <div className="p-8 text-center">
-                  <p className="text-sm font-bold text-[#5B6B7F]">अद्याप कोणत्याही नोकरीसाठी अर्ज केलेला नाही (No Applications Yet)</p>
-                  <p className="text-xs text-gray-400 mt-1">तुम्ही नोकरीसाठी अर्ज केल्यावर येथे अर्जाची स्थिती दिसेल.</p>
+                  <p className="text-sm font-bold text-[#5B6B7F]">No Applications Yet</p>
+                  <p className="text-xs text-gray-400 mt-1">When you apply for a job, your application status will appear here.</p>
                   <Button asChild className="mt-4 bg-[#063B78] hover:bg-[#082F63] text-white font-bold text-xs px-6 h-9 rounded-xl">
-                    <Link to="/jobs">नोकऱ्या शोधा (Find Jobs)</Link>
+                    <Link to="/jobs">Find Jobs</Link>
                   </Button>
                 </div>
               )}
@@ -343,9 +343,9 @@ function UserDashboard() {
           </div>
 
         </div>
-      )}
+      </div>
 
-      {activeTab === "applied" && (
+      <div className={activeTab === "applied" ? "block" : "hidden"}>
         <div className="space-y-6 animate-in fade-in duration-500">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl sm:text-3xl font-black text-[#10233F]">Applied Jobs History</h2>
@@ -410,10 +410,10 @@ function UserDashboard() {
             )}
           </div>
         </div>
-      )}
+      </div>
 
       {/* Saved Jobs Tab */}
-      {activeTab === "saved" && (
+      <div className={activeTab === "saved" ? "block" : "hidden"}>
         <div className="space-y-6 animate-in fade-in duration-500">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-black text-[#10233F]">Saved Jobs</h2>
@@ -441,16 +441,16 @@ function UserDashboard() {
             </div>
           )}
         </div>
-      )}
+      </div>
 
       {/* Profile Tab */}
-      {activeTab === "profile" && (
+      <div className={activeTab === "profile" ? "block" : "hidden"}>
         <UserProfileSection user={user} />
-      )}
+      </div>
 
 
       {/* Settings Tab Placeholder */}
-      {activeTab === "settings" && (
+      <div className={activeTab === "settings" ? "block" : "hidden"}>
         <div className="space-y-6 animate-in fade-in duration-300">
           <h2 className="text-2xl font-black text-[#10233F] capitalize">Settings</h2>
           <div className="bg-white rounded-2xl shadow-sm border border-[#DCE5F0] p-12 text-center flex flex-col items-center justify-center">
@@ -463,7 +463,7 @@ function UserDashboard() {
             </p>
           </div>
         </div>
-      )}
+      </div>
     </UserSidebarLayout>
   );
 }
