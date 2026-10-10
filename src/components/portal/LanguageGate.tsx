@@ -71,6 +71,20 @@ export function LanguageGate() {
   const handleLanguageSelect = (code: LanguageCode) => {
     setSelectedLang(code);
     setLang(code);
+    if (typeof window !== "undefined") {
+      // Set the Google Translate cookie
+      document.cookie = `googtrans=/en/${code}; path=/`;
+      document.cookie = `googtrans=/en/${code}; path=/; domain=${window.location.hostname}`;
+      
+      // Defer the heavy Google Translate DOM manipulation so React can render the selection first
+      setTimeout(() => {
+        const select = document.querySelector(".goog-te-combo") as HTMLSelectElement;
+        if (select) {
+          select.value = code;
+          select.dispatchEvent(new Event("change"));
+        }
+      }, 50);
+    }
   };
 
   const proceedToRole = () => {
@@ -123,13 +137,8 @@ export function LanguageGate() {
         <div className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl border border-white/40 overflow-hidden p-6 sm:p-10 transition-all duration-300">
 
         {/* Header Branding & Progress Bar */}
-        <div className="flex flex-col items-center text-center mb-6 sm:mb-8">
-          <LogoIcon className="h-12 sm:h-14 mb-3 object-contain" />
-
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#EBF1F8] border border-[#B8D3F2] text-[11px] font-black text-[#063B78] uppercase tracking-wider">
-            <Sparkles className="size-3 text-[#D4AF37]" />
-            {step === "language" ? "Step 1 of 2 • Language Selection / भाषा निवडा" : "Step 2 of 2 • Select Your Profile / भूमिका निवडा"}
-          </div>
+        <div className="flex flex-col items-center text-center mb-3 sm:mb-4">
+          <LogoIcon className="h-14 sm:h-16 object-contain" />
         </div>
 
         {/* STEP 1: LANGUAGE SELECTION */}
@@ -145,7 +154,7 @@ export function LanguageGate() {
             </div>
 
             {/* Language Selection Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 notranslate">
               {languages.map((item) => {
                 const active = selectedLang === item.code;
                 return (

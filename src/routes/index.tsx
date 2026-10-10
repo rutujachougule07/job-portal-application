@@ -329,6 +329,16 @@ function LandingGatewayPage() {
                   }`}
               />
             ))}
+            <div className="absolute inset-0 bg-hero-overlay"></div>
+          </div>
+
+          <div className="relative z-10 text-center px-4 max-w-4xl mx-auto flex flex-col items-center">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white whitespace-pre-line leading-[1.15] drop-shadow-xl mb-4 sm:mb-6">
+              {heroTitle}
+            </h1>
+            <p className="text-sm sm:text-base md:text-xl font-bold text-white/90 drop-shadow-md bg-black/20 px-4 py-1.5 sm:px-6 sm:py-2 rounded-full border border-white/10 backdrop-blur-sm">
+              {heroSubtitle}
+            </p>
           </div>
         </section>
 

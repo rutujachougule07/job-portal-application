@@ -43,7 +43,7 @@ export function LanguageSwitcher({
         </Button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" className="w-56 p-2 shadow-2xl border-[#DCE5F0] bg-white text-[#10233F] z-[60] rounded-xl">
+      <DropdownMenuContent align="end" className="w-56 p-2 shadow-2xl border-[#DCE5F0] bg-white text-[#10233F] z-[60] rounded-xl notranslate">
         <DropdownMenuLabel className="text-[11px] font-black uppercase tracking-wider text-[#5B6B7F] px-2 py-1">
           {t("chooseLanguage")} • भाषा निवडा
         </DropdownMenuLabel>
@@ -55,7 +55,21 @@ export function LanguageSwitcher({
             return (
               <DropdownMenuItem
                 key={item.code}
-                onClick={() => setLang(item.code)}
+                onClick={() => {
+                  setLang(item.code);
+                  if (typeof window !== "undefined") {
+                    document.cookie = `googtrans=/en/${item.code}; path=/`;
+                    document.cookie = `googtrans=/en/${item.code}; path=/; domain=${window.location.hostname}`;
+                    
+                    setTimeout(() => {
+                      const select = document.querySelector(".goog-te-combo") as HTMLSelectElement;
+                      if (select) {
+                        select.value = item.code;
+                        select.dispatchEvent(new Event("change"));
+                      }
+                    }, 50);
+                  }
+                }}
                 className={`flex items-center justify-between cursor-pointer px-3 py-2 text-xs sm:text-sm rounded-lg transition-colors ${isSelected
                     ? "bg-[#063B78] text-white font-bold"
                     : "hover:bg-[#F5F8FC] hover:text-[#063B78]"

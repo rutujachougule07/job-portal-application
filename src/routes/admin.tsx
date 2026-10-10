@@ -1,4 +1,4 @@
-import { useState, useEffect, Fragment, useMemo } from "react";
+import { useState, useEffect, Fragment, useMemo, useTransition } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   ShieldCheck,
@@ -239,7 +239,15 @@ function AdminDashboardPage() {
   const navigate = useNavigate();
   const { t, n } = useI18n();
 
-  const [activeTab, setActiveTab] = useState<"overview" | "jobs" | "applications" | "attendance" | "salary" | "packages" | "profile">("overview");
+  const [activeTabState, setActiveTabState] = useState<"overview" | "jobs" | "applications" | "attendance" | "salary" | "packages" | "profile">("overview");
+  const [isPendingTab, startTransitionTab] = useTransition();
+
+  const activeTab = activeTabState;
+  const setActiveTab = (tab: "overview" | "jobs" | "applications" | "attendance" | "salary" | "packages" | "profile" | any) => {
+    startTransitionTab(() => {
+      setActiveTabState(tab);
+    });
+  };
 
   // Data states
   const [jobs, setJobs] = useState<JobRecord[]>([]);

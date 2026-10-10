@@ -15,6 +15,26 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { I18nProvider } from "../lib/i18n";
 import { Toaster } from "../components/ui/sonner";
 
+if (typeof Node === 'function' && Node.prototype) {
+  const originalRemoveChild = Node.prototype.removeChild;
+  Node.prototype.removeChild = function (child: Node) {
+    if (child.parentNode !== this) {
+      if (console) console.warn('Cannot remove a child from a different parent', child, this);
+      return child;
+    }
+    return originalRemoveChild.apply(this, arguments as any);
+  } as any;
+
+  const originalInsertBefore = Node.prototype.insertBefore;
+  Node.prototype.insertBefore = function (newNode: Node, referenceNode: Node | null) {
+    if (referenceNode && referenceNode.parentNode !== this) {
+      if (console) console.warn('Cannot insert before a reference node from a different parent', referenceNode, this);
+      return newNode;
+    }
+    return originalInsertBefore.apply(this, arguments as any);
+  } as any;
+}
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -112,8 +132,14 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="en">
       <head>
         <HeadContent />
+        <style dangerouslySetInnerHTML={{ __html: `
+          .goog-te-banner-frame.skiptranslate, .goog-te-gadget-icon { display: none !important; }
+          body { top: 0px !important; }
+          #google_translate_element { opacity: 0; position: absolute; top: 0; left: 0; z-index: -999; pointer-events: none; }
+        `}} />
       </head>
       <body className="overscroll-y-none">
+        <div id="google_translate_element"></div>
         {children}
         <Scripts />
       </body>
@@ -123,6 +149,23 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !document.getElementById('google-translate-script')) {
+      (window as any).googleTranslateElementInit = () => {
+        new (window as any).google.translate.TranslateElement(
+          { pageLanguage: 'en', autoDisplay: false },
+          'google_translate_element'
+        );
+      };
+
+      const script = document.createElement('script');
+      script.id = 'google-translate-script';
+      script.src = '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
