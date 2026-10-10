@@ -2399,17 +2399,9 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   const setLang = (value: LanguageCode) => {
     setLangState(value);
-    window.localStorage.setItem("realjob-language", value);
-    
-    // Also set Google Translate cookie so it translates the whole DOM automatically
-    if (value === "en") {
-      document.cookie = `googtrans=/en/en; path=/`;
-      document.cookie = `googtrans=/en/en; domain=${window.location.hostname}; path=/`;
-    } else {
-      document.cookie = `googtrans=/en/${value}; path=/`;
-      document.cookie = `googtrans=/en/${value}; domain=${window.location.hostname}; path=/`;
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("realjob-language", value);
     }
-    window.location.reload();
   };
 
   const value = useMemo(

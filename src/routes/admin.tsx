@@ -198,7 +198,7 @@ function calculateWorkAndOvertime(
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
-      { title: "Employer Portal & Control Dashboard Ã¢â‚¬â€ REAL JOB" },
+      { title: "Employer Portal & Control Dashboard — REAL JOB" },
       { name: "description", content: "Employer dashboard, job control panel, candidate application manager, and hiring portal." },
     ],
   }),
@@ -355,7 +355,7 @@ function AdminDashboardPage() {
       toast.error("Please enter department / category name");
       return;
     }
-    const catName = trimmed.startsWith("Ã¢Å“Â¨") || trimmed.startsWith("Ã°Å¸Å’Â±") || trimmed.startsWith("Ã°Å¸Å¡Å“") || trimmed.startsWith("Ã¢Å¡â„¢Ã¯Â¸ÂÃ¯Â¸Â") ? trimmed : `Ã¢Å“Â¨ ${trimmed}`;
+    const catName = trimmed.startsWith("✨") || trimmed.startsWith("🌱") || trimmed.startsWith("🚜") || trimmed.startsWith("⚙️") ? trimmed : `✨ ${trimmed}`;
     const updated = Array.from(new Set([...customCategories, catName]));
     setCustomCategories(updated);
     setRemovedCategories((prev) => prev.filter((c) => c !== catName));
@@ -396,7 +396,7 @@ function AdminDashboardPage() {
       const allPossible = [
         ...getIndustryDefaultCategories(),
         ...customCategories,
-        "Ã¢Å¡â„¢Ã¯Â¸ÂÃ¯Â¸Â Other / Custom",
+        "⚙️ Other / Custom",
       ];
       const remaining = allPossible.filter((c) => c !== catToRemove && !removedCategories.includes(c));
       setWorkerForm((p) => ({ ...p, category: remaining[0] || getIndustryDefaultCategories()[0] || "General Work" }));
@@ -484,8 +484,8 @@ function AdminDashboardPage() {
       text.includes("builder") ||
       text.includes("developer") ||
       text.includes("infrastructure") ||
-      text.includes("Ã Â¤Â¬Ã Â¤Â¾Ã Â¤â€šÃ Â¤Â§Ã Â¤â€¢Ã Â¤Â¾Ã Â¤Â®") ||
-      text.includes("Ã Â¤â€¢Ã Â¤â€šÃ Â¤Â¤Ã Â¥ÂÃ Â¤Â°Ã Â¤Â¾Ã Â¤Å¸Ã Â¤Â¦Ã Â¤Â¾Ã Â¤Â°") ||
+      text.includes("कंत्राटदार") ||
+      text.includes("कंत्राटदार") ||
       text.includes("vaje")
     ) {
       return "construction";
@@ -529,7 +529,7 @@ function AdminDashboardPage() {
       text.includes("krushi") ||
       text.includes("agri") ||
       text.includes("plant") ||
-      text.includes("Ã Â¤Â°Ã Â¥â€¹Ã Â¤ÂªÃ Â¤ÂµÃ Â¤Â¾Ã Â¤Å¸Ã Â¤Â¿Ã Â¤â€¢Ã Â¤Â¾")
+      text.includes("कंत्राटदार")
     ) {
       return "agriculture";
     }
@@ -542,63 +542,63 @@ function AdminDashboardPage() {
     
     const categoriesMap: Record<string, string[]> = {
       construction: [
-        "Ã°Å¸Ââ€”Ã¯Â¸Â Construction & Site Work",
-        "Ã°Å¸Â§Â± Masonry & Brickwork",
-        "Ã¢Å¡Â¡ Electrical & Wiring",
-        "Ã°Å¸Å¡Â° Plumbing & Piping",
-        "Ã°Å¸ÂªÂµ Carpentry & Woodwork",
-        "Ã°Å¸Å½Â¨ Painting & Finishing",
-        "Ã°Å¸â€ºÂ Ã¯Â¸Â General Labour & Helper",
+        "फार्मिंग",
+        "ðŸ§± Masonry & Brickwork",
+        "⚡ Electrical & Wiring",
+        "ðŸš° Plumbing & Piping",
+        "ðŸªµ Carpentry & Woodwork",
+        "ðŸŽ¨ Painting & Finishing",
+        "🛎️ ï¸ General Labour & Helper",
       ],
       factory: [
-        "Ã¢Å¡â„¢Ã¯Â¸ÂÃ¯Â¸Â Machine Operator",
-        "Ã°Å¸â€Â§ Assembly & Fitting",
-        "Ã°Å¸â€Â¨ Welding & Fabrication",
-        "Ã°Å¸â€œÂ¦ Packing & Warehouse",
-        "Ã°Å¸â€Â Quality Inspection",
-        "Ã°Å¸â€ºÂ Ã¯Â¸Â Helper & Maintenance",
-        "Ã°Å¸Å¡Å¡ Loading & Unloading",
+        "⚙️ Machine Operator",
+        "फार्मिंग",
+        "फार्मिंग",
+        "📦 Packing & Warehouse",
+        "फार्मिंग",
+        "🛎️ ï¸ Helper & Maintenance",
+        "ðŸšš Loading & Unloading",
       ],
       hospitality: [
-        "Ã°Å¸â€˜Â¨Ã¢â‚¬ÂÃ°Å¸ÂÂ³ Cook & Kitchen Staff",
-        "Ã°Å¸ÂÂ½Ã¯Â¸Â Waiter & Food Service",
-        "Ã°Å¸Â§Â¹ Housekeeping & Cleaning",
-        "Ã°Å¸â€ºÅ½Ã¯Â¸Â Reception & Billing",
-        "Ã°Å¸â€ºÂ¡Ã¯Â¸Â Security & Support",
+        "फार्मिंग",
+        "ðŸ½ï¸ Waiter & Food Service",
+        "ðŸ§¹ Housekeeping & Cleaning",
+        "🛎️ Reception & Billing",
+        "🛎️¡ï¸ Security & Support",
       ],
       healthcare: [
-        "Ã°Å¸Â©Âº Nursing & Patient Care",
-        "Ã°Å¸â€™Å  Pharmacy & Medical Support",
-        "Ã°Å¸â€Â¬ Lab & Testing Support",
-        "Ã°Å¸Â§Â¹ Sanitation & Cleaning",
-        "Ã°Å¸â€ºÂ¡Ã¯Â¸Â Security & Maintenance",
+        "ðŸ©º Nursing & Patient Care",
+        "💊 Pharmacy & Medical Support",
+        "फार्मिंग",
+        "ðŸ§¹ Sanitation & Cleaning",
+        "🛎️¡ï¸ Security & Maintenance",
       ],
       it_software: [
-        "Ã°Å¸â€™Â» Software Developer / Engineer",
-        "Ã°Å¸Å½Â¨ UI/UX Designer",
-        "Ã°Å¸â€œÅ  Data Analyst",
-        "Ã°Å¸â€œÅ¾ BPO / Call Center Executive",
-        "Ã°Å¸â€œË† Sales & Marketing",
-        "Ã°Å¸â€˜Â¥ HR & Administration",
-        "Ã°Å¸â€ºÂ Ã¯Â¸Â System Admin / IT Support",
-        "Ã°Å¸â€™Â¼ Project Manager",
+        "💻 Software Developer / Engineer",
+        "ðŸŽ¨ UI/UX Designer",
+        "📊 Data Analyst",
+        "📞 BPO / Call Center Executive",
+        "📈 Sales & Marketing",
+        "👥 HR & Administration",
+        "🛎️ ï¸ System Admin / IT Support",
+        "💼 Project Manager",
       ],
       agriculture: [
-        "Ã°Å¸Å’Â± Plant Nursery & Care",
-        "Ã°Å¸Å¡Å“ Tractor & Machinery",
-        "Ã¢Å“â€šÃ¯Â¸Â Grafting & Propagation",
-        "Ã°Å¸â€œÂ¦ Packing & Loading",
-        "Ã°Å¸â€™Â§ Irrigation & Spraying",
-        "Ã°Å¸Å’Â¿ Soil & Fertilizer",
-        "Ã°Å¸â€ºÂ Ã¯Â¸Â General Labour",
+        "🌱 Plant Nursery & Care",
+        "🚜 Tractor & Machinery",
+        "✂️ Grafting & Propagation",
+        "📦 Packing & Loading",
+        "💧 Irrigation & Spraying",
+        "🌿 Soil & Fertilizer",
+        "🛎️ ï¸ General Labour",
       ]
     };
 
     const generalCategories = [
-      "Ã°Å¸â€™Â¼ Office Staff & Admin",
-      "Ã°Å¸Å¡Å¡ Logistics & Transport",
-      "Ã°Å¸Â§Â¹ Cleaning & Housekeeping",
-      "Ã°Å¸â€ºÂ¡Ã¯Â¸Â Security Guard",
+      "💼 Office Staff & Admin",
+      "ðŸšš Logistics & Transport",
+      "ðŸ§¹ Cleaning & Housekeeping",
+      "🛎️¡ï¸ Security Guard",
     ];
 
     let combinedResults: string[] = [];
@@ -626,14 +626,12 @@ function AdminDashboardPage() {
   const formatCategoryName = (cat?: string) => {
     if (!cat) return getIndustryDefaultCategories()[0] || "General Work";
     const cleaned = cat
-      .replace(/ÃƒÂ°Ã…Â¸[^\s]*\s*/g, "")
-      .replace(/ÃƒÂ¢[^\s]*\s*/g, "")
-      .replace(/ÃƒÂ¯Ã‚Â¸/g, "")
-      .replace(/Ã¢â‚¬ÂÃ¢â€šÂ¬Ã¢â‚¬Â/g, "")
+      .replace(/[\u1000-\uFFFF]/g, "")
+      .replace(/• /g, "")
       .trim();
     return cleaned || cat;
-  };
 
+  };
   const getWorkerReportMetrics = (worker: EmployerWorker, period: "week" | "month" | "all") => {
     let startDate = "";
     const now = new Date();
@@ -714,7 +712,7 @@ function AdminDashboardPage() {
         <table style="width: 100%; border-collapse: collapse; background: linear-gradient(135deg, #021D3D 0%, #063B78 60%, #0B52A8 100%); border-radius: 12px; margin-bottom: 20px;">
           <tr>
             <td style="padding: 20px; vertical-align: middle;">
-              <div style="font-size: 10px; font-weight: bold; text-transform: uppercase; color: #F59E0B; letter-spacing: 1.5px; margin-bottom: 4px;">Ã°Å¸Å’Â± OFFICIAL WORKFORCE SALARY SLIP</div>
+              <div style="font-size: 10px; font-weight: bold; text-transform: uppercase; color: #F59E0B; letter-spacing: 1.5px; margin-bottom: 4px;">🌱 OFFICIAL WORKFORCE SALARY SLIP</div>
               <h1 style="font-size: 20px; font-weight: 900; margin: 0; color: #FFFFFF; letter-spacing: -0.3px;">${companyTitle}</h1>
               <div style="font-size: 12px; margin-top: 6px; color: #DCE5F0;">
                 Employer: <strong style="color: #FFFFFF;">${employerName}</strong> &bull; Work & Salary Settlement
@@ -733,7 +731,7 @@ function AdminDashboardPage() {
         <table style="width: 100%; border-collapse: collapse; border: 1.5px solid #CBD5E1; border-radius: 10px; background: #F8FAFC; margin-bottom: 20px;">
           <tr>
             <td colspan="2" style="padding: 10px 16px; font-size: 11px; font-weight: 900; color: #063B78; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1.5px solid #E2E8F0; background: #EFF6FF;">
-              Ã°Å¸â€˜Â¤ EMPLOYEE CONTRACT & WORKPLACE DETAILS
+              👤 EMPLOYEE CONTRACT & WORKPLACE DETAILS
             </td>
           </tr>
           <tr>
@@ -757,7 +755,7 @@ function AdminDashboardPage() {
               <span style="color: #64748B; font-weight: 600;">Mobile Number:</span> <strong style="color: #0F172A; font-weight: 700;">${worker.mobile || "N/A"}</strong>
             </td>
             <td style="padding: 8px 16px; font-size: 12px; border-bottom: 1px solid #E2E8F0;">
-              <span style="color: #64748B; font-weight: 600;">Daily Rate:</span> <strong style="color: #059669; font-weight: 900; font-size: 13px;">Ã¢â€šÂ¹${worker.dailyRate} / day</strong>
+              <span style="color: #64748B; font-weight: 600;">Daily Rate:</span> <strong style="color: #059669; font-weight: 900; font-size: 13px;">₹${worker.dailyRate} / day</strong>
             </td>
           </tr>
           <tr>
@@ -823,8 +821,8 @@ function AdminDashboardPage() {
                             ${r.status}
                           </span>
                         </td>
-                        <td style="padding: 8px 12px; color: #64748B;">Ã¢â€šÂ¹${worker.dailyRate} / day</td>
-                        <td style="padding: 8px 12px; text-align: right; color:#059669; font-weight:900;">Ã¢â€šÂ¹${pay}</td>
+                        <td style="padding: 8px 12px; color: #64748B;">₹${worker.dailyRate} / day</td>
+                        <td style="padding: 8px 12px; text-align: right; color:#059669; font-weight:900;">₹${pay}</td>
                       </tr>
                     `;
         }).join("")
@@ -841,7 +839,7 @@ function AdminDashboardPage() {
             </td>
             <td style="padding: 16px 20px; vertical-align: middle; text-align: right; width: 220px;">
               <div style="font-size: 10px; font-weight: 800; color: #047857; text-transform: uppercase;">NET PAYABLE AMOUNT</div>
-              <div style="font-size: 28px; font-weight: 900; color: #047857; line-height: 1; margin-top: 2px;">Ã¢â€šÂ¹${metrics.netPay.toLocaleString("en-IN")}</div>
+              <div style="font-size: 28px; font-weight: 900; color: #047857; line-height: 1; margin-top: 2px;">₹${metrics.netPay.toLocaleString("en-IN")}</div>
             </td>
           </tr>
         </table>
@@ -857,7 +855,7 @@ function AdminDashboardPage() {
             <td style="vertical-align: bottom; text-align: right; padding-top: 14px;">
               <div style="display: inline-block; text-align: center;">
                 <div style="border: 1.5px dashed #94A3B8; border-radius: 4px; padding: 4px 12px; margin-bottom: 6px; font-size: 9px; color: #063B78; font-weight: bold; background: #F8FAFC;">
-                  Ã¢Å“â€ OFFICIAL STAMP
+                   OFFICIAL STAMP
                 </div>
                 <div style="border-top: 1.5px solid #063B78; width: 160px; padding-top: 4px; font-weight: bold; color: #063B78;">EMPLOYER SIGNATURE</div>
               </div>
@@ -1006,9 +1004,9 @@ function AdminDashboardPage() {
     try {
       const text = `${currentUser?.fullName || ""} ${empIdentifier || ""}`.toLowerCase();
       const isField = [
-        "farming", "farm", "agro", "agriculture", "nursery", "Ã Â¤Â¶Ã Â¥â€¡Ã Â¤Â¤Ã Â¥â‚¬", "Ã Â¤Â¶Ã Â¥â€¡Ã Â¤Â¤", "Ã Â¤Â«Ã Â¤Â¾Ã Â¤Â°Ã Â¥ÂÃ Â¤Â®Ã Â¤Â¿Ã Â¤â€šÃ Â¤â€”", "Ã Â¤â€¢Ã Â¥Æ’Ã Â¤Â·Ã Â¥â‚¬", "Ã Â¤Â¶Ã Â¥â€¡Ã Â¤Â¤Ã Â¤â€¢Ã Â¥â€šÃ Â¤Âª",
-        "construction", "site", "baukam", "Ã Â¤Â¬Ã Â¤Â¾Ã Â¤â€šÃ Â¤Â§Ã Â¤â€¢Ã Â¤Â¾Ã Â¤Â®", "Ã Â¤Â¸Ã Â¤Â¾Ã Â¤â€¡Ã Â¤Å¸", "Ã Â¤Â®Ã Â¤Å“Ã Â¥â€šÃ Â¤Â°", "Ã Â¤Â²Ã Â¥â€¡Ã Â¤Â¬Ã Â¤Â°", "labour", "labor",
-        "field", "driver", "moving", "delivery", "security", "guard", "Ã Â¤Â¹Ã Â¤Â®Ã Â¤Â¾Ã Â¤Â²"
+        "farming", "farm", "agro", "agriculture", "nursery", "फार्मिंग", "फार्मिंग", "फार्मिंग", "कृषी", "फार्मिंग",
+        "construction", "site", "baukam", "फार्मिंग", "फार्मिंग", "फार्मिंग", "फार्मिंग", "labour", "labor",
+        "field", "driver", "moving", "delivery", "security", "guard", "हमाल"
       ].some(kw => text.includes(kw));
 
       return isField ? "field" : "fixed";
@@ -1044,7 +1042,7 @@ function AdminDashboardPage() {
     };
     dataStore.setCurrentUser(updatedUser);
     dataStore.registerAccount(updatedUser);
-    toast.success("Ã°Å¸Å½â€° Profile updated successfully!");
+    toast.success("🎉 Profile updated successfully!");
   };
 
   const refreshCredits = () => {
@@ -1122,7 +1120,7 @@ function AdminDashboardPage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast.success(`Ã°Å¸â€œÅ  Attendance CSV Report Downloaded for ${selectedAttendanceDate}!`);
+    toast.success(`📊 Attendance CSV Report Downloaded for ${selectedAttendanceDate}!`);
   };
 
   const handleOpenAddWorker = () => {
@@ -1130,7 +1128,7 @@ function AdminDashboardPage() {
     const allowedLimit = dataStore.getUserWorkerCredits(userId);
     if (allowedLimit === 0) {
       toast.error(
-        "Ã¢Å¡Â Ã¯Â¸Â Active package required to add employees! Please purchase a package to continue.",
+        "⚠️ ï¸ Active package required to add employees! Please purchase a package to continue.",
         { duration: 6000 }
       );
       setShowPackageModal(true);
@@ -1138,7 +1136,7 @@ function AdminDashboardPage() {
     }
     if (workers.length >= allowedLimit) {
       toast.error(
-        `Ã¢Å¡Â Ã¯Â¸Â Employee limit reached for your active package! (Current Limit: ${allowedLimit} employees). Please upgrade package to add more employees!`,
+        `⚠️ ï¸ Employee limit reached for your active package! (Current Limit: ${allowedLimit} employees). Please upgrade package to add more employees!`,
         { duration: 6000 }
       );
       setShowPackageModal(true);
@@ -1342,7 +1340,7 @@ function AdminDashboardPage() {
       setShowPackageModal(false);
       refreshCredits();
 
-      toast.success(`Ã°Å¸Å½â€° ${selectedPlan.name} activated! You now have ${selectedPlan.jobCount} Job Credits.`);
+      toast.success(`🎉 ${selectedPlan.name} activated! You now have ${selectedPlan.jobCount} Job Credits.`);
 
       // Open Post New Job form immediately
       setEditingJobId(null);
@@ -1394,7 +1392,7 @@ function AdminDashboardPage() {
   const handlePublishJob = (e: React.FormEvent) => {
     e.preventDefault();
     const salaryText = jobForm.salaryMin && jobForm.salaryMax
-      ? `Ã¢â€šÂ¹${Number(jobForm.salaryMin).toLocaleString("en-IN")} - Ã¢â€šÂ¹${Number(jobForm.salaryMax).toLocaleString("en-IN")} / ${jobForm.salaryType === "Monthly" ? "Month" : "Year"}`
+      ? `₹${Number(jobForm.salaryMin).toLocaleString("en-IN")} - ₹${Number(jobForm.salaryMax).toLocaleString("en-IN")} / ${jobForm.salaryType === "Monthly" ? "Month" : "Year"}`
       : "Salary on Interview";
 
     if (editingJobId) {
@@ -1416,7 +1414,7 @@ function AdminDashboardPage() {
         vacancies: Number(jobForm.vacancies) || 1,
         status: jobForm.status as any,
       });
-      toast.success("Ã¢Å“â€¦ Job posting updated successfully!");
+      toast.success("✅ Job posting updated successfully!");
     } else {
       const empId = currentUser?.email || currentUser?.fullName || currentUser?.id || "admin-001";
       const compName = jobForm.company || currentUser?.fullName || "Company";
@@ -1449,7 +1447,7 @@ function AdminDashboardPage() {
         refreshCredits();
       }
 
-      toast.success("Ã°Å¸Å½â€° New job posted successfully!");
+      toast.success("🎉 New job posted successfully!");
     }
     setShowJobForm(false);
     setEditingJobId(null);
@@ -1480,7 +1478,7 @@ function AdminDashboardPage() {
 
   const activeSelectedPlan = activeJobPackages.find((p) => p.id === selectedPlanId) || activeJobPackages[0]!;
 
-  // Ã¢â€â‚¬Ã¢â€â‚¬ FULL PAGE: Add / Edit Job Form Ã¢â€â‚¬Ã¢â€â‚¬
+  // ── FULL PAGE: Add / Edit Job Form ──
   if (showJobForm) {
     return (
       <div className="fixed inset-0 z-50 bg-[#F0F4FA] overflow-y-auto flex flex-col font-sans">
@@ -1491,10 +1489,10 @@ function AdminDashboardPage() {
               onClick={() => setShowJobForm(false)}
               className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-bold transition-all flex items-center gap-1"
             >
-              Ã¢â€ Â Back to Dashboard
+                Back to Dashboard
             </button>
             <h1 className="text-base font-black text-white">
-              {editingJobId ? "Ã¢Å“ÂÃ¯Â¸Â Edit Job Posting" : "Ã°Å¸â€™Â¼ Post New Job"}
+              {editingJobId ? "फार्मिंग" : "💼 Post New Job"}
             </h1>
           </div>
           <span className="text-xs font-bold text-[#FFC400] bg-white/10 px-3 py-1 rounded-full">
@@ -1563,7 +1561,7 @@ function AdminDashboardPage() {
               </div>
               <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Min Salary (Ã¢â€šÂ¹)</label>
+                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Min Salary (₹)</label>
                   <Input
                     type="number"
                     value={jobForm.salaryMin}
@@ -1573,7 +1571,7 @@ function AdminDashboardPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Max Salary (Ã¢â€šÂ¹)</label>
+                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Max Salary (₹)</label>
                   <Input
                     type="number"
                     value={jobForm.salaryMax}
@@ -1681,7 +1679,7 @@ function AdminDashboardPage() {
                   Cancel
                 </button>
                 <button type="submit" className="px-7 py-2.5 rounded-xl bg-gradient-to-r from-[#063B78] to-[#0A4F9E] text-white font-black text-xs hover:opacity-90 transition-all shadow-md shadow-[#063B78]/20 flex items-center gap-1.5">
-                  {editingJobId ? "Ã¢Å“Â¦ Update Job Posting" : "Ã¢Å“Â¦ Publish Job"}
+                  {editingJobId ? "✨ Update Job Posting" : "✨ Publish Job"}
                 </button>
               </div>
             </div>
@@ -1693,7 +1691,7 @@ function AdminDashboardPage() {
 
   return (
     <div className="h-screen bg-[#F0F4FA] flex flex-col md:flex-row font-sans w-full overflow-hidden">
-      {/* Ã¢â€â‚¬Ã¢â€â‚¬ MOBILE TOP NAVBAR HEADER (Visible on < md) Ã¢â€â‚¬Ã¢â€â‚¬ */}
+      {/* ── MOBILE TOP NAVBAR HEADER (Visible on < md) ── */}
       <header className="md:hidden bg-[#021D3D] text-white px-4 py-3 sticky top-0 z-40 flex items-center justify-between shadow-md border-b border-white/10 shrink-0 w-full">
         <div className="flex items-center gap-3 min-w-0 pr-2">
           <div className="size-9 bg-gradient-to-br from-[#FFC400] to-[#FFA500] rounded-xl flex items-center justify-center shadow-md border border-white/10 shrink-0">
@@ -1718,7 +1716,7 @@ function AdminDashboardPage() {
         </button>
       </header>
 
-      {/* Ã¢â€â‚¬Ã¢â€â‚¬ MOBILE DRAWER SLIDE-OVER MENU Ã¢â€â‚¬Ã¢â€â‚¬ */}
+      {/* ── MOBILE DRAWER SLIDE-OVER MENU ── */}
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-50 md:hidden flex">
           <div
@@ -1802,7 +1800,7 @@ function AdminDashboardPage() {
         </div>
       )}
 
-      {/* Ã¢â€â‚¬Ã¢â€â‚¬ LEFT DARK NAVY SIDEBAR (Visible on md+) Ã¢â€â‚¬Ã¢â€â‚¬ */}
+      {/* ── LEFT DARK NAVY SIDEBAR (Visible on md+) ── */}
       <aside className="w-64 bg-[#021D3D] text-white flex flex-col justify-between hidden md:flex h-full shrink-0 border-r border-white/10 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
         {/* Logo / Company Name Header */}
         <div className="p-5 border-b border-white/10 shrink-0">
@@ -1873,7 +1871,7 @@ function AdminDashboardPage() {
         </div>
       </aside>
 
-      {/* Ã¢â€â‚¬Ã¢â€â‚¬ RIGHT MAIN CONTENT AREA Ã¢â€â‚¬Ã¢â€â‚¬ */}
+      {/* ── RIGHT MAIN CONTENT AREA ── */}
       <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
         {/* Top Navbar Header */}
         <header className="h-16 sm:h-20 bg-white border-b border-[#E0E8F5] flex items-center justify-between px-3 sm:px-8 shrink-0 z-30 shadow-2xs min-w-0">
@@ -1950,7 +1948,7 @@ function AdminDashboardPage() {
                         </span>
                         {latestPkg && (
                           <span className="text-[10px] sm:text-xs font-bold text-amber-200 bg-white/10 px-2.5 py-0.5 rounded-full border border-white/15">
-                            Purchased for Ã¢â€šÂ¹{n(latestPkg.price)} on {latestPkg.purchaseDate}
+                            Purchased for ₹{n(latestPkg.price)} on {latestPkg.purchaseDate}
                           </span>
                         )}
                       </div>
@@ -1959,11 +1957,11 @@ function AdminDashboardPage() {
                       </h3>
                       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 text-xs text-slate-200 font-semibold pt-1">
                         <span className="flex items-center justify-between sm:justify-start gap-1.5 bg-white/10 px-3 py-2 rounded-xl border border-white/15">
-                          <span>Ã°Å¸â€™Â¼ {t("jobPostCredits")}:</span>
+                          <span>💼 {t("jobPostCredits")}:</span>
                           <strong className="text-amber-300 text-xs sm:text-sm">{n(jobCredits)} {t("available")}</strong>
                         </span>
                         <span className="flex items-center justify-between sm:justify-start gap-1.5 bg-white/10 px-3 py-2 rounded-xl border border-white/15">
-                          <span>Ã°Å¸â€˜Â¥ {t("employeeAdditionLimit")}:</span>
+                          <span>👥 {t("employeeAdditionLimit")}:</span>
                           <strong className="text-emerald-300 text-xs sm:text-sm">{workerLimit === 0 ? "0 (Package Required)" : (workerLimit >= 9999 ? "Unlimited" : `${n(workers.length)} / ${n(workerLimit)} ${t("added")}`)}</strong>
                         </span>
                       </div>
@@ -1974,7 +1972,7 @@ function AdminDashboardPage() {
                         onClick={() => setShowPackageModal(true)}
                         className="w-full md:w-auto bg-gradient-to-r from-[#FFC400] to-[#FFA500] hover:from-[#FFA500] hover:to-[#FFC400] text-[#021D3D] font-black text-xs px-5 py-3 rounded-xl sm:rounded-2xl shadow-lg border-b-[3px] border-amber-600 transition-all active:scale-95 justify-center"
                       >
-                        {userPkgs.length > 0 ? "Ã¢Å¡Â¡ Upgrade Package" : "Ã°Å¸â€ºâ€™ Buy Package Now"}
+                        {userPkgs.length > 0 ? "⚡ Upgrade Package" : "🛒 Buy Package Now"}
                       </Button>
                       {userPkgs.length > 0 && (
                         <Button
@@ -2076,7 +2074,7 @@ function AdminDashboardPage() {
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h3 className="text-lg font-black text-[#10233F]">
-                      Ã°Å¸â€œÂ© {t("recentCandidatesTitle")}
+                      📥 {t("recentCandidatesTitle")}
                     </h3>
                     <p className="text-xs font-semibold text-[#5B6B7F] mt-0.5">
                       {t("recentCandidatesDesc")}
@@ -2086,7 +2084,7 @@ function AdminDashboardPage() {
                     onClick={() => setActiveTab("applications")}
                     className="bg-[#063B78] text-white font-black text-xs hover:bg-[#0A4F9E]"
                   >
-                    {t("viewAllBtn")} Ã¢â€ â€™
+                    {t("viewAllBtn")} →
                   </Button>
                 </div>
 
@@ -2110,7 +2108,7 @@ function AdminDashboardPage() {
                           <div>
                             <h4 className="text-xs font-black text-[#10233F]">{app.candidateName}</h4>
                             <p className="text-[11px] font-semibold text-[#5B6B7F]">
-                              Ã°Å¸â€™Â¼ Applied for: <span className="font-bold text-[#063B78]">{app.jobTitle}</span> | Ã°Å¸â€œÅ¾ {app.candidateMobile || "N/A"}
+                              💼 Applied for: <span className="font-bold text-[#063B78]">{app.jobTitle}</span> | 📞 {app.candidateMobile || "N/A"}
                             </p>
                           </div>
                         </div>
@@ -2125,7 +2123,7 @@ function AdminDashboardPage() {
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h3 className="text-lg font-black text-[#10233F]">
-                      Ã°Å¸â€˜Â¥ Registered Employees & Attendance Register
+                      👥 Registered Employees & Attendance Register
                     </h3>
                     <p className="text-xs font-semibold text-[#5B6B7F] mt-0.5">
                       Manage employee wage rates, daily attendance marking, and monthly payroll reports.
@@ -2135,7 +2133,7 @@ function AdminDashboardPage() {
                     onClick={() => setActiveTab("attendance")}
                     className="bg-[#063B78] text-white font-black text-xs hover:bg-[#0A4F9E]"
                   >
-                    View All Ã¢â€ â€™
+                    View All →
                   </Button>
                 </div>
 
@@ -2155,7 +2153,7 @@ function AdminDashboardPage() {
                         <div>
                           <div className="flex items-center justify-between mb-1.5">
                             <span className="text-xs font-black text-[#063B78]">{worker.name}</span>
-                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">Ã¢â€šÂ¹{worker.dailyRate}/day</span>
+                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">₹{worker.dailyRate}/day</span>
                           </div>
                           <p className="text-xs font-semibold text-[#5B6B7F]">Department: <span className="font-bold text-[#10233F]">{formatCategoryName(worker.category || worker.trade)}</span></p>
                           <p className="text-[11px] font-semibold text-[#5B6B7F]">Mobile: {worker.mobile || "N/A"}</p>
@@ -2224,7 +2222,7 @@ function AdminDashboardPage() {
                         </td>
                         <td className="p-3.5">
                           <strong className="block font-bold text-[#063B78]">{j.company}</strong>
-                          <span className="text-[10px] text-indigo-700 font-bold block mt-0.5">Ã°Å¸â€˜Â¤ Posted by: {j.employerId || j.company}</span>
+                          <span className="text-[10px] text-indigo-700 font-bold block mt-0.5">👤 Posted by: {j.employerId || j.company}</span>
                         </td>
                         <td className="p-3.5">
                           <div>{j.location}</div>
@@ -2233,11 +2231,11 @@ function AdminDashboardPage() {
                         <td className="p-3.5 font-black text-[#063B78]">{j.vacancies || 5} Openings</td>
                         <td className="p-3.5">
                           {j.approvalStatus === "rejected" ? (
-                            <Badge className="bg-red-600 text-white font-bold">Ã¢ÂÅ’ Rejected</Badge>
+                            <Badge className="bg-red-600 text-white font-bold"> Rejected</Badge>
                           ) : j.approvalStatus === "approved" || !j.approvalStatus ? (
-                            <Badge className="bg-emerald-600 text-white font-bold">Ã¢Å“â€¦ Approved</Badge>
+                            <Badge className="bg-emerald-600 text-white font-bold">✅ Approved</Badge>
                           ) : (
-                            <Badge className="bg-amber-500 text-white font-bold">Ã¢ÂÂ³ Pending Approval</Badge>
+                            <Badge className="bg-amber-500 text-white font-bold">⏳ Pending Approval</Badge>
                           )}
                         </td>
                         <td className="p-3.5">
@@ -2303,11 +2301,11 @@ function AdminDashboardPage() {
                 </table>
               </div>
 
-              {/* Ã¢â€â‚¬Ã¢â€â‚¬ Pagination Controls Ã¢â€â‚¬Ã¢â€â‚¬ */}
+              {/* ── Pagination Controls ── */}
               {totalJobPages > 1 && (
                 <div className="flex items-center justify-between mt-4 pt-4 border-t border-[#DCE5F0]">
                   <p className="text-xs font-bold text-[#5B6B7F]">
-                    Showing {(jobsPage - 1) * JOBS_PER_PAGE + 1}Ã¢â‚¬â€œ{Math.min(jobsPage * JOBS_PER_PAGE, filteredJobs.length)} of {filteredJobs.length} jobs
+                    Showing {(jobsPage - 1) * JOBS_PER_PAGE + 1}—œ{Math.min(jobsPage * JOBS_PER_PAGE, filteredJobs.length)} of {filteredJobs.length} jobs
                   </p>
                   <div className="flex items-center gap-1.5">
                     <button
@@ -2315,7 +2313,7 @@ function AdminDashboardPage() {
                       onClick={() => setJobsPage((p) => p - 1)}
                       className="px-3 py-1.5 rounded-lg text-xs font-black border border-[#DCE5F0] bg-white text-[#063B78] hover:bg-[#EBF3FF] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                     >
-                      Ã¢â€ Â Prev
+                        Prev
                     </button>
                     {Array.from({ length: totalJobPages }, (_, i) => i + 1).map((pg) => (
                       <button
@@ -2334,7 +2332,7 @@ function AdminDashboardPage() {
                       onClick={() => setJobsPage((p) => p + 1)}
                       className="px-3 py-1.5 rounded-lg text-xs font-black border border-[#DCE5F0] bg-white text-[#063B78] hover:bg-[#EBF3FF] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                     >
-                      Next Ã¢â€ â€™
+                      Next →
                     </button>
                   </div>
                 </div>
@@ -2363,7 +2361,7 @@ function AdminDashboardPage() {
                       onClick={() => setFilterJobId(null)}
                       className="text-xs font-bold border-[#063B78] text-[#063B78]"
                     >
-                      Ã¢Å“â€¢ Show All Applications
+                      ✕ Show All Applications
                     </Button>
                   )}
                   <div className="w-full sm:w-64 relative">
@@ -2408,7 +2406,7 @@ function AdminDashboardPage() {
                             </td>
                             <td className="p-3.5">
                               <div className="font-bold text-[#10233F]">{a.jobTitle}</div>
-                              <div className="text-[11px] text-[#125BB5]">{a.companyName || "Company"} Ã¢â‚¬Â¢ {a.location}</div>
+                              <div className="text-[11px] text-[#125BB5]">{a.companyName || "Company"} • {a.location}</div>
                             </td>
                             <td className="p-3.5">
                               <div className="flex items-center gap-2">
@@ -2416,7 +2414,7 @@ function AdminDashboardPage() {
                                   href={`tel:${formatCallNumber(a.candidateMobile)}`}
                                   className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-bold text-[10px] hover:bg-emerald-700 transition-all flex items-center gap-1"
                                 >
-                                  Ã°Å¸â€œÅ¾ Call Candidate
+                                  📞 Call Candidate
                                 </a>
                                 <a
                                   href={`https://wa.me/${formatWaNumber(a.candidateMobile)}?text=${encodeURIComponent(`Hello ${a.candidateName}, regarding your application for ${a.jobTitle}.`)}`}
@@ -2424,7 +2422,7 @@ function AdminDashboardPage() {
                                   rel="noreferrer"
                                   className="px-2.5 py-1 rounded-lg bg-green-600 text-white font-bold text-[10px] hover:bg-green-700 transition-all flex items-center gap-1"
                                 >
-                                  Ã°Å¸â€™Â¬ WhatsApp
+                                  💬 WhatsApp
                                 </a>
                               </div>
                             </td>
@@ -2435,12 +2433,12 @@ function AdminDashboardPage() {
                                 onChange={(e) => handleUpdateAppStatus(a.id, e.target.value as any)}
                                 className="h-8 px-2 rounded-lg border border-[#DCE5F0] text-xs font-black focus:outline-none focus:border-[#063B78]"
                               >
-                                <option value="Applied">Ã°Å¸â€œÂ Applied</option>
-                                <option value="Viewed">Ã°Å¸â€˜ÂÃ¯Â¸Â Viewed</option>
-                                <option value="Shortlisted">Ã¢Â­Â Shortlisted</option>
-                                <option value="Interview">Ã°Å¸â€œâ€¦ Interview Scheduled</option>
-                                <option value="Selected">Ã¢Å“â€¦ Selected / Hired</option>
-                                <option value="Rejected">Ã¢ÂÅ’ Rejected</option>
+                                <option value="Applied"> Applied</option>
+                                <option value="Viewed"> Viewed</option>
+                                <option value="Shortlisted">⭐ Shortlisted</option>
+                                <option value="Interview">📅 Interview Scheduled</option>
+                                <option value="Selected">✅ Selected / Hired</option>
+                                <option value="Rejected"> Rejected</option>
                               </select>
                             </td>
                             <td className="p-3.5 text-right">
@@ -2482,7 +2480,7 @@ function AdminDashboardPage() {
                                     {/* Employer Reply / Message to Candidate Box */}
                                     <div className="mt-5 pt-4 border-t border-[#DCE5F0]">
                                       <label className="block text-xs font-black text-[#063B78] mb-2">
-                                        Ã°Å¸â€™Â¬ Candidate Reply / Employer Response (Ã Â¤Â¯Ã Â¤Â¾ Ã Â¤â€°Ã Â¤Â®Ã Â¥â€¡Ã Â¤Â¦Ã Â¤ÂµÃ Â¤Â¾Ã Â¤Â°Ã Â¤Â¾Ã Â¤Â²Ã Â¤Â¾ Ã Â¤Â¸Ã Â¤â€šÃ Â¤Â¦Ã Â¥â€¡Ã Â¤Â¶ / Ã Â¤Â°Ã Â¤Â¿Ã Â¤ÂªÃ Â¥ÂÃ Â¤Â²Ã Â¤Â¾Ã Â¤Â¯ Ã Â¤ÂªÃ Â¤Â¾Ã Â¤Â Ã Â¤ÂµÃ Â¤Â¾):
+                                        💬 Candidate Reply / Employer Response (या उमेदवाराला संदेश / रिप्लाय पाठवा):
                                       </label>
                                       <div className="flex flex-col sm:flex-row gap-2">
                                         <input
@@ -2501,7 +2499,7 @@ function AdminDashboardPage() {
                                       </div>
                                       {a.replyMessage && (
                                         <div className="mt-2.5 text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-3.5 py-2 rounded-xl flex items-center justify-between">
-                                          <span>Ã¢Å“â€œ Sent Reply: "{a.replyMessage}"</span>
+                                          <span>✓ Sent Reply: "{a.replyMessage}"</span>
                                           {a.replyDate && <span className="text-[10px] text-emerald-600 font-semibold">{a.replyDate}</span>}
                                         </div>
                                       )}
@@ -2552,7 +2550,7 @@ function AdminDashboardPage() {
                       title="Auto-detected from company name: Attendance is marked manually by employer."
                     >
                       <span className="size-2 rounded-full bg-amber-500 animate-pulse shrink-0"></span>
-                      <span className="leading-snug flex-1 min-w-0 break-words">Ã°Å¸Å¡Å“ Field / Moving Worksite (Auto-Detected: Employer Attendance)</span>
+                      <span className="leading-snug flex-1 min-w-0 break-words">🚜 Field / Moving Worksite (Auto-Detected: Employer Attendance)</span>
                     </div>
                   ) : (
                     <div
@@ -2560,7 +2558,7 @@ function AdminDashboardPage() {
                       title="Auto-detected from company name: Employees punch in/out via mobile app."
                     >
                       <span className="size-2 rounded-full bg-blue-600 animate-pulse shrink-0"></span>
-                      <span className="leading-snug flex-1 min-w-0 break-words">Ã°Å¸ÂÂ¢ Fixed Worksite (Auto-Detected: App Punch In/Out)</span>
+                      <span className="leading-snug flex-1 min-w-0 break-words">ðŸ¢ Fixed Worksite (Auto-Detected: App Punch In/Out)</span>
                     </div>
                   )}
 
@@ -2583,7 +2581,7 @@ function AdminDashboardPage() {
                       >
                         <MapPin className="size-4 text-emerald-600 shrink-0 group-hover:scale-110 transition-transform" />
                         <span className="truncate underline underline-offset-2">
-                          Ã°Å¸â€œÂ {savedLocationLink || (currentUser as any)?.worksiteLocationLink || `GPS: ${savedLocationCoords?.lat.toFixed(4)}, ${savedLocationCoords?.lng.toFixed(4)}`}
+                           {savedLocationLink || (currentUser as any)?.worksiteLocationLink || `GPS: ${savedLocationCoords?.lat.toFixed(4)}, ${savedLocationCoords?.lng.toFixed(4)}`}
                         </span>
                         <ExternalLink className="size-3.5 text-emerald-600 shrink-0" />
                       </a>
@@ -2611,7 +2609,7 @@ function AdminDashboardPage() {
                       className="h-10 border-[#DCE5F0] text-[#5B6B7F] hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 font-extrabold text-xs px-4 rounded-xl shadow-2xs flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer w-full sm:w-auto"
                     >
                       <MapPin className="size-4 text-emerald-600" />
-                      <span>Ã°Å¸â€œÂ Set Worksite Location</span>
+                      <span> Set Worksite Location</span>
                     </Button>
                   ))}
 
@@ -2639,9 +2637,9 @@ function AdminDashboardPage() {
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 bg-white p-2 sm:p-3 rounded-2xl border border-[#DCE5F0] shadow-sm min-w-0">
                       <div className="grid grid-cols-3 gap-1.5 w-full sm:w-auto sm:flex sm:items-center min-w-0">
                         {[
-                          { id: "daily", fullLabel: "Ã°Å¸â€œâ€¹ Daily Attendance", shortLabel: "Ã°Å¸â€œâ€¹ Daily", icon: CalendarCheck },
-                          { id: "reports", fullLabel: "Ã°Å¸â€œÅ  Reports", shortLabel: "Ã°Å¸â€œÅ  Reports", icon: PieChart },
-                          { id: "directory", fullLabel: `Ã°Å¸â€˜Â¥ Employees (${workers.length})`, shortLabel: `Ã°Å¸â€˜Â¥ Staff (${workers.length})`, icon: Users },
+                          { id: "daily", fullLabel: "📋 Daily Attendance", shortLabel: "📋 Daily", icon: CalendarCheck },
+                          { id: "reports", fullLabel: "📊 Reports", shortLabel: "📊 Reports", icon: PieChart },
+                          { id: "directory", fullLabel: `👥 Employees (${workers.length})`, shortLabel: `👥 Staff (${workers.length})`, icon: Users },
                         ].map((tab) => (
                           <button
                             key={tab.id}
@@ -2668,7 +2666,7 @@ function AdminDashboardPage() {
                             onChange={(e) => setSelectedCategoryFilter(e.target.value)}
                             className="bg-transparent font-bold text-xs text-[#10233F] focus:outline-none cursor-pointer outline-none w-full sm:max-w-[200px] truncate min-w-0"
                           >
-                            <option value="ALL">Ã°Å¸ÂÂ·Ã¯Â¸Â All Categories ({workers.length})</option>
+                            <option value="ALL">ðŸ·ï¸ All Categories ({workers.length})</option>
                             {allCategories.map((cat) => {
                               const count = categoryCounts.get(cat) || 0;
                               return (
@@ -2710,7 +2708,7 @@ function AdminDashboardPage() {
 
                           const filteredByCat = workers.filter((w) => {
                             if (selectedCategoryFilter === "ALL") return true;
-                            const cat = w.category || w.trade || "Plant Nursery / Ã Â¤Â°Ã Â¥â€¹Ã Â¤ÂªÃ Â¤ÂµÃ Â¤Â¾Ã Â¤Å¸Ã Â¤Â¿Ã Â¤â€¢Ã Â¤Â¾";
+                            const cat = w.category || w.trade || "Plant Nursery / Ã Â¤Â°Ã Â¥ Â¤ÂªÃ Â¤ÂµÃ Â¤Â¾Ã Â¤Å¸Ã Â¤Â¿Ã Â¤";
                             return cat === selectedCategoryFilter;
                           });
 
@@ -2787,7 +2785,7 @@ function AdminDashboardPage() {
                               <div className="p-3.5 sm:p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between gap-2">
                                 <div className="min-w-0 flex-1">
                                   <p className="text-[11px] sm:text-xs font-bold text-[#063B78] truncate" title="Today's Payable Wages">Payable Wages</p>
-                                  <h4 className="text-lg sm:text-xl font-black text-[#063B78] mt-0.5">Ã¢â€šÂ¹{todayWageSum.toLocaleString("en-IN")}</h4>
+                                  <h4 className="text-lg sm:text-xl font-black text-[#063B78] mt-0.5">₹{todayWageSum.toLocaleString("en-IN")}</h4>
                                 </div>
                                 <div className="p-2.5 bg-indigo-50 text-[#063B78] rounded-xl shrink-0">
                                   <DollarSign className="size-5" />
@@ -2857,7 +2855,7 @@ function AdminDashboardPage() {
                           <div className="flex items-center justify-between mb-5">
                             <div>
                               <h3 className="text-lg font-black text-[#10233F] flex items-center gap-2">
-                                <span>Ã°Å¸â€œâ€¦ Daily Attendance Sheet</span>
+                                <span>📅 Daily Attendance Sheet</span>
                                 <Badge className="bg-[#063B78] text-white font-bold text-xs">
                                   {selectedAttendanceDate}
                                 </Badge>
@@ -2974,7 +2972,7 @@ function AdminDashboardPage() {
                                             <div>
                                               <div className="text-sm font-black text-[#10233F]">{worker.name}</div>
                                               <div className="text-[10px] text-[#5B6B7F]">
-                                                Ã°Å¸â€œÅ¾ {worker.mobile || "N/A"}
+                                                📞 {worker.mobile || "N/A"}
                                               </div>
                                             </div>
                                           </div>
@@ -2991,7 +2989,7 @@ function AdminDashboardPage() {
                                         </td>
 
                                         <td className="p-4 font-black text-[#10233F]">
-                                          Ã¢â€šÂ¹{worker.dailyRate} <span className="text-[10px] font-semibold text-[#5B6B7F]">/ day</span>
+                                          ₹{worker.dailyRate} <span className="text-[10px] font-semibold text-[#5B6B7F]">/ day</span>
                                         </td>
 
                                         {attendanceMode === "fixed" && (
@@ -3027,7 +3025,7 @@ function AdminDashboardPage() {
                                                   <div className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-300 text-emerald-900 px-3 py-1 rounded-xl shadow-xs font-black text-xs">
                                                     <Clock className="size-3.5 text-emerald-600" />
                                                     <span>
-                                                      {workInfo.isCurrentlyWorking ? "Ã¢ÂÂ³ Live Work: " : "Ã¢ÂÂ±Ã¯Â¸Â Worked: "}
+                                                      {workInfo.isCurrentlyWorking ? "⏳ Live Work: " : "⏱️ Worked: "}
                                                       <strong className="text-emerald-950 font-black">{workInfo.workedText}</strong>
                                                     </span>
                                                   </div>
@@ -3037,7 +3035,7 @@ function AdminDashboardPage() {
                                                     <div className="inline-flex items-center gap-1.5 bg-amber-100 border border-amber-400 text-amber-950 px-3 py-1 rounded-xl shadow-xs font-black text-xs animate-pulse">
                                                       <Zap className="size-3.5 text-amber-600 fill-amber-500" />
                                                       <span>
-                                                        Ã°Å¸â€Â¥ Overtime: <strong className="text-amber-950 font-black">{workInfo.overtimeText}</strong>
+                                                         Overtime: <strong className="text-amber-950 font-black">{workInfo.overtimeText}</strong>
                                                       </span>
                                                     </div>
                                                   ) : (
@@ -3062,12 +3060,12 @@ function AdminDashboardPage() {
                                                 <div className="flex items-center gap-2">
                                                   <div className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-300 text-emerald-900 px-2.5 py-1 rounded-xl font-black text-xs">
                                                     <Clock className="size-3.5 text-emerald-600" />
-                                                    <span>Ã¢ÂÂ±Ã¯Â¸Â Worked: {workInfo.workedText}</span>
+                                                    <span>⏱️ Worked: {workInfo.workedText}</span>
                                                   </div>
                                                   {workInfo.overtimeText && (
                                                     <div className="inline-flex items-center gap-1 bg-amber-100 border border-amber-400 text-amber-900 px-2.5 py-1 rounded-xl font-black text-xs">
                                                       <Zap className="size-3.5 text-amber-600 fill-amber-500" />
-                                                      <span>Ã°Å¸â€Â¥ OT: {workInfo.overtimeText}</span>
+                                                      <span> OT: {workInfo.overtimeText}</span>
                                                     </div>
                                                   )}
                                                 </div>
@@ -3127,7 +3125,7 @@ function AdminDashboardPage() {
                                         </td>
 
                                         <td className="p-4 text-right font-black text-emerald-700 text-sm">
-                                          Ã¢â€šÂ¹{earnedAmount.toLocaleString("en-IN")}
+                                          ₹{earnedAmount.toLocaleString("en-IN")}
                                         </td>
                                       </tr>
                                     );
@@ -3276,7 +3274,7 @@ function AdminDashboardPage() {
                               <div className="p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between">
                                 <div>
                                   <p className="text-xs font-extrabold text-[#063B78]">Net Total Payroll</p>
-                                  <h4 className="text-xl font-black text-[#063B78] mt-1">Ã¢â€šÂ¹{totalPeriodPayroll.toLocaleString("en-IN")}</h4>
+                                  <h4 className="text-xl font-black text-[#063B78] mt-1">₹{totalPeriodPayroll.toLocaleString("en-IN")}</h4>
                                 </div>
                                 <div className="p-3 bg-indigo-50 text-[#063B78] rounded-xl">
                                   <DollarSign className="size-5" />
@@ -3291,7 +3289,7 @@ function AdminDashboardPage() {
                           <div className="flex items-center justify-between mb-5">
                             <div>
                               <h3 className="text-lg font-black text-[#10233F] flex items-center gap-2">
-                                <span>Ã°Å¸â€œÅ  Employee Weekly & Monthly Payroll Summary</span>
+                                <span>📊 Employee Weekly & Monthly Payroll Summary</span>
                                 <Badge className="bg-[#063B78] text-white font-bold text-xs uppercase">
                                   {reportTimeframe === "week" ? "Weekly Report" : reportTimeframe === "month" ? "Monthly Report" : "Custom Range"}
                                 </Badge>
@@ -3360,7 +3358,7 @@ function AdminDashboardPage() {
                                       <tr key={worker.id} className="hover:bg-[#F8FAFF]">
                                         <td className="p-4 font-black text-[#10233F]">
                                           <div className="text-sm font-black">{worker.name}</div>
-                                          <div className="text-[10px] text-[#5B6B7F]">Ã°Å¸â€œÅ¾ {worker.mobile || "N/A"}</div>
+                                          <div className="text-[10px] text-[#5B6B7F]">📞 {worker.mobile || "N/A"}</div>
                                         </td>
 
                                         <td className="p-4">
@@ -3370,7 +3368,7 @@ function AdminDashboardPage() {
                                         </td>
 
                                         <td className="p-4 font-black text-[#10233F]">
-                                          Ã¢â€šÂ¹{worker.dailyRate} / day
+                                          ₹{worker.dailyRate} / day
                                         </td>
 
                                         <td className="p-4 text-center font-black text-emerald-600 text-sm">
@@ -3390,7 +3388,7 @@ function AdminDashboardPage() {
                                         </td>
 
                                         <td className="p-4 text-right font-black text-emerald-700 text-base">
-                                          Ã¢â€šÂ¹{totalWage.toLocaleString("en-IN")}
+                                          ₹{totalWage.toLocaleString("en-IN")}
                                         </td>
                                       </tr>
                                     );
@@ -3409,7 +3407,7 @@ function AdminDashboardPage() {
                         <div className="flex items-center justify-between">
                           <div>
                             <h3 className="text-lg font-black text-[#10233F] flex items-center gap-2">
-                              <span>Ã°Å¸â€˜Â¥ Registered Employee Directory</span>
+                              <span>👥 Registered Employee Directory</span>
                               <Badge className="bg-emerald-100 text-emerald-800 font-bold text-xs border border-emerald-300">
                                 {workers.length} Employees Total
                               </Badge>
@@ -3471,7 +3469,7 @@ function AdminDashboardPage() {
                                     </td>
                                     <td className="p-4 font-bold text-[#063B78]">{w.trade}</td>
                                     <td className="p-4 text-[#5B6B7F]">{w.mobile || "N/A"}</td>
-                                    <td className="p-4 font-black text-emerald-700">Ã¢â€šÂ¹{w.dailyRate} / day</td>
+                                    <td className="p-4 font-black text-emerald-700">₹{w.dailyRate} / day</td>
                                     <td className="p-4 text-[#5B6B7F]">{w.joiningDate || "N/A"}</td>
                                     <td className="p-4 text-center">
                                       <div className="flex items-center justify-center gap-2">
@@ -3531,7 +3529,7 @@ function AdminDashboardPage() {
                     </div>
                   </div>
                   <Badge className="bg-emerald-600 text-white font-bold text-xs px-3 py-1">
-                    Ã¢Å“â€œ Verified Employer
+                    ✓ Verified Employer
                   </Badge>
                 </div>
 
@@ -3658,7 +3656,7 @@ function AdminDashboardPage() {
                     <div className="bg-white rounded-2xl border border-[#DCE5F0] p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div>
                         <h2 className="text-xl font-black text-[#10233F] flex items-center gap-2">
-                          <span>Ã°Å¸â€™Â³ Active Package & Subscription Status</span>
+                          <span>💳 Active Package & Subscription Status</span>
                           <span className="text-xs bg-emerald-100 text-emerald-800 border border-emerald-300 font-extrabold px-3 py-0.5 rounded-full">
                             {userPkgs.length} Active Purchases
                           </span>
@@ -3695,7 +3693,7 @@ function AdminDashboardPage() {
                       <div className="bg-white p-5 rounded-2xl border border-[#DCE5F0] shadow-sm space-y-1">
                         <span className="text-[11px] font-black uppercase text-[#5B6B7F] tracking-wider">Total Amount Spent</span>
                         <div className="text-3xl font-black text-emerald-600">
-                          Ã¢â€šÂ¹{userPkgs.reduce((sum, p) => sum + (p.price || 0), 0)}
+                          ₹{userPkgs.reduce((sum, p) => sum + (p.price || 0), 0)}
                         </div>
                         <p className="text-xs text-slate-500 font-medium">Across {userPkgs.length} transaction(s)</p>
                       </div>
@@ -3724,7 +3722,7 @@ function AdminDashboardPage() {
                               <tr className="bg-[#F8FAFF] border-b border-[#E0E8F5] text-[#5B6B7F] font-black uppercase tracking-wider text-[11px]">
                                 <th className="p-3 whitespace-nowrap">Transaction ID</th>
                                 <th className="p-3 whitespace-nowrap">Package Name</th>
-                                <th className="p-3 whitespace-nowrap">Price Paid (Ã¢â€šÂ¹)</th>
+                                <th className="p-3 whitespace-nowrap">Price Paid (₹)</th>
                                 <th className="p-3 whitespace-nowrap">Job Credits</th>
                                 <th className="p-3 whitespace-nowrap">Employee Limit</th>
                                 <th className="p-3 whitespace-nowrap">Payment Method</th>
@@ -3741,7 +3739,7 @@ function AdminDashboardPage() {
                                       {tx.planName}
                                     </span>
                                   </td>
-                                  <td className="p-3 font-black text-emerald-700 text-sm whitespace-nowrap">Ã¢â€šÂ¹{tx.price}</td>
+                                  <td className="p-3 font-black text-emerald-700 text-sm whitespace-nowrap">₹{tx.price}</td>
                                   <td className="p-3 font-extrabold text-amber-700 whitespace-nowrap">{tx.jobCount >= 999 ? "Unlimited" : tx.jobCount}</td>
                                   <td className="p-3 font-extrabold text-indigo-700 whitespace-nowrap">{tx.workerCount ? (Number(tx.workerCount) >= 9999 ? "Unlimited" : `${tx.workerCount} Employees`) : "3 Employees"}</td>
                                   <td className="p-3 font-bold uppercase text-slate-600 whitespace-nowrap">{tx.paymentMethod}</td>
@@ -3808,11 +3806,11 @@ function AdminDashboardPage() {
                             <strong className="block font-black text-[#063B78]">{emp.name}</strong>
                           </td>
                           <td className="p-4 text-[#5B6B7F] font-bold">{emp.trade || "Worker"}</td>
-                          <td className="p-4 text-slate-600 font-bold text-center">Ã¢â€šÂ¹{emp.dailyRate} / day</td>
+                          <td className="p-4 text-slate-600 font-bold text-center">₹{emp.dailyRate} / day</td>
                           <td className="p-4 text-emerald-600 font-black text-center">{metrics.present + metrics.halfDay * 0.5} Days</td>
                           <td className="p-4 text-rose-600 font-black text-center">{metrics.absent} Days</td>
                           <td className="p-4 text-right font-black text-emerald-700 text-sm">
-                            Ã¢â€šÂ¹{metrics.netPay.toLocaleString("en-IN")}
+                            ₹{metrics.netPay.toLocaleString("en-IN")}
                           </td>
                           <td className="p-4 text-center">
                             <Button 
@@ -3842,7 +3840,7 @@ function AdminDashboardPage() {
         </main>
       </div>
 
-      {/* Ã¢â€â‚¬Ã¢â€â‚¬ SET WORKSITE LOCATION MODAL Ã¢â€â‚¬Ã¢â€â‚¬ */}
+      {/* ── SET WORKSITE LOCATION MODAL ── */}
       {showLocationModal && (
         <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
           <div className="bg-white w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-100 relative">
@@ -3870,7 +3868,7 @@ function AdminDashboardPage() {
             {(savedLocationLink || savedLocationCoords) && (
               <div className="mb-4 p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl">
                 <p className="text-[11px] font-black text-emerald-900 uppercase tracking-wide">
-                  Ã°Å¸â€œÂ Current Saved Location:
+                   Current Saved Location:
                 </p>
                 <div className="flex items-center justify-between gap-2 mt-1">
                   <span className="text-xs font-bold text-emerald-800 truncate">
@@ -3924,7 +3922,7 @@ function AdminDashboardPage() {
                     let coordsObj = parsed || { lat: 18.5204, lng: 73.8567 };
 
                     if (parsed) {
-                      toast.info(`Ã°Å¸â€œÂ Recognized Location: ${parsed.lat.toFixed(6)}, ${parsed.lng.toFixed(6)}`);
+                      toast.info(` Recognized Location: ${parsed.lat.toFixed(6)}, ${parsed.lng.toFixed(6)}`);
                     } else {
                       toast.warning("Saved link for reference.");
                     }
@@ -3950,13 +3948,13 @@ function AdminDashboardPage() {
                       } catch (e) { }
                     }
 
-                    toast.success("Ã¢Å“â€¦ Worksite Location Link Saved Successfully!");
+                    toast.success("✅ Worksite Location Link Saved Successfully!");
                     setShowLocationModal(false);
                   }}
                   variant="outline"
                   className="w-full border-[#DCE5F0] text-[#5B6B7F] hover:bg-slate-50 font-extrabold text-xs py-2.5 rounded-xl cursor-pointer"
                 >
-                  Ã°Å¸â€â€” Save Link
+                   Save Link
                 </Button>
               </div>
             </div>
@@ -3964,7 +3962,7 @@ function AdminDashboardPage() {
         </div>
       )}
 
-      {/* Ã¢â€â‚¬Ã¢â€â‚¬ ADD / EDIT WORKER MODAL WITH CUSTOM FIELDS GENERATOR Ã¢â€â‚¬Ã¢â€â‚¬ */}
+      {/* ── ADD / EDIT WORKER MODAL WITH CUSTOM FIELDS GENERATOR ── */}
       {showWorkerModal && (
         <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
           <div className="bg-white w-full max-w-xl rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-100 relative max-h-[92vh] overflow-y-auto">
@@ -3972,7 +3970,7 @@ function AdminDashboardPage() {
               onClick={() => setShowWorkerModal(false)}
               className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 font-extrabold text-xl p-2 rounded-full hover:bg-slate-100"
             >
-              Ã¢Å“â€¢
+              ✕
             </button>
 
             {/* Modal Header & TOP + Add Custom Field Button */}
@@ -4089,13 +4087,13 @@ function AdminDashboardPage() {
                     <ChevronDown className={`size-4 text-slate-400 transition-transform duration-200 ${isCategoryDropdownOpen ? "rotate-180" : ""}`} />
                   </button>
 
-                  {/* Dropdown Menu Popup with Ã¢Å“â€¢ delete buttons directly on custom category options! */}
+                  {/* Dropdown Menu Popup with ✕ delete buttons directly on custom category options! */}
                   {isCategoryDropdownOpen && (
                     <div className="absolute left-0 right-0 top-12 z-50 bg-white border border-slate-200 rounded-2xl shadow-xl max-h-72 overflow-y-auto p-1.5 space-y-0.5 animate-fade-in">
                       {[
                         ...getIndustryDefaultCategories(),
                         ...customCategories,
-                        "Ã¢Å¡â„¢Ã¯Â¸ÂÃ¯Â¸Â Other / Custom",
+                        "⚙️ Other / Custom",
                       ]
                         .filter((catName) => !removedCategories.includes(catName))
                         .map((catName) => {
@@ -4159,7 +4157,7 @@ function AdminDashboardPage() {
                             onClick={() => setShowOtherCategoryInput(false)}
                             className="p-1 text-slate-400 hover:text-slate-700 text-xs font-bold shrink-0"
                           >
-                            Ã¢Å“â€¢
+                            ✕
                           </button>
                         </div>
                       ) : (
@@ -4172,7 +4170,7 @@ function AdminDashboardPage() {
                           className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-black text-[#063B78] hover:bg-blue-50 transition-colors border-t border-slate-100 mt-1"
                         >
                           <Plus className="size-3.5" />
-                          <span>Ã¢Å¾â€¢ Add New Custom Category...</span>
+                          <span>➕ Add New Custom Category...</span>
                         </button>
                       )}
                     </div>
@@ -4241,7 +4239,7 @@ function AdminDashboardPage() {
                   <div className="p-3.5 bg-amber-50 rounded-xl border border-amber-200/90 space-y-1.5">
                     <div className="flex items-center gap-2 text-xs font-black text-amber-950">
                       <span className="size-2 rounded-full bg-amber-500 animate-pulse shrink-0"></span>
-                      <span>Ã°Å¸Å¡Å“ Field / Site Worksite (Auto-Detected: Employer Attendance)</span>
+                      <span>🚜 Field / Site Worksite (Auto-Detected: Employer Attendance)</span>
                     </div>
                     <p className="text-[11px] text-amber-900/90 font-medium leading-relaxed">
                       Auto-detected from company name. Mobile GPS & selfie punch-in are not required. Daily attendance will be marked directly by employer.
@@ -4251,7 +4249,7 @@ function AdminDashboardPage() {
                   <div className="p-3.5 bg-blue-50/90 rounded-xl border border-blue-200/90 space-y-3">
                     <div className="flex items-center gap-2 text-xs font-black text-[#063B78]">
                       <span className="size-2 rounded-full bg-blue-600 animate-pulse shrink-0"></span>
-                      <span>Ã°Å¸ÂÂ¢ Fixed Location Worksite (Auto-Detected: App Punch In/Out)</span>
+                      <span>ðŸ¢ Fixed Location Worksite (Auto-Detected: App Punch In/Out)</span>
                     </div>
                     <p className="text-[11px] text-blue-900/90 font-medium leading-relaxed">
                       Auto-detected from company name. Employee punches in/out via mobile app (GPS + Camera).
@@ -4282,7 +4280,7 @@ function AdminDashboardPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-xs font-extrabold text-slate-700 uppercase mb-1 block">
-                    Custom Daily Wage Rate (Ã¢â€šÂ¹) *
+                    Custom Daily Wage Rate (₹) *
                   </Label>
                   <Input
                     type="number"
@@ -4405,7 +4403,7 @@ function AdminDashboardPage() {
         </div>
       )}
 
-      {/* Ã¢â€â‚¬Ã¢â€â‚¬ INTERACTIVE ADD CUSTOM FIELD MODAL DIALOG Ã¢â€â‚¬Ã¢â€â‚¬ */}
+      {/* ── INTERACTIVE ADD CUSTOM FIELD MODAL DIALOG ── */}
       {showAddFieldPrompt && (
         <div className="fixed inset-0 z-60 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
           <div className="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-slate-100 relative space-y-4">
@@ -4414,7 +4412,7 @@ function AdminDashboardPage() {
               onClick={() => setShowAddFieldPrompt(false)}
               className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 font-extrabold text-lg p-1.5 rounded-full hover:bg-slate-100"
             >
-              Ã¢Å“â€¢
+              ✕
             </button>
 
             <div>
@@ -4489,7 +4487,7 @@ function AdminDashboardPage() {
               onClick={() => setShowPackageModal(false)}
               className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 font-extrabold text-xl p-2 rounded-full hover:bg-slate-100"
             >
-              Ã¢Å“â€¢
+              ✕
             </button>
 
             <div className="flex items-center gap-3 mb-4">
@@ -4539,7 +4537,7 @@ function AdminDashboardPage() {
                   </div>
 
                   <div className="text-right">
-                    <span className="text-xl font-black text-[#063B78]">Ã¢â€šÂ¹{pkg.price}</span>
+                    <span className="text-xl font-black text-[#063B78]">₹{pkg.price}</span>
                   </div>
                 </div>
               ))}
@@ -4553,7 +4551,7 @@ function AdminDashboardPage() {
               </div>
               <div className="text-right">
                 <p className="text-xs font-bold text-slate-500">Total Amount</p>
-                <p className="text-2xl font-black text-emerald-700">Ã¢â€šÂ¹{activeSelectedPlan.price}</p>
+                <p className="text-2xl font-black text-emerald-700">₹{activeSelectedPlan.price}</p>
               </div>
             </div>
 
@@ -4630,7 +4628,7 @@ function AdminDashboardPage() {
                 {isProcessingPackage ? (
                   <span>Activating...</span>
                 ) : (
-                  <span>Pay Ã¢â€šÂ¹{activeSelectedPlan.price} & Post Job</span>
+                  <span>Pay ₹{activeSelectedPlan.price} & Post Job</span>
                 )}
               </Button>
             </div>
@@ -4640,7 +4638,7 @@ function AdminDashboardPage() {
 
 
 
-      {/* Ã¢â€â‚¬Ã¢â€â‚¬ WORKER REPORT & SALARY SLIP MODAL Ã¢â€â‚¬Ã¢â€â‚¬ */}
+      {/* ── WORKER REPORT & SALARY SLIP MODAL ── */}
       {selectedWorkerReport && (() => {
         const w = selectedWorkerReport!;
         return (
@@ -4650,7 +4648,7 @@ function AdminDashboardPage() {
               onClick={() => setSelectedWorkerReport(null)}
               className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 font-extrabold text-xl p-2 rounded-full hover:bg-slate-100"
             >
-              Ã¢Å“â€¢
+              ✕
             </button>
 
             {/* Modal Header */}
@@ -4667,7 +4665,7 @@ function AdminDashboardPage() {
                     </Badge>
                   </div>
                   <p className="text-xs text-[#5B6B7F] font-semibold mt-0.5">
-                    Ã°Å¸â€œÅ¾ {w.mobile || "N/A"} Ã¢â‚¬Â¢ Role: <span className="font-bold text-[#063B78]">{w.trade || "General Worker"}</span> Ã¢â‚¬Â¢ Rate: <span className="font-extrabold text-emerald-700">Ã¢â€šÂ¹{w.dailyRate} / day</span>
+                    📞 {w.mobile || "N/A"} • Role: <span className="font-bold text-[#063B78]">{w.trade || "General Worker"}</span> • Rate: <span className="font-extrabold text-emerald-700">₹{w.dailyRate} / day</span>
                   </p>
                 </div>
               </div>
@@ -4740,14 +4738,14 @@ function AdminDashboardPage() {
 
                     <div className="p-3.5 rounded-2xl border border-emerald-300 bg-emerald-100/70 text-center col-span-2 sm:col-span-1">
                       <p className="text-[10px] font-black uppercase text-emerald-900">Total Wage</p>
-                      <h4 className="text-lg font-black text-emerald-800 mt-1">Ã¢â€šÂ¹{metrics.netPay.toLocaleString("en-IN")}</h4>
+                      <h4 className="text-lg font-black text-emerald-800 mt-1">₹{metrics.netPay.toLocaleString("en-IN")}</h4>
                     </div>
                   </div>
 
                   {/* Attendance Log Table inside Modal */}
                   <div className="border border-[#DCE5F0] rounded-2xl overflow-hidden">
                     <div className="bg-[#F8FAFF] p-3 border-b border-[#DCE5F0] flex items-center justify-between">
-                      <span className="text-xs font-black text-[#10233F]">Ã°Å¸â€œâ€¦ Attendance Log History ({metrics.records.length} records)</span>
+                      <span className="text-xs font-black text-[#10233F]">📅 Attendance Log History ({metrics.records.length} records)</span>
                       <span className="text-[11px] font-bold text-[#5B6B7F]">{metrics.startDate} to {metrics.endDate}</span>
                     </div>
 
@@ -4786,8 +4784,8 @@ function AdminDashboardPage() {
                                       {r.status}
                                     </span>
                                   </td>
-                                  <td className="p-2.5 text-slate-500">Ã¢â€šÂ¹{w.dailyRate}</td>
-                                  <td className="p-2.5 text-right font-black text-emerald-700">Ã¢â€šÂ¹{pay}</td>
+                                  <td className="p-2.5 text-slate-500">₹{w.dailyRate}</td>
+                                  <td className="p-2.5 text-right font-black text-emerald-700">₹{pay}</td>
                                 </tr>
                               );
                             })
@@ -4817,17 +4815,17 @@ function AdminDashboardPage() {
                     <Button
                       onClick={() => {
                         if (!w.mobile) {
-                          toast.error("Ã Â¤â€¢Ã Â¤Â°Ã Â¥ÂÃ Â¤Â®Ã Â¤Å¡Ã Â¤Â¾Ã Â¤Â±Ã Â¥ÂÃ Â¤Â¯Ã Â¤Â¾Ã Â¤Å¡Ã Â¤Â¾ Ã Â¤Â®Ã Â¥â€¹Ã Â¤Â¬Ã Â¤Â¾Ã Â¤Ë†Ã Â¤Â² Ã Â¤Â¨Ã Â¤â€šÃ Â¤Â¬Ã Â¤Â° Ã Â¤â€°Ã Â¤ÂªÃ Â¤Â²Ã Â¤Â¬Ã Â¥ÂÃ Â¤Â§ Ã Â¤Â¨Ã Â¤Â¾Ã Â¤Â¹Ã Â¥â‚¬. (Mobile number not found)");
+                          toast.error("कर्मचाऱ्याचा मोबाईल नंबर उपलब्ध नाही. (Mobile number not found)");
                           return;
                         }
-                        const periodText = workerReportPeriod === "month" ? "Ã Â¤Â¯Ã Â¤Â¾ Ã Â¤Â®Ã Â¤Â¹Ã Â¤Â¿Ã Â¤Â¨Ã Â¥ÂÃ Â¤Â¯Ã Â¤Â¾Ã Â¤Å¡Ã Â¥â‚¬" : "Ã Â¤Â¯Ã Â¤Â¾ Ã Â¤â€ Ã Â¤Â Ã Â¤ÂµÃ Â¤Â¡Ã Â¥ÂÃ Â¤Â¯Ã Â¤Â¾Ã Â¤Å¡Ã Â¥â‚¬";
-                        let msg = `Ã Â¤Â¨Ã Â¤Â®Ã Â¤Â¸Ã Â¥ÂÃ Â¤â€¢Ã Â¤Â¾Ã Â¤Â° ${w.name},\n\nÃ Â¤Â¤Ã Â¥ÂÃ Â¤Â®Ã Â¤Å¡Ã Â¥â‚¬ ${periodText} Ã Â¤Â¸Ã Â¥â€¦Ã Â¤Â²Ã Â¤Â°Ã Â¥â‚¬ Ã Â¤Â¸Ã Â¥ÂÃ Â¤Â²Ã Â¤Â¿Ã Â¤Âª Ã Â¤Â¤Ã Â¤Â¯Ã Â¤Â¾Ã Â¤Â° Ã Â¤â€ Ã Â¤Â¹Ã Â¥â€¡.\n\n`;
-                        msg += `Ã¢â€“Â«Ã¯Â¸Â Ã Â¤ÂÃ Â¤â€¢Ã Â¥â€šÃ Â¤Â£ Ã Â¤Â¹Ã Â¤Å“Ã Â¥â€¡Ã Â¤Â°Ã Â¥â‚¬: ${metrics.present} Ã Â¤Â¦Ã Â¤Â¿Ã Â¤ÂµÃ Â¤Â¸\n`;
+                        const periodText = workerReportPeriod === "month" ? "या महिन्याची" : "या आठवड्याची";
+                        let msg = `नमस्कार ${w.name},\n\nतुमची ${periodText} सॅलरी स्लिप तयार आहे.\n\n`;
+                        msg += ` Ã Â¤ÂÃ Â¤ Â¥ हजेरी: ${metrics.present} दिवस\n`;
                         if (metrics.overtime > 0) {
-                          msg += `Ã¢â€“Â«Ã¯Â¸Â Ã Â¤â€œÃ Â¤ÂµÃ Â¥ÂÃ Â¤Â¹Ã Â¤Â°Ã Â¤Å¸Ã Â¤Â¾Ã Â¤Ë†Ã Â¤Â®: ${metrics.overtime} Ã Â¤Â¦Ã Â¤Â¿Ã Â¤ÂµÃ Â¤Â¸\n`;
+                          msg += ` Ã Â¤ Â¤ÂµÃ Â¥ÂÃ Â¤Â¹Ã Â¤Â°Ã Â¤Å¸Ã Â¤Â¾Ã Â¤Ë†म: ${metrics.overtime} दिवस\n`;
                         }
-                        msg += `Ã¢â€“Â«Ã¯Â¸Â Ã Â¤ÂÃ Â¤â€¢Ã Â¥â€šÃ Â¤Â£ Ã Â¤ÂªÃ Â¤â€”Ã Â¤Â¾Ã Â¤Â° (Net Pay): Ã¢â€šÂ¹${metrics.netPay.toLocaleString("en-IN")}\n\n`;
-                        msg += `- Ã Â¤Â§Ã Â¤Â¨Ã Â¥ÂÃ Â¤Â¯Ã Â¤ÂµÃ Â¤Â¾Ã Â¤Â¦.`;
+                        msg += ` Ã Â¤ÂÃ Â¤ Â¥ पगार (Net Pay): ₹${metrics.netPay.toLocaleString("en-IN")}\n\n`;
+                        msg += `- धन्यवाद.`;
 
                         const encodedMsg = encodeURIComponent(msg);
                         const waLink = `https://wa.me/91${w.mobile.replace(/\D/g, "")}?text=${encodedMsg}`;
@@ -4847,7 +4845,7 @@ function AdminDashboardPage() {
       })()}
 
 
-      {/* Ã¢â€â‚¬Ã¢â€â‚¬ E-SALARY SLIP MODAL Ã¢â€â‚¬Ã¢â€â‚¬ */}
+      {/* ── E-SALARY SLIP MODAL ── */}
       {viewSlipWorker && (() => {
         const v = viewSlipWorker!;
         return (
@@ -4871,18 +4869,18 @@ function AdminDashboardPage() {
                 <Button
                   onClick={() => {
                     if (!v.mobile) {
-                      toast.error("Ã Â¤â€¢Ã Â¤Â°Ã Â¥ÂÃ Â¤Â®Ã Â¤Å¡Ã Â¤Â¾Ã Â¤Â±Ã Â¥ÂÃ Â¤Â¯Ã Â¤Â¾Ã Â¤Å¡Ã Â¤Â¾ Ã Â¤Â®Ã Â¥â€¹Ã Â¤Â¬Ã Â¤Â¾Ã Â¤Ë†Ã Â¤Â² Ã Â¤Â¨Ã Â¤â€šÃ Â¤Â¬Ã Â¤Â° Ã Â¤â€°Ã Â¤ÂªÃ Â¤Â²Ã Â¤Â¬Ã Â¥ÂÃ Â¤Â§ Ã Â¤Â¨Ã Â¤Â¾Ã Â¤Â¹Ã Â¥â‚¬. (Mobile number not found)");
+                      toast.error("कर्मचाऱ्याचा मोबाईल नंबर उपलब्ध नाही. (Mobile number not found)");
                       return;
                     }
                     const metrics = getWorkerReportMetrics(v, viewSlipPeriod);
-                    const periodText = viewSlipPeriod === "month" ? "Ã Â¤Â¯Ã Â¤Â¾ Ã Â¤Â®Ã Â¤Â¹Ã Â¤Â¿Ã Â¤Â¨Ã Â¥ÂÃ Â¤Â¯Ã Â¤Â¾Ã Â¤Å¡Ã Â¥â‚¬" : "Ã Â¤Â¯Ã Â¤Â¾ Ã Â¤â€ Ã Â¤Â Ã Â¤ÂµÃ Â¤Â¡Ã Â¥ÂÃ Â¤Â¯Ã Â¤Â¾Ã Â¤Å¡Ã Â¥â‚¬";
-                    let msg = `Ã Â¤Â¨Ã Â¤Â®Ã Â¤Â¸Ã Â¥ÂÃ Â¤â€¢Ã Â¤Â¾Ã Â¤Â° ${v.name},\n\nÃ Â¤Â¤Ã Â¥ÂÃ Â¤Â®Ã Â¤Å¡Ã Â¥â‚¬ ${periodText} Ã Â¤Â¸Ã Â¥â€¦Ã Â¤Â²Ã Â¤Â°Ã Â¥â‚¬ Ã Â¤Â¸Ã Â¥ÂÃ Â¤Â²Ã Â¤Â¿Ã Â¤Âª Ã Â¤Â¤Ã Â¤Â¯Ã Â¤Â¾Ã Â¤Â° Ã Â¤â€ Ã Â¤Â¹Ã Â¥â€¡.\n\n`;
-                    msg += `Ã¢â€“Â«Ã¯Â¸Â Ã Â¤ÂÃ Â¤â€¢Ã Â¥â€šÃ Â¤Â£ Ã Â¤Â¹Ã Â¤Å“Ã Â¥â€¡Ã Â¤Â°Ã Â¥â‚¬: ${metrics.present} Ã Â¤Â¦Ã Â¤Â¿Ã Â¤ÂµÃ Â¤Â¸\n`;
+                    const periodText = viewSlipPeriod === "month" ? "या महिन्याची" : "या आठवड्याची";
+                    let msg = `नमस्कार ${v.name},\n\nतुमची ${periodText} सॅलरी स्लिप तयार आहे.\n\n`;
+                    msg += ` Ã Â¤ÂÃ Â¤ Â¥ हजेरी: ${metrics.present} दिवस\n`;
                     if (metrics.overtime > 0) {
-                      msg += `Ã¢â€“Â«Ã¯Â¸Â Ã Â¤â€œÃ Â¤ÂµÃ Â¥ÂÃ Â¤Â¹Ã Â¤Â°Ã Â¤Å¸Ã Â¤Â¾Ã Â¤Ë†Ã Â¤Â®: ${metrics.overtime} Ã Â¤Â¤Ã Â¤Â¾Ã Â¤Â¸\n`;
+                      msg += ` Ã Â¤ Â¤ÂµÃ Â¥ÂÃ Â¤Â¹Ã Â¤Â°Ã Â¤Å¸Ã Â¤Â¾Ã Â¤Ë†म: ${metrics.overtime} तास\n`;
                     }
-                    msg += `Ã¢â€“Â«Ã¯Â¸Â Ã Â¤ÂÃ Â¤â€¢Ã Â¥â€šÃ Â¤Â£ Ã Â¤ÂªÃ Â¤â€”Ã Â¤Â¾Ã Â¤Â° (Net Pay): Ã¢â€šÂ¹${metrics.netPay.toLocaleString("en-IN")}\n\n`;
-                    msg += `- Ã Â¤Â§Ã Â¤Â¨Ã Â¥ÂÃ Â¤Â¯Ã Â¤ÂµÃ Â¤Â¾Ã Â¤Â¦.`;
+                    msg += ` Ã Â¤ÂÃ Â¤ Â¥ पगार (Net Pay): ₹${metrics.netPay.toLocaleString("en-IN")}\n\n`;
+                    msg += `- धन्यवाद.`;
 
                     const encodedMsg = encodeURIComponent(msg);
                     const waLink = `https://wa.me/91${v.mobile.replace(/\D/g, "")}?text=${encodedMsg}`;
@@ -4896,7 +4894,7 @@ function AdminDashboardPage() {
                   onClick={() => setViewSlipWorker(null)}
                   className="text-slate-400 hover:text-slate-700 font-extrabold text-xl p-1 rounded-full hover:bg-slate-100"
                 >
-                  Ã¢Å“â€¢
+                  ✕
                 </button>
               </div>
             </div>
@@ -4964,7 +4962,7 @@ function AdminDashboardPage() {
                         <div className="border-r-2 border-[#10233F] p-4 space-y-3">
                           <div className="flex justify-between">
                             <span className="font-bold text-slate-600">Basic Wage Rate</span>
-                            <span className="font-black text-[#10233F]">Ã¢â€šÂ¹{(v.dailyRate).toLocaleString("en-IN")}/day</span>
+                            <span className="font-black text-[#10233F]">₹{(v.dailyRate).toLocaleString("en-IN")}/day</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="font-bold text-slate-600">Present Days</span>
@@ -4991,7 +4989,7 @@ function AdminDashboardPage() {
                           </div>
                           <div className="flex justify-between">
                             <span className="font-bold text-slate-600">Other Deductions</span>
-                            <span className="font-black text-rose-600">Ã¢â€šÂ¹0</span>
+                            <span className="font-black text-rose-600">₹0</span>
                           </div>
                         </div>
                       </div>
@@ -5000,18 +4998,18 @@ function AdminDashboardPage() {
                       <div className="grid grid-cols-2 border-t-2 border-[#10233F] bg-slate-50 font-black text-sm">
                         <div className="p-3 border-r-2 border-[#10233F] flex justify-between">
                           <span className="text-slate-800">Total Earnings</span>
-                          <span className="text-[#063B78]">Ã¢â€šÂ¹{metrics.netPay.toLocaleString("en-IN")}</span>
+                          <span className="text-[#063B78]">₹{metrics.netPay.toLocaleString("en-IN")}</span>
                         </div>
                         <div className="p-3 flex justify-between">
                           <span className="text-slate-800">Total Deductions</span>
-                          <span className="text-rose-700">Ã¢â€šÂ¹0</span>
+                          <span className="text-rose-700">₹0</span>
                         </div>
                       </div>
                       
                       {/* Net Pay */}
                       <div className="border-t-2 border-[#10233F] bg-emerald-50 p-4 text-center">
                         <p className="text-xs font-bold text-emerald-800 uppercase tracking-wider mb-1">Net Payable Salary</p>
-                        <h2 className="text-3xl font-black text-emerald-700">Ã¢â€šÂ¹{metrics.netPay.toLocaleString("en-IN")}</h2>
+                        <h2 className="text-3xl font-black text-emerald-700">₹{metrics.netPay.toLocaleString("en-IN")}</h2>
                       </div>
                     </>
                   )
@@ -5038,7 +5036,7 @@ function AdminDashboardPage() {
         );
       })()}
 
-      {/* Ã¢â€â‚¬Ã¢â€â‚¬ MOBILE BOTTOM NAVIGATION BAR (Visible on < md) Ã¢â€â‚¬Ã¢â€â‚¬ */}
+      {/* ── MOBILE BOTTOM NAVIGATION BAR (Visible on < md) ── */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[#021D3D] text-white border-t border-white/10 z-40 px-2 py-1.5 flex items-center justify-around shadow-2xl">
         {[
           { id: "overview", label: "Dashboard", icon: BarChart3 },

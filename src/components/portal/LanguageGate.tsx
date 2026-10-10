@@ -31,6 +31,12 @@ export function LanguageGate() {
   const [selectedLang, setSelectedLang] = useState<LanguageCode>(lang || "mr");
 
   useEffect(() => {
+    if (lang) {
+      setSelectedLang(lang);
+    }
+  }, [lang]);
+
+  useEffect(() => {
     if (location.pathname === "/") {
       const hash = location.hash; // TanStack Router hash (without #)
       if (hash === "role") {
@@ -38,7 +44,7 @@ export function LanguageGate() {
         setStep("role");
       } else if (hash === "main") {
         setOpen(false);
-      } else if (hash === "") {
+      } else if (hash === "language") {
         setOpen(true);
         setStep("language");
       }
@@ -259,7 +265,10 @@ export function LanguageGate() {
             <div className="flex justify-center pt-2">
               <Button
                 type="button"
-                onClick={() => window.history.back()}
+                onClick={() => {
+                  setStep("language");
+                  navigate({ to: "/", hash: "language" });
+                }}
                 variant="outline"
                 className="border-gray-200 text-gray-700 hover:bg-gray-100 font-extrabold text-xs rounded-xl h-10 px-4 flex items-center gap-2"
               >
