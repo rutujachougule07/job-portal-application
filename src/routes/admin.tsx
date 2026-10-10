@@ -2462,20 +2462,25 @@ function AdminDashboardPage() {
                           </tr>
                           {expandedApp === a.id && (
                             <tr className="bg-[#F8FAFC]">
-                              <td colSpan={6} className="p-4 border-t border-[#DCE5F0]">
-                                <div className="bg-white p-5 rounded-xl border border-[#E2E8F0] shadow-sm">
+                              <td colSpan={6} className="p-0 border-t border-[#DCE5F0]">
+                                <div className="p-3 md:p-4">
+                                  <div className="sticky left-0 md:static w-[88vw] sm:w-[90vw] md:w-full bg-white p-4 md:p-5 rounded-xl border border-[#E2E8F0] shadow-sm">
                                   <h4 className="font-bold text-[#10233F] mb-4 border-b pb-2 flex items-center gap-2">
                                     <FileText className="size-4 text-[#063B78]" />
                                     Candidate Application Details
                                   </h4>
-                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                                    {a.fieldValues && Object.entries(a.fieldValues).map(([key, value]) => (
+                                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+                                    {a.fieldValues && Object.entries(a.fieldValues)
+                                      .filter(([key, value]) => key.trim() !== '' && value !== null && value !== undefined && value.toString().trim() !== '')
+                                      .map(([key, value]) => (
                                       <div key={key} className="text-xs bg-[#F5F8FC] p-3 rounded-lg border border-[#DCE5F0]">
                                         <div className="font-bold text-[#5B6B7F] capitalize mb-1">{key.replace(/([A-Z])/g, ' $1').trim()}</div>
                                         <div className="font-black text-[#10233F]">{value as string}</div>
                                       </div>
                                     ))}
-                                    {a.customAnswers && Object.entries(a.customAnswers).map(([key, value]) => (
+                                    {a.customAnswers && Object.entries(a.customAnswers)
+                                      .filter(([key, value]) => key.trim() !== '' && value !== null && value !== undefined && value.toString().trim() !== '')
+                                      .map(([key, value]) => (
                                       <div key={key} className="text-xs bg-[#F5F8FC] p-3 rounded-lg border border-[#DCE5F0]">
                                         <div className="font-bold text-[#5B6B7F] capitalize mb-1">{key}</div>
                                         <div className="font-black text-[#10233F]">{value as string}</div>
@@ -2485,7 +2490,8 @@ function AdminDashboardPage() {
                                       <div className="text-sm font-semibold text-[#5B6B7F]">No additional application details provided.</div>
                                     )}
 
-                                    {/* Employer Reply / Message to Candidate Box */}
+                                  </div>
+                                  {/* Employer Reply / Message to Candidate Box */}
                                     <div className="mt-5 pt-4 border-t border-[#DCE5F0]">
                                       <label className="block text-xs font-black text-[#063B78] mb-2">
                                         💬 Candidate Reply / Employer Response (या उमेदवाराला संदेश / रिप्लाय पाठवा):
@@ -2512,6 +2518,7 @@ function AdminDashboardPage() {
                                         </div>
                                       )}
                                     </div>
+
                                   </div>
                                 </div>
                               </td>

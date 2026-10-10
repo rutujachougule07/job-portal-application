@@ -2408,7 +2408,9 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     () => ({
       lang,
       setLang,
-      t: (key: TranslationKeys) => partial[lang]?.[key] ?? en[key] ?? key,
+      // ALWAYS return English so Google Translate can cleanly translate it to the target language
+      // This prevents the "double translation" corruption bug (e.g., Marathi -> Google Translate -> Garbage)
+      t: (key: TranslationKeys) => en[key] ?? key,
       n: (val: string | number | undefined | null) => formatNum(val, lang),
     }),
     [lang]

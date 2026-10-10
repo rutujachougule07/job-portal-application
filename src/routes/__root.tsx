@@ -17,7 +17,7 @@ import { Toaster } from "../components/ui/sonner";
 
 if (typeof Node === 'function' && Node.prototype) {
   const originalRemoveChild = Node.prototype.removeChild;
-  Node.prototype.removeChild = function (child: Node) {
+  Node.prototype.removeChild = function (this: Node, child: Node) {
     if (child.parentNode !== this) {
       if (console) console.warn('Cannot remove a child from a different parent', child, this);
       return child;
@@ -26,7 +26,7 @@ if (typeof Node === 'function' && Node.prototype) {
   } as any;
 
   const originalInsertBefore = Node.prototype.insertBefore;
-  Node.prototype.insertBefore = function (newNode: Node, referenceNode: Node | null) {
+  Node.prototype.insertBefore = function (this: Node, newNode: Node, referenceNode: Node | null) {
     if (referenceNode && referenceNode.parentNode !== this) {
       if (console) console.warn('Cannot insert before a reference node from a different parent', referenceNode, this);
       return newNode;
@@ -133,9 +133,22 @@ function RootShell({ children }: { children: ReactNode }) {
       <head>
         <HeadContent />
         <style dangerouslySetInnerHTML={{ __html: `
-          .goog-te-banner-frame.skiptranslate, .goog-te-gadget-icon { display: none !important; }
+          .goog-te-banner-frame.skiptranslate, .goog-te-gadget-icon, .goog-logo-link, .goog-te-gadget img { display: none !important; }
           body { top: 0px !important; }
           #google_translate_element { opacity: 0; position: absolute; top: 0; left: 0; z-index: -999; pointer-events: none; }
+          .goog-text-highlight { background: transparent !important; box-shadow: none !important; }
+          #goog-gt-tt, .goog-te-balloon-frame { display: none !important; }
+          body > iframe.skiptranslate, body > div.skiptranslate { display: none !important; }
+          .goog-te-gadget { color: transparent !important; }
+          
+          /* Aggressive rules for the new circular floating Google Translate bubble */
+          div[id^="goog-gt-"] { display: none !important; }
+          iframe[src*="translate.google.com"], iframe[src*="translate.googleapis.com"] { display: none !important; }
+          .skiptranslate > iframe { display: none !important; }
+          
+          /* Catch all dynamic Google Translate UI components */
+          [class*="VIpgJd-"] { display: none !important; }
+          .VIpgJd-Zvi9od-aZ2wEe-wOHMyf-ti6hGc { display: none !important; }
         `}} />
       </head>
       <body className="overscroll-y-none">
@@ -164,6 +177,15 @@ function RootComponent() {
       script.src = '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
       script.async = true;
       document.body.appendChild(script);
+
+      // Prevent Google Translate from translating the page title
+      const observer = new MutationObserver(() => {
+        const titleEl = document.querySelector('title');
+        if (titleEl && !titleEl.classList.contains('notranslate')) {
+          titleEl.classList.add('notranslate');
+        }
+      });
+      observer.observe(document.head, { childList: true, subtree: true });
     }
   }, []);
 

@@ -141,7 +141,6 @@ export function LanguageGate() {
           <LogoIcon className="h-14 sm:h-16 object-contain" />
         </div>
 
-        {/* STEP 1: LANGUAGE SELECTION */}
         {step === "language" ? (
           <div className="space-y-6">
             <div className="text-center space-y-1">
