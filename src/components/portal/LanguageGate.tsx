@@ -187,8 +187,25 @@ export function LanguageGate() {
           </div>
         ) : (
           /* STEP 2: ROLE / PROFILE SELECTION */
-          <div className="space-y-6">
-            <div className="text-center space-y-1">
+          <div className="flex flex-col">
+            {/* Back to Language Button (Moved to Top Left of Modal) */}
+            <div className="absolute top-4 sm:top-6 left-4 sm:left-6 z-10">
+              <Button
+                type="button"
+                onClick={() => {
+                  setStep("language");
+                  navigate({ to: "/", hash: "language" });
+                }}
+                variant="ghost"
+                size="icon"
+                className="text-gray-400 hover:text-[#063B78] hover:bg-gray-100 rounded-full h-10 w-10 flex items-center justify-center transition-colors shadow-sm border border-transparent hover:border-gray-200"
+                title={t("backToLanguage")}
+              >
+                <ArrowLeft className="size-5" />
+              </Button>
+            </div>
+
+            <div className="text-center space-y-1 mb-6">
               <h1 className="text-2xl sm:text-3xl font-black text-[#082F63] tracking-tight">
                 {t("selectRole")}
               </h1>
@@ -260,22 +277,6 @@ export function LanguageGate() {
                 </div>
               </div>
 
-            </div>
-
-            {/* Back to Language Button */}
-            <div className="flex justify-center pt-2">
-              <Button
-                type="button"
-                onClick={() => {
-                  setStep("language");
-                  navigate({ to: "/", hash: "language" });
-                }}
-                variant="outline"
-                className="border-gray-200 text-gray-700 hover:bg-gray-100 font-extrabold text-xs rounded-xl h-10 px-4 flex items-center gap-2"
-              >
-                <ArrowLeft className="size-4" />
-                <span>{t("backToLanguage")}</span>
-              </Button>
             </div>
           </div>
         )}
