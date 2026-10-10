@@ -110,16 +110,17 @@ export function LanguageGate() {
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-6 animate-fade-in overflow-y-auto">
+    <div className="fixed inset-0 z-[200] overflow-y-auto animate-fade-in">
       {/* Blurred Poster Background */}
       <div
         className="fixed inset-0 z-[-2] bg-cover bg-center bg-no-repeat blur-sm scale-105"
         style={{ backgroundImage: `url('/portal-bg.png')` }}
       />
-      {/* Color Overlay for Readability (No blue tint) */}
+      {/* Color Overlay for Readability */}
       <div className="fixed inset-0 z-[-1] bg-black/40" />
 
-      <div className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl border border-white/40 overflow-hidden my-auto p-6 sm:p-10 transition-all duration-300">
+      <div className="flex min-h-full items-center justify-center p-3 sm:p-6">
+        <div className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl border border-white/40 overflow-hidden p-6 sm:p-10 transition-all duration-300">
 
         {/* Header Branding & Progress Bar */}
         <div className="flex flex-col items-center text-center mb-6 sm:mb-8">
@@ -279,6 +280,7 @@ export function LanguageGate() {
           </div>
         )}
 
+      </div>
       </div>
     </div>
   );

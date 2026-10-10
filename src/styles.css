@@ -117,13 +117,15 @@ input[type="number"] {
     border-color: var(--color-border);
   }
 
-  html, body, #root, #app {
+  html,
+  body,
+  #root,
+  #app {
     overflow-x: hidden !important;
     max-width: 100% !important;
     width: 100% !important;
     position: relative;
     touch-action: pan-y;
-    overscroll-behavior-y: none; /* Prevents Android WebView pull-to-refresh */
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
@@ -202,6 +204,7 @@ input[type="number"] {
   0% {
     transform: translateX(0%);
   }
+
   100% {
     transform: translateX(-50%);
   }
@@ -226,6 +229,14 @@ input[type="number"] {
 }
 
 /* Hide Google Translate Banner */
-body { top: 0 !important; }
-.skiptranslate iframe { display: none !important; }
-.goog-te-banner-frame { display: none !important; }
+body {
+  top: 0 !important;
+}
+
+.skiptranslate iframe {
+  display: none !important;
+}
+
+.goog-te-banner-frame {
+  display: none !important;
+}
