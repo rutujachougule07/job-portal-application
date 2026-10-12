@@ -3,8 +3,8 @@ import { Link } from "@tanstack/react-router";
 export function LogoIcon({ className = "h-14" }: { className?: string }) {
   return (
     <img
-      src="/logo.png"
-      alt="REAL JOB Logo"
+      src="/logo_icon.png"
+      alt="REAL JOB Emblem"
       className={`${className} object-contain shrink-0`}
     />
   );

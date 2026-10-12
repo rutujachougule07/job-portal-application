@@ -1,5 +1,6 @@
 import { useState, useEffect, Fragment, useMemo, useTransition } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import SalarySlip from "../components/SalarySlip";
 import {
   ShieldCheck,
   Users,
@@ -547,7 +548,7 @@ function AdminDashboardPage() {
 
   const getIndustryDefaultCategories = (): string[] => {
     const indType = detectEmployerIndustry();
-    
+
     const categoriesMap: Record<string, string[]> = {
       construction: [
         "फार्मिंग",
@@ -945,7 +946,7 @@ function AdminDashboardPage() {
   const [registeredUsers, setRegisteredUsers] = useState<
     Array<{ id: string; name: string; role: string; mobile: string; city: string; trade: string; status: string; createdAt?: string | undefined }>
   >([]);
-  
+
   // Synchronous initialization prevents "admin-001" fallback during initial state setup
   const [currentUser, setCurrentUser] = useState<any>(() => {
     if (typeof window !== "undefined") {
@@ -998,7 +999,7 @@ function AdminDashboardPage() {
       if (storedLink && storedLink !== savedLocationLink) {
         setSavedLocationLink(storedLink);
       }
-      
+
       const storedCoords = localStorage.getItem(`emp_worksite_coords_${empIdentifier}`);
       const coords = storedCoords ? JSON.parse(storedCoords) : (currentUser as any)?.worksiteLocation;
       if (coords && (!savedLocationCoords || coords.lat !== savedLocationCoords.lat)) {
@@ -1497,7 +1498,7 @@ function AdminDashboardPage() {
               onClick={() => setShowJobForm(false)}
               className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-bold transition-all flex items-center gap-1"
             >
-                Back to Dashboard
+               Back to Dashboard
             </button>
             <h1 className="text-base font-black text-white">
               {editingJobId ? "फार्मिंग" : "💼 Post New Job"}
@@ -2321,7 +2322,7 @@ function AdminDashboardPage() {
                       onClick={() => setJobsPage((p) => p - 1)}
                       className="px-3 py-1.5 rounded-lg text-xs font-black border border-[#DCE5F0] bg-white text-[#063B78] hover:bg-[#EBF3FF] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                     >
-                        Prev
+                       Prev
                     </button>
                     {Array.from({ length: totalJobPages }, (_, i) => i + 1).map((pg) => (
                       <button
@@ -2465,33 +2466,33 @@ function AdminDashboardPage() {
                               <td colSpan={6} className="p-0 border-t border-[#DCE5F0]">
                                 <div className="p-3 md:p-4">
                                   <div className="sticky left-0 md:static w-[88vw] sm:w-[90vw] md:w-full bg-white p-4 md:p-5 rounded-xl border border-[#E2E8F0] shadow-sm">
-                                  <h4 className="font-bold text-[#10233F] mb-4 border-b pb-2 flex items-center gap-2">
-                                    <FileText className="size-4 text-[#063B78]" />
-                                    Candidate Application Details
-                                  </h4>
-                                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-                                    {a.fieldValues && Object.entries(a.fieldValues)
-                                      .filter(([key, value]) => key.trim() !== '' && value !== null && value !== undefined && value.toString().trim() !== '')
-                                      .map(([key, value]) => (
-                                      <div key={key} className="text-xs bg-[#F5F8FC] p-3 rounded-lg border border-[#DCE5F0]">
-                                        <div className="font-bold text-[#5B6B7F] capitalize mb-1">{key.replace(/([A-Z])/g, ' $1').trim()}</div>
-                                        <div className="font-black text-[#10233F]">{value as string}</div>
-                                      </div>
-                                    ))}
-                                    {a.customAnswers && Object.entries(a.customAnswers)
-                                      .filter(([key, value]) => key.trim() !== '' && value !== null && value !== undefined && value.toString().trim() !== '')
-                                      .map(([key, value]) => (
-                                      <div key={key} className="text-xs bg-[#F5F8FC] p-3 rounded-lg border border-[#DCE5F0]">
-                                        <div className="font-bold text-[#5B6B7F] capitalize mb-1">{key}</div>
-                                        <div className="font-black text-[#10233F]">{value as string}</div>
-                                      </div>
-                                    ))}
-                                    {(!a.fieldValues && !a.customAnswers) && (
-                                      <div className="text-sm font-semibold text-[#5B6B7F]">No additional application details provided.</div>
-                                    )}
+                                    <h4 className="font-bold text-[#10233F] mb-4 border-b pb-2 flex items-center gap-2">
+                                      <FileText className="size-4 text-[#063B78]" />
+                                      Candidate Application Details
+                                    </h4>
+                                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+                                      {a.fieldValues && Object.entries(a.fieldValues)
+                                        .filter(([key, value]) => key.trim() !== '' && value !== null && value !== undefined && value.toString().trim() !== '')
+                                        .map(([key, value]) => (
+                                          <div key={key} className="text-xs bg-[#F5F8FC] p-3 rounded-lg border border-[#DCE5F0]">
+                                            <div className="font-bold text-[#5B6B7F] capitalize mb-1">{key.replace(/([A-Z])/g, ' $1').trim()}</div>
+                                            <div className="font-black text-[#10233F]">{value as string}</div>
+                                          </div>
+                                        ))}
+                                      {a.customAnswers && Object.entries(a.customAnswers)
+                                        .filter(([key, value]) => key.trim() !== '' && value !== null && value !== undefined && value.toString().trim() !== '')
+                                        .map(([key, value]) => (
+                                          <div key={key} className="text-xs bg-[#F5F8FC] p-3 rounded-lg border border-[#DCE5F0]">
+                                            <div className="font-bold text-[#5B6B7F] capitalize mb-1">{key}</div>
+                                            <div className="font-black text-[#10233F]">{value as string}</div>
+                                          </div>
+                                        ))}
+                                      {(!a.fieldValues && !a.customAnswers) && (
+                                        <div className="text-sm font-semibold text-[#5B6B7F]">No additional application details provided.</div>
+                                      )}
 
-                                  </div>
-                                  {/* Employer Reply / Message to Candidate Box */}
+                                    </div>
+                                    {/* Employer Reply / Message to Candidate Box */}
                                     <div className="mt-5 pt-4 border-t border-[#DCE5F0]">
                                       <label className="block text-xs font-black text-[#063B78] mb-2">
                                         💬 Candidate Reply / Employer Response (या उमेदवाराला संदेश / रिप्लाय पाठवा):
@@ -2596,7 +2597,7 @@ function AdminDashboardPage() {
                       >
                         <MapPin className="size-4 text-emerald-600 shrink-0 group-hover:scale-110 transition-transform" />
                         <span className="truncate underline underline-offset-2">
-                           {savedLocationLink || (currentUser as any)?.worksiteLocationLink || `GPS: ${savedLocationCoords?.lat.toFixed(4)}, ${savedLocationCoords?.lng.toFixed(4)}`}
+                          {savedLocationLink || (currentUser as any)?.worksiteLocationLink || `GPS: ${savedLocationCoords?.lat.toFixed(4)}, ${savedLocationCoords?.lng.toFixed(4)}`}
                         </span>
                         <ExternalLink className="size-3.5 text-emerald-600 shrink-0" />
                       </a>
@@ -3050,7 +3051,7 @@ function AdminDashboardPage() {
                                                     <div className="inline-flex items-center gap-1.5 bg-amber-100 border border-amber-400 text-amber-950 px-3 py-1 rounded-xl shadow-xs font-black text-xs animate-pulse">
                                                       <Zap className="size-3.5 text-amber-600 fill-amber-500" />
                                                       <span>
-                                                         Overtime: <strong className="text-amber-950 font-black">{workInfo.overtimeText}</strong>
+                                                        Overtime: <strong className="text-amber-950 font-black">{workInfo.overtimeText}</strong>
                                                       </span>
                                                     </div>
                                                   ) : (
@@ -3780,7 +3781,7 @@ function AdminDashboardPage() {
           {/* TAB: E-SALARY / SLIPS */}
           <div className={activeTab === "salary" ? "block" : "hidden"}>
             <div className="space-y-6 sm:space-y-8 animate-fade-in min-w-0">
-              
+
               {/* Top Salary Header Banner */}
               <div className="rounded-2xl border border-[#DCE5F0] bg-white p-4 sm:p-6 shadow-xs flex flex-col xl:flex-row xl:items-center justify-between gap-6 min-w-0 overflow-hidden flex-wrap">
                 <div className="space-y-1.5 min-w-[280px] flex-1">
@@ -3800,56 +3801,56 @@ function AdminDashboardPage() {
               <div className="bg-white p-4 sm:p-6 rounded-2xl border border-[#DCE5F0] shadow-sm space-y-4">
                 <div className="overflow-x-auto rounded-xl border border-[#DCE5F0]">
                   <table className="w-full text-left text-xs whitespace-nowrap">
-                  <thead className="bg-[#063B78] text-white font-black uppercase tracking-wider text-[11px]">
-                    <tr>
-                      <th className="p-4">Employee Name</th>
-                      <th className="p-4">Position</th>
-                      <th className="p-4 text-center">Wage Rate</th>
-                      <th className="p-4 text-center">Present</th>
-                      <th className="p-4 text-center">Absent</th>
-                      <th className="p-4 text-right">Net Earned</th>
-                      <th className="p-4 text-center">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#DCE5F0] font-semibold text-[#10233F]">
-                    {workers.map((emp) => {
-                      const metrics = getWorkerReportMetrics(emp, "month");
+                    <thead className="bg-[#063B78] text-white font-black uppercase tracking-wider text-[11px]">
+                      <tr>
+                        <th className="p-4">Employee Name</th>
+                        <th className="p-4">Position</th>
+                        <th className="p-4 text-center">Wage Rate</th>
+                        <th className="p-4 text-center">Present</th>
+                        <th className="p-4 text-center">Absent</th>
+                        <th className="p-4 text-right">Net Earned</th>
+                        <th className="p-4 text-center">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#DCE5F0] font-semibold text-[#10233F]">
+                      {workers.map((emp) => {
+                        const metrics = getWorkerReportMetrics(emp, "month");
 
-                      return (
-                        <tr key={emp.id} className="hover:bg-[#F5F8FC] transition-colors">
-                          <td className="p-4">
-                            <strong className="block font-black text-[#063B78]">{emp.name}</strong>
-                          </td>
-                          <td className="p-4 text-[#5B6B7F] font-bold">{emp.trade || "Worker"}</td>
-                          <td className="p-4 text-slate-600 font-bold text-center">₹{emp.dailyRate} / day</td>
-                          <td className="p-4 text-emerald-600 font-black text-center">{metrics.present + metrics.halfDay * 0.5} Days</td>
-                          <td className="p-4 text-rose-600 font-black text-center">{metrics.absent} Days</td>
-                          <td className="p-4 text-right font-black text-emerald-700 text-sm">
-                            ₹{metrics.netPay.toLocaleString("en-IN")}
-                          </td>
-                          <td className="p-4 text-center">
-                            <Button 
-                              onClick={() => setViewSlipWorker(emp)} 
-                              size="sm" 
-                              className="bg-[#063B78] hover:bg-[#082F63] text-white text-[10px] font-black px-4"
-                            >
-                              View Slip
-                            </Button>
+                        return (
+                          <tr key={emp.id} className="hover:bg-[#F5F8FC] transition-colors">
+                            <td className="p-4">
+                              <strong className="block font-black text-[#063B78]">{emp.name}</strong>
+                            </td>
+                            <td className="p-4 text-[#5B6B7F] font-bold">{emp.trade || "Worker"}</td>
+                            <td className="p-4 text-slate-600 font-bold text-center">₹{emp.dailyRate} / day</td>
+                            <td className="p-4 text-emerald-600 font-black text-center">{metrics.present + metrics.halfDay * 0.5} Days</td>
+                            <td className="p-4 text-rose-600 font-black text-center">{metrics.absent} Days</td>
+                            <td className="p-4 text-right font-black text-emerald-700 text-sm">
+                              ₹{metrics.netPay.toLocaleString("en-IN")}
+                            </td>
+                            <td className="p-4 text-center">
+                              <Button
+                                onClick={() => setViewSlipWorker(emp)}
+                                size="sm"
+                                className="bg-[#063B78] hover:bg-[#082F63] text-white text-[10px] font-black px-4"
+                              >
+                                View Slip
+                              </Button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {workers.length === 0 && (
+                        <tr>
+                          <td colSpan={7} className="p-8 text-center text-xs font-bold text-[#5B6B7F] bg-[#F8FAFF]">
+                            No employees registered yet.
                           </td>
                         </tr>
-                      );
-                    })}
-                    {workers.length === 0 && (
-                      <tr>
-                        <td colSpan={7} className="p-8 text-center text-xs font-bold text-[#5B6B7F] bg-[#F8FAFF]">
-                          No employees registered yet.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
             </div>
           </div>
         </main>
@@ -3883,7 +3884,7 @@ function AdminDashboardPage() {
             {(savedLocationLink || savedLocationCoords) && (
               <div className="mb-4 p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl">
                 <p className="text-[11px] font-black text-emerald-900 uppercase tracking-wide">
-                   Current Saved Location:
+                  Current Saved Location:
                 </p>
                 <div className="flex items-center justify-between gap-2 mt-1">
                   <span className="text-xs font-bold text-emerald-800 truncate">
@@ -3969,7 +3970,7 @@ function AdminDashboardPage() {
                   variant="outline"
                   className="w-full border-[#DCE5F0] text-[#5B6B7F] hover:bg-slate-50 font-extrabold text-xs py-2.5 rounded-xl cursor-pointer"
                 >
-                   Save Link
+                  Save Link
                 </Button>
               </div>
             </div>
@@ -4658,204 +4659,204 @@ function AdminDashboardPage() {
         const w = selectedWorkerReport!;
         return (
           <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white w-full max-w-2xl rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-100 relative max-h-[90vh] overflow-y-auto">
-            <button
-              onClick={() => setSelectedWorkerReport(null)}
-              className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 font-extrabold text-xl p-2 rounded-full hover:bg-slate-100"
-            >
-              ✕
-            </button>
+            <div className="bg-white w-full max-w-2xl rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-100 relative max-h-[90vh] overflow-y-auto">
+              <button
+                onClick={() => setSelectedWorkerReport(null)}
+                className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 font-extrabold text-xl p-2 rounded-full hover:bg-slate-100"
+              >
+                ✕
+              </button>
 
-            {/* Modal Header */}
-            <div className="flex items-start justify-between border-b border-slate-100 pb-5 mb-5">
-              <div className="flex items-center gap-3">
-                <div className="size-12 rounded-2xl bg-[#063B78] text-white font-black flex items-center justify-center text-xl shadow-md">
-                  {w.name.slice(0, 1).toUpperCase()}
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-xl font-black text-[#10233F]">{w.name}</h3>
-                    <Badge className="bg-emerald-50 text-emerald-800 border border-emerald-200 font-extrabold text-[10px]">
-                      {formatCategoryName(w.category || w.trade)}
-                    </Badge>
+              {/* Modal Header */}
+              <div className="flex items-start justify-between border-b border-slate-100 pb-5 mb-5">
+                <div className="flex items-center gap-3">
+                  <div className="size-12 rounded-2xl bg-[#063B78] text-white font-black flex items-center justify-center text-xl shadow-md">
+                    {w.name.slice(0, 1).toUpperCase()}
                   </div>
-                  <p className="text-xs text-[#5B6B7F] font-semibold mt-0.5">
-                    📞 {w.mobile || "N/A"} • Role: <span className="font-bold text-[#063B78]">{w.trade || "General Worker"}</span> • Rate: <span className="font-extrabold text-emerald-700">₹{w.dailyRate} / day</span>
-                  </p>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-xl font-black text-[#10233F]">{w.name}</h3>
+                      <Badge className="bg-emerald-50 text-emerald-800 border border-emerald-200 font-extrabold text-[10px]">
+                        {formatCategoryName(w.category || w.trade)}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-[#5B6B7F] font-semibold mt-0.5">
+                      📞 {w.mobile || "N/A"} • Role: <span className="font-bold text-[#063B78]">{w.trade || "General Worker"}</span> • Rate: <span className="font-extrabold text-emerald-700">₹{w.dailyRate} / day</span>
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Period selector */}
-            <div className="flex items-center justify-between bg-[#F8FAFF] p-3 rounded-2xl border border-[#DCE5F0] mb-5">
-              <span className="text-xs font-black text-[#10233F] flex items-center gap-1.5">
-                <CalendarDays className="size-4 text-[#063B78]" /> Select Report Period:
-              </span>
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setWorkerReportPeriod("week")}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${workerReportPeriod === "week"
-                    ? "bg-[#063B78] text-white shadow-md"
-                    : "bg-white text-[#5B6B7F] border border-[#DCE5F0] hover:bg-slate-50"
-                    }`}
-                >
-                  This Week
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setWorkerReportPeriod("month")}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${workerReportPeriod === "month"
-                    ? "bg-[#063B78] text-white shadow-md"
-                    : "bg-white text-[#5B6B7F] border border-[#DCE5F0] hover:bg-slate-50"
-                    }`}
-                >
-                  This Month
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setWorkerReportPeriod("all")}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${workerReportPeriod === "all"
-                    ? "bg-[#063B78] text-white shadow-md"
-                    : "bg-white text-[#5B6B7F] border border-[#DCE5F0] hover:bg-slate-50"
-                    }`}
-                >
-                  All Time
-                </button>
+              {/* Period selector */}
+              <div className="flex items-center justify-between bg-[#F8FAFF] p-3 rounded-2xl border border-[#DCE5F0] mb-5">
+                <span className="text-xs font-black text-[#10233F] flex items-center gap-1.5">
+                  <CalendarDays className="size-4 text-[#063B78]" /> Select Report Period:
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setWorkerReportPeriod("week")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${workerReportPeriod === "week"
+                      ? "bg-[#063B78] text-white shadow-md"
+                      : "bg-white text-[#5B6B7F] border border-[#DCE5F0] hover:bg-slate-50"
+                      }`}
+                  >
+                    This Week
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setWorkerReportPeriod("month")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${workerReportPeriod === "month"
+                      ? "bg-[#063B78] text-white shadow-md"
+                      : "bg-white text-[#5B6B7F] border border-[#DCE5F0] hover:bg-slate-50"
+                      }`}
+                  >
+                    This Month
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setWorkerReportPeriod("all")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${workerReportPeriod === "all"
+                      ? "bg-[#063B78] text-white shadow-md"
+                      : "bg-white text-[#5B6B7F] border border-[#DCE5F0] hover:bg-slate-50"
+                      }`}
+                  >
+                    All Time
+                  </button>
+                </div>
               </div>
-            </div>
 
-            {/* Calculated Metrics Cards */}
-            {(() => {
-              const metrics = getWorkerReportMetrics(w, workerReportPeriod);
-              return (
-                <div className="space-y-5">
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                    <div className="p-3.5 rounded-2xl border border-emerald-200 bg-emerald-50/60 text-center">
-                      <p className="text-[10px] font-black uppercase text-emerald-800">Present</p>
-                      <h4 className="text-xl font-black text-emerald-700 mt-1">{metrics.present} Days</h4>
+              {/* Calculated Metrics Cards */}
+              {(() => {
+                const metrics = getWorkerReportMetrics(w, workerReportPeriod);
+                return (
+                  <div className="space-y-5">
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                      <div className="p-3.5 rounded-2xl border border-emerald-200 bg-emerald-50/60 text-center">
+                        <p className="text-[10px] font-black uppercase text-emerald-800">Present</p>
+                        <h4 className="text-xl font-black text-emerald-700 mt-1">{metrics.present} Days</h4>
+                      </div>
+
+                      <div className="p-3.5 rounded-2xl border border-amber-200 bg-amber-50/60 text-center">
+                        <p className="text-[10px] font-black uppercase text-amber-800">Half Day</p>
+                        <h4 className="text-xl font-black text-amber-700 mt-1">{metrics.halfDay} Days</h4>
+                      </div>
+
+                      <div className="p-3.5 rounded-2xl border border-rose-200 bg-rose-50/60 text-center">
+                        <p className="text-[10px] font-black uppercase text-rose-800">Absent</p>
+                        <h4 className="text-xl font-black text-rose-700 mt-1">{metrics.absent} Days</h4>
+                      </div>
+
+                      <div className="p-3.5 rounded-2xl border border-blue-200 bg-blue-50/60 text-center">
+                        <p className="text-[10px] font-black uppercase text-blue-800">Overtime</p>
+                        <h4 className="text-xl font-black text-blue-700 mt-1">{metrics.overtime} Days</h4>
+                      </div>
+
+                      <div className="p-3.5 rounded-2xl border border-emerald-300 bg-emerald-100/70 text-center col-span-2 sm:col-span-1">
+                        <p className="text-[10px] font-black uppercase text-emerald-900">Total Wage</p>
+                        <h4 className="text-lg font-black text-emerald-800 mt-1">₹{metrics.netPay.toLocaleString("en-IN")}</h4>
+                      </div>
                     </div>
 
-                    <div className="p-3.5 rounded-2xl border border-amber-200 bg-amber-50/60 text-center">
-                      <p className="text-[10px] font-black uppercase text-amber-800">Half Day</p>
-                      <h4 className="text-xl font-black text-amber-700 mt-1">{metrics.halfDay} Days</h4>
-                    </div>
+                    {/* Attendance Log Table inside Modal */}
+                    <div className="border border-[#DCE5F0] rounded-2xl overflow-hidden">
+                      <div className="bg-[#F8FAFF] p-3 border-b border-[#DCE5F0] flex items-center justify-between">
+                        <span className="text-xs font-black text-[#10233F]">📅 Attendance Log History ({metrics.records.length} records)</span>
+                        <span className="text-[11px] font-bold text-[#5B6B7F]">{metrics.startDate} to {metrics.endDate}</span>
+                      </div>
 
-                    <div className="p-3.5 rounded-2xl border border-rose-200 bg-rose-50/60 text-center">
-                      <p className="text-[10px] font-black uppercase text-rose-800">Absent</p>
-                      <h4 className="text-xl font-black text-rose-700 mt-1">{metrics.absent} Days</h4>
-                    </div>
-
-                    <div className="p-3.5 rounded-2xl border border-blue-200 bg-blue-50/60 text-center">
-                      <p className="text-[10px] font-black uppercase text-blue-800">Overtime</p>
-                      <h4 className="text-xl font-black text-blue-700 mt-1">{metrics.overtime} Days</h4>
-                    </div>
-
-                    <div className="p-3.5 rounded-2xl border border-emerald-300 bg-emerald-100/70 text-center col-span-2 sm:col-span-1">
-                      <p className="text-[10px] font-black uppercase text-emerald-900">Total Wage</p>
-                      <h4 className="text-lg font-black text-emerald-800 mt-1">₹{metrics.netPay.toLocaleString("en-IN")}</h4>
-                    </div>
-                  </div>
-
-                  {/* Attendance Log Table inside Modal */}
-                  <div className="border border-[#DCE5F0] rounded-2xl overflow-hidden">
-                    <div className="bg-[#F8FAFF] p-3 border-b border-[#DCE5F0] flex items-center justify-between">
-                      <span className="text-xs font-black text-[#10233F]">📅 Attendance Log History ({metrics.records.length} records)</span>
-                      <span className="text-[11px] font-bold text-[#5B6B7F]">{metrics.startDate} to {metrics.endDate}</span>
-                    </div>
-
-                    <div className="max-h-48 overflow-y-auto">
-                      <table className="w-full text-left border-collapse text-xs">
-                        <thead>
-                          <tr className="border-b border-[#EBF1F8] bg-slate-50 text-[10px] uppercase font-black text-[#5B6B7F]">
-                            <th className="p-2.5">Date</th>
-                            <th className="p-2.5">Status</th>
-                            <th className="p-2.5">Rate</th>
-                            <th className="p-2.5 text-right">Earned Wage</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[#EBF1F8] font-semibold">
-                          {metrics.records.length === 0 ? (
-                            <tr>
-                              <td colSpan={4} className="p-4 text-center text-slate-400 font-bold">
-                                No attendance records found for this timeframe.
-                              </td>
+                      <div className="max-h-48 overflow-y-auto">
+                        <table className="w-full text-left border-collapse text-xs">
+                          <thead>
+                            <tr className="border-b border-[#EBF1F8] bg-slate-50 text-[10px] uppercase font-black text-[#5B6B7F]">
+                              <th className="p-2.5">Date</th>
+                              <th className="p-2.5">Status</th>
+                              <th className="p-2.5">Rate</th>
+                              <th className="p-2.5 text-right">Earned Wage</th>
                             </tr>
-                          ) : (
-                            metrics.records.map((r) => {
-                              let pay = w.dailyRate;
-                              if (r.status === "HalfDay") pay = Math.round(w.dailyRate / 2);
-                              if (r.status === "Absent") pay = 0;
-                              if (r.status === "Overtime") pay = Math.round(w.dailyRate * 1.5);
+                          </thead>
+                          <tbody className="divide-y divide-[#EBF1F8] font-semibold">
+                            {metrics.records.length === 0 ? (
+                              <tr>
+                                <td colSpan={4} className="p-4 text-center text-slate-400 font-bold">
+                                  No attendance records found for this timeframe.
+                                </td>
+                              </tr>
+                            ) : (
+                              metrics.records.map((r) => {
+                                let pay = w.dailyRate;
+                                if (r.status === "HalfDay") pay = Math.round(w.dailyRate / 2);
+                                if (r.status === "Absent") pay = 0;
+                                if (r.status === "Overtime") pay = Math.round(w.dailyRate * 1.5);
 
-                              return (
-                                <tr key={r.id} className="hover:bg-slate-50">
-                                  <td className="p-2.5 font-bold text-[#10233F]">{r.date}</td>
-                                  <td className="p-2.5">
-                                    <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${r.status === "Present" ? "bg-emerald-100 text-emerald-800" :
-                                      r.status === "HalfDay" ? "bg-amber-100 text-amber-800" :
-                                        r.status === "Absent" ? "bg-rose-100 text-rose-800" : "bg-blue-100 text-blue-800"
-                                      }`}>
-                                      {r.status}
-                                    </span>
-                                  </td>
-                                  <td className="p-2.5 text-slate-500">₹{w.dailyRate}</td>
-                                  <td className="p-2.5 text-right font-black text-emerald-700">₹{pay}</td>
-                                </tr>
-                              );
-                            })
-                          )}
-                        </tbody>
-                      </table>
+                                return (
+                                  <tr key={r.id} className="hover:bg-slate-50">
+                                    <td className="p-2.5 font-bold text-[#10233F]">{r.date}</td>
+                                    <td className="p-2.5">
+                                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${r.status === "Present" ? "bg-emerald-100 text-emerald-800" :
+                                        r.status === "HalfDay" ? "bg-amber-100 text-amber-800" :
+                                          r.status === "Absent" ? "bg-rose-100 text-rose-800" : "bg-blue-100 text-blue-800"
+                                        }`}>
+                                        {r.status}
+                                      </span>
+                                    </td>
+                                    <td className="p-2.5 text-slate-500">₹{w.dailyRate}</td>
+                                    <td className="p-2.5 text-right font-black text-emerald-700">₹{pay}</td>
+                                  </tr>
+                                );
+                              })
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* Print & Download Action Buttons */}
+                    <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                      <Button
+                        onClick={() => handleDownloadPDFSalarySlip(w, workerReportPeriod)}
+                        className="flex-1 bg-[#063B78] hover:bg-[#082F63] text-white font-extrabold text-xs py-5 rounded-xl shadow-md flex items-center justify-center gap-2"
+                      >
+                        <Download className="size-4" /> Download PDF Salary Slip
+                      </Button>
+
+                      <Button
+                        variant="outline"
+                        onClick={() => handleDownloadCSV(w, workerReportPeriod)}
+                        className="flex-1 border-[#DCE5F0] text-[#063B78] hover:bg-blue-50 font-extrabold text-xs py-5 rounded-xl flex items-center justify-center gap-2"
+                      >
+                        <Download className="size-4" /> Export CSV Salary Data
+                      </Button>
+
+                      <Button
+                        onClick={() => {
+                          if (!w.mobile) {
+                            toast.error("कर्मचाऱ्याचा मोबाईल नंबर उपलब्ध नाही. (Mobile number not found)");
+                            return;
+                          }
+                          const periodText = workerReportPeriod === "month" ? "या महिन्याची" : "या आठवड्याची";
+                          let msg = `नमस्कार ${w.name},\n\nतुमची ${periodText} सॅलरी स्लिप तयार आहे.\n\n`;
+                          msg += ` Ã Â¤ÂÃ Â¤ Â¥ हजेरी: ${metrics.present} दिवस\n`;
+                          if (metrics.overtime > 0) {
+                            msg += ` Ã Â¤ Â¤ÂµÃ Â¥ÂÃ Â¤Â¹Ã Â¤Â°Ã Â¤Å¸Ã Â¤Â¾Ã Â¤Ë†म: ${metrics.overtime} दिवस\n`;
+                          }
+                          msg += ` Ã Â¤ÂÃ Â¤ Â¥ पगार (Net Pay): ₹${metrics.netPay.toLocaleString("en-IN")}\n\n`;
+                          msg += `- धन्यवाद.`;
+
+                          const encodedMsg = encodeURIComponent(msg);
+                          const waLink = `https://wa.me/91${w.mobile.replace(/\D/g, "")}?text=${encodedMsg}`;
+                          window.open(waLink, '_blank');
+                        }}
+                        className="flex-1 bg-[#25D366] hover:bg-[#1DA851] text-white font-extrabold text-xs py-5 rounded-xl shadow-md flex items-center justify-center gap-2"
+                      >
+                        <MessageCircle className="size-4" /> Send to WhatsApp
+                      </Button>
                     </div>
                   </div>
-
-                  {/* Print & Download Action Buttons */}
-                  <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                    <Button
-                      onClick={() => handleDownloadPDFSalarySlip(w, workerReportPeriod)}
-                      className="flex-1 bg-[#063B78] hover:bg-[#082F63] text-white font-extrabold text-xs py-5 rounded-xl shadow-md flex items-center justify-center gap-2"
-                    >
-                      <Download className="size-4" /> Download PDF Salary Slip
-                    </Button>
-
-                    <Button
-                      variant="outline"
-                      onClick={() => handleDownloadCSV(w, workerReportPeriod)}
-                      className="flex-1 border-[#DCE5F0] text-[#063B78] hover:bg-blue-50 font-extrabold text-xs py-5 rounded-xl flex items-center justify-center gap-2"
-                    >
-                      <Download className="size-4" /> Export CSV Salary Data
-                    </Button>
-
-                    <Button
-                      onClick={() => {
-                        if (!w.mobile) {
-                          toast.error("कर्मचाऱ्याचा मोबाईल नंबर उपलब्ध नाही. (Mobile number not found)");
-                          return;
-                        }
-                        const periodText = workerReportPeriod === "month" ? "या महिन्याची" : "या आठवड्याची";
-                        let msg = `नमस्कार ${w.name},\n\nतुमची ${periodText} सॅलरी स्लिप तयार आहे.\n\n`;
-                        msg += ` Ã Â¤ÂÃ Â¤ Â¥ हजेरी: ${metrics.present} दिवस\n`;
-                        if (metrics.overtime > 0) {
-                          msg += ` Ã Â¤ Â¤ÂµÃ Â¥ÂÃ Â¤Â¹Ã Â¤Â°Ã Â¤Å¸Ã Â¤Â¾Ã Â¤Ë†म: ${metrics.overtime} दिवस\n`;
-                        }
-                        msg += ` Ã Â¤ÂÃ Â¤ Â¥ पगार (Net Pay): ₹${metrics.netPay.toLocaleString("en-IN")}\n\n`;
-                        msg += `- धन्यवाद.`;
-
-                        const encodedMsg = encodeURIComponent(msg);
-                        const waLink = `https://wa.me/91${w.mobile.replace(/\D/g, "")}?text=${encodedMsg}`;
-                        window.open(waLink, '_blank');
-                      }}
-                      className="flex-1 bg-[#25D366] hover:bg-[#1DA851] text-white font-extrabold text-xs py-5 rounded-xl shadow-md flex items-center justify-center gap-2"
-                    >
-                      <MessageCircle className="size-4" /> Send to WhatsApp
-                    </Button>
-                  </div>
-                </div>
-              );
-            })()}
+                );
+              })()}
+            </div>
           </div>
-        </div>
         );
       })()}
 
@@ -4865,189 +4866,77 @@ function AdminDashboardPage() {
         const v = viewSlipWorker!;
         return (
           <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in print:bg-white print:p-0">
-          <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl border border-slate-100 relative max-h-[90vh] overflow-y-auto print:max-h-none print:shadow-none print:border-none print:rounded-none">
-            <div className="print:hidden sticky top-0 bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between z-10 rounded-t-3xl">
-              <div className="flex items-center gap-4">
-                <h3 className="font-black text-[#10233F] text-lg">Employee Salary Slip</h3>
-                <div className="flex bg-slate-100 rounded-lg p-1">
-                  <button onClick={() => setViewSlipPeriod("week")} className={`text-xs px-3 py-1 font-bold rounded-md ${viewSlipPeriod === "week" ? "bg-white shadow-sm text-[#063B78]" : "text-slate-500"}`}>Week</button>
-                  <button onClick={() => setViewSlipPeriod("month")} className={`text-xs px-3 py-1 font-bold rounded-md ${viewSlipPeriod === "month" ? "bg-white shadow-sm text-[#063B78]" : "text-slate-500"}`}>Month</button>
+            <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl border border-slate-100 relative max-h-[90vh] overflow-y-auto print:max-h-none print:shadow-none print:border-none print:rounded-none">
+              <div className="print:hidden sticky top-0 bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between z-10 rounded-t-3xl">
+                <div className="flex items-center gap-4">
+                  <h3 className="font-black text-[#10233F] text-lg">Employee Salary Slip</h3>
+                  <div className="flex bg-slate-100 rounded-lg p-1">
+                    <button onClick={() => setViewSlipPeriod("week")} className={`text-xs px-3 py-1 font-bold rounded-md ${viewSlipPeriod === "week" ? "bg-white shadow-sm text-[#063B78]" : "text-slate-500"}`}>Week</button>
+                    <button onClick={() => setViewSlipPeriod("month")} className={`text-xs px-3 py-1 font-bold rounded-md ${viewSlipPeriod === "month" ? "bg-white shadow-sm text-[#063B78]" : "text-slate-500"}`}>Month</button>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Button 
-                  onClick={() => window.print()}
-                  className="bg-[#063B78] hover:bg-[#082F63] text-white font-black text-xs px-4"
-                >
-                  <Download className="size-4 mr-2" /> Download / Print
-                </Button>
-                <Button
-                  onClick={() => {
-                    if (!v.mobile) {
-                      toast.error("कर्मचाऱ्याचा मोबाईल नंबर उपलब्ध नाही. (Mobile number not found)");
-                      return;
-                    }
-                    const metrics = getWorkerReportMetrics(v, viewSlipPeriod);
-                    const periodText = viewSlipPeriod === "month" ? "या महिन्याची" : "या आठवड्याची";
-                    let msg = `नमस्कार ${v.name},\n\nतुमची ${periodText} सॅलरी स्लिप तयार आहे.\n\n`;
-                    msg += ` Ã Â¤ÂÃ Â¤ Â¥ हजेरी: ${metrics.present} दिवस\n`;
-                    if (metrics.overtime > 0) {
-                      msg += ` Ã Â¤ Â¤ÂµÃ Â¥ÂÃ Â¤Â¹Ã Â¤Â°Ã Â¤Å¸Ã Â¤Â¾Ã Â¤Ë†म: ${metrics.overtime} तास\n`;
-                    }
-                    msg += ` Ã Â¤ÂÃ Â¤ Â¥ पगार (Net Pay): ₹${metrics.netPay.toLocaleString("en-IN")}\n\n`;
-                    msg += `- धन्यवाद.`;
+                <div className="flex items-center gap-3">
+                  {/* Download button removed as SalarySlip handles its own PDF generation */}
+                  <Button
+                    onClick={() => {
+                      if (!v.mobile) {
+                        toast.error("कर्मचाऱ्याचा मोबाईल नंबर उपलब्ध नाही. (Mobile number not found)");
+                        return;
+                      }
+                      const metrics = getWorkerReportMetrics(v, viewSlipPeriod);
+                      const periodText = viewSlipPeriod === "month" ? "या महिन्याची" : "या आठवड्याची";
+                      let msg = `नमस्कार ${v.name},\n\nतुमची ${periodText} सॅलरी स्लिप तयार आहे.\n\n`;
+                      msg += ` Ã Â¤ÂÃ Â¤ Â¥ हजेरी: ${metrics.present} दिवस\n`;
+                      if (metrics.overtime > 0) {
+                        msg += ` Ã Â¤ Â¤ÂµÃ Â¥ÂÃ Â¤Â¹Ã Â¤Â°Ã Â¤Å¸Ã Â¤Â¾Ã Â¤Ë†म: ${metrics.overtime} तास\n`;
+                      }
+                      msg += ` Ã Â¤ÂÃ Â¤ Â¥ पगार (Net Pay): ₹${metrics.netPay.toLocaleString("en-IN")}\n\n`;
+                      msg += `- धन्यवाद.`;
 
-                    const encodedMsg = encodeURIComponent(msg);
-                    const waLink = `https://wa.me/91${v.mobile.replace(/\D/g, "")}?text=${encodedMsg}`;
-                    window.open(waLink, '_blank');
-                  }}
-                  className="bg-[#25D366] hover:bg-[#1DA851] text-white font-black text-xs px-4"
-                >
-                  <MessageCircle className="size-4 mr-2" /> WhatsApp
-                </Button>
-                <button
-                  onClick={() => setViewSlipWorker(null)}
-                  className="text-slate-400 hover:text-slate-700 font-extrabold text-xl p-1 rounded-full hover:bg-slate-100"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-
-            {/* Print Area */}
-            <div className="p-8 sm:p-10 bg-white" id="salary-slip-print-area">
-              <style>{`
-                @media print {
-                  body * { visibility: hidden; }
-                  #salary-slip-print-area, #salary-slip-print-area * { visibility: visible; }
-                  #salary-slip-print-area { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 20px; }
-                  @page { margin: 0; }
-                }
-              `}</style>
-              {/* Header */}
-              <div className="text-center mb-8 pb-6 border-b-2 border-[#10233F]">
-                <h1 className="text-2xl font-black text-[#10233F] uppercase tracking-wider mb-1">
-                  {currentUser?.fullName || "INFOYSHONAD TECHNOLOGY PVT LTD"}
-                </h1>
-                <p className="text-sm font-bold text-slate-500 mb-4">
-                  Payslip for {viewSlipPeriod === "month" ? "This Month" : "This Week"}
-                </p>
-              </div>
-
-              {/* Employee Details */}
-              <div className="grid grid-cols-2 gap-x-12 gap-y-4 mb-8 text-sm">
-                <div className="flex border-b border-slate-200 pb-2">
-                  <span className="font-bold text-slate-500 w-32">Employee Name:</span>
-                  <span className="font-black text-[#10233F]">{v.name}</span>
-                </div>
-                <div className="flex border-b border-slate-200 pb-2">
-                  <span className="font-bold text-slate-500 w-32">Employee ID:</span>
-                  <span className="font-black text-[#10233F]">EMP-{v.id.substring(0, 6).toUpperCase()}</span>
-                </div>
-                <div className="flex border-b border-slate-200 pb-2">
-                  <span className="font-bold text-slate-500 w-32">Designation:</span>
-                  <span className="font-black text-[#10233F]">{v.trade || "Worker"}</span>
-                </div>
-                <div className="flex border-b border-slate-200 pb-2">
-                  <span className="font-bold text-slate-500 w-32">Department:</span>
-                  <span className="font-black text-[#10233F]">{formatCategoryName(v.category || v.trade)}</span>
-                </div>
-                <div className="flex border-b border-slate-200 pb-2">
-                  <span className="font-bold text-slate-500 w-32">Bank A/C No:</span>
-                  <span className="font-black text-[#10233F]">XXXXXXXX5432</span>
-                </div>
-                <div className="flex border-b border-slate-200 pb-2">
-                  <span className="font-bold text-slate-500 w-32">PAN No:</span>
-                  <span className="font-black text-[#10233F]">ABCDE1234F</span>
+                      const encodedMsg = encodeURIComponent(msg);
+                      const waLink = `https://wa.me/91${v.mobile.replace(/\D/g, "")}?text=${encodedMsg}`;
+                      window.open(waLink, '_blank');
+                    }}
+                    className="bg-[#25D366] hover:bg-[#1DA851] text-white font-black text-xs px-4"
+                  >
+                    <MessageCircle className="size-4 mr-2" /> WhatsApp
+                  </Button>
+                  <button
+                    onClick={() => setViewSlipWorker(null)}
+                    className="text-slate-400 hover:text-slate-700 font-extrabold text-xl p-1 rounded-full hover:bg-slate-100"
+                  >
+                    ✕
+                  </button>
                 </div>
               </div>
 
-              {/* Salary Breakdown */}
-              <div className="border-2 border-[#10233F] rounded-xl overflow-hidden mb-8">
+              {/* Print Area */}
+              <div className="bg-white overflow-hidden relative">
                 {(() => {
                   const metrics = getWorkerReportMetrics(v, viewSlipPeriod);
                   return (
-                    <>
-                      <div className="grid grid-cols-2 bg-[#10233F] text-white font-black text-sm uppercase">
-                        <div className="p-3 border-r border-slate-400">Earnings</div>
-                        <div className="p-3">Deductions</div>
-                      </div>
-                      <div className="grid grid-cols-2 text-sm">
-                        {/* Earnings Column */}
-                        <div className="border-r-2 border-[#10233F] p-4 space-y-3">
-                          <div className="flex justify-between">
-                            <span className="font-bold text-slate-600">Basic Wage Rate</span>
-                            <span className="font-black text-[#10233F]">₹{(v.dailyRate).toLocaleString("en-IN")}/day</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="font-bold text-slate-600">Present Days</span>
-                            <span className="font-black text-[#10233F]">{metrics.present} Days</span>
-                          </div>
-                          {metrics.halfDay > 0 && (
-                            <div className="flex justify-between">
-                              <span className="font-bold text-slate-600">Half Days</span>
-                              <span className="font-black text-[#10233F]">{metrics.halfDay} Days</span>
-                            </div>
-                          )}
-                          {metrics.overtime > 0 && (
-                            <div className="flex justify-between">
-                              <span className="font-bold text-slate-600">Overtime</span>
-                              <span className="font-black text-[#10233F]">{metrics.overtime} Days</span>
-                            </div>
-                          )}
-                        </div>
-                        {/* Deductions Column */}
-                        <div className="p-4 space-y-3">
-                          <div className="flex justify-between">
-                            <span className="font-bold text-slate-600">Absent</span>
-                            <span className="font-black text-rose-600">{metrics.absent} Days</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="font-bold text-slate-600">Other Deductions</span>
-                            <span className="font-black text-rose-600">₹0</span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Totals */}
-                      <div className="grid grid-cols-2 border-t-2 border-[#10233F] bg-slate-50 font-black text-sm">
-                        <div className="p-3 border-r-2 border-[#10233F] flex justify-between">
-                          <span className="text-slate-800">Total Earnings</span>
-                          <span className="text-[#063B78]">₹{metrics.netPay.toLocaleString("en-IN")}</span>
-                        </div>
-                        <div className="p-3 flex justify-between">
-                          <span className="text-slate-800">Total Deductions</span>
-                          <span className="text-rose-700">₹0</span>
-                        </div>
-                      </div>
-                      
-                      {/* Net Pay */}
-                      <div className="border-t-2 border-[#10233F] bg-emerald-50 p-4 text-center">
-                        <p className="text-xs font-bold text-emerald-800 uppercase tracking-wider mb-1">Net Payable Salary</p>
-                        <h2 className="text-3xl font-black text-emerald-700">₹{metrics.netPay.toLocaleString("en-IN")}</h2>
-                      </div>
-                    </>
-                  )
+                    <SalarySlip
+                      companyName={currentUser?.fullName || "INFOYSHONAD TECHNOLOGY PVT LTD"}
+                      companyAddress={currentUser?.location || "India"}
+                      employeeName={v.name}
+                      employeeId={`EMP-${v.id.substring(0, 6).toUpperCase()}`}
+                      designation={v.trade || "Worker"}
+                      month={viewSlipPeriod === "month" ? "This Month" : "This Week"}
+                      year={new Date().getFullYear().toString()}
+                      basicSalary={metrics.netPay}
+                      hra={0}
+                      conveyance={0}
+                      medicalAllowance={0}
+                      specialAllowance={0}
+                      providentFund={0}
+                      professionalTax={0}
+                      incomeTax={0}
+                    />
+                  );
                 })()}
               </div>
-
-              {/* Footer / Signatures */}
-              <div className="mt-16 flex justify-between px-8 text-sm">
-                <div className="text-center">
-                  <div className="w-32 border-b-2 border-slate-300 mb-2"></div>
-                  <span className="font-bold text-slate-500">Employer Signature</span>
-                </div>
-                <div className="text-center">
-                  <div className="w-32 border-b-2 border-slate-300 mb-2"></div>
-                  <span className="font-bold text-slate-500">Employee Signature</span>
-                </div>
-              </div>
-              <p className="text-center text-[10px] font-bold text-slate-400 mt-12">
-                This is a computer-generated document. No signature is required.
-              </p>
             </div>
           </div>
-        </div>
         );
       })()}
 
@@ -5081,6 +4970,3 @@ function AdminDashboardPage() {
     </div>
   );
 }
-
-
-

@@ -329,6 +329,9 @@ const en = {
   recentCandidatesDesc: "Candidates who applied to your posted jobs on the portal.",
   viewAllBtn: "View All",
   myProfile: "My Profile",
+  appliedJobsTab: "Applied Jobs",
+  savedJobsTab: "Saved Jobs",
+  candidatePortal: "Candidate Portal",
 };
 
 export type TranslationKeys = keyof typeof en;
@@ -643,6 +646,9 @@ const partial: Record<string, Partial<Record<TranslationKeys, string>>> = {
     recentCandidatesDesc: "पोर्टलवर तुमच्या पोस्ट केलेल्या नोकऱ्यांसाठी ज्यांनी अर्ज केला आहे ते उमेदवार.",
     viewAllBtn: "सर्व पहा",
     myProfile: "माझी प्रोफाइल",
+    appliedJobsTab: "अर्ज केलेल्या नोकऱ्या",
+    savedJobsTab: "सेव्ह केलेल्या नोकऱ्या",
+    candidatePortal: "उमेदवार पोर्टल",
   },
   hi: {
     brand: "REAL JOB",
@@ -953,6 +959,9 @@ const partial: Record<string, Partial<Record<TranslationKeys, string>>> = {
     recentCandidatesDesc: "वे उम्मीदवार जिन्होंने आपकी पोस्ट की गई नौकरियों के लिए आवेदन किया है।",
     viewAllBtn: "सभी देखें",
     myProfile: "मेरी प्रोफ़ाइल",
+    appliedJobsTab: "आवेदन की गई नौकरियां",
+    savedJobsTab: "सहेजी गई नौकरियां",
+    candidatePortal: "उम्मीदवार पोर्टल",
   },
   gu: {
     brand: "REAL JOB",

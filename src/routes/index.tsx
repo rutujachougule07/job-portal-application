@@ -72,7 +72,7 @@ const heroImages = [
 ];
 
 function LandingGatewayPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const navigate = useNavigate();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
@@ -242,7 +242,7 @@ function LandingGatewayPage() {
       {/* LANDING HEADER */}
       <header className="absolute top-0 w-full z-50 bg-transparent p-3 sm:p-4">
         <div className="mx-auto flex max-w-[1400px] items-center justify-between">
-          <Brand className="h-12 sm:h-16 shrink-0" />
+          <Brand className="h-10 sm:h-12 md:h-14 shrink-0" />
 
           <div className="flex items-center gap-2 sm:gap-3">
             {currentUser ? (
@@ -255,7 +255,7 @@ function LandingGatewayPage() {
                   size="sm"
                   className="bg-[#063B78] hover:bg-[#082F63] text-white font-extrabold text-xs px-3 h-9.5 rounded-lg shadow-xs"
                 >
-                  Dashboard (डॅशबोर्ड)
+                  {lang === "mr" ? "डॅशबोर्ड" : "Dashboard"}
                 </Button>
                 <Button
                   onClick={handleLogout}
@@ -263,7 +263,7 @@ function LandingGatewayPage() {
                   variant="outline"
                   className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 font-extrabold text-xs px-3 h-9.5 rounded-lg shadow-xs"
                 >
-                  Logout (लॉग आउट)
+                  {lang === "mr" ? "लॉग आउट" : "Logout"}
                 </Button>
               </div>
             ) : (
@@ -393,46 +393,71 @@ function LandingGatewayPage() {
             <div className="bg-white rounded-[30px] border border-gray-100 shadow-[0_10px_40px_rgb(0,0,0,0.05)] overflow-hidden">
               <div className="grid grid-cols-1 lg:grid-cols-12">
 
-                {/* Left Column: Image and Stats */}
-                <div className="lg:col-span-5 relative bg-white pb-24 lg:pb-0">
+                {/* Left Column: Image and Tagline Banner */}
+                <div className="lg:col-span-5 relative bg-white pb-20 lg:pb-0">
                   {/* Image container with gold curved edge */}
                   <div className="relative h-[300px] lg:h-[450px] w-full pr-12 lg:pr-16 pt-8 pl-8">
-                    <div className="w-full h-full rounded-tr-[60px] rounded-bl-[60px] overflow-hidden border-r-[8px] border-b-[8px] border-[#D4AF37] relative">
+                    <div className="w-full h-full rounded-tr-[60px] rounded-bl-[60px] overflow-hidden border-r-[8px] border-b-[8px] border-[#D4AF37] relative shadow-lg">
                       <img src={aboutData.image} alt="Company Overview" className="w-full h-full object-cover" />
                       <div className="absolute inset-0 bg-[#082F63]/10 mix-blend-multiply"></div>
                     </div>
                   </div>
 
-                  {/* Dark Blue Stats Bar */}
-                  <div className="absolute bottom-0 left-0 right-0 lg:right-[-4rem] bg-[#082F63] rounded-tr-[40px] rounded-tl-[40px] lg:rounded-tl-none p-6 lg:p-8 flex justify-between items-center shadow-xl border-t-[4px] border-[#D4AF37] z-20">
-                    <div className="flex flex-col items-center flex-1 border-r border-white/10 px-2">
-                      <Users className="size-6 lg:size-8 text-[#D4AF37] mb-2" />
-                      <span className="text-xl lg:text-2xl font-black text-white leading-none">10K+</span>
-                      <span className="text-[10px] lg:text-[11px] text-gray-300 mt-1 font-medium text-center">Happy Workers</span>
-                    </div>
-                    <div className="flex flex-col items-center flex-1 border-r border-white/10 px-2">
-                      <Building2 className="size-6 lg:size-8 text-[#D4AF37] mb-2" />
-                      <span className="text-xl lg:text-2xl font-black text-white leading-none">2.2K+</span>
-                      <span className="text-[10px] lg:text-[11px] text-gray-300 mt-1 font-medium text-center">Trusted Employers</span>
-                    </div>
-                    <div className="flex flex-col items-center flex-1 border-r border-white/10 px-2">
-                      <Briefcase className="size-6 lg:size-8 text-[#D4AF37] mb-2" />
-                      <span className="text-xl lg:text-2xl font-black text-white leading-none">5K+</span>
-                      <span className="text-[10px] lg:text-[11px] text-gray-300 mt-1 font-medium text-center">Live Job Openings</span>
-                    </div>
-                    <div className="flex flex-col items-center flex-1 px-2">
-                      <Star className="size-6 lg:size-8 text-[#D4AF37] mb-2" />
-                      <span className="text-xl lg:text-2xl font-black text-white leading-none">98%</span>
-                      <span className="text-[10px] lg:text-[11px] text-gray-300 mt-1 font-medium text-center">Success Rate</span>
+                  {/* Right Person • Right Job • Right Opportunity Banner (Language Responsive) */}
+                  <div className="absolute bottom-0 left-0 right-0 lg:right-[-3.5rem] bg-gradient-to-r from-[#082F63] via-[#0D3B73] to-[#082F63] rounded-tr-[32px] rounded-tl-[32px] lg:rounded-tl-none p-5 lg:p-6 shadow-2xl border-t-[4px] border-[#D4AF37] z-20">
+                    <div className="grid grid-cols-3 divide-x divide-white/15">
+                      <div className="flex flex-col items-center text-center px-1 sm:px-2 group">
+                        <div className="size-9 lg:size-10 rounded-xl bg-[#D4AF37]/15 border border-[#D4AF37]/40 flex items-center justify-center mb-1.5 transition-transform duration-300 group-hover:scale-110">
+                          <UserCheck className="size-4 lg:size-5 text-[#D4AF37]" />
+                        </div>
+                        <span className="text-xs lg:text-sm font-black text-white leading-tight">
+                          {lang === "mr" ? "योग्य व्यक्ती" : "Right Person"}
+                        </span>
+                        {lang === "mr" && (
+                          <span className="text-[9px] lg:text-[10px] text-[#D4AF37] font-semibold mt-0.5">Right Person</span>
+                        )}
+                      </div>
+
+                      <div className="flex flex-col items-center text-center px-1 sm:px-2 group">
+                        <div className="size-9 lg:size-10 rounded-xl bg-[#D4AF37]/15 border border-[#D4AF37]/40 flex items-center justify-center mb-1.5 transition-transform duration-300 group-hover:scale-110">
+                          <Briefcase className="size-4 lg:size-5 text-[#D4AF37]" />
+                        </div>
+                        <span className="text-xs lg:text-sm font-black text-white leading-tight">
+                          {lang === "mr" ? "योग्य काम" : "Right Job"}
+                        </span>
+                        {lang === "mr" && (
+                          <span className="text-[9px] lg:text-[10px] text-[#D4AF37] font-semibold mt-0.5">Right Job</span>
+                        )}
+                      </div>
+
+                      <div className="flex flex-col items-center text-center px-1 sm:px-2 group">
+                        <div className="size-9 lg:size-10 rounded-xl bg-[#D4AF37]/15 border border-[#D4AF37]/40 flex items-center justify-center mb-1.5 transition-transform duration-300 group-hover:scale-110">
+                          <Sparkles className="size-4 lg:size-5 text-[#D4AF37]" />
+                        </div>
+                        <span className="text-xs lg:text-sm font-black text-white leading-tight">
+                          {lang === "mr" ? "योग्य संधी" : "Right Opportunity"}
+                        </span>
+                        {lang === "mr" && (
+                          <span className="text-[9px] lg:text-[10px] text-[#D4AF37] font-semibold mt-0.5">Right Opportunity</span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Right Column: Text and Cards */}
                 <div className="lg:col-span-7 p-8 lg:p-16 flex flex-col justify-center">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="h-[2px] w-10 bg-[#D4AF37]"></div>
-                    <span className="text-xs font-black text-[#082F63] tracking-[0.1em] uppercase">ABOUT REAL JOB</span>
+                  <div className="flex flex-wrap items-center gap-3 mb-4">
+                    <div className="flex items-center gap-2">
+                      <div className="h-[2px] w-8 bg-[#D4AF37]"></div>
+                      <span className="text-xs font-black text-[#082F63] tracking-[0.1em] uppercase">ABOUT REAL JOB</span>
+                    </div>
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FEF9E7] border border-[#FDE68A] text-[#B45309] font-black text-[11px] shadow-2xs">
+                      <Sparkles className="size-3 text-[#D97706]" />
+                      <span>
+                        {lang === "mr" ? "योग्य व्यक्ती • योग्य काम • योग्य संधी" : "Right Person • Right Job • Right Opportunity"}
+                      </span>
+                    </div>
                   </div>
 
                   <h2 className="text-4xl md:text-5xl font-black text-[#082F63] leading-[1.1] mb-6">
@@ -450,9 +475,11 @@ function LandingGatewayPage() {
                       <div className="size-12 rounded-full border-2 border-[#D4AF37] flex items-center justify-center mb-4 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-12 group-hover:bg-[#D4AF37] z-10">
                         <Target className="size-6 text-[#D4AF37] group-hover:text-white transition-colors duration-300" />
                       </div>
-                      <h4 className="text-[14px] font-black text-[#082F63] mb-2 z-10 relative">Our Mission</h4>
+                      <h4 className="text-[14px] font-black text-[#082F63] mb-2 z-10 relative">
+                        {lang === "mr" ? "आमचे ध्येय" : "Our Mission"}
+                      </h4>
                       <p className="text-[11px] font-semibold text-gray-500 leading-snug z-10 relative">
-                        To provide the right employment opportunity to everyone.
+                        {lang === "mr" ? "प्रत्येकाला रोजगाराची योग्य संधी मिळवून देणे." : "To provide the right employment opportunity to everyone."}
                       </p>
                     </div>
 
@@ -462,9 +489,11 @@ function LandingGatewayPage() {
                       <div className="size-12 rounded-full border-2 border-[#D4AF37] flex items-center justify-center mb-4 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-12 group-hover:bg-[#D4AF37] z-10">
                         <Eye className="size-6 text-[#D4AF37] group-hover:text-white transition-colors duration-300" />
                       </div>
-                      <h4 className="text-[14px] font-black text-[#082F63] mb-2 z-10 relative">Our Vision</h4>
+                      <h4 className="text-[14px] font-black text-[#082F63] mb-2 z-10 relative">
+                        {lang === "mr" ? "आमचे व्हिजन" : "Our Vision"}
+                      </h4>
                       <p className="text-[11px] font-semibold text-gray-500 leading-snug z-10 relative">
-                        To become the most trusted employment portal in India.
+                        {lang === "mr" ? "भारतातील सर्वात विश्वासार्ह रोजगार मंच बनणे." : "To become the most trusted employment portal in India."}
                       </p>
                     </div>
 
@@ -474,9 +503,11 @@ function LandingGatewayPage() {
                       <div className="size-12 rounded-full border-2 border-[#D4AF37] flex items-center justify-center mb-4 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-12 group-hover:bg-[#D4AF37] z-10">
                         <Users className="size-6 text-[#D4AF37] group-hover:text-white transition-colors duration-300" />
                       </div>
-                      <h4 className="text-[14px] font-black text-[#082F63] mb-2 z-10 relative">Our Values</h4>
+                      <h4 className="text-[14px] font-black text-[#082F63] mb-2 z-10 relative">
+                        {lang === "mr" ? "आमची मूल्ये" : "Our Values"}
+                      </h4>
                       <p className="text-[11px] font-semibold text-gray-500 leading-snug z-10 relative">
-                        Trust, transparency, quality, and consistent service.
+                        {lang === "mr" ? "विश्वास, पारदर्शकता, गुणवत्ता आणि निरंतर सेवा." : "Trust, transparency, quality, and consistent service."}
                       </p>
                     </div>
 
@@ -486,9 +517,23 @@ function LandingGatewayPage() {
                       <div className="size-12 rounded-full border-2 border-[#D4AF37] flex items-center justify-center mb-4 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-12 group-hover:bg-[#D4AF37] z-10">
                         <Handshake className="size-6 text-[#D4AF37] group-hover:text-white transition-colors duration-300" />
                       </div>
-                      <h4 className="text-[14px] font-black text-[#082F63] mb-2 z-10 relative">Our Belief</h4>
+                      <h4 className="text-[14px] font-black text-[#082F63] mb-2 z-10 relative">
+                        {lang === "mr" ? "आमचा विश्वास" : "Our Belief"}
+                      </h4>
                       <p className="text-[11px] font-semibold text-gray-500 leading-snug z-10 relative">
-                        Right Person<br />Right Job<br />Right Opportunity.
+                        {lang === "mr" ? (
+                          <>
+                            योग्य व्यक्ती<br />
+                            योग्य काम<br />
+                            योग्य संधी
+                          </>
+                        ) : (
+                          <>
+                            Right Person<br />
+                            Right Job<br />
+                            Right Opportunity
+                          </>
+                        )}
                       </p>
                     </div>
                   </div>

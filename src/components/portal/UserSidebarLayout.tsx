@@ -18,7 +18,7 @@ import {
 export function UserSidebarLayout({ children, activeTab }: { children: ReactNode, activeTab: string }) {
   const navigate = useNavigate();
   const user = dataStore.getCurrentUser("worker");
-  const { lang, setLang } = useI18n();
+  const { lang, setLang, t } = useI18n();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   if (!user) {
@@ -26,11 +26,11 @@ export function UserSidebarLayout({ children, activeTab }: { children: ReactNode
   }
 
   const tabs = [
-    { id: "overview", label: "Dashboard", icon: Home, path: "/dashboard" },
-    { id: "find-jobs", label: "Find Jobs", icon: Search, path: "/jobs" },
-    { id: "applied", label: "Applied Jobs", icon: FileText, path: "/dashboard", search: { tab: "applied" } },
-    { id: "saved", label: "Saved Jobs", icon: Bookmark, path: "/dashboard", search: { tab: "saved" } },
-    { id: "profile", label: "My Profile", icon: User, path: "/dashboard", search: { tab: "profile" } },
+    { id: "overview", label: t("dashboard"), icon: Home, path: "/dashboard" },
+    { id: "find-jobs", label: t("jobs"), icon: Search, path: "/jobs" },
+    { id: "applied", label: t("appliedJobsTab"), icon: FileText, path: "/dashboard", search: { tab: "applied" } },
+    { id: "saved", label: t("savedJobsTab"), icon: Bookmark, path: "/dashboard", search: { tab: "saved" } },
+    { id: "profile", label: t("myProfile"), icon: User, path: "/dashboard", search: { tab: "profile" } },
   ];
 
   return (
@@ -52,7 +52,7 @@ export function UserSidebarLayout({ children, activeTab }: { children: ReactNode
           )}
           <div className="min-w-0 flex-1">
             <h1 className="font-black text-xs text-white truncate leading-tight">{user.fullName || user.email?.split("@")[0] || "Candidate"}</h1>
-            <span className="text-[10px] text-[#FFC400] font-black uppercase block tracking-wider leading-tight mt-0.5">Candidate Portal</span>
+            <span className="text-[10px] text-[#FFC400] font-black uppercase block tracking-wider leading-tight mt-0.5">{t("candidatePortal")}</span>
           </div>
         </div>
 
