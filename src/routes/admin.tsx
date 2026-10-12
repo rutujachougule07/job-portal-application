@@ -292,6 +292,13 @@ function AdminDashboardPage() {
   // Worker Individual Report & Salary Slip states
   const [selectedWorkerReport, setSelectedWorkerReport] = useState<EmployerWorker | null>(null);
   const [workerReportPeriod, setWorkerReportPeriod] = useState<"week" | "month" | "all">("month");
+  const [selectedSalaryWorkerId, setSelectedSalaryWorkerId] = useState<string | null>(null);
+  const [selectedSalaryMonth, setSelectedSalaryMonth] = useState<string>(() => {
+    return new Date().toLocaleDateString("en-US", { month: "long" });
+  });
+  const [selectedSalaryYear, setSelectedSalaryYear] = useState<string>(() => {
+    return new Date().getFullYear().toString();
+  });
 
   const [workerForm, setWorkerForm] = useState({
     name: "",
@@ -3783,7 +3790,7 @@ function AdminDashboardPage() {
             <div className="space-y-6 sm:space-y-8 animate-fade-in min-w-0">
 
               {/* Top Salary Header Banner */}
-              <div className="rounded-2xl border border-[#DCE5F0] bg-white p-4 sm:p-6 shadow-xs flex flex-col xl:flex-row xl:items-center justify-between gap-6 min-w-0 overflow-hidden flex-wrap">
+              <div className="rounded-2xl border border-[#DCE5F0] bg-white p-4 sm:p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 min-w-0 overflow-hidden flex-wrap">
                 <div className="space-y-1.5 min-w-[280px] flex-1">
                   <div className="inline-flex items-center gap-2 rounded-full bg-[#063B78]/10 px-3 py-1 text-[11px] sm:text-xs font-black text-[#063B78] max-w-full truncate">
                     <FileText className="size-3.5 text-[#063B78] shrink-0" />
@@ -3793,8 +3800,20 @@ function AdminDashboardPage() {
                     Employee Salary Slips
                   </h2>
                   <p className="text-xs sm:text-sm font-semibold text-[#5B6B7F] max-w-2xl leading-relaxed">
-                    Manage and view monthly salary slips for your registered employees.
+                    Manage and view monthly salary slips for your registered employees. Click &quot;View Slip&quot; on any employee to open and download their official payslip.
                   </p>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <select
+                    value={selectedSalaryMonth}
+                    onChange={(e) => setSelectedSalaryMonth(e.target.value)}
+                    className="h-10 px-3 bg-[#F8FAFF] rounded-xl border border-[#DCE5F0] text-xs font-black text-[#063B78] focus:outline-none cursor-pointer"
+                  >
+                    {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map((m) => (
+                      <option key={m} value={m}>{m} {selectedSalaryYear}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
@@ -3820,6 +3839,7 @@ function AdminDashboardPage() {
                           <tr key={emp.id} className="hover:bg-[#F5F8FC] transition-colors">
                             <td className="p-4">
                               <strong className="block font-black text-[#063B78]">{emp.name}</strong>
+                              <span className="text-[10px] text-slate-400 font-medium">ID: RJW-{emp.id.slice(-6).toUpperCase()}</span>
                             </td>
                             <td className="p-4 text-[#5B6B7F] font-bold">{emp.trade || "Worker"}</td>
                             <td className="p-4 text-slate-600 font-bold text-center">₹{emp.dailyRate} / day</td>
@@ -3832,7 +3852,7 @@ function AdminDashboardPage() {
                               <Button
                                 onClick={() => setViewSlipWorker(emp)}
                                 size="sm"
-                                className="bg-[#063B78] hover:bg-[#082F63] text-white text-[10px] font-black px-4"
+                                className="bg-[#063B78] hover:bg-[#082F63] text-white text-xs font-black px-4 shadow-sm cursor-pointer"
                               >
                                 View Slip
                               </Button>
@@ -3843,7 +3863,14 @@ function AdminDashboardPage() {
                       {workers.length === 0 && (
                         <tr>
                           <td colSpan={7} className="p-8 text-center text-xs font-bold text-[#5B6B7F] bg-[#F8FAFF]">
-                            No employees registered yet.
+                            <p className="mb-2">No registered employees found. You can add employees in the Attendance tab!</p>
+                            <Button
+                              onClick={handleOpenAddWorker}
+                              size="sm"
+                              className="bg-[#063B78] hover:bg-[#082F63] text-white font-black text-xs h-8"
+                            >
+                              + Add Employee
+                            </Button>
                           </td>
                         </tr>
                       )}
@@ -4814,10 +4841,13 @@ function AdminDashboardPage() {
                     {/* Print & Download Action Buttons */}
                     <div className="flex flex-col sm:flex-row gap-3 pt-2">
                       <Button
-                        onClick={() => handleDownloadPDFSalarySlip(w, workerReportPeriod)}
+                        onClick={() => {
+                          setViewSlipWorker(w);
+                          setViewSlipPeriod(workerReportPeriod === "all" ? "month" : workerReportPeriod);
+                        }}
                         className="flex-1 bg-[#063B78] hover:bg-[#082F63] text-white font-extrabold text-xs py-5 rounded-xl shadow-md flex items-center justify-center gap-2"
                       >
-                        <Download className="size-4" /> Download PDF Salary Slip
+                        <FileText className="size-4" /> View & Download Payslip
                       </Button>
 
                       <Button
@@ -4876,7 +4906,6 @@ function AdminDashboardPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  {/* Download button removed as SalarySlip handles its own PDF generation */}
                   <Button
                     onClick={() => {
                       if (!v.mobile) {
@@ -4884,13 +4913,13 @@ function AdminDashboardPage() {
                         return;
                       }
                       const metrics = getWorkerReportMetrics(v, viewSlipPeriod);
-                      const periodText = viewSlipPeriod === "month" ? "या महिन्याची" : "या आठवड्याची";
+                      const periodText = viewSlipPeriod === "month" ? (selectedSalaryMonth ? `${selectedSalaryMonth} महिन्याची` : "या महिन्याची") : "या आठवड्याची";
                       let msg = `नमस्कार ${v.name},\n\nतुमची ${periodText} सॅलरी स्लिप तयार आहे.\n\n`;
-                      msg += ` Ã Â¤ÂÃ Â¤ Â¥ हजेरी: ${metrics.present} दिवस\n`;
+                      msg += `• हजेरी (Present): ${metrics.present} दिवस\n`;
                       if (metrics.overtime > 0) {
-                        msg += ` Ã Â¤ Â¤ÂµÃ Â¥ÂÃ Â¤Â¹Ã Â¤Â°Ã Â¤Å¸Ã Â¤Â¾Ã Â¤Ë†म: ${metrics.overtime} तास\n`;
+                        msg += `• ओव्हरटाईम (Overtime): ${metrics.overtime} तास\n`;
                       }
-                      msg += ` Ã Â¤ÂÃ Â¤ Â¥ पगार (Net Pay): ₹${metrics.netPay.toLocaleString("en-IN")}\n\n`;
+                      msg += `• निव्वळ पगार (Net Pay): ₹${metrics.netPay.toLocaleString("en-IN")}\n\n`;
                       msg += `- धन्यवाद.`;
 
                       const encodedMsg = encodeURIComponent(msg);
@@ -4914,23 +4943,49 @@ function AdminDashboardPage() {
               <div className="bg-white overflow-hidden relative">
                 {(() => {
                   const metrics = getWorkerReportMetrics(v, viewSlipPeriod);
+                  const empCompanyName = currentUser?.fullName || (currentUser as any)?.companyName || "REAL JOB Construction Pvt. Ltd.";
+                  const empCompanyAddress = currentUser?.location || "MIDC Industrial Area, Pune, Maharashtra 411026";
+                  const empIndustry = currentUser?.industry || "Building Better Opportunities";
+                  const currentMonthName = new Date().toLocaleDateString("en-US", { month: "long" });
+                  const currentYear = new Date().getFullYear().toString();
+                  const rate = v.dailyRate || 600;
+                  const pDays = metrics.present || 26;
+                  const basic = pDays * rate;
+                  const daAmt = Math.round(basic * 0.2);
+                  const hraAmt = Math.round(basic * 0.1667);
+                  const otAmt = metrics.overtime ? Math.round(metrics.overtime * rate * 1.5) : 600;
+                  const pfAmt = Math.round((basic + daAmt) * 0.12);
+                  const esiAmt = Math.round((basic + daAmt + hraAmt + otAmt) * 0.0075);
+
                   return (
                     <SalarySlip
-                      companyName={currentUser?.fullName || "INFOYSHONAD TECHNOLOGY PVT LTD"}
-                      companyAddress={currentUser?.location || "India"}
+                      companyName={empCompanyName}
+                      companyAddress={empCompanyAddress}
+                      companyTagline={empIndustry}
                       employeeName={v.name}
-                      employeeId={`EMP-${v.id.substring(0, 6).toUpperCase()}`}
+                      employeeId={`RJW-${v.id.slice(-6).toUpperCase()}`}
+                      mobile={v.mobile || "9876543210"}
                       designation={v.trade || "Worker"}
-                      month={viewSlipPeriod === "month" ? "This Month" : "This Week"}
-                      year={new Date().getFullYear().toString()}
-                      basicSalary={metrics.netPay}
-                      hra={0}
-                      conveyance={0}
-                      medicalAllowance={0}
-                      specialAllowance={0}
-                      providentFund={0}
-                      professionalTax={0}
-                      incomeTax={0}
+                      department={v.category || "Construction"}
+                      location={currentUser?.location || "Site - Pune"}
+                      joiningDate={v.joiningDate || "01-08-2026"}
+                      month={viewSlipPeriod === "month" ? (selectedSalaryMonth || currentMonthName) : "Weekly"}
+                      year={selectedSalaryYear || currentYear}
+                      totalDaysInMonth={31}
+                      presentDays={pDays}
+                      absentDays={metrics.absent || 2}
+                      halfDays={metrics.halfDay || 1}
+                      weeklyOffDays={2}
+                      dailyRate={rate}
+                      basicSalary={basic}
+                      da={daAmt}
+                      hra={hraAmt}
+                      overtimeHours={metrics.overtime ? metrics.overtime * 4 : 4}
+                      overtimeRate={Math.round(rate / 4)}
+                      overtimePay={otAmt}
+                      providentFund={pfAmt}
+                      esi={esiAmt}
+                      professionalTax={200}
                     />
                   );
                 })()}

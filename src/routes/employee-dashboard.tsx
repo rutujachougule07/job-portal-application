@@ -20,8 +20,10 @@ import {
   Activity,
   UserCheck,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  FileText
 } from "lucide-react";
+import SalarySlip from "@/components/SalarySlip";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { parseMapCoordinates } from "@/lib/location-utils";
@@ -62,6 +64,7 @@ function EmployeeDashboard() {
   const [attendanceHistory, setAttendanceHistory] = useState<any[]>([]);
   const [selectedActivityDate, setSelectedActivityDate] = useState<string | null>(null);
   const [activityMonth, setActivityMonth] = useState<Date>(new Date(2026, 9, 1));
+  const [showPayslipModal, setShowPayslipModal] = useState(false);
 
   const prevMonth = () => {
     setActivityMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
@@ -833,6 +836,15 @@ function EmployeeDashboard() {
               </div>
             </div>
 
+            {/* View Official Salary Slip Action */}
+            <Button
+              onClick={() => setShowPayslipModal(true)}
+              className="w-full h-12 bg-[#063B78] hover:bg-[#082F63] text-white font-black text-xs rounded-2xl flex items-center justify-center gap-2 shadow-md cursor-pointer"
+            >
+              <FileText className="size-4 text-[#FFC400]" />
+              <span>📄 View & Download Salary Slip (सॅलरी स्लिप)</span>
+            </Button>
+
             {/* Logout Action */}
             <Button
               onClick={handleLogout}
@@ -844,6 +856,53 @@ function EmployeeDashboard() {
         )}
 
       </div>
+
+      {/* ── EMPLOYEE SALARY SLIP MODAL ── */}
+      {showPayslipModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fade-in print:bg-white print:p-0">
+          <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl border border-slate-200 relative max-h-[92vh] overflow-y-auto print:max-h-none print:shadow-none print:border-none print:rounded-none">
+            <div className="print:hidden sticky top-0 bg-white border-b border-slate-100 px-5 py-3.5 flex items-center justify-between z-10 rounded-t-3xl shadow-2xs">
+              <div className="flex items-center gap-2">
+                <FileText className="size-5 text-[#063B78]" />
+                <h3 className="font-black text-[#10233F] text-sm sm:text-base">
+                  Official Salary Slip &bull; {user.employerName || employerName || "Company"}
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowPayslipModal(false)}
+                className="text-slate-400 hover:text-slate-700 font-extrabold text-xl p-1.5 rounded-full hover:bg-slate-100 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-2 sm:p-4">
+              <SalarySlip
+                companyName={user.employerName || employerName || "REAL JOB Construction Pvt. Ltd."}
+                companyAddress="MIDC Industrial Area, Pune, Maharashtra 411026"
+                companyTagline="Building Better Opportunities"
+                employeeName={user.fullName || "Employee"}
+                employeeId={user.id ? `RJW-${user.id.slice(-6).toUpperCase()}` : "RJW-000123"}
+                mobile={user.mobile || "9876543210"}
+                designation={user.trade || "Staff"}
+                department={user.category || "General"}
+                location="Site - Pune"
+                joiningDate={user.joiningDate || "01-08-2026"}
+                month={activityMonth.toLocaleDateString("en-US", { month: "long" })}
+                year={activityMonth.getFullYear().toString()}
+                totalDaysInMonth={31}
+                presentDays={monthSummary.presentCount || 26}
+                absentDays={monthSummary.absentCount || 2}
+                halfDays={monthSummary.halfDayCount || 1}
+                weeklyOffDays={2}
+                dailyRate={user.dailyRate || 600}
+                basicSalary={(monthSummary.presentCount || 26) * (user.dailyRate || 600)}
+                overtimeHours={(monthSummary.overtimeCount || 1) * 4}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── BOTTOM NAVIGATION BAR (Website Navy Theme #063B78) ── */}
       <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-[#063B78] text-white border-t border-blue-400/20 z-30 px-4 py-2 flex items-center justify-around shadow-2xl">
