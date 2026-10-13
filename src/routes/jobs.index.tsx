@@ -51,7 +51,7 @@ import { JobCardImage } from "@/components/portal/JobCardImage";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useI18n, getCategoryTitle, getCategoryDesc } from "@/lib/i18n";
-import { dataStore, JobRecord } from "@/lib/data-store";
+import { dataStore, JobRecord, isRemovedTestCategory } from "@/lib/data-store";
 
 export const Route = createFileRoute("/jobs/")({
   validateSearch: (search: Record<string, unknown>): { category?: string | undefined } => {
@@ -92,11 +92,14 @@ function JobsListingPage() {
 
   const dynamicMainCategories = useMemo(() => {
     const jobsList = dataStore.getActiveJobs();
-    const catMap = new Map<string, { slug: string; name: string; count: number }>();
+    const catMap = new Map<string, { slug: string; name: string; count: number; iconName?: string }>();
 
     jobsList.forEach((job) => {
       if (job.category && job.category.trim()) {
         const name = job.category.trim();
+        // Skip removed test categories
+        if (isRemovedTestCategory(name)) return;
+
         const slug = name.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-');
         if (!catMap.has(slug)) {
           catMap.set(slug, { slug, name, count: 1 });
@@ -154,6 +157,8 @@ function JobsListingPage() {
       company: dj.company,
       location: dj.location,
       salary: dj.salary,
+      showSalary: dj.showSalary ?? true,
+      hideSalary: dj.hideSalary ?? false,
       experience: dj.experience,
       type: dj.jobType,
       workMode: (dj.workMode as any) || "On-site",
@@ -170,7 +175,8 @@ function JobsListingPage() {
         job.title.toLowerCase().includes(term) ||
         job.company.toLowerCase().includes(term) ||
         job.location.toLowerCase().includes(term) ||
-        (job.category && job.category.toLowerCase().includes(term));
+        (job.category && job.category.toLowerCase().includes(term)) ||
+        (job.salary && job.salary.toLowerCase().includes(term));
 
       let matchesCategory = false;
       if (categoryFilter === "all" || !categoryFilter) {
@@ -354,20 +360,23 @@ function JobsListingPage() {
             {dynamicMainCategories.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 max-w-6xl mx-auto">
                 {/* Dynamic Main Category Cards */}
-                {dynamicMainCategories.map(({ slug, name, count }) => {
+                {dynamicMainCategories.map(({ slug, name, count, iconName }) => {
                   let CategoryIcon = Briefcase;
                   const lc = name.toLowerCase();
-                  if (lc.includes('construction') || lc.includes('builder') || lc.includes('civil')) CategoryIcon = HardHat;
-                  else if (lc.includes('software') || lc.includes('it') || lc.includes('develop') || lc.includes('computer')) CategoryIcon = Laptop;
-                  else if (lc.includes('engineer') || lc.includes('tech') || lc.includes('mechanic')) CategoryIcon = Wrench;
-                  else if (lc.includes('health') || lc.includes('medic') || lc.includes('doctor') || lc.includes('nurse')) CategoryIcon = Stethoscope;
-                  else if (lc.includes('financ') || lc.includes('account') || lc.includes('bank')) CategoryIcon = Landmark;
+                  if (iconName === 'Factory' || lc.includes('manufact') || lc.includes('factory')) CategoryIcon = Factory;
+                  else if (iconName === 'HardHat' || lc.includes('construction') || lc.includes('builder') || lc.includes('civil')) CategoryIcon = HardHat;
+                  else if (iconName === 'Wrench' || lc.includes('engineer') || lc.includes('tech') || lc.includes('mechanic')) CategoryIcon = Wrench;
+                  else if (iconName === 'Truck' || lc.includes('logistic') || lc.includes('transport') || lc.includes('driver')) CategoryIcon = Truck;
+                  else if (iconName === 'Zap' || lc.includes('electric')) CategoryIcon = Zap;
+                  else if (iconName === 'Shield' || lc.includes('security') || lc.includes('guard')) CategoryIcon = ShieldCheck;
+                  else if (iconName === 'Briefcase' || lc.includes('office') || lc.includes('staff')) CategoryIcon = Briefcase;
+                  else if (iconName === 'Laptop' || lc.includes('software') || lc.includes('it')) CategoryIcon = Laptop;
+                  else if (lc.includes('farm') || lc.includes('agri')) CategoryIcon = Sprout;
+                  else if (lc.includes('health') || lc.includes('medic')) CategoryIcon = Stethoscope;
+                  else if (lc.includes('financ') || lc.includes('account')) CategoryIcon = Landmark;
                   else if (lc.includes('sales') || lc.includes('market')) CategoryIcon = TrendingUp;
-                  else if (lc.includes('educat') || lc.includes('teach') || lc.includes('school')) CategoryIcon = GraduationCap;
-                  else if (lc.includes('manufact') || lc.includes('factory') || lc.includes('production') || lc.includes('industrial')) CategoryIcon = Factory;
-                  else if (lc.includes('logistic') || lc.includes('transport') || lc.includes('driver') || lc.includes('delivery')) CategoryIcon = Truck;
-                  else if (lc.includes('hotel') || lc.includes('restaurant') || lc.includes('hospitality')) CategoryIcon = Hotel;
-                  else if (lc.includes('security') || lc.includes('guard')) CategoryIcon = ShieldCheck;
+                  else if (lc.includes('educat') || lc.includes('teach')) CategoryIcon = GraduationCap;
+                  else if (lc.includes('hotel') || lc.includes('restaurant')) CategoryIcon = Hotel;
 
                   return (
                     <button

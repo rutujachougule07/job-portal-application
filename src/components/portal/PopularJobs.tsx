@@ -20,7 +20,7 @@ import { useI18n } from "@/lib/i18n";
 import { dataStore } from "@/lib/data-store";
 
 export function PopularJobs() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [activeTab, setActiveTab] = useState("all");
   const [savedJobs, setSavedJobs] = useState<Record<string, boolean>>({});
 
@@ -39,26 +39,29 @@ export function PopularJobs() {
 
   const allJobsFromStore = dataStore.getActiveJobs();
 
-  const jobsList = allJobsFromStore.map((j) => ({
-    id: j.id,
-    title: j.title,
-    company: j.company,
-    location: j.location,
-    salary: j.salary,
-    posted: j.postedAgo || "Just now",
-    type: j.jobType || "Full Time",
-    exp: j.experience || "Any",
-    mode: j.workMode || "On-site",
-    featured: true,
-    badgeColor: "bg-[#063B78]",
-    btnColor: "bg-[#063B78] hover:bg-[#082F63] text-white",
-    waveGlow: "from-[#063B78]/15 via-[#063B78]/5",
-    logoSvg: (
-      <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[#063B78] text-white shadow-md font-black text-[#FFC400] text-sm">
-        {j.initials || (j.company ? j.company.substring(0, 2).toUpperCase() : "RJ")}
-      </div>
-    ),
-  }));
+  const jobsList = allJobsFromStore.map((j) => {
+    const isSalaryHidden = j.showSalary === false || j.hideSalary === true;
+    return {
+      id: j.id,
+      title: j.title,
+      company: j.company,
+      location: j.location,
+      salary: isSalaryHidden ? "Not Disclosed" : j.salary,
+      posted: j.postedAgo || "Just now",
+      type: j.jobType || "Full Time",
+      exp: j.experience || "Any",
+      mode: j.workMode || "On-site",
+      featured: true,
+      badgeColor: "bg-[#063B78]",
+      btnColor: "bg-[#063B78] hover:bg-[#082F63] text-white",
+      waveGlow: "from-[#063B78]/15 via-[#063B78]/5",
+      logoSvg: (
+        <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[#063B78] text-white shadow-md font-black text-[#FFC400] text-sm">
+          {j.initials || (j.company ? j.company.substring(0, 2).toUpperCase() : "RJ")}
+        </div>
+      ),
+    };
+  });
 
   return (
     <section className="relative bg-[#F8F7F4] py-20 sm:py-28 overflow-hidden">

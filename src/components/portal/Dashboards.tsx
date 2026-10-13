@@ -84,6 +84,8 @@ export function SeekerDashboard() {
                   company: j.company,
                   location: j.location,
                   salary: j.salary,
+                  showSalary: j.showSalary,
+                  hideSalary: j.hideSalary,
                   experience: j.experience,
                   type: j.jobType || j.type || "Full Time",
                   workMode: (j.workMode as any) || "On-site",

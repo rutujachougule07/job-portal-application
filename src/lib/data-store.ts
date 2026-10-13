@@ -69,6 +69,8 @@ export type JobRecord = {
   salaryMin?: number | undefined;
   salaryMax?: number | undefined;
   salaryType: SalaryType;
+  showSalary?: boolean;
+  hideSalary?: boolean;
   applicationConfig?: any;
   location: string;
   jobType: JobType;
@@ -234,7 +236,8 @@ export type EmployerWorker = {
   education?: string;
   dailyRate: number;
   joiningDate: string;
-  status: "Active" | "Inactive";
+  status: "Active" | "Inactive" | "Deleted";
+  isDeleted?: boolean;
   workShiftStart?: string;
   workShiftEnd?: string;
   customFields?: Array<{ label: string; value: string }>;
@@ -251,6 +254,7 @@ export type DailyAttendanceRecord = {
   workerName: string;
   date: string;
   status: "Present" | "HalfDay" | "Absent" | "Overtime";
+  overtimeHours?: number;
   punchInTime?: string;
   punchOutTime?: string;
   punchInLocation?: { lat: number; lng: number };
@@ -273,7 +277,22 @@ export type RegisteredUser = {
   worksiteLocationLink?: string;
 };
 
+export const DEFAULT_SUPERADMIN_CATEGORIES = [
+  { label: "Factory Worker", iconName: "Factory", theme: "blue" },
+  { label: "Construction", iconName: "HardHat", theme: "yellow" },
+  { label: "Technical Staff", iconName: "Wrench", theme: "purple" },
+  { label: "Transport & Logistics", iconName: "Truck", theme: "green" },
+  { label: "Electrician", iconName: "Zap", theme: "orange" },
+  { label: "Security Guard", iconName: "Shield", theme: "red" },
+  { label: "Office Staff", iconName: "Briefcase", theme: "blue" },
+];
+
 const INITIAL_JOBS: JobRecord[] = [];
+
+// Helper to determine if a job category is one of the removed test categories
+export function isRemovedTestCategory(_cat?: string): boolean {
+  return false;
+}
 
 export class DataStoreManager {
   private STORAGE_KEYS = {
@@ -300,6 +319,16 @@ export class DataStoreManager {
 
     if (!localStorage.getItem(this.STORAGE_KEYS.JOBS)) {
       localStorage.setItem(this.STORAGE_KEYS.JOBS, JSON.stringify([]));
+    } else {
+      // Immediate cleanup of removed test categories from local storage
+      try {
+        const raw = localStorage.getItem(this.STORAGE_KEYS.JOBS) || "[]";
+        const parsed: JobRecord[] = JSON.parse(raw);
+        const cleaned = parsed.filter((j) => !isRemovedTestCategory(j.category));
+        if (cleaned.length !== parsed.length) {
+          localStorage.setItem(this.STORAGE_KEYS.JOBS, JSON.stringify(cleaned));
+        }
+      } catch {}
     }
     if (!localStorage.getItem(this.STORAGE_KEYS.APPLICATIONS)) {
       localStorage.setItem(this.STORAGE_KEYS.APPLICATIONS, JSON.stringify([]));
@@ -326,14 +355,26 @@ export class DataStoreManager {
       const attendanceSnap = await getDocs(collection(db, "attendance"));
 
       if (!jobsSnap.empty) {
-        // Firebase has jobs → use Firebase as source of truth
-        const fbJobs = jobsSnap.docs.map(d => d.data());
-        localStorage.setItem(this.STORAGE_KEYS.JOBS, JSON.stringify(fbJobs));
+        // Firebase has jobs → use Firebase as source of truth while purging removed categories
+        const fbJobs = jobsSnap.docs.map(d => d.data() as JobRecord);
+        const validJobs: JobRecord[] = [];
+        for (const docItem of jobsSnap.docs) {
+          const jData = docItem.data() as JobRecord;
+          if (isRemovedTestCategory(jData.category)) {
+            // Delete removed test jobs from Firestore
+            await deleteDoc(doc(db, "jobs", docItem.id)).catch(() => {});
+          } else {
+            validJobs.push(jData);
+          }
+        }
+        localStorage.setItem(this.STORAGE_KEYS.JOBS, JSON.stringify(validJobs));
       } else {
         // Firebase empty → push local jobs to Firebase
         const localJobs: JobRecord[] = JSON.parse(localStorage.getItem(this.STORAGE_KEYS.JOBS) || "[]");
         for (const job of localJobs) {
-          await setDoc(doc(db, "jobs", job.id), job);
+          if (!isRemovedTestCategory(job.category)) {
+            await setDoc(doc(db, "jobs", job.id), job);
+          }
         }
       }
 
@@ -348,32 +389,102 @@ export class DataStoreManager {
       }
 
       if (!usersSnap.empty) {
-        const fbUsers = usersSnap.docs.map(d => d.data());
-        localStorage.setItem("realjob_db_registered_users", JSON.stringify(fbUsers));
+        const fbUsers = usersSnap.docs.map(d => d.data() as RegisteredUser);
+        const localUsers: RegisteredUser[] = JSON.parse(localStorage.getItem("realjob_db_registered_users") || "[]");
+        const map = new Map<string, RegisteredUser>();
+        fbUsers.forEach(u => {
+          if (u.id) map.set(u.id, u);
+          else if (u.email) map.set(u.email.toLowerCase(), u);
+        });
+        localUsers.forEach(u => {
+          if (u.id) map.set(u.id, u);
+          else if (u.email) map.set(u.email.toLowerCase(), u);
+        });
+        const merged = Array.from(map.values());
+        localStorage.setItem("realjob_db_registered_users", JSON.stringify(merged));
       } else {
         const localUsers: RegisteredUser[] = JSON.parse(localStorage.getItem("realjob_db_registered_users") || "[]");
         for (const user of localUsers) {
-          await setDoc(doc(db, "users", user.id), user);
+          await setDoc(doc(db, "users", user.id), user).catch(() => {});
         }
       }
 
       if (!workersSnap.empty) {
-        const fbWorkers = workersSnap.docs.map(d => d.data());
-        localStorage.setItem(this.STORAGE_KEYS.EMP_WORKERS, JSON.stringify(fbWorkers));
-      } else {
-        const localWorkers: EmployerWorker[] = JSON.parse(localStorage.getItem(this.STORAGE_KEYS.EMP_WORKERS) || "[]");
+        const deletedIds = new Set<string>(
+          JSON.parse(localStorage.getItem("realjob_deleted_worker_ids") || "[]")
+        );
+        deletedIds.add("empw-1791635953540");
+        deletedIds.add("empw-1791785681836");
+
+        // Purge any deleted/inactive workers from Firestore
+        for (const docItem of workersSnap.docs) {
+          const dData = docItem.data() as EmployerWorker;
+          if (deletedIds.has(docItem.id) || dData.status === "Deleted" || (dData as any).isDeleted || dData.status === "Inactive") {
+            deletedIds.add(docItem.id);
+            deleteDoc(doc(db, "workers", docItem.id)).catch(() => {});
+          }
+        }
+        localStorage.setItem("realjob_deleted_worker_ids", JSON.stringify(Array.from(deletedIds)));
+
+        const fbWorkers = workersSnap.docs
+          .map(d => d.data() as EmployerWorker)
+          .filter(w => !deletedIds.has(w.id) && w.status !== "Inactive" && w.status !== "Deleted" && !(w as any).isDeleted);
+
+        const localWorkers: EmployerWorker[] = (
+          JSON.parse(localStorage.getItem(this.STORAGE_KEYS.EMP_WORKERS) || "[]") as EmployerWorker[]
+        ).filter(w => !deletedIds.has(w.id) && w.status !== "Inactive" && w.status !== "Deleted" && !(w as any).isDeleted);
+
+        const map = new Map<string, EmployerWorker>();
+        fbWorkers.forEach(w => { if (w.id) map.set(w.id, w); });
+        localWorkers.forEach(w => { if (w.id) map.set(w.id, w); });
+        const merged = Array.from(map.values()).filter(
+          w => !deletedIds.has(w.id) && w.status !== "Inactive" && w.status !== "Deleted" && !(w as any).isDeleted
+        );
+        localStorage.setItem(this.STORAGE_KEYS.EMP_WORKERS, JSON.stringify(merged));
+
+        const fbIds = new Set(fbWorkers.map(w => w.id));
         for (const w of localWorkers) {
-          await setDoc(doc(db, "workers", w.id), w);
+          if (!fbIds.has(w.id) && !deletedIds.has(w.id)) {
+            setDoc(doc(db, "workers", w.id), w, { merge: true }).catch(() => {});
+          }
+        }
+      } else {
+        const deletedIds = new Set<string>(
+          JSON.parse(localStorage.getItem("realjob_deleted_worker_ids") || "[]")
+        );
+        deletedIds.add("empw-1791635953540");
+        deletedIds.add("empw-1791785681836");
+        const localWorkers: EmployerWorker[] = (
+          JSON.parse(localStorage.getItem(this.STORAGE_KEYS.EMP_WORKERS) || "[]") as EmployerWorker[]
+        ).filter(w => !deletedIds.has(w.id) && w.status !== "Inactive" && w.status !== "Deleted" && !(w as any).isDeleted);
+        localStorage.setItem(this.STORAGE_KEYS.EMP_WORKERS, JSON.stringify(localWorkers));
+
+        for (const w of localWorkers) {
+          if (!deletedIds.has(w.id)) {
+            await setDoc(doc(db, "workers", w.id), w, { merge: true }).catch(() => {});
+          }
         }
       }
 
       if (!attendanceSnap.empty) {
-        const fbAtt = attendanceSnap.docs.map(d => d.data());
-        localStorage.setItem(this.STORAGE_KEYS.ATTENDANCE, JSON.stringify(fbAtt));
+        const fbAtt = attendanceSnap.docs.map(d => d.data() as DailyAttendanceRecord);
+        const localAtt: DailyAttendanceRecord[] = JSON.parse(localStorage.getItem(this.STORAGE_KEYS.ATTENDANCE) || "[]");
+        const map = new Map<string, DailyAttendanceRecord>();
+        fbAtt.forEach(a => { if (a.id) map.set(a.id, a); });
+        localAtt.forEach(a => { if (a.id) map.set(a.id, a); });
+        const merged = Array.from(map.values());
+        localStorage.setItem(this.STORAGE_KEYS.ATTENDANCE, JSON.stringify(merged));
+
+        const fbAttIds = new Set(fbAtt.map(a => a.id));
+        for (const a of localAtt) {
+          if (!fbAttIds.has(a.id)) {
+            setDoc(doc(db, "attendance", a.id), a, { merge: true }).catch(() => {});
+          }
+        }
       } else {
         const localAtt: DailyAttendanceRecord[] = JSON.parse(localStorage.getItem(this.STORAGE_KEYS.ATTENDANCE) || "[]");
         for (const a of localAtt) {
-          await setDoc(doc(db, "attendance", a.id), a);
+          await setDoc(doc(db, "attendance", a.id), a, { merge: true }).catch(() => {});
         }
       }
     });
@@ -445,17 +556,36 @@ export class DataStoreManager {
 
   public updateRegisteredAccount(userId: string, updates: Partial<RegisteredUser>): RegisteredUser | null {
     const list = this.getRegisteredUserAccounts();
-    const index = list.findIndex(u => u.id === userId);
-    if (index >= 0) {
-      const updated = { ...list[index], ...updates } as RegisteredUser;
-      list[index] = updated;
-      if (typeof window !== "undefined") {
-        localStorage.setItem("realjob_db_registered_users", JSON.stringify(list));
-        fbSync(() => updateDoc(doc(db, "users", userId), updated));
-      }
-      return updated;
+    let index = list.findIndex(u => u.id === userId);
+    if (index < 0 && updates.email) {
+      index = list.findIndex(u => u.email.toLowerCase() === updates.email!.toLowerCase());
     }
-    return null;
+
+    let updated: RegisteredUser;
+    if (index >= 0) {
+      updated = { ...list[index], ...updates } as RegisteredUser;
+      list[index] = updated;
+    } else {
+      updated = {
+        id: userId || `usr-${Date.now()}`,
+        email: updates.email || "",
+        password: updates.password || "",
+        mobile: updates.mobile || "",
+        role: updates.role || "employer",
+        fullName: updates.fullName || "User",
+        profilePhoto: updates.profilePhoto || "",
+        createdAt: new Date().toISOString(),
+        ...updates,
+      } as RegisteredUser;
+      list.push(updated);
+    }
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem("realjob_db_registered_users", JSON.stringify(list));
+      fbSync(() => setDoc(doc(db, "users", updated.id), updated, { merge: true }));
+      this.setCurrentUser(updated);
+    }
+    return updated;
   }
 
   public findRegisteredAccount(identifier: string) {
@@ -607,6 +737,67 @@ export class DataStoreManager {
     this.setCurrentUser(null, targetRole);
   }
 
+  public getExistingJobCategories(): string[] {
+    const categoriesSet = new Set<string>();
+
+    // 1. From all jobs
+    const allJobs = this.getAllJobs();
+    allJobs.forEach((job) => {
+      if (job.category && job.category.trim()) {
+        categoriesSet.add(job.category.trim());
+      }
+    });
+
+    // 2. From saved custom categories pool in localStorage
+    if (typeof window !== "undefined") {
+      try {
+        const custom = localStorage.getItem("realjob_custom_categories");
+        if (custom) {
+          const parsed = JSON.parse(custom);
+          if (Array.isArray(parsed)) {
+            parsed.forEach((c) => {
+              if (typeof c === "string" && c.trim()) {
+                categoriesSet.add(c.trim());
+              }
+            });
+          }
+        }
+      } catch {}
+    }
+
+    return Array.from(categoriesSet);
+  }
+
+  public addCustomCategory(cat: string): void {
+    if (!cat || !cat.trim()) return;
+    const cleanCat = cat.trim();
+    if (typeof window !== "undefined") {
+      try {
+        const custom = localStorage.getItem("realjob_custom_categories");
+        const list: string[] = custom ? JSON.parse(custom) : [];
+        if (!list.some((c) => c.toLowerCase() === cleanCat.toLowerCase())) {
+          list.push(cleanCat);
+          localStorage.setItem("realjob_custom_categories", JSON.stringify(list));
+        }
+      } catch {}
+    }
+  }
+
+  public getSuperadminCategories(): Array<{ label: string; iconName: string; theme?: string }> {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("cms_categories");
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed.filter((c: any) => !isRemovedTestCategory(c.label));
+          }
+        } catch {}
+      }
+    }
+    return DEFAULT_SUPERADMIN_CATEGORIES;
+  }
+
   // --- JOBS COLLECTION ---
   public getAllJobs(): JobRecord[] {
     if (typeof window === "undefined") return INITIAL_JOBS;
@@ -617,8 +808,11 @@ export class DataStoreManager {
     }
     try {
       const parsed: JobRecord[] = JSON.parse(raw);
-      let modified = false;
-      const updated = parsed.map((j) => {
+      // Clean up jobs belonging to removed test categories
+      const filtered = parsed.filter((j) => !isRemovedTestCategory(j.category));
+      let modified = filtered.length !== parsed.length;
+
+      const updated = filtered.map((j) => {
         if (!j.approvalStatus) {
           modified = true;
           return { ...j, approvalStatus: "pending" as ApprovalStatus };
@@ -658,6 +852,9 @@ export class DataStoreManager {
   }
 
   public createJob(jobData: Omit<JobRecord, "id" | "postedDate" | "postedAgo" | "initials"> & { approvalStatus?: ApprovalStatus }): JobRecord {
+    if (jobData.category) {
+      this.addCustomCategory(jobData.category);
+    }
     const jobs = this.getAllJobs();
     const initials = (jobData.company || "Company").substring(0, 2).toUpperCase();
     const newJob: JobRecord = {
@@ -1241,12 +1438,41 @@ export class DataStoreManager {
 
   // --- EMPLOYER WORKER & ATTENDANCE MANAGEMENT ---
   public getEmployerWorkers(employerId: string): EmployerWorker[] {
-    if (typeof window === "undefined" || !employerId) return [];
+    if (typeof window === "undefined") return [];
     const raw = localStorage.getItem(this.STORAGE_KEYS.EMP_WORKERS);
     if (!raw) return [];
     try {
-      const all: EmployerWorker[] = JSON.parse(raw);
-      return all.filter((w) => w.employerId === employerId);
+      const deletedIds = new Set<string>(
+        JSON.parse(localStorage.getItem("realjob_deleted_worker_ids") || "[]")
+      );
+      deletedIds.add("empw-1791635953540");
+      deletedIds.add("empw-1791785681836");
+
+      const all: EmployerWorker[] = (JSON.parse(raw) as EmployerWorker[]).filter(
+        (w) =>
+          !deletedIds.has(w.id) &&
+          w.status !== "Inactive" &&
+          w.status !== "Deleted" &&
+          !(w as any).isDeleted
+      );
+      if (!employerId) return all;
+
+      const currentUser = this.getCurrentUser();
+      const validIdentifiers = new Set<string>();
+      if (employerId) validIdentifiers.add(employerId.trim().toLowerCase());
+      if (currentUser) {
+        if (currentUser.id) validIdentifiers.add(currentUser.id.trim().toLowerCase());
+        if (currentUser.email) validIdentifiers.add(currentUser.email.trim().toLowerCase());
+        if (currentUser.fullName) validIdentifiers.add(currentUser.fullName.trim().toLowerCase());
+      }
+
+      const filtered = all.filter((w) => {
+        if (!w.employerId) return false;
+        const wEmp = w.employerId.trim().toLowerCase();
+        return validIdentifiers.has(wEmp);
+      });
+
+      return filtered;
     } catch {
       return [];
     }
@@ -1257,7 +1483,20 @@ export class DataStoreManager {
     const raw = localStorage.getItem(this.STORAGE_KEYS.EMP_WORKERS);
     if (!raw) return [];
     try {
-      return JSON.parse(raw);
+      const deletedIds = new Set<string>(
+        JSON.parse(localStorage.getItem("realjob_deleted_worker_ids") || "[]")
+      );
+      deletedIds.add("empw-1791635953540");
+      deletedIds.add("empw-1791785681836");
+
+      const all: EmployerWorker[] = JSON.parse(raw);
+      return all.filter(
+        (w) =>
+          !deletedIds.has(w.id) &&
+          w.status !== "Inactive" &&
+          w.status !== "Deleted" &&
+          !(w as any).isDeleted
+      );
     } catch {
       return [];
     }
@@ -1271,6 +1510,7 @@ export class DataStoreManager {
       ...worker,
       id: workerId,
       status: worker.status || "Active",
+      isDeleted: false,
     };
     const index = all.findIndex((w) => w.id === workerId);
     if (index >= 0) {
@@ -1279,8 +1519,13 @@ export class DataStoreManager {
       all.unshift(newWorker);
     }
     if (typeof window !== "undefined") {
+      try {
+        const deletedIds: string[] = JSON.parse(localStorage.getItem("realjob_deleted_worker_ids") || "[]");
+        const filtered = deletedIds.filter((id) => id !== workerId);
+        localStorage.setItem("realjob_deleted_worker_ids", JSON.stringify(filtered));
+      } catch {}
       localStorage.setItem(this.STORAGE_KEYS.EMP_WORKERS, JSON.stringify(all));
-      fbSync(() => setDoc(doc(db, "workers", newWorker.id), newWorker));
+      fbSync(() => setDoc(doc(db, "workers", newWorker.id), newWorker, { merge: true }));
     }
     return newWorker;
   }
@@ -1290,10 +1535,41 @@ export class DataStoreManager {
     const raw = localStorage.getItem(this.STORAGE_KEYS.EMP_WORKERS);
     if (!raw) return false;
     try {
+      // Add worker to deleted tombstone list
+      try {
+        const deletedIds: string[] = JSON.parse(localStorage.getItem("realjob_deleted_worker_ids") || "[]");
+        if (!deletedIds.includes(workerId)) {
+          deletedIds.push(workerId);
+          localStorage.setItem("realjob_deleted_worker_ids", JSON.stringify(deletedIds));
+        }
+      } catch {}
+
       const all: EmployerWorker[] = JSON.parse(raw);
+      const targetWorker = all.find((w) => w.id === workerId);
       const filtered = all.filter((w) => w.id !== workerId);
       localStorage.setItem(this.STORAGE_KEYS.EMP_WORKERS, JSON.stringify(filtered));
-      fbSync(() => deleteDoc(doc(db, "workers", workerId)));
+
+      // Clean up session if this employee is currently logged in on this machine
+      try {
+        const sessionUser = JSON.parse(localStorage.getItem("realjob-user") || "null");
+        if (
+          sessionUser &&
+          (sessionUser.id === workerId ||
+            (targetWorker?.mobile && (sessionUser.mobile || "").replace(/\D/g, "") === (targetWorker.mobile || "").replace(/\D/g, "")))
+        ) {
+          localStorage.removeItem("realjob-user");
+        }
+      } catch {}
+
+      // Fire sync delete to Firestore
+      fbSync(async () => {
+        try {
+          await setDoc(doc(db, "workers", workerId), { status: "Deleted", isDeleted: true }, { merge: true });
+        } catch {}
+        try {
+          await deleteDoc(doc(db, "workers", workerId));
+        } catch {}
+      });
       return true;
     } catch {
       return false;
@@ -1301,12 +1577,27 @@ export class DataStoreManager {
   }
 
   public getEmployerAttendance(employerId: string, date?: string): DailyAttendanceRecord[] {
-    if (typeof window === "undefined" || !employerId) return [];
+    if (typeof window === "undefined") return [];
     const raw = localStorage.getItem(this.STORAGE_KEYS.ATTENDANCE);
     if (!raw) return [];
     try {
       const all: DailyAttendanceRecord[] = JSON.parse(raw);
-      let res = all.filter((a) => a.employerId === employerId);
+      const currentUser = this.getCurrentUser();
+      const validIdentifiers = new Set<string>();
+      if (employerId) validIdentifiers.add(employerId.trim().toLowerCase());
+      if (currentUser) {
+        if (currentUser.id) validIdentifiers.add(currentUser.id.trim().toLowerCase());
+        if (currentUser.email) validIdentifiers.add(currentUser.email.trim().toLowerCase());
+        if (currentUser.fullName) validIdentifiers.add(currentUser.fullName.trim().toLowerCase());
+      }
+
+      let res = all.filter((a) => {
+        if (!a.employerId) return true;
+        return validIdentifiers.has(a.employerId.trim().toLowerCase());
+      });
+      if (res.length === 0 && all.length > 0) {
+        res = all; // Fallback
+      }
       if (date) {
         res = res.filter((a) => a.date === date);
       }
@@ -1338,12 +1629,27 @@ export class DataStoreManager {
   }
 
   public getEmployerAttendanceRange(employerId: string, startDate?: string, endDate?: string): DailyAttendanceRecord[] {
-    if (typeof window === "undefined" || !employerId) return [];
+    if (typeof window === "undefined") return [];
     const raw = localStorage.getItem(this.STORAGE_KEYS.ATTENDANCE);
     if (!raw) return [];
     try {
       const all: DailyAttendanceRecord[] = JSON.parse(raw);
-      let res = all.filter((a) => a.employerId === employerId);
+      const currentUser = this.getCurrentUser();
+      const validIdentifiers = new Set<string>();
+      if (employerId) validIdentifiers.add(employerId.trim().toLowerCase());
+      if (currentUser) {
+        if (currentUser.id) validIdentifiers.add(currentUser.id.trim().toLowerCase());
+        if (currentUser.email) validIdentifiers.add(currentUser.email.trim().toLowerCase());
+        if (currentUser.fullName) validIdentifiers.add(currentUser.fullName.trim().toLowerCase());
+      }
+
+      let res = all.filter((a) => {
+        if (!a.employerId) return true;
+        return validIdentifiers.has(a.employerId.trim().toLowerCase());
+      });
+      if (res.length === 0 && all.length > 0) {
+        res = all; // Fallback
+      }
       if (startDate) {
         res = res.filter((a) => a.date >= startDate);
       }
@@ -1368,7 +1674,8 @@ export class DataStoreManager {
       punchOutTime?: string;
       punchInLocation?: { lat: number; lng: number };
       punchOutLocation?: { lat: number; lng: number };
-    }
+    },
+    overtimeHours?: number
   ): DailyAttendanceRecord {
     const raw = typeof window !== "undefined" ? localStorage.getItem(this.STORAGE_KEYS.ATTENDANCE) : null;
     const all: DailyAttendanceRecord[] = raw ? JSON.parse(raw) : [];
@@ -1391,9 +1698,14 @@ export class DataStoreManager {
       const updatedPunchLog = existing.punchLog ? [...existing.punchLog] : [];
       if (newPunchLogEntry) updatedPunchLog.unshift(newPunchLogEntry); // Keep newest at the top
       
+      const finalOtHours = overtimeHours !== undefined
+        ? overtimeHours
+        : (status === "Overtime" ? (existing.overtimeHours || 2) : 0);
+
       newRecord = {
         ...existing,
         status: status,
+        overtimeHours: finalOtHours,
         punchLog: updatedPunchLog,
         updatedAt: new Date().toISOString(),
       };
@@ -1414,6 +1726,10 @@ export class DataStoreManager {
       }
       all[index] = newRecord;
     } else {
+      const finalOtHours = overtimeHours !== undefined
+        ? overtimeHours
+        : (status === "Overtime" ? 2 : 0);
+
       newRecord = {
         id: recordId,
         employerId,
@@ -1421,6 +1737,7 @@ export class DataStoreManager {
         workerName,
         date,
         status,
+        overtimeHours: finalOtHours,
         notes: notes || "",
         punchInTime: punchData?.punchInTime,
         punchOutTime: punchData?.punchOutTime,
@@ -1437,6 +1754,81 @@ export class DataStoreManager {
       fbSync(() => setDoc(doc(db, "attendance", newRecord.id), newRecord));
     }
     return newRecord;
+  }
+
+  public saveBulkAttendance(
+    employerId: string,
+    workerId: string,
+    workerName: string,
+    dates: string[],
+    status: "Present" | "HalfDay" | "Absent" | "Overtime",
+    overtimeHours?: number,
+    notes?: string
+  ): DailyAttendanceRecord[] {
+    const raw = typeof window !== "undefined" ? localStorage.getItem(this.STORAGE_KEYS.ATTENDANCE) : null;
+    const all: DailyAttendanceRecord[] = raw ? JSON.parse(raw) : [];
+    const savedRecords: DailyAttendanceRecord[] = [];
+
+    const finalOtHours = overtimeHours !== undefined
+      ? overtimeHours
+      : (status === "Overtime" ? 2 : 0);
+
+    dates.forEach((date) => {
+      const recordId = `att-${workerId}-${date}`;
+      const index = all.findIndex((a) => a.id === recordId || (a.workerId === workerId && a.date === date));
+      let record: DailyAttendanceRecord;
+
+      if (index >= 0) {
+        record = {
+          ...all[index]!,
+          status,
+          overtimeHours: finalOtHours,
+          updatedAt: new Date().toISOString(),
+        };
+        if (notes) record.notes = notes;
+        all[index] = record;
+      } else {
+        record = {
+          id: recordId,
+          employerId,
+          workerId,
+          workerName,
+          date,
+          status,
+          overtimeHours: finalOtHours,
+          notes: notes || "",
+          updatedAt: new Date().toISOString(),
+        };
+        all.push(record);
+      }
+      savedRecords.push(record);
+      fbSync(() => setDoc(doc(db, "attendance", record.id), record));
+    });
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem(this.STORAGE_KEYS.ATTENDANCE, JSON.stringify(all));
+    }
+    return savedRecords;
+  }
+  public deleteAttendanceRecord(workerId: string, date: string): boolean {
+    if (typeof window === "undefined") return false;
+    const raw = localStorage.getItem(this.STORAGE_KEYS.ATTENDANCE);
+    if (!raw) return false;
+    try {
+      const all: DailyAttendanceRecord[] = JSON.parse(raw);
+      const recordId = `att-${workerId}-${date}`;
+      const filtered = all.filter(
+        (a) => !(a.id === recordId || (a.workerId === workerId && a.date === date))
+      );
+      localStorage.setItem(this.STORAGE_KEYS.ATTENDANCE, JSON.stringify(filtered));
+      // Also remove from Firestore
+      fbSync(async () => {
+        try { await deleteDoc(doc(db, "attendance", recordId)); } catch {}
+      });
+      return true;
+    } catch {
+      return false;
+    }
   }
 }
 

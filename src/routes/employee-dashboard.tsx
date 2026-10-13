@@ -187,8 +187,17 @@ function EmployeeDashboard() {
         if (u.role === "employee") {
           const allWorkers = dataStore.getAllEmployerWorkers();
           const cleanMobile = (u.mobile || "").replace(/\D/g, "");
-          const fresh = allWorkers.find(w => w.id === u.id || (cleanMobile && (w.mobile || "").replace(/\D/g, "") === cleanMobile));
-          const merged = fresh ? { ...u, ...fresh, fullName: (fresh as any).fullName || fresh.name || u.fullName, role: "employee" } : u;
+          const fresh = allWorkers.find(w => (w.id === u.id || (cleanMobile && (w.mobile || "").replace(/\D/g, "") === cleanMobile)));
+          
+          if (!fresh) {
+            localStorage.removeItem("realjob-user");
+            dataStore.setCurrentUser(null as any);
+            toast.error("❌ आपले कर्मचारी खाते आता सक्रिय नाही किंवा काढून टाकले आहे! (Your employee account has been removed.)");
+            navigate({ to: "/auth", search: { mode: "login", role: "employee" } });
+            return;
+          }
+
+          const merged = { ...u, ...fresh, fullName: (fresh as any).fullName || fresh.name || u.fullName, role: "employee" };
           setUser(merged);
 
           // Find employer company name
@@ -302,6 +311,21 @@ function EmployeeDashboard() {
 
   const handlePunchAction = () => {
     if (!user) return;
+
+    // Verify employee still exists in employer directory and has not been deleted
+    const activeWorkers = dataStore.getAllEmployerWorkers();
+    const userCleanMobile = (user.mobile || "").replace(/\D/g, "");
+    const stillExists = activeWorkers.some(
+      (w) => w.id === user.id || (userCleanMobile && (w.mobile || "").replace(/\D/g, "") === userCleanMobile)
+    );
+    if (!stillExists) {
+      localStorage.removeItem("realjob-user");
+      dataStore.setCurrentUser(null as any);
+      toast.error("❌ आपले कर्मचारी खाते आता उपलब्ध नाही किंवा काढून टाकले आहे! (Your employee account has been removed.)");
+      navigate({ to: "/auth", search: { mode: "login", role: "employee" } });
+      return;
+    }
+
     const isPunchingIn = status === "Absent" || status === "Punched Out";
     const punchType: "in" | "out" = isPunchingIn ? "in" : "out";
 

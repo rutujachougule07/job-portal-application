@@ -48,6 +48,8 @@ function getJobDetails(jobId: string) {
       company: storeJob.company,
       location: storeJob.location,
       salary: storeJob.salary,
+      showSalary: storeJob.showSalary,
+      hideSalary: storeJob.hideSalary,
       experience: storeJob.experience,
       type: storeJob.jobType,
       workMode: (storeJob.workMode as any) || "On-site",
@@ -152,11 +154,14 @@ function JobDetailPage() {
     }
   };
 
+  const isSalaryHidden = (job as any).showSalary === false || (job as any).hideSalary === true;
+  const displaySalary = isSalaryHidden ? "Not Disclosed" : n(job.salary);
+
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
         title: `${job.title} at ${job.company}`,
-        text: `Check out this job opening on REAL JOB: ${job.title} (${job.salary})`,
+        text: `Check out this job opening on REAL JOB: ${job.title} ${isSalaryHidden ? "" : `(${job.salary})`}`,
         url: window.location.href,
       });
     } else {
@@ -225,7 +230,7 @@ function JobDetailPage() {
                       <MapPin className="size-4 text-[#063B78]" /> {job.location}
                     </span>
                     <span className="flex items-center gap-1 text-[#063B78]">
-                      <Wallet className="size-4 text-[#FFC400]" /> {n(job.salary)}
+                      <Wallet className="size-4 text-[#FFC400]" /> {displaySalary}
                     </span>
                     <span className="flex items-center gap-1">
                       <Clock3 className="size-4 text-[#5B6B7F]" /> {n(job.posted)}
@@ -441,7 +446,7 @@ function JobDetailPage() {
                       </div>
                       <div>
                         <p className="text-xs font-bold text-[#5B6B7F]">Salary</p>
-                        <p className="text-sm font-black text-[#10233F]">{job.salary}</p>
+                        <p className="text-sm font-black text-[#10233F]">{isSalaryHidden ? "Not Disclosed" : job.salary}</p>
                       </div>
                     </div>
                     <div className="flex gap-3 items-start">

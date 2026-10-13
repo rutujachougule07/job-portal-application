@@ -34,8 +34,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { LanguageSwitcher } from "@/components/portal/LanguageSwitcher";
-import { dataStore, JobRecord, ApplicationRecord, JobPackagePlan, PackageTransaction } from "@/lib/data-store";
+import { dataStore, JobRecord, ApplicationRecord, JobPackagePlan, PackageTransaction, DEFAULT_SUPERADMIN_CATEGORIES, isRemovedTestCategory } from "@/lib/data-store";
 
 export const Route = createFileRoute("/superadmin")({
   head: () => ({
@@ -82,15 +81,7 @@ function SuperAdminPage() {
     title: "About Our Company",
     description: "REAL JOB is a reliable employment portal that connects job seekers with trusted companies. We focus on creating real opportunities, building successful careers, and supporting growth for individuals and businesses across India."
   });
-  const [categories, setCategories] = useState([
-    { label: "Factory Worker", iconName: "Factory", theme: "blue" },
-    { label: "Construction", iconName: "HardHat", theme: "yellow" },
-    { label: "Technical Staff", iconName: "Wrench", theme: "purple" },
-    { label: "Transport & Logistics", iconName: "Truck", theme: "green" },
-    { label: "Electrician", iconName: "Zap", theme: "orange" },
-    { label: "Security Guard", iconName: "Shield", theme: "red" },
-    { label: "Office Staff", iconName: "Briefcase", theme: "blue" }
-  ]);
+  const [categories, setCategories] = useState<Array<{ label: string; iconName: string; theme?: string }>>(DEFAULT_SUPERADMIN_CATEGORIES);
 
   useEffect(() => {
     const savedTitle = localStorage.getItem("cms_heroTitle");
@@ -105,7 +96,15 @@ function SuperAdminPage() {
     if (savedImages) setHeroImages(JSON.parse(savedImages));
     if (savedMetrics) setMetrics(JSON.parse(savedMetrics));
     if (savedAbout) setAboutData(JSON.parse(savedAbout));
-    if (savedCategories) setCategories(JSON.parse(savedCategories));
+    if (savedCategories) {
+      try {
+        const parsed = JSON.parse(savedCategories);
+        if (Array.isArray(parsed)) {
+          const sanitized = parsed.filter((c: any) => !isRemovedTestCategory(c.label));
+          setCategories(sanitized.length > 0 ? sanitized : DEFAULT_SUPERADMIN_CATEGORIES);
+        }
+      } catch {}
+    }
   }, []);
 
   const [allJobs, setAllJobs] = useState<JobRecord[]>([]);

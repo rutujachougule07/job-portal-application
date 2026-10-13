@@ -25,7 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
-import { dataStore } from "@/lib/data-store";
+import { dataStore, type EmployerWorker } from "@/lib/data-store";
 
 const searchSchema = z.object({
   mode: z.string().optional().catch("login"),
@@ -328,13 +328,58 @@ function AuthPage() {
          const searchMobile = enteredEmail.replace(/\D/g, "");
          const allEmployerWorkers = (dataStore as any).getAllEmployerWorkers ? (dataStore as any).getAllEmployerWorkers() : [];
          
-         const candidates = allEmployerWorkers.filter((w: any) => w.mobile?.replace(/\D/g, "") === searchMobile);
+         const deletedIds = new Set<string>(
+           typeof window !== "undefined"
+             ? JSON.parse(localStorage.getItem("realjob_deleted_worker_ids") || "[]")
+             : []
+         );
+         deletedIds.add("empw-1791635953540");
+         deletedIds.add("empw-1791785681836");
+
+         let candidates = allEmployerWorkers.filter((w: any) => {
+           const clean = (w.mobile || "").replace(/\D/g, "");
+           return clean === searchMobile &&
+             !deletedIds.has(w.id) &&
+             w.status !== "Inactive" &&
+             w.status !== "Deleted" &&
+             !w.isDeleted;
+         });
+
+         // In case candidates not yet loaded into localStorage, check directly from Firestore
+         if (candidates.length === 0) {
+           try {
+             const { getFirestore, collection, getDocs } = await import("firebase/firestore");
+             const db = getFirestore();
+             const qSnap = await getDocs(collection(db, "workers"));
+             const fbCandidates: any[] = [];
+             qSnap.forEach((docSnap) => {
+               const data = docSnap.data() as EmployerWorker;
+               const m = (data.mobile || "").replace(/\D/g, "");
+               if (
+                 m === searchMobile &&
+                 !deletedIds.has(docSnap.id) &&
+                 !deletedIds.has(data.id) &&
+                 data.status !== "Inactive" &&
+                 data.status !== "Deleted" &&
+                 !data.isDeleted
+               ) {
+                 fbCandidates.push({ ...data, id: docSnap.id });
+               }
+             });
+             if (fbCandidates.length > 0) {
+               candidates = fbCandidates;
+             }
+           } catch {}
+         }
          
          if (candidates.length === 0) {
-            toast.error("❌ कर्मचारी सापडला नाही! (Employee not found. Check your mobile number.)");
+            toast.error("❌ हा कर्मचारी सध्या सक्रिय नाही किंवा काढून टाकला आहे! (Employee not found or has been removed.)");
             setBusy(false);
             return;
          }
+
+         // Sort newest first so most recently added profile matches
+         candidates.sort((a: any, b: any) => (b.id || "").localeCompare(a.id || ""));
 
          existingAccount = candidates.find((c: any) => (c.pin || "1234") === password);
          

@@ -50,6 +50,8 @@ export type Job = {
   featured?: boolean;
   openings?: number;
   vacancies?: number;
+  showSalary?: boolean;
+  hideSalary?: boolean;
 };
 
 export type CompanyMetadata = {
@@ -415,7 +417,12 @@ export function JobCard({
       category: dj.category,
       featured: dj.featured ?? false,
       openings: dj.vacancies ?? 1,
+      showSalary: dj.showSalary,
+      hideSalary: dj.hideSalary,
     }));
+
+  const isSalaryHidden = job.showSalary === false || (job as any).hideSalary === true;
+  const displayedSalary = isSalaryHidden ? "Not Disclosed" : n(job.salary);
 
   return (
     <>
@@ -534,7 +541,7 @@ export function JobCard({
               <p className="text-[9px] font-bold uppercase text-[#5B6B7F] truncate">
                 {lang === "mr" ? "सुरुवातीचा पगार" : "Starting Salary"}
               </p>
-              <p className="text-xs sm:text-sm font-black text-[#063B78] truncate">{n(job.salary)}</p>
+              <p className="text-xs sm:text-sm font-black text-[#063B78] truncate">{displayedSalary}</p>
             </div>
           </div>
 
@@ -779,7 +786,7 @@ export function JobCard({
                   <div className="p-4 rounded-2xl bg-[#063B78]/5 border border-[#063B78]/15 space-y-2">
                     <h3 className="text-base font-black text-[#063B78]">{job.title}</h3>
                     <div className="flex flex-wrap items-center gap-4 text-xs font-bold text-[#5B6B7F]">
-                      <span>💰 Salary: {job.salary}</span>
+                      <span>💰 Salary: {isSalaryHidden ? "Not Disclosed" : job.salary}</span>
                       <span>📍 Location: {job.location}</span>
                       <span>💼 Exp: {job.experience}</span>
                       <span>🕒 Type: {job.type} ({job.workMode})</span>
@@ -981,7 +988,7 @@ export function JobCard({
                     </div>
                     <div>
                       <p className="text-xs font-bold text-[#5B6B7F]">Salary</p>
-                      <p className="text-sm font-black text-[#10233F]">{job.salary}</p>
+                      <p className="text-sm font-black text-[#10233F]">{isSalaryHidden ? "Not Disclosed" : job.salary}</p>
                     </div>
                   </div>
                   <div className="flex gap-3 items-start">

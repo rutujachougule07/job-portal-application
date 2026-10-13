@@ -39,12 +39,17 @@ import {
   Bell,
   LogOut,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   MapPin,
   X,
   ExternalLink,
   Menu,
   IndianRupee,
   MessageCircle,
+  LocateFixed,
+  Navigation,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { parseMapCoordinates } from "@/lib/location-utils";
@@ -273,7 +278,25 @@ function AdminDashboardPage() {
   const [showWorkerModal, setShowWorkerModal] = useState(false);
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [locationLinkInput, setLocationLinkInput] = useState("");
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [editingWorkerId, setEditingWorkerId] = useState<string | null>(null);
+
+  // Individual Worker Attendance Calendar Modal State
+  const [calendarWorker, setCalendarWorker] = useState<EmployerWorker | null>(null);
+  const [calendarMonth, setCalendarMonth] = useState<number>(() => new Date().getMonth());
+  const [calendarYear, setCalendarYear] = useState<number>(() => new Date().getFullYear());
+  const [activeCalendarDate, setActiveCalendarDate] = useState<string | null>(null);
+  const [customOtHoursInput, setCustomOtHoursInput] = useState<number>(2);
+  const [showBulkFillSection, setShowBulkFillSection] = useState(false);
+  const [bulkFillStatus, setBulkFillStatus] = useState<"Present" | "HalfDay" | "Absent" | "Overtime">("Present");
+  const [bulkFillOtHours, setBulkFillOtHours] = useState<number>(2);
+  const [bulkFillFromDate, setBulkFillFromDate] = useState<string>(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 14);
+    return d.toISOString().split("T")[0]!;
+  });
+  const [bulkFillToDate, setBulkFillToDate] = useState<string>(() => new Date().toISOString().split("T")[0]!);
+  const [bulkSkipSundays, setBulkSkipSundays] = useState<boolean>(true);
 
   // Category & Reports Sub-States
   const [attendanceSubView, setAttendanceSubView] = useState<"daily" | "reports" | "directory">("daily");
@@ -558,45 +581,42 @@ function AdminDashboardPage() {
 
     const categoriesMap: Record<string, string[]> = {
       construction: [
-        "फार्मिंग",
-        "ðŸ§± Masonry & Brickwork",
+        "🧱 Masonry & Brickwork",
         "⚡ Electrical & Wiring",
-        "ðŸš° Plumbing & Piping",
-        "ðŸªµ Carpentry & Woodwork",
-        "ðŸŽ¨ Painting & Finishing",
-        "🛎️ ï¸ General Labour & Helper",
+        "🔧 Plumbing & Piping",
+        "🪵 Carpentry & Woodwork",
+        "🎨 Painting & Finishing",
+        "👷 General Labour & Helper",
       ],
       factory: [
         "⚙️ Machine Operator",
-        "फार्मिंग",
-        "फार्मिंग",
+        "🔧 Quality & Assembly",
         "📦 Packing & Warehouse",
-        "फार्मिंग",
-        "🛎️ ï¸ Helper & Maintenance",
-        "ðŸšš Loading & Unloading",
+        "👷 Helper & Maintenance",
+        "🚛 Loading & Unloading",
       ],
       hospitality: [
-        "फार्मिंग",
-        "ðŸ½ï¸ Waiter & Food Service",
-        "ðŸ§¹ Housekeeping & Cleaning",
+        "👨‍🍳 Chef & Kitchen Staff",
+        "🍽️ Waiter & Food Service",
+        "🧹 Housekeeping & Cleaning",
         "🛎️ Reception & Billing",
-        "🛎️¡ï¸ Security & Support",
+        "🛡️ Security & Support",
       ],
       healthcare: [
-        "ðŸ©º Nursing & Patient Care",
+        "🩺 Nursing & Patient Care",
         "💊 Pharmacy & Medical Support",
-        "फार्मिंग",
-        "ðŸ§¹ Sanitation & Cleaning",
-        "🛎️¡ï¸ Security & Maintenance",
+        "🔬 Lab Technician",
+        "🧹 Sanitation & Cleaning",
+        "🛡️ Security & Maintenance",
       ],
       it_software: [
         "💻 Software Developer / Engineer",
-        "ðŸŽ¨ UI/UX Designer",
+        "🎨 UI/UX Designer",
         "📊 Data Analyst",
         "📞 BPO / Call Center Executive",
         "📈 Sales & Marketing",
         "👥 HR & Administration",
-        "🛎️ ï¸ System Admin / IT Support",
+        "🖥️ System Admin / IT Support",
         "💼 Project Manager",
       ],
       agriculture: [
@@ -606,15 +626,15 @@ function AdminDashboardPage() {
         "📦 Packing & Loading",
         "💧 Irrigation & Spraying",
         "🌿 Soil & Fertilizer",
-        "🛎️ ï¸ General Labour",
+        "👷 General Labour",
       ]
     };
 
     const generalCategories = [
       "💼 Office Staff & Admin",
-      "ðŸšš Logistics & Transport",
-      "ðŸ§¹ Cleaning & Housekeeping",
-      "🛎️¡ï¸ Security Guard",
+      "🚛 Logistics & Transport",
+      "🧹 Cleaning & Housekeeping",
+      "🛡️ Security Guard",
     ];
 
     let combinedResults: string[] = [];
@@ -957,7 +977,12 @@ function AdminDashboardPage() {
   // Synchronous initialization prevents "admin-001" fallback during initial state setup
   const [currentUser, setCurrentUser] = useState<any>(() => {
     if (typeof window !== "undefined") {
-      return dataStore.getCurrentUser("employer") || dataStore.getCurrentUser("admin");
+      const fromStore = dataStore.getCurrentUser("employer") || dataStore.getCurrentUser("admin");
+      if (fromStore) return fromStore;
+      try {
+        const backup = localStorage.getItem("realjob-employer-profile");
+        if (backup) return JSON.parse(backup);
+      } catch {}
     }
     return null;
   });
@@ -967,10 +992,12 @@ function AdminDashboardPage() {
       setProfileForm((prev) => ({
         ...prev,
         fullName: currentUser.fullName || prev.fullName,
-        contactPerson: currentUser.fullName || prev.fullName,
+        contactPerson: currentUser.contactPerson || currentUser.fullName || prev.fullName,
         email: currentUser.email || prev.email,
         mobile: currentUser.mobile || prev.mobile,
         profilePhoto: currentUser.profilePhoto || prev.profilePhoto,
+        location: currentUser.location || prev.location,
+        industry: currentUser.industry || prev.industry,
       }));
     }
   }, [currentUser]);
@@ -1020,8 +1047,8 @@ function AdminDashboardPage() {
     try {
       const text = `${currentUser?.fullName || ""} ${empIdentifier || ""}`.toLowerCase();
       const isField = [
-        "farming", "farm", "agro", "agriculture", "nursery", "फार्मिंग", "फार्मिंग", "फार्मिंग", "कृषी", "फार्मिंग",
-        "construction", "site", "baukam", "फार्मिंग", "फार्मिंग", "फार्मिंग", "फार्मिंग", "labour", "labor",
+        "farming", "farm", "agro", "agriculture", "nursery", "शेती", "शेत", "रोपवाटिका", "कृषी", "फार्मिंग",
+        "construction", "site", "baukam", "बांधकाम", "साइट", "मजूर", "लेबर", "labour", "labor",
         "field", "driver", "moving", "delivery", "security", "guard", "हमाल"
       ].some(kw => text.includes(kw));
 
@@ -1049,15 +1076,34 @@ function AdminDashboardPage() {
       return;
     }
     const updatedUser = {
+      ...(currentUser || {}),
+      id: currentUser?.id || `usr-${Date.now()}`,
       email: profileForm.email.trim() || currentUser?.email || "",
       role: (currentUser?.role || "employer") as UserRole,
       fullName: profileForm.fullName.trim(),
-      id: currentUser?.id || `usr-${Date.now()}`,
+      contactPerson: profileForm.contactPerson?.trim() || "",
       mobile: profileForm.mobile.trim(),
       profilePhoto: profileForm.profilePhoto.trim(),
+      location: profileForm.location.trim(),
+      industry: profileForm.industry.trim(),
+      worksiteLocation: (currentUser as any)?.worksiteLocation || savedLocationCoords || null,
+      worksiteLocationLink: (currentUser as any)?.worksiteLocationLink || savedLocationLink || "",
     };
+
+    // 1. Immediately update React state for instant UI re-render
+    setCurrentUser(updatedUser);
+
+    // 2. Persist in dataStore session & registered accounts
     dataStore.setCurrentUser(updatedUser);
-    dataStore.registerAccount(updatedUser);
+    dataStore.updateRegisteredAccount(updatedUser.id, updatedUser);
+
+    // 3. Permanent local storage backups
+    try {
+      localStorage.setItem("realjob-employer-profile", JSON.stringify(updatedUser));
+      localStorage.setItem(`emp_profile_${updatedUser.id}`, JSON.stringify(updatedUser));
+      if (updatedUser.email) localStorage.setItem(`emp_profile_${updatedUser.email.toLowerCase()}`, JSON.stringify(updatedUser));
+    } catch {}
+
     toast.success("🎉 Profile updated successfully!");
   };
 
@@ -1068,9 +1114,10 @@ function AdminDashboardPage() {
   };
 
   const loadAttendanceData = () => {
-    const empWorkers = dataStore.getEmployerWorkers(empIdentifier);
+    const activeEmpId = currentUser?.id || currentUser?.fullName || currentUser?.email || empIdentifier;
+    const empWorkers = dataStore.getEmployerWorkers(activeEmpId);
     setWorkers(empWorkers);
-    const attRecords = dataStore.getEmployerAttendance(empIdentifier, selectedAttendanceDate);
+    const attRecords = dataStore.getEmployerAttendance(activeEmpId, selectedAttendanceDate);
     setDailyAttendanceRecords(attRecords);
 
     // Calculate report range
@@ -1086,27 +1133,58 @@ function AdminDashboardPage() {
       start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0]!;
       end = new Date().toISOString().split("T")[0]!;
     }
-    const rangeRecords = dataStore.getEmployerAttendanceRange(empIdentifier, start, end);
+    const rangeRecords = dataStore.getEmployerAttendanceRange(activeEmpId, start, end);
     setReportAttendanceRecords(rangeRecords);
   };
 
   useEffect(() => {
     loadAttendanceData();
-  }, [empIdentifier, selectedAttendanceDate, reportTimeframe, reportStartDate, reportEndDate]);
+  }, [currentUser?.id, currentUser?.fullName, empIdentifier, selectedAttendanceDate, reportTimeframe, reportStartDate, reportEndDate]);
 
   const handleMarkAttendance = (
     worker: EmployerWorker,
-    status: "Present" | "HalfDay" | "Absent" | "Overtime"
+    status: "Present" | "HalfDay" | "Absent" | "Overtime",
+    targetDate?: string,
+    overtimeHours?: number
   ) => {
+    const activeEmpId = currentUser?.id || currentUser?.fullName || currentUser?.email || empIdentifier;
+    const dateToUse = targetDate || selectedAttendanceDate;
     dataStore.saveAttendanceStatus(
-      empIdentifier,
+      activeEmpId,
       worker.id,
       worker.name,
-      selectedAttendanceDate,
-      status
+      dateToUse,
+      status,
+      undefined,
+      undefined,
+      overtimeHours
     );
     loadAttendanceData();
-    toast.success(`Attendance updated: ${worker.name} marked as ${status}`);
+    const otText = status === "Overtime" ? ` (${overtimeHours || 2} तास OT)` : "";
+    toast.success(`हजेरी नोंदवली: ${worker.name} - ${status}${otText} [${dateToUse}]`);
+  };
+
+  const handleBulkMarkAttendance = (
+    worker: EmployerWorker,
+    dates: string[],
+    status: "Present" | "HalfDay" | "Absent" | "Overtime",
+    overtimeHours?: number
+  ) => {
+    if (dates.length === 0) {
+      toast.error("कोणतीही तारीख निवडलेली नाही! (No dates selected)");
+      return;
+    }
+    const activeEmpId = currentUser?.id || currentUser?.fullName || currentUser?.email || empIdentifier;
+    dataStore.saveBulkAttendance(
+      activeEmpId,
+      worker.id,
+      worker.name,
+      dates,
+      status,
+      overtimeHours
+    );
+    loadAttendanceData();
+    toast.success(`✅ ${dates.length} दिवसांची हजेरी यशस्वीरीत्या नोंदवली! (${status})`);
   };
 
   const handleExportAttendanceCSV = () => {
@@ -1144,7 +1222,7 @@ function AdminDashboardPage() {
     const allowedLimit = dataStore.getUserWorkerCredits(userId);
     if (allowedLimit === 0) {
       toast.error(
-        "⚠️ ï¸ Active package required to add employees! Please purchase a package to continue.",
+        "⚠️ Active package required to add employees! Please purchase a package to continue.",
         { duration: 6000 }
       );
       setShowPackageModal(true);
@@ -1152,7 +1230,7 @@ function AdminDashboardPage() {
     }
     if (workers.length >= allowedLimit) {
       toast.error(
-        `⚠️ ï¸ Employee limit reached for your active package! (Current Limit: ${allowedLimit} employees). Please upgrade package to add more employees!`,
+        `⚠️ Employee limit reached for your active package! (Current Limit: ${allowedLimit} employees). Please upgrade package to add more employees!`,
         { duration: 6000 }
       );
       setShowPackageModal(true);
@@ -1218,9 +1296,10 @@ function AdminDashboardPage() {
       toast.error("Please enter employee name");
       return;
     }
+    const activeEmpId = currentUser?.id || currentUser?.fullName || currentUser?.email || empIdentifier;
     dataStore.saveEmployerWorker({
       ...(editingWorkerId ? { id: editingWorkerId } : {}),
-      employerId: empIdentifier,
+      employerId: activeEmpId,
       name: workerForm.name.trim(),
       mobile: workerForm.mobile.trim(),
       trade: workerForm.trade.trim() || "General Worker",
@@ -1240,7 +1319,7 @@ function AdminDashboardPage() {
     setShowWorkerModal(false);
     setEditingWorkerId(null);
     loadAttendanceData();
-    toast.success("Employee details saved successfully!");
+    toast.success(editingWorkerId ? "Employee details updated successfully!" : "Employee registered successfully!");
   };
 
   const handleDeleteWorker = (workerId: string, name: string) => {
@@ -1300,7 +1379,9 @@ function AdminDashboardPage() {
   const [editingJobId, setEditingJobId] = useState<string | null>(null);
   const [jobForm, setJobForm] = useState({
     title: "", company: "REAL JOB Platform", category: "", subcategory: "", location: "",
+    salary: "",
     salaryMin: "", salaryMax: "", salaryType: "Monthly",
+    showSalary: true,
     jobType: "Full Time", workMode: "On-site", vacancies: "5",
     education: "", experience: "", skills: "", description: "",
     responsibilities: "", benefits: "", status: "Active",
@@ -1319,7 +1400,9 @@ function AdminDashboardPage() {
     setEditingJobId(null);
     setJobForm({
       title: "", company: currentUser?.fullName || "REAL JOB Platform", category: "", subcategory: "", location: "",
+      salary: "",
       salaryMin: "", salaryMax: "", salaryType: "Monthly",
+      showSalary: true,
       jobType: "Full Time", workMode: "On-site", vacancies: "5",
       education: "", experience: "", skills: "", description: "",
       responsibilities: "", benefits: "", status: "Active",
@@ -1362,7 +1445,9 @@ function AdminDashboardPage() {
       setEditingJobId(null);
       setJobForm({
         title: "", company: currentUser?.fullName || "REAL JOB Platform", category: "", subcategory: "", location: "",
+        salary: "",
         salaryMin: "", salaryMax: "", salaryType: "Monthly",
+        showSalary: true,
         jobType: "Full Time", workMode: "On-site", vacancies: "5",
         education: "", experience: "", skills: "", description: "",
         responsibilities: "", benefits: "", status: "Active",
@@ -1388,9 +1473,11 @@ function AdminDashboardPage() {
       category: job.category || "",
       subcategory: job.subcategory || "",
       location: job.location || "",
+      salary: job.salary || (sMin && sMax ? `₹${sMin} - ₹${sMax}` : (sMin ? `₹${sMin}` : "")),
       salaryMin: sMin,
       salaryMax: sMax,
       salaryType: job.salaryType || "Monthly",
+      showSalary: job.showSalary !== false && !job.hideSalary,
       jobType: job.jobType || "Full Time",
       workMode: job.workMode || "On-site",
       vacancies: job.vacancies ? String(job.vacancies) : "5",
@@ -1408,8 +1495,14 @@ function AdminDashboardPage() {
   const handlePublishJob = (e: React.FormEvent) => {
     e.preventDefault();
     const salaryText = jobForm.salaryMin && jobForm.salaryMax
-      ? `₹${Number(jobForm.salaryMin).toLocaleString("en-IN")} - ₹${Number(jobForm.salaryMax).toLocaleString("en-IN")} / ${jobForm.salaryType === "Monthly" ? "Month" : "Year"}`
-      : "Salary on Interview";
+      ? `₹${Number(jobForm.salaryMin).toLocaleString("en-IN")} - ₹${Number(jobForm.salaryMax).toLocaleString("en-IN")}`
+      : jobForm.salaryMin
+        ? `₹${Number(jobForm.salaryMin).toLocaleString("en-IN")}`
+        : "Salary on Interview";
+
+    const parsedMin = Number(jobForm.salaryMin) || 0;
+    const parsedMax = Number(jobForm.salaryMax) || parsedMin;
+    const isShowSalary = jobForm.showSalary !== false;
 
     if (editingJobId) {
       dataStore.updateJob(editingJobId, {
@@ -1421,9 +1514,11 @@ function AdminDashboardPage() {
         qualification: jobForm.education,
         experience: jobForm.experience,
         salary: salaryText,
-        salaryMin: Number(jobForm.salaryMin) || 0,
-        salaryMax: Number(jobForm.salaryMax) || 0,
-        salaryType: jobForm.salaryType as any,
+        salaryMin: parsedMin,
+        salaryMax: parsedMax,
+        salaryType: "Monthly",
+        showSalary: isShowSalary,
+        hideSalary: !isShowSalary,
         location: jobForm.location,
         jobType: jobForm.jobType as any,
         workMode: jobForm.workMode as any,
@@ -1446,9 +1541,11 @@ function AdminDashboardPage() {
         qualification: jobForm.education,
         experience: jobForm.experience,
         salary: salaryText,
-        salaryMin: Number(jobForm.salaryMin) || 0,
-        salaryMax: Number(jobForm.salaryMax) || 0,
-        salaryType: jobForm.salaryType as any,
+        salaryMin: parsedMin,
+        salaryMax: parsedMax,
+        salaryType: "Monthly",
+        showSalary: isShowSalary,
+        hideSalary: !isShowSalary,
         location: jobForm.location,
         jobType: jobForm.jobType as any,
         workMode: jobForm.workMode as any,
@@ -1547,14 +1644,23 @@ function AdminDashboardPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Category *</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-bold text-[#5B6B7F]">Category *</label>
+                    <span className="text-[10px] text-[#125BB5] font-bold">Pick existing or type new</span>
+                  </div>
                   <Input
+                    list="admin-category-suggestions"
                     required
                     value={jobForm.category}
                     onChange={(e) => setJ("category", e.target.value)}
-                    placeholder="e.g. Information Technology / Retail"
+                    placeholder="e.g. IT, Farming, Retail..."
                     className="text-xs font-semibold"
                   />
+                  <datalist id="admin-category-suggestions">
+                    {dataStore.getExistingJobCategories().map((cat) => (
+                      <option key={cat} value={cat} />
+                    ))}
+                  </datalist>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Location *</label>
@@ -1575,39 +1681,82 @@ function AdminDashboardPage() {
                 <span className="size-7 rounded-xl bg-[#063B78] text-white flex items-center justify-center text-xs font-black">2</span>
                 <h2 className="text-sm font-black text-[#10233F]">Salary & Work Mode</h2>
               </div>
-              <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Min Salary (₹)</label>
+                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Min Salary / किमान पगार (₹) *</label>
                   <Input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
+                    required
                     value={jobForm.salaryMin}
-                    onChange={(e) => setJ("salaryMin", e.target.value)}
+                    onChange={(e) => setJ("salaryMin", e.target.value.replace(/\D/g, ""))}
                     placeholder="e.g. 25000"
                     className="text-xs font-semibold"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Max Salary (₹)</label>
+                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Max Salary / कमाल पगार (₹) *</label>
                   <Input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
+                    required
                     value={jobForm.salaryMax}
-                    onChange={(e) => setJ("salaryMax", e.target.value)}
+                    onChange={(e) => setJ("salaryMax", e.target.value.replace(/\D/g, ""))}
                     placeholder="e.g. 45000"
                     className="text-xs font-semibold"
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Salary Period</label>
-                  <select
-                    value={jobForm.salaryType}
-                    onChange={(e) => setJ("salaryType", e.target.value)}
-                    className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F]"
-                  >
-                    <option value="Monthly">Monthly</option>
-                    <option value="Yearly">Yearly</option>
-                    <option value="Daily">Daily Wage</option>
-                  </select>
+
+                {/* Seeker Salary Visibility: Yes / No Option */}
+                <div className="md:col-span-2 bg-[#F8FAFF] p-4 rounded-xl border border-[#DCE5F0] transition-all">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <label className="block text-xs font-black text-[#10233F]">
+                        Show Salary to Job Seekers? *
+                      </label>
+                      <p className="text-[11px] font-semibold text-[#5B6B7F] mt-0.5">
+                        {jobForm.showSalary ? (
+                          <span className="text-emerald-700 font-bold">
+                            ✅ 'Yes' selected — Salary will be visible to job seekers {jobForm.salaryMin ? `(e.g. ₹${Number(jobForm.salaryMin).toLocaleString('en-IN')}${jobForm.salaryMax ? ` - ₹${Number(jobForm.salaryMax).toLocaleString('en-IN')}` : ''})` : ''}
+                          </span>
+                        ) : (
+                          <span className="text-rose-700 font-bold">
+                            🔒 'No' selected — Salary will be hidden from job seekers ('Not Disclosed' will be shown).
+                          </span>
+                        )}
+                      </p>
+                    </div>
+
+                    {/* Yes / No Toggle Buttons */}
+                    <div className="flex items-center gap-2 shrink-0 bg-white p-1 rounded-xl border border-[#DCE5F0] shadow-xs">
+                      <button
+                        type="button"
+                        onClick={() => setJ("showSalary", true)}
+                        className={`px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+                          jobForm.showSalary
+                            ? "bg-emerald-600 text-white shadow-sm"
+                            : "text-[#5B6B7F] hover:bg-gray-100"
+                        }`}
+                      >
+                        <span className="text-sm">✓</span>
+                        <span>Yes (Show Salary)</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setJ("showSalary", false)}
+                        className={`px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+                          !jobForm.showSalary
+                            ? "bg-rose-600 text-white shadow-sm"
+                            : "text-[#5B6B7F] hover:bg-gray-100"
+                        }`}
+                      >
+                        <span className="text-sm">✕</span>
+                        <span>No (Hide Salary)</span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
+
                 <div>
                   <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Job Type</label>
                   <select
@@ -1636,9 +1785,10 @@ function AdminDashboardPage() {
                 <div>
                   <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Vacancies</label>
                   <Input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     value={jobForm.vacancies}
-                    onChange={(e) => setJ("vacancies", e.target.value)}
+                    onChange={(e) => setJ("vacancies", e.target.value.replace(/\D/g, ""))}
                     placeholder="5"
                     className="text-xs font-semibold"
                   />
@@ -2242,7 +2392,18 @@ function AdminDashboardPage() {
                         </td>
                         <td className="p-3.5">
                           <div>{j.location}</div>
-                          <div className="text-[#125BB5] font-bold">{j.salary}</div>
+                          <div className="text-[#125BB5] font-bold flex items-center gap-1.5 flex-wrap">
+                            <span>{j.salary}</span>
+                            {(j.showSalary === false || j.hideSalary) ? (
+                              <span className="text-[10px] bg-rose-50 text-rose-700 border border-rose-200 px-1.5 py-0.5 rounded font-black">
+                                🔒 Hidden from Seekers
+                              </span>
+                            ) : (
+                              <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded font-black">
+                                👁️ Visible to Seekers
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="p-3.5 font-black text-[#063B78]">{j.vacancies || 5} Openings</td>
                         <td className="p-3.5">
@@ -2581,7 +2742,7 @@ function AdminDashboardPage() {
                       title="Auto-detected from company name: Employees punch in/out via mobile app."
                     >
                       <span className="size-2 rounded-full bg-blue-600 animate-pulse shrink-0"></span>
-                      <span className="leading-snug flex-1 min-w-0 break-words">ðŸ¢ Fixed Worksite (Auto-Detected: App Punch In/Out)</span>
+                      <span className="leading-snug flex-1 min-w-0 break-words">🏢 Fixed Worksite (Auto-Detected: App Punch In/Out)</span>
                     </div>
                   )}
 
@@ -2689,7 +2850,7 @@ function AdminDashboardPage() {
                             onChange={(e) => setSelectedCategoryFilter(e.target.value)}
                             className="bg-transparent font-bold text-xs text-[#10233F] focus:outline-none cursor-pointer outline-none w-full sm:max-w-[200px] truncate min-w-0"
                           >
-                            <option value="ALL">ðŸ·ï¸ All Categories ({workers.length})</option>
+                            <option value="ALL">🏷️ All Categories ({workers.length})</option>
                             {allCategories.map((cat) => {
                               const count = categoryCounts.get(cat) || 0;
                               return (
@@ -2731,7 +2892,7 @@ function AdminDashboardPage() {
 
                           const filteredByCat = workers.filter((w) => {
                             if (selectedCategoryFilter === "ALL") return true;
-                            const cat = w.category || w.trade || "Plant Nursery / Ã Â¤Â°Ã Â¥ Â¤ÂªÃ Â¤ÂµÃ Â¤Â¾Ã Â¤Å¸Ã Â¤Â¿Ã Â¤";
+                            const cat = w.category || w.trade || "Plant Nursery / रोपवाटिका";
                             return cat === selectedCategoryFilter;
                           });
 
@@ -2993,7 +3154,23 @@ function AdminDashboardPage() {
                                               {worker.name.slice(0, 1).toUpperCase()}
                                             </div>
                                             <div>
-                                              <div className="text-sm font-black text-[#10233F]">{worker.name}</div>
+                                              <div className="text-sm font-black text-[#10233F] flex items-center gap-2 flex-wrap">
+                                                <span>{worker.name}</span>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => {
+                                                    setCalendarWorker(worker);
+                                                    setCalendarMonth(new Date().getMonth());
+                                                    setCalendarYear(new Date().getFullYear());
+                                                    setActiveCalendarDate(null);
+                                                  }}
+                                                  title="Open Employee Attendance Calendar (कॅलेंडर उघडा)"
+                                                  className="inline-flex items-center gap-1 text-[11px] font-black px-2 py-0.5 rounded-lg bg-blue-50 text-[#063B78] border border-blue-200 hover:bg-[#063B78] hover:text-white transition-all shadow-2xs"
+                                                >
+                                                  <Calendar className="size-3 text-[#125BB5]" />
+                                                  <span>📅 Calendar</span>
+                                                </button>
+                                              </div>
                                               <div className="text-[10px] text-[#5B6B7F]">
                                                 📞 {worker.mobile || "N/A"}
                                               </div>
@@ -3094,55 +3271,101 @@ function AdminDashboardPage() {
                                                 </div>
                                               ) : null}
 
-                                              <div className="inline-flex items-center gap-1 bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80 shadow-inner whitespace-nowrap">
-                                                <button
-                                                  type="button"
-                                                  onClick={() => handleMarkAttendance(worker, "Present")}
-                                                  className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 ${currentStatus === "Present"
-                                                    ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/30 scale-[1.02]"
-                                                    : "text-slate-600 hover:text-emerald-700 hover:bg-emerald-50/80"
-                                                    }`}
-                                                >
-                                                  <CheckCircle2 className="size-3.5" />
-                                                  <span>Present</span>
-                                                </button>
+                                              <div className="flex flex-col sm:flex-row items-center gap-2">
+                                                <div className="inline-flex items-center gap-1 bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80 shadow-inner whitespace-nowrap">
+                                                  {/* 🟢 PRESENT (Green) */}
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => handleMarkAttendance(worker, "Present")}
+                                                    className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 ${currentStatus === "Present"
+                                                      ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/30 scale-[1.02]"
+                                                      : "text-slate-600 hover:text-emerald-700 hover:bg-emerald-50/80"
+                                                      }`}
+                                                    title="Mark Present (हिरवा - हजर)"
+                                                  >
+                                                    <CheckCircle2 className="size-3.5" />
+                                                    <span>Present</span>
+                                                  </button>
 
-                                                <button
-                                                  type="button"
-                                                  onClick={() => handleMarkAttendance(worker, "HalfDay")}
-                                                  className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 ${currentStatus === "HalfDay"
-                                                    ? "bg-amber-500 text-white shadow-md shadow-amber-500/30 scale-[1.02]"
-                                                    : "text-slate-600 hover:text-amber-700 hover:bg-amber-50/80"
-                                                    }`}
-                                                >
-                                                  <Clock className="size-3.5" />
-                                                  <span>Half Day</span>
-                                                </button>
+                                                  {/* 🟠 HALF DAY (Orange) */}
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => handleMarkAttendance(worker, "HalfDay")}
+                                                    className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 ${currentStatus === "HalfDay"
+                                                      ? "bg-amber-500 text-white shadow-md shadow-amber-500/30 scale-[1.02]"
+                                                      : "text-slate-600 hover:text-amber-700 hover:bg-amber-50/80"
+                                                      }`}
+                                                    title="Mark Half Day (नारंगी - अर्धा दिवस)"
+                                                  >
+                                                    <Clock className="size-3.5" />
+                                                    <span>Half Day</span>
+                                                  </button>
 
-                                                <button
-                                                  type="button"
-                                                  onClick={() => handleMarkAttendance(worker, "Absent")}
-                                                  className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 ${currentStatus === "Absent"
-                                                    ? "bg-rose-600 text-white shadow-md shadow-rose-600/30 scale-[1.02]"
-                                                    : "text-slate-600 hover:text-rose-700 hover:bg-rose-50/80"
-                                                    }`}
-                                                >
-                                                  <XCircle className="size-3.5" />
-                                                  <span>Absent</span>
-                                                </button>
+                                                  {/* 🔴 ABSENT (Red) */}
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => handleMarkAttendance(worker, "Absent")}
+                                                    className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 ${currentStatus === "Absent"
+                                                      ? "bg-rose-600 text-white shadow-md shadow-rose-600/30 scale-[1.02]"
+                                                      : "text-slate-600 hover:text-rose-700 hover:bg-rose-50/80"
+                                                      }`}
+                                                    title="Mark Absent (लाल - गैरहजर)"
+                                                  >
+                                                    <XCircle className="size-3.5" />
+                                                    <span>Absent</span>
+                                                  </button>
 
+                                                  {/* 🔵 OVERTIME (Blue) */}
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => handleMarkAttendance(worker, "Overtime", selectedAttendanceDate, record?.overtimeHours || 2)}
+                                                    className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 ${currentStatus === "Overtime"
+                                                      ? "bg-blue-600 text-white shadow-md shadow-blue-600/30 scale-[1.02]"
+                                                      : "text-slate-600 hover:text-blue-700 hover:bg-blue-50/80"
+                                                      }`}
+                                                    title="Mark Overtime (निळा - ओव्हरटाईम)"
+                                                  >
+                                                    <Zap className="size-3.5 text-amber-300 fill-amber-300" />
+                                                    <span>Overtime</span>
+                                                  </button>
+                                                </div>
+
+                                                {/* 📅 CALENDAR BUTTON FOR EMPLOYEE */}
                                                 <button
                                                   type="button"
-                                                  onClick={() => handleMarkAttendance(worker, "Overtime")}
-                                                  className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 ${currentStatus === "Overtime"
-                                                    ? "bg-[#063B78] text-white shadow-md shadow-[#063B78]/30 scale-[1.02]"
-                                                    : "text-slate-600 hover:text-[#063B78] hover:bg-blue-50/80"
-                                                    }`}
+                                                  onClick={() => {
+                                                    setCalendarWorker(worker);
+                                                    setCalendarMonth(new Date().getMonth());
+                                                    setCalendarYear(new Date().getFullYear());
+                                                    setActiveCalendarDate(null);
+                                                  }}
+                                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-gradient-to-r from-[#063B78] to-blue-700 text-white hover:from-blue-800 hover:to-indigo-800 transition-all shadow-xs hover:shadow-md hover:scale-[1.02] whitespace-nowrap cursor-pointer"
+                                                  title="कॅलेंडर उघडा व मागील १५ दिवसांची हजेरी एका क्लिकमध्ये भरा"
                                                 >
-                                                  <Zap className="size-3.5 text-amber-400 fill-amber-400" />
-                                                  <span>Overtime</span>
+                                                  <Calendar className="size-3.5 text-amber-300" />
+                                                  <span>📅 कॅलेंडर</span>
                                                 </button>
                                               </div>
+
+                                              {/* 🔵 OVERTIME HOURS MANUAL INPUT */}
+                                              {currentStatus === "Overtime" && (
+                                                <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-200 text-blue-950 px-3 py-1 rounded-xl text-xs font-bold animate-in fade-in">
+                                                  <Zap className="size-3.5 text-blue-600 fill-blue-600" />
+                                                  <span>ओव्हरटाईम वेळ (Hours):</span>
+                                                  <input
+                                                    type="number"
+                                                    min={1}
+                                                    max={16}
+                                                    value={record?.overtimeHours || 2}
+                                                    onChange={(e) => {
+                                                      const hours = Math.max(1, Math.min(16, Number(e.target.value) || 1));
+                                                      handleMarkAttendance(worker, "Overtime", selectedAttendanceDate, hours);
+                                                    }}
+                                                    className="w-12 h-6 text-center font-black bg-white border border-blue-300 rounded shadow-xs text-xs focus:ring-1 focus:ring-blue-500"
+                                                  />
+                                                  <span className="text-[11px] font-bold text-blue-800">तास</span>
+                                                </div>
+                                              )}
                                             </div>
                                           )}
                                         </td>
@@ -3884,126 +4107,255 @@ function AdminDashboardPage() {
       </div>
 
       {/* ── SET WORKSITE LOCATION MODAL ── */}
-      {showLocationModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-100 relative">
-            <button
-              onClick={() => setShowLocationModal(false)}
-              className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 font-extrabold text-xl p-2 rounded-full hover:bg-slate-100"
-            >
-              <X className="size-5" />
-            </button>
+      {showLocationModal && (() => {
+        const handleUseCurrentLocation = () => {
+          if (!navigator.geolocation) {
+            toast.error("Geolocation is not supported by your browser / device.");
+            return;
+          }
 
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-3 rounded-2xl bg-emerald-50 text-emerald-700 shrink-0">
-                <MapPin className="size-6" />
-              </div>
-              <div>
-                <h3 className="text-xl font-black text-[#10233F]">
-                  Set Worksite Location
-                </h3>
-                <p className="text-xs text-slate-500 font-semibold mt-0.5">
-                  Set the official location for Employee Punch-in.
-                </p>
-              </div>
-            </div>
+          setIsDetectingLocation(true);
+          toast.info("📍 Fetching your exact GPS location...");
 
-            {(savedLocationLink || savedLocationCoords) && (
-              <div className="mb-4 p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl">
-                <p className="text-[11px] font-black text-emerald-900 uppercase tracking-wide">
-                  Current Saved Location:
-                </p>
-                <div className="flex items-center justify-between gap-2 mt-1">
-                  <span className="text-xs font-bold text-emerald-800 truncate">
-                    {savedLocationLink || `GPS: ${savedLocationCoords?.lat.toFixed(4)}, ${savedLocationCoords?.lng.toFixed(4)}`}
-                  </span>
-                  <a
-                    href={
-                      savedLocationLink
-                        ? (savedLocationLink.startsWith("http") ? savedLocationLink : `https://${savedLocationLink}`)
-                        : `https://maps.google.com/?q=${savedLocationCoords?.lat},${savedLocationCoords?.lng}`
-                    }
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs font-black text-emerald-700 hover:underline shrink-0 flex items-center gap-1"
-                  >
-                    Open Map <ExternalLink className="size-3" />
-                  </a>
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              setIsDetectingLocation(false);
+              const lat = position.coords.latitude;
+              const lng = position.coords.longitude;
+              const accuracy = position.coords.accuracy ? Math.round(position.coords.accuracy) : null;
+
+              const mapsLink = `https://maps.google.com/?q=${lat},${lng}`;
+              const coordsObj = { lat, lng };
+
+              setLocationLinkInput(mapsLink);
+              setSavedLocationLink(mapsLink);
+              setSavedLocationCoords(coordsObj);
+
+              try {
+                localStorage.setItem(`emp_worksite_link_${empIdentifier}`, mapsLink);
+                localStorage.setItem(`emp_worksite_coords_${empIdentifier}`, JSON.stringify(coordsObj));
+              } catch (e) { }
+
+              if (currentUser) {
+                const updated = (currentUser.id ? dataStore.updateRegisteredAccount(currentUser.id, {
+                  worksiteLocation: coordsObj,
+                  worksiteLocationLink: mapsLink,
+                }) : null) || { ...currentUser, worksiteLocation: coordsObj, worksiteLocationLink: mapsLink };
+
+                dataStore.setCurrentUser(updated);
+                try {
+                  sessionStorage.setItem("realjob_tab_user", JSON.stringify(updated));
+                  localStorage.setItem("realjob-user", JSON.stringify(updated));
+                  if (currentUser.role === "employer") localStorage.setItem("realjob-user-employer", JSON.stringify(updated));
+                  if (currentUser.role === "admin") localStorage.setItem("realjob-user-admin", JSON.stringify(updated));
+                } catch (e) { }
+              }
+
+              toast.success(`📍 Worksite Location set to Current GPS! (${lat.toFixed(5)}, ${lng.toFixed(5)}${accuracy ? `, ~${accuracy}m` : ""})`);
+              setShowLocationModal(false);
+            },
+            (error) => {
+              setIsDetectingLocation(false);
+              console.error("GPS error:", error);
+              if (error.code === error.PERMISSION_DENIED) {
+                toast.error("Location permission denied. Please allow location access in your browser settings.");
+              } else if (error.code === error.POSITION_UNAVAILABLE) {
+                toast.error("Location information is currently unavailable.");
+              } else if (error.code === error.TIMEOUT) {
+                toast.error("Location request timed out. Please try again or paste a map link.");
+              } else {
+                toast.error("Unable to get current location. Please paste a map link below.");
+              }
+            },
+            {
+              enableHighAccuracy: true,
+              timeout: 12000,
+              maximumAge: 0,
+            }
+          );
+        };
+
+        const handleSaveMapLink = () => {
+          const rawInput = locationLinkInput.trim();
+          if (!rawInput) {
+            toast.error("Please enter or paste a map location link.");
+            return;
+          }
+
+          setSavedLocationLink(rawInput);
+          try {
+            localStorage.setItem(`emp_worksite_link_${empIdentifier}`, rawInput);
+          } catch (e) { }
+
+          const parsed = parseMapCoordinates(rawInput);
+          let coordsObj = parsed || { lat: 18.5204, lng: 73.8567 };
+
+          if (parsed) {
+            toast.info(` Recognized Location: ${parsed.lat.toFixed(6)}, ${parsed.lng.toFixed(6)}`);
+          } else {
+            toast.warning("Saved link for reference.");
+          }
+
+          setSavedLocationCoords(coordsObj);
+          try {
+            localStorage.setItem(`emp_worksite_coords_${empIdentifier}`, JSON.stringify(coordsObj));
+          } catch (e) { }
+
+          if (currentUser) {
+            const updated = (currentUser.id ? dataStore.updateRegisteredAccount(currentUser.id, {
+              worksiteLocation: coordsObj,
+              worksiteLocationLink: rawInput,
+            }) : null) || { ...currentUser, worksiteLocation: coordsObj, worksiteLocationLink: rawInput };
+
+            dataStore.setCurrentUser(updated);
+            try {
+              sessionStorage.setItem("realjob_tab_user", JSON.stringify(updated));
+              localStorage.setItem("realjob-user", JSON.stringify(updated));
+              if (currentUser.role === "employer") localStorage.setItem("realjob-user-employer", JSON.stringify(updated));
+              if (currentUser.role === "admin") localStorage.setItem("realjob-user-admin", JSON.stringify(updated));
+            } catch (e) { }
+          }
+
+          toast.success("✅ Worksite Location Link Saved Successfully!");
+          setShowLocationModal(false);
+        };
+
+        return (
+          <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+            <div className="bg-white w-full max-w-md rounded-3xl p-6 sm:p-7 shadow-2xl border border-slate-100 relative">
+              <button
+                onClick={() => setShowLocationModal(false)}
+                className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 font-extrabold text-xl p-2 rounded-full hover:bg-slate-100"
+              >
+                <X className="size-5" />
+              </button>
+
+              <div className="flex items-center gap-3 mb-5">
+                <div className="p-3 rounded-2xl bg-emerald-50 text-emerald-700 shrink-0">
+                  <MapPin className="size-6 text-emerald-600" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-[#10233F]">
+                    Set Worksite Location
+                  </h3>
+                  <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                    Set the official location for Employee Punch-in.
+                  </p>
                 </div>
               </div>
-            )}
 
-            <div className="space-y-4">
-              {/* Paste Maps Link / Location */}
-              <div>
-                <label className="block text-sm font-bold text-[#10233F] mb-1.5">Paste Maps Link / Location</label>
-                <p className="text-xs text-slate-500 font-semibold mb-3">
-                  Paste any Google Maps or Bing Maps share link / location URL below.
-                </p>
-                <Input
-                  value={locationLinkInput}
-                  onChange={(e) => setLocationLinkInput(e.target.value)}
-                  placeholder="Paste Google Maps or Bing Maps location link here..."
-                  className="text-xs font-semibold mb-3.5"
-                />
-                <Button
-                  onClick={() => {
-                    const rawInput = locationLinkInput.trim();
-                    if (!rawInput) {
-                      toast.error("Please enter or paste a map location link.");
-                      return;
-                    }
+              {(savedLocationLink || savedLocationCoords) && (
+                <div className="mb-4 p-3.5 bg-emerald-50/90 border border-emerald-200 rounded-2xl">
+                  <p className="text-[11px] font-black text-emerald-900 uppercase tracking-wide">
+                    Current Saved Location:
+                  </p>
+                  <div className="flex items-center justify-between gap-2 mt-1">
+                    <span className="text-xs font-bold text-emerald-800 truncate">
+                      {savedLocationLink || `GPS: ${savedLocationCoords?.lat.toFixed(4)}, ${savedLocationCoords?.lng.toFixed(4)}`}
+                    </span>
+                    <a
+                      href={
+                        savedLocationLink
+                          ? (savedLocationLink.startsWith("http") ? savedLocationLink : `https://${savedLocationLink}`)
+                          : `https://maps.google.com/?q=${savedLocationCoords?.lat},${savedLocationCoords?.lng}`
+                      }
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs font-black text-emerald-700 hover:underline shrink-0 flex items-center gap-1"
+                    >
+                      Open Map <ExternalLink className="size-3" />
+                    </a>
+                  </div>
+                </div>
+              )}
 
-                    // 1. Immediately update React state for instant UI re-render
-                    setSavedLocationLink(rawInput);
-                    try {
-                      localStorage.setItem(`emp_worksite_link_${empIdentifier}`, rawInput);
-                    } catch (e) { }
+              <div className="space-y-4">
+                {/* OPTION 1: USE CURRENT GPS LOCATION */}
+                <div className="p-4 bg-gradient-to-br from-emerald-50 via-teal-50/40 to-emerald-50 border border-emerald-200 rounded-2xl shadow-2xs space-y-2.5">
+                  <div className="flex items-start gap-2.5">
+                    <div className="p-2 rounded-xl bg-emerald-600 text-white shrink-0 mt-0.5 shadow-sm">
+                      <LocateFixed className="size-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black text-emerald-950 flex items-center gap-1.5">
+                        Option 1: Device GPS (चालू स्थान)
+                      </h4>
+                      <p className="text-[11px] text-emerald-800/80 font-medium leading-relaxed mt-0.5">
+                        सध्या ऑफिस/साइटवर असाल तर 1-क्लिकमध्ये तुमचे चालू GPS लोकेशन सेव्ह करा.
+                      </p>
+                    </div>
+                  </div>
 
-                    // 2. Parse coordinates using robust multi-map parser
-                    const parsed = parseMapCoordinates(rawInput);
-                    let coordsObj = parsed || { lat: 18.5204, lng: 73.8567 };
+                  <Button
+                    type="button"
+                    onClick={handleUseCurrentLocation}
+                    disabled={isDetectingLocation}
+                    className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-98"
+                  >
+                    {isDetectingLocation ? (
+                      <>
+                        <Loader2 className="size-4 animate-spin" />
+                        <span>Detecting Exact GPS Location...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Navigation className="size-4" />
+                        <span>📍 Use My Current Location (चालू स्थान वापरा)</span>
+                      </>
+                    )}
+                  </Button>
+                </div>
 
-                    if (parsed) {
-                      toast.info(` Recognized Location: ${parsed.lat.toFixed(6)}, ${parsed.lng.toFixed(6)}`);
-                    } else {
-                      toast.warning("Saved link for reference.");
-                    }
+                {/* DIVIDER */}
+                <div className="relative flex py-1 items-center">
+                  <div className="flex-grow border-t border-slate-200"></div>
+                  <span className="flex-shrink mx-3 text-[10px] font-black uppercase tracking-wider text-slate-400 bg-white px-2">
+                    OR Paste Map Link
+                  </span>
+                  <div className="flex-grow border-t border-slate-200"></div>
+                </div>
 
-                    setSavedLocationCoords(coordsObj);
-                    try {
-                      localStorage.setItem(`emp_worksite_coords_${empIdentifier}`, JSON.stringify(coordsObj));
-                    } catch (e) { }
+                {/* OPTION 2: PASTE MAP LINK */}
+                <div className="space-y-2.5">
+                  <div>
+                    <label className="block text-xs font-bold text-[#10233F] mb-1">
+                      Option 2: Paste Google Maps / Bing Maps Link
+                    </label>
+                    <p className="text-[11px] text-slate-500 font-semibold mb-2">
+                      गुगल मॅप्स किंवा बिंग मॅप्सची लोकेशन लिंक खाली पेस्ट करा.
+                    </p>
+                    <div className="relative">
+                      <Input
+                        value={locationLinkInput}
+                        onChange={(e) => setLocationLinkInput(e.target.value)}
+                        placeholder="Paste Google Maps or Bing Maps link here..."
+                        className="text-xs font-semibold pr-8"
+                      />
+                      {locationLinkInput && (
+                        <button
+                          type="button"
+                          onClick={() => setLocationLinkInput("")}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                        >
+                          <X className="size-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
 
-                    // 3. Update currentUser session objects
-                    if (currentUser) {
-                      const updated = (currentUser.id ? dataStore.updateRegisteredAccount(currentUser.id, {
-                        worksiteLocation: coordsObj,
-                        worksiteLocationLink: rawInput,
-                      }) : null) || { ...currentUser, worksiteLocation: coordsObj, worksiteLocationLink: rawInput };
-
-                      dataStore.setCurrentUser(updated);
-                      try {
-                        sessionStorage.setItem("realjob_tab_user", JSON.stringify(updated));
-                        localStorage.setItem("realjob-user", JSON.stringify(updated));
-                        if (currentUser.role === "employer") localStorage.setItem("realjob-user-employer", JSON.stringify(updated));
-                        if (currentUser.role === "admin") localStorage.setItem("realjob-user-admin", JSON.stringify(updated));
-                      } catch (e) { }
-                    }
-
-                    toast.success("✅ Worksite Location Link Saved Successfully!");
-                    setShowLocationModal(false);
-                  }}
-                  variant="outline"
-                  className="w-full border-[#DCE5F0] text-[#5B6B7F] hover:bg-slate-50 font-extrabold text-xs py-2.5 rounded-xl cursor-pointer"
-                >
-                  Save Link
-                </Button>
+                  <Button
+                    type="button"
+                    onClick={handleSaveMapLink}
+                    className="w-full h-10 bg-[#063B78] hover:bg-[#082F63] text-white font-extrabold text-xs rounded-xl shadow-sm cursor-pointer"
+                  >
+                    Save Map Link
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ── ADD / EDIT WORKER MODAL WITH CUSTOM FIELDS GENERATOR ── */}
       {showWorkerModal && (
@@ -4292,7 +4644,7 @@ function AdminDashboardPage() {
                   <div className="p-3.5 bg-blue-50/90 rounded-xl border border-blue-200/90 space-y-3">
                     <div className="flex items-center gap-2 text-xs font-black text-[#063B78]">
                       <span className="size-2 rounded-full bg-blue-600 animate-pulse shrink-0"></span>
-                      <span>ðŸ¢ Fixed Location Worksite (Auto-Detected: App Punch In/Out)</span>
+                      <span>🏢 Fixed Location Worksite (Auto-Detected: App Punch In/Out)</span>
                     </div>
                     <p className="text-[11px] text-blue-900/90 font-medium leading-relaxed">
                       Auto-detected from company name. Employee punches in/out via mobile app (GPS + Camera).
@@ -4326,11 +4678,12 @@ function AdminDashboardPage() {
                     Custom Daily Wage Rate (₹) *
                   </Label>
                   <Input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     required
                     placeholder="500"
                     value={workerForm.dailyRate}
-                    onChange={(e) => setWorkerForm((p) => ({ ...p, dailyRate: e.target.value }))}
+                    onChange={(e) => setWorkerForm((p) => ({ ...p, dailyRate: e.target.value.replace(/\D/g, "") }))}
                     className="h-11 rounded-xl text-xs font-bold border-slate-300 text-emerald-700"
                   />
                 </div>
@@ -4866,11 +5219,11 @@ function AdminDashboardPage() {
                           }
                           const periodText = workerReportPeriod === "month" ? "या महिन्याची" : "या आठवड्याची";
                           let msg = `नमस्कार ${w.name},\n\nतुमची ${periodText} सॅलरी स्लिप तयार आहे.\n\n`;
-                          msg += ` Ã Â¤ÂÃ Â¤ Â¥ हजेरी: ${metrics.present} दिवस\n`;
+                          msg += ` 📅 हजेरी: ${metrics.present} दिवस\n`;
                           if (metrics.overtime > 0) {
-                            msg += ` Ã Â¤ Â¤ÂµÃ Â¥ÂÃ Â¤Â¹Ã Â¤Â°Ã Â¤Å¸Ã Â¤Â¾Ã Â¤Ë†म: ${metrics.overtime} दिवस\n`;
+                            msg += ` ⏰ ओव्हरटाईम: ${metrics.overtime} दिवस\n`;
                           }
-                          msg += ` Ã Â¤ÂÃ Â¤ Â¥ पगार (Net Pay): ₹${metrics.netPay.toLocaleString("en-IN")}\n\n`;
+                          msg += ` 💰 निव्वळ पगार (Net Pay): ₹${metrics.netPay.toLocaleString("en-IN")}\n\n`;
                           msg += `- धन्यवाद.`;
 
                           const encodedMsg = encodeURIComponent(msg);
@@ -4995,7 +5348,581 @@ function AdminDashboardPage() {
         );
       })()}
 
-      {/* ── MOBILE BOTTOM NAVIGATION BAR (Visible on < md) ── */}
+            {/* ── EMPLOYEE ATTENDANCE CALENDAR & BULK FILL MODAL ── */}
+      {calendarWorker && (() => {
+        const activeEmpId = currentUser?.id || currentUser?.fullName || currentUser?.email || empIdentifier;
+        const monthNames = [
+          "January", "February", "March", "April",
+          "May", "June", "July", "August",
+          "September", "October", "November", "December"
+        ];
+        const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+        const firstDayOfWeek = new Date(calendarYear, calendarMonth, 1).getDay(); // 0 is Sunday
+
+        const monthStartStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, "0")}-01`;
+        const monthEndStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, "0")}-${String(daysInMonth).padStart(2, "0")}`;
+
+        // Get all attendance records for this month
+        const monthRangeRecords = dataStore.getEmployerAttendanceRange(activeEmpId, monthStartStr, monthEndStr)
+          .filter(r => r.workerId === calendarWorker.id);
+        const recordsMap = new Map<string, DailyAttendanceRecord>();
+        monthRangeRecords.forEach(r => recordsMap.set(r.date, r));
+
+        // Calculate Month Summary
+        let presentCount = 0;
+        let halfDayCount = 0;
+        let absentCount = 0;
+        let overtimeCount = 0;
+        let totalOvertimeHours = 0;
+        let totalEarned = 0;
+
+        for (let d = 1; d <= daysInMonth; d++) {
+          const dateStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+          const rec = recordsMap.get(dateStr);
+          if (rec) {
+            if (rec.status === "Present") {
+              presentCount++;
+              totalEarned += calendarWorker.dailyRate;
+            } else if (rec.status === "HalfDay") {
+              halfDayCount++;
+              totalEarned += (calendarWorker.dailyRate / 2);
+            } else if (rec.status === "Absent") {
+              absentCount++;
+            } else if (rec.status === "Overtime") {
+              overtimeCount++;
+              const otH = rec.overtimeHours || 2;
+              totalOvertimeHours += otH;
+              totalEarned += calendarWorker.dailyRate + otH * (calendarWorker.dailyRate / 8) * 1.5;
+            }
+          }
+        }
+
+        // Active date record if any
+        const activeRec = activeCalendarDate ? recordsMap.get(activeCalendarDate) : undefined;
+        const activeStatus = activeRec?.status || "None";
+        const activeOtHours = activeRec?.overtimeHours || customOtHoursInput;
+
+        // Handler to execute past 15 days / 30 days bulk fill
+        const executeBulkFill = (presetDays?: number) => {
+          let fromD = bulkFillFromDate;
+          let toD = bulkFillToDate;
+          if (presetDays) {
+            const today = new Date();
+            toD = today.toISOString().split("T")[0]!;
+            const past = new Date();
+            past.setDate(today.getDate() - (presetDays - 1));
+            fromD = past.toISOString().split("T")[0]!;
+          }
+
+          const datesToFill: string[] = [];
+          const curr = new Date(fromD);
+          const end = new Date(toD);
+          while (curr <= end) {
+            if (!bulkSkipSundays || curr.getDay() !== 0) {
+              const y = curr.getFullYear();
+              const m = String(curr.getMonth() + 1).padStart(2, "0");
+              const d = String(curr.getDate()).padStart(2, "0");
+              datesToFill.push(`${y}-${m}-${d}`);
+            }
+            curr.setDate(curr.getDate() + 1);
+          }
+
+          if (datesToFill.length === 0) {
+            toast.error("निवडलेल्या कालावधीत एकही तारीख उपलब्ध नाही!");
+            return;
+          }
+
+          handleBulkMarkAttendance(
+            calendarWorker,
+            datesToFill,
+            bulkFillStatus,
+            bulkFillStatus === "Overtime" ? bulkFillOtHours : undefined
+          );
+        };
+
+        return (
+          <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overflow-y-auto animate-in fade-in duration-200">
+            <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[94vh] flex flex-col overflow-hidden my-auto">
+              
+              {/* MODAL HEADER */}
+              <div className="bg-gradient-to-r from-[#021D3D] via-[#063B78] to-[#125BB5] text-white p-4 sm:p-5 flex items-center justify-between shadow-md">
+                <div className="flex items-center gap-3">
+                  <div className="size-11 sm:size-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-lg sm:text-xl font-black text-amber-300 shadow-inner">
+                    {calendarWorker.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base sm:text-lg font-black tracking-tight">{calendarWorker.name}</h3>
+                      <span className="text-[11px] font-black bg-amber-400 text-slate-950 px-2 py-0.5 rounded-full">
+                        ₹{calendarWorker.dailyRate}/दिवस
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-white/80 mt-0.5">
+                      <span>{calendarWorker.category || calendarWorker.trade || "कर्मचारी"}</span>
+                      <span>•</span>
+                      <span>{calendarWorker.trade || "General Worker"}</span>
+                      {calendarWorker.mobile && (
+                        <>
+                          <span>•</span>
+                          <span>📞 {calendarWorker.mobile}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      setCalendarWorker(null);
+                      setActiveCalendarDate(null);
+                    }}
+                    className="size-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold text-lg transition-all"
+                    title="बंद करा (Close)"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+
+              {/* MODAL BODY */}
+              <div className="p-4 sm:p-6 overflow-y-auto space-y-6 flex-1 bg-slate-50/60">
+                
+                {/* ── 1. PAST ATTENDANCE / BULK FILL TOOL ── */}
+                <div className="bg-white rounded-2xl border border-blue-200 shadow-sm p-4 sm:p-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="size-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-black">
+                        ⚡
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-black text-slate-900">
+                          ⚡ Bulk Fill — Past 15 Days (1-Click)
+                        </h4>
+                        <p className="text-[11px] text-slate-500 font-medium">
+                          Mark attendance for multiple past days in one click:
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowBulkFillSection(!showBulkFillSection)}
+                      className="text-xs font-black text-blue-700 hover:text-blue-900 underline self-start sm:self-auto cursor-pointer"
+                    >
+                      {showBulkFillSection ? "Hide Options ▲" : "Custom Options ▼"}
+                    </button>
+                  </div>
+
+                  {/* Quick 1-Click Buttons */}
+                  <div className="flex flex-wrap items-center gap-2 mb-3">
+                    <button
+                      type="button"
+                      onClick={() => executeBulkFill(15)}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-black bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm hover:scale-[1.02] transition-all cursor-pointer"
+                      title="Mark last 15 days as Present"
+                    >
+                      <span>⚡ Fill Last 15 Days as Present</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => executeBulkFill(30)}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-black bg-blue-600 hover:bg-blue-700 text-white shadow-sm hover:scale-[1.02] transition-all cursor-pointer"
+                      title="Mark last 30 days as Present"
+                    >
+                      <span>⚡ Fill Last 30 Days as Present</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const now = new Date();
+                        const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0]!;
+                        const today = now.toISOString().split("T")[0]!;
+                        setBulkFillFromDate(start);
+                        setBulkFillToDate(today);
+                        setShowBulkFillSection(true);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all cursor-pointer"
+                    >
+                      <span>📅 Current Month (1st to Today)</span>
+                    </button>
+                  </div>
+
+                  {/* Expandable Custom Bulk Fill Settings */}
+                  {showBulkFillSection && (
+                    <div className="mt-3 pt-3 border-t border-slate-100 bg-blue-50/50 p-3.5 rounded-xl space-y-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                        <div>
+                          <label className="text-[11px] font-black text-slate-700 block mb-1">From Date:</label>
+                          <input
+                            type="date"
+                            value={bulkFillFromDate}
+                            onChange={(e) => setBulkFillFromDate(e.target.value)}
+                            className="w-full text-xs font-bold p-2 bg-white border border-slate-300 rounded-lg"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[11px] font-black text-slate-700 block mb-1">To Date:</label>
+                          <input
+                            type="date"
+                            value={bulkFillToDate}
+                            onChange={(e) => setBulkFillToDate(e.target.value)}
+                            className="w-full text-xs font-bold p-2 bg-white border border-slate-300 rounded-lg"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[11px] font-black text-slate-700 block mb-1">Attendance Status:</label>
+                          <select
+                            value={bulkFillStatus}
+                            onChange={(e) => setBulkFillStatus(e.target.value as any)}
+                            className="w-full text-xs font-bold p-2 bg-white border border-slate-300 rounded-lg"
+                          >
+                            <option value="Present">🟢 Present</option>
+                            <option value="HalfDay">🟠 Half Day</option>
+                            <option value="Absent">🔴 Absent</option>
+                            <option value="Overtime">🔵 Overtime</option>
+                          </select>
+                        </div>
+
+                        {bulkFillStatus === "Overtime" ? (
+                          <div>
+                            <label className="text-[11px] font-black text-slate-700 block mb-1">Daily Overtime Hours:</label>
+                            <input
+                              type="number"
+                              min={1}
+                              max={16}
+                              value={bulkFillOtHours}
+                              onChange={(e) => setBulkFillOtHours(Number(e.target.value) || 2)}
+                              className="w-full text-xs font-bold p-2 bg-white border border-blue-300 rounded-lg"
+                            />
+                          </div>
+                        ) : (
+                          <div className="flex items-center pt-5">
+                            <label className="inline-flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700">
+                              <input
+                                type="checkbox"
+                                checked={bulkSkipSundays}
+                                onChange={(e) => setBulkSkipSundays(e.target.checked)}
+                                className="rounded size-4 text-blue-600 focus:ring-blue-500"
+                              />
+                              <span>Skip Sundays</span>
+                            </label>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1">
+                        <label className="inline-flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700">
+                          {bulkFillStatus === "Overtime" && (
+                            <>
+                              <input
+                                type="checkbox"
+                                checked={bulkSkipSundays}
+                                onChange={(e) => setBulkSkipSundays(e.target.checked)}
+                                className="rounded size-4 text-blue-600 focus:ring-blue-500"
+                              />
+                              <span>Skip Sundays</span>
+                            </>
+                          )}
+                        </label>
+
+                        <button
+                          type="button"
+                          onClick={() => executeBulkFill()}
+                          className="px-4 py-2 rounded-xl text-xs font-black bg-blue-700 hover:bg-blue-800 text-white shadow-sm transition-all"
+                        >
+                          ⚡ Save Attendance for Selected Days
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* ── 2. MONTH CALENDAR VIEW ── */}
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5 overflow-visible">
+                  
+                  {/* Month Navigation Header */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (calendarMonth === 0) {
+                            setCalendarMonth(11);
+                            setCalendarYear(calendarYear - 1);
+                          } else {
+                            setCalendarMonth(calendarMonth - 1);
+                          }
+                          setActiveCalendarDate(null);
+                        }}
+                        className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold transition-all"
+                        title="मागील महिना (Previous Month)"
+                      >
+                        <ChevronLeft className="size-4" />
+                      </button>
+
+                      <div className="text-sm sm:text-base font-black text-slate-900 px-2 min-w-[200px] text-center">
+                        📅 {monthNames[calendarMonth]} {calendarYear}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (calendarMonth === 11) {
+                            setCalendarMonth(0);
+                            setCalendarYear(calendarYear + 1);
+                          } else {
+                            setCalendarMonth(calendarMonth + 1);
+                          }
+                          setActiveCalendarDate(null);
+                        }}
+                        className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold transition-all"
+                        title="Next Month"
+                      >
+                        <ChevronRight className="size-4" />
+                      </button>
+                    </div>
+
+                    {/* Color Legend */}
+                    <div className="flex flex-wrap items-center gap-2 text-[11px] font-black">
+                      <span className="flex items-center gap-1 text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                        <span className="size-2 rounded-full bg-emerald-500"></span>
+                        Present
+                      </span>
+                      <span className="flex items-center gap-1 text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                        <span className="size-2 rounded-full bg-amber-500"></span>
+                        Half Day
+                      </span>
+                      <span className="flex items-center gap-1 text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+                        <span className="size-2 rounded-full bg-rose-500"></span>
+                        Absent
+                      </span>
+                      <span className="flex items-center gap-1 text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                        <span className="size-2 rounded-full bg-blue-500"></span>
+                        Overtime
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* ── 7-DAY CALENDAR GRID ── */}
+                  <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-4 overflow-visible">
+                    {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((dayName, idx) => (
+                      <div
+                        key={dayName}
+                        className={`text-center font-black text-[11px] py-1.5 rounded-lg ${idx === 0 ? "text-rose-600 bg-rose-50" : "text-slate-600 bg-slate-100"}`}
+                      >
+                        {dayName}
+                      </div>
+                    ))}
+
+                    {/* Leading empty spaces before 1st of month */}
+                    {Array.from({ length: firstDayOfWeek }).map((_, i) => (
+                      <div key={`empty-${i}`} className="min-h-[64px] sm:min-h-[76px] rounded-xl bg-slate-50/50 border border-transparent"></div>
+                    ))}
+
+                    {/* Days of Month */}
+                    {Array.from({ length: daysInMonth }).map((_, i) => {
+                      const dayNum = i + 1;
+                      const dateStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, "0")}-${String(dayNum).padStart(2, "0")}`;
+                      const rec = recordsMap.get(dateStr);
+                      const isSelected = activeCalendarDate === dateStr;
+                      const isSunday = (firstDayOfWeek + i) % 7 === 0;
+
+                      let statusBadge = null;
+                      let bgClass = "bg-white hover:border-blue-400 border-slate-200";
+
+                      if (rec?.status === "Present") {
+                        bgClass = "bg-emerald-50/90 border-emerald-400 shadow-xs";
+                        statusBadge = (
+                          <div className="text-[10px] font-black text-white bg-emerald-600 px-1.5 py-0.5 rounded-md truncate w-full text-center">
+                            🟢 Present
+                          </div>
+                        );
+                      } else if (rec?.status === "HalfDay") {
+                        bgClass = "bg-amber-50/90 border-amber-400 shadow-xs";
+                        statusBadge = (
+                          <div className="text-[10px] font-black text-white bg-amber-500 px-1.5 py-0.5 rounded-md truncate w-full text-center">
+                            🟠 Half Day
+                          </div>
+                        );
+                      } else if (rec?.status === "Absent") {
+                        bgClass = "bg-rose-50/90 border-rose-400 shadow-xs";
+                        statusBadge = (
+                          <div className="text-[10px] font-black text-white bg-rose-600 px-1.5 py-0.5 rounded-md truncate w-full text-center">
+                            🔴 Absent
+                          </div>
+                        );
+                      } else if (rec?.status === "Overtime") {
+                        bgClass = "bg-blue-50/90 border-blue-400 shadow-xs";
+                        statusBadge = (
+                          <div className="text-[10px] font-black text-white bg-blue-600 px-1.5 py-0.5 rounded-md truncate w-full text-center">
+                            🔵 OT ({rec.overtimeHours || 2}h)
+                          </div>
+                        );
+                      } else {
+                        statusBadge = (
+                          <div className="text-[9px] font-bold text-slate-400 border border-dashed border-slate-200 rounded px-1 py-0.5 w-full text-center group-hover:text-blue-600 group-hover:border-blue-300">
+                            + Mark
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div
+                          key={dateStr}
+                          className={`relative min-h-[64px] sm:min-h-[76px] p-1.5 rounded-xl border flex flex-col justify-between cursor-pointer transition-all hover:scale-[1.03] group ${bgClass} ${isSelected ? "ring-2 ring-blue-600 shadow-md" : ""}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (activeCalendarDate === dateStr) {
+                              setActiveCalendarDate(null);
+                            } else {
+                              setActiveCalendarDate(dateStr);
+                              if (rec?.overtimeHours) setCustomOtHoursInput(rec.overtimeHours);
+                            }
+                          }}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className={`text-xs font-black ${isSunday ? "text-rose-600" : "text-slate-800"}`}>
+                              {dayNum}
+                            </span>
+                            {rec?.overtimeHours && (
+                              <span className="text-[9px] font-black text-blue-700 bg-blue-100 px-1 rounded">
+                                ⚡{rec.overtimeHours}h
+                              </span>
+                            )}
+                          </div>
+                          <div className="mt-1">
+                            {isSelected ? (
+                              <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
+                                {/* 4 Status buttons with labels */}
+                                <div className="flex items-center gap-0.5">
+                                  <button type="button" title="Present"
+                                    onClick={(e) => { e.stopPropagation(); handleMarkAttendance(calendarWorker, "Present", dateStr); setActiveCalendarDate(null); }}
+                                    className={`flex-1 flex flex-col items-center justify-center py-1 rounded-md transition-all cursor-pointer gap-0 ${
+                                      activeStatus === "Present" ? "bg-emerald-600 text-white" : "bg-emerald-100 text-emerald-700 hover:bg-emerald-300"
+                                    }`}>
+                                    <CheckCircle2 className="size-3" />
+                                    <span className="text-[8px] font-black leading-tight">Present</span>
+                                  </button>
+                                  <button type="button" title="Half Day"
+                                    onClick={(e) => { e.stopPropagation(); handleMarkAttendance(calendarWorker, "HalfDay", dateStr); setActiveCalendarDate(null); }}
+                                    className={`flex-1 flex flex-col items-center justify-center py-1 rounded-md transition-all cursor-pointer gap-0 ${
+                                      activeStatus === "HalfDay" ? "bg-amber-500 text-white" : "bg-amber-100 text-amber-700 hover:bg-amber-300"
+                                    }`}>
+                                    <Clock className="size-3" />
+                                    <span className="text-[8px] font-black leading-tight">Half</span>
+                                  </button>
+                                  <button type="button" title="Absent"
+                                    onClick={(e) => { e.stopPropagation(); handleMarkAttendance(calendarWorker, "Absent", dateStr); setActiveCalendarDate(null); }}
+                                    className={`flex-1 flex flex-col items-center justify-center py-1 rounded-md transition-all cursor-pointer gap-0 ${
+                                      activeStatus === "Absent" ? "bg-rose-600 text-white" : "bg-rose-100 text-rose-700 hover:bg-rose-300"
+                                    }`}>
+                                    <XCircle className="size-3" />
+                                    <span className="text-[8px] font-black leading-tight">Absent</span>
+                                  </button>
+                                  <button type="button" title="Overtime"
+                                    onClick={(e) => { e.stopPropagation(); handleMarkAttendance(calendarWorker, "Overtime", dateStr, customOtHoursInput); setActiveCalendarDate(null); }}
+                                    className={`flex-1 flex flex-col items-center justify-center py-1 rounded-md transition-all cursor-pointer gap-0 ${
+                                      activeStatus === "Overtime" ? "bg-blue-600 text-white" : "bg-blue-100 text-blue-700 hover:bg-blue-300"
+                                    }`}>
+                                    <Zap className="size-3" />
+                                    <span className="text-[8px] font-black leading-tight">OT</span>
+                                  </button>
+                                </div>
+                                {/* Clear button — only visible if attendance already marked */}
+                                {activeRec && (
+                                  <button
+                                    type="button"
+                                    title="Clear attendance for this date"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const activeEmpId = currentUser?.id || currentUser?.fullName || currentUser?.email || empIdentifier;
+                                      dataStore.deleteAttendanceRecord(calendarWorker.id, dateStr);
+                                      loadAttendanceData();
+                                      setActiveCalendarDate(null);
+                                      toast.success(`Attendance cleared for ${dateStr}`);
+                                    }}
+                                    className="w-full flex items-center justify-center gap-1 py-0.5 rounded-md bg-slate-100 hover:bg-red-100 text-slate-400 hover:text-red-600 transition-all cursor-pointer"
+                                  >
+                                    <Trash2 className="size-2.5" />
+                                    <span className="text-[8px] font-black">Clear</span>
+                                  </button>
+                                )}
+                              </div>
+                            ) : (
+                              statusBadge
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* ── OT Hours strip — shows below grid only for Overtime date ── */}
+                  {activeCalendarDate && activeStatus === "Overtime" && (
+                    <div className="mt-2 flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-xl px-3 py-2" onClick={(e) => e.stopPropagation()}>
+                      <Zap className="size-4 text-blue-600 fill-blue-600 shrink-0" />
+                      <span className="text-xs font-black text-blue-800 shrink-0">OT Hours — {activeCalendarDate}:</span>
+                      <input
+                        type="number" min={1} max={16} value={activeOtHours}
+                        onChange={(e) => {
+                          const val = Math.max(1, Math.min(16, Number(e.target.value) || 1));
+                          setCustomOtHoursInput(val);
+                          handleMarkAttendance(calendarWorker, "Overtime", activeCalendarDate, val);
+                        }}
+                        className="w-16 h-8 text-center font-black bg-white border border-blue-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                      />
+                      <span className="text-xs font-bold text-slate-500">hrs</span>
+                    </div>
+                  )}
+
+                </div>
+
+                {/* ── 4. MONTHLY SUMMARY & PAYROLL CARD ── */}
+                <div className="bg-gradient-to-br from-slate-900 to-[#063B78] text-white rounded-2xl p-4 sm:p-5 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <span className="text-xs font-bold text-amber-400">
+                      {monthNames[calendarMonth]} {calendarYear} — Monthly Attendance Summary
+                    </span>
+                    <div className="flex flex-wrap items-center gap-3 text-xs font-extrabold mt-1">
+                      <span className="text-emerald-400">🟢 Present: {presentCount} days</span>
+                      <span className="text-amber-400">🟠 Half Day: {halfDayCount} days</span>
+                      <span className="text-rose-400">🔴 Absent: {absentCount} days</span>
+                      <span className="text-blue-300">🔵 Overtime: {overtimeCount} days ({totalOvertimeHours} hrs)</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 border-t sm:border-t-0 sm:border-l border-white/20 pt-3 sm:pt-0 sm:pl-4">
+                    <div>
+                      <div className="text-[10px] text-white/70 font-bold uppercase tracking-wider">Est. Total Salary</div>
+                      <div className="text-xl sm:text-2xl font-black text-amber-300">
+                        ₹{Math.round(totalEarned).toLocaleString("en-IN")}
+                      </div>
+                    </div>
+
+                    <Button
+                      onClick={() => {
+                        setViewSlipWorker(calendarWorker);
+                        setCalendarWorker(null);
+                      }}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs px-3.5 py-2 rounded-xl shadow-md cursor-pointer"
+                    >
+                      🧾 View Salary Slip
+                    </Button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+{/* ── MOBILE BOTTOM NAVIGATION BAR (Visible on < md) ── */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[#021D3D] text-white border-t border-white/10 z-40 px-2 py-1.5 flex items-center justify-around shadow-2xl">
         {[
           { id: "overview", label: "Dashboard", icon: BarChart3 },

@@ -187,6 +187,14 @@ function RootComponent() {
       });
       observer.observe(document.head, { childList: true, subtree: true });
     }
+
+    const handleWheel = (e: WheelEvent) => {
+      if (document.activeElement instanceof HTMLInputElement && document.activeElement.type === "number") {
+        document.activeElement.blur();
+      }
+    };
+    window.addEventListener("wheel", handleWheel, { passive: true });
+    return () => window.removeEventListener("wheel", handleWheel);
   }, []);
 
   return (

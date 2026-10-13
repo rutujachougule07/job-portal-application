@@ -80,6 +80,8 @@ function UserDashboard() {
       company: dj.company,
       location: dj.location,
       salary: dj.salary,
+      showSalary: dj.showSalary,
+      hideSalary: dj.hideSalary,
       experience: dj.experience,
       type: dj.jobType,
       workMode: (dj.workMode as any) || "On-site",

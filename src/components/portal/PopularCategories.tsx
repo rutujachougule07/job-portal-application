@@ -21,6 +21,8 @@ import {
   Truck,
   UserPlus,
   Wrench,
+  Zap,
+  ShieldCheck,
 } from "lucide-react";
 import { useI18n, getCategoryTitle, getCategoryDesc } from "@/lib/i18n";
 import { dataStore } from "@/lib/data-store";
@@ -43,6 +45,8 @@ export function PopularCategories({ limit = 8, hideHeader = false }: { limit?: n
       }
     });
 
+    // Only show categories that have actual jobs posted by employers
+
     return Array.from(catData.values()).map(data => {
        let icon = Briefcase;
        const lc = data.id.toLowerCase();
@@ -55,6 +59,8 @@ export function PopularCategories({ limit = 8, hideHeader = false }: { limit?: n
        else if (lc.includes('educat') || lc.includes('teach')) icon = GraduationCap;
        else if (lc.includes('manufact') || lc.includes('factory') || lc.includes('production')) icon = Factory;
        else if (lc.includes('logistic') || lc.includes('transport') || lc.includes('delivery')) icon = Truck;
+       else if (lc.includes('electric')) icon = Zap;
+       else if (lc.includes('security')) icon = ShieldCheck;
        else if (lc.includes('hotel') || lc.includes('hospitality') || lc.includes('restaurant')) icon = Hotel;
 
        return {

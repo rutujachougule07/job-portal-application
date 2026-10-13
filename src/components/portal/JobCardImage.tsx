@@ -4,7 +4,10 @@ import { Job } from "./JobCard";
 import { useI18n } from "@/lib/i18n";
 
 export function JobCardImage({ job }: { job: Job }) {
-  const { n } = useI18n();
+  const { n, lang } = useI18n();
+
+  const isSalaryHidden = job.showSalary === false || (job as any).hideSalary === true;
+  const displaySalary = isSalaryHidden ? "Not Disclosed" : n(job.salary);
 
   // Pick a random background image based on category
   const getBgImage = () => {
@@ -60,7 +63,7 @@ export function JobCardImage({ job }: { job: Job }) {
         <div className="mt-3 flex items-center gap-4 text-xs font-bold text-white/90">
           <div className="flex items-center gap-1.5">
             <Wallet className="size-4 text-[#FFC400]" />
-            <span>{n(job.salary)}</span>
+            <span>{displaySalary}</span>
           </div>
           {job.openings && (
             <div className="flex items-center gap-1.5">

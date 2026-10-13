@@ -115,7 +115,7 @@ export function PublicHeader() {
                   <span>{t("seekerLogin")}</span>
                 </Link>
               </Button>
-              
+
               <Button asChild variant="outline" className="hidden lg:inline-flex border-emerald-600 text-emerald-700 font-extrabold hover:bg-emerald-600 hover:text-white text-xs px-2.5 h-9 rounded-lg shadow-2xs shrink-0 whitespace-nowrap">
                 <Link to="/auth" search={{ mode: "login", role: "employee" }} className="inline-flex items-center gap-1.5">
                   <Briefcase className="size-3.5" />

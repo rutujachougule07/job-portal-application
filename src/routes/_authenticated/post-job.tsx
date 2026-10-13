@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   Briefcase,
@@ -205,17 +205,22 @@ function PostJobPage() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const [showPreview, setShowPreview] = useState(false);
+  const [existingCategories, setExistingCategories] = useState<string[]>([]);
+  const [isCustomCategory, setIsCustomCategory] = useState(false);
+  const [customCategoryInput, setCustomCategoryInput] = useState("");
 
   // Form State
   const [formData, setFormData] = useState({
     title: "",
-    category: "HR & Recruitment",
-    subcategory: "HR Executive (एचआर एक्झिक्युटिव्ह)",
+    category: "",
+    subcategory: "General Role",
     company: "",
     location: "",
+    salary: "",
     salaryMin: "",
     salaryMax: "",
     salaryType: "Per Month",
+    showSalary: true,
     experience: "1-3 Years",
     jobType: "Full-time",
     vacancies: "5",
@@ -228,7 +233,7 @@ function PostJobPage() {
     contactPhone: "",
   });
 
-  const handleChange = (field: string, value: string) => {
+  const handleChange = (field: string, value: any) => {
     if (field === "category") {
       const subOptions = SUBCATEGORIES_MAP[value] || ["General Role"];
       setFormData((prev) => ({
@@ -240,6 +245,19 @@ function PostJobPage() {
       setFormData((prev) => ({ ...prev, [field]: value }));
     }
   };
+
+  useEffect(() => {
+    const cats = dataStore.getExistingJobCategories();
+    setExistingCategories(cats);
+    if (cats.length > 0) {
+      setFormData((prev) => ({
+        ...prev,
+        category: (prev.category && cats.includes(prev.category) ? prev.category : cats[0]) || "",
+      }));
+    } else {
+      setIsCustomCategory(true);
+    }
+  }, []);
 
   const handleSaveDraft = () => {
     toast.success("Job draft saved successfully!");
@@ -258,13 +276,14 @@ function PostJobPage() {
     const cleanMin = formData.salaryMin ? formData.salaryMin.replace(/[^0-9]/g, '') : '';
     const cleanMax = formData.salaryMax ? formData.salaryMax.replace(/[^0-9]/g, '') : '';
     const salaryString = cleanMin && cleanMax
-      ? `₹${cleanMin}–₹${cleanMax} / ${formData.salaryType === "Per Day" ? "day" : "month"}`
+      ? `₹${Number(cleanMin).toLocaleString('en-IN')} - ₹${Number(cleanMax).toLocaleString('en-IN')}`
       : cleanMin
-        ? `₹${cleanMin} / ${formData.salaryType === "Per Day" ? "day" : "month"}`
-        : "₹25,000–40,000 / month";
+        ? `₹${Number(cleanMin).toLocaleString('en-IN')}`
+        : "₹25,000 - ₹40,000";
 
     const skillsArray = formData.skills ? formData.skills.split(",").map(s => s.trim()) : ["General Work"];
     const benefitsArray = formData.benefits ? formData.benefits.split(",").map(b => b.trim()) : ["Standard Allowance"];
+    const isShowSalary = formData.showSalary !== false;
 
     dataStore.createJob({
       employerId,
@@ -278,9 +297,11 @@ function PostJobPage() {
       qualification: formData.education || "10th Pass",
       experience: formData.experience,
       salary: salaryString,
-      ...(formData.salaryMin ? { salaryMin: parseInt(formData.salaryMin) } : {}),
-      ...(formData.salaryMax ? { salaryMax: parseInt(formData.salaryMax) } : {}),
-      salaryType: formData.salaryType === "Per Day" ? "Daily" : "Monthly",
+      ...(cleanMin ? { salaryMin: parseInt(cleanMin) } : {}),
+      ...(cleanMax ? { salaryMax: parseInt(cleanMax) } : {}),
+      salaryType: "Monthly",
+      showSalary: isShowSalary,
+      hideSalary: !isShowSalary,
       location: formData.location,
       jobType: (formData.jobType as any) || "Full Time",
       workMode: "On-site",
@@ -349,42 +370,66 @@ function PostJobPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-extrabold text-[#10233F] mb-1.5 uppercase">
-                    कामगार / नोकरी श्रेणी (Category) *
-                  </label>
-                  <select
-                    value={formData.category}
-                    onChange={(e) => handleChange("category", e.target.value)}
-                    className="w-full h-11 rounded-lg border border-[#DCE5F0] bg-white px-3 text-xs font-bold text-[#10233F]"
-                  >
-                    <optgroup label="💻 Professional & Corporate Categories (कॉर्पोरेट श्रेणी)">
-                      <option value="IT & Software">IT & Software (आयटी व सॉफ्टवेअर)</option>
-                      <option value="Engineering">Engineering (अभियांत्रिकी व तांत्रिक)</option>
-                      <option value="Healthcare & Medical">Healthcare & Medical (वैद्यकीय व आरोग्य)</option>
-                      <option value="Finance & Accounting">Finance & Accounting (वित्त व अकाऊंटिंग)</option>
-                      <option value="Sales & Marketing">Sales & Marketing (विक्री व मार्केटिंग)</option>
-                      <option value="Education">Education (शिक्षण व अध्यापन)</option>
-                      <option value="HR & Recruitment">HR & Recruitment (एचआर व भरती)</option>
-                      <option value="Design & Creative">Design & Creative (डिझाइन व आर्ट)</option>
-                      <option value="Legal">Legal & Compliance (कायदेशीर)</option>
-                      <option value="Architecture & Design">Architecture & Design (स्थापत्य डिझाइन)</option>
-                    </optgroup>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-extrabold text-[#10233F] uppercase">
+                      कामगार / नोकरी श्रेणी (Category) *
+                    </label>
+                    {existingCategories.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = !isCustomCategory;
+                          setIsCustomCategory(next);
+                          if (next) {
+                            setFormData((prev) => ({ ...prev, category: customCategoryInput }));
+                          } else {
+                            setFormData((prev) => ({ ...prev, category: existingCategories[0] || "" }));
+                          }
+                        }}
+                        className="text-[11px] font-bold text-[#125BB5] hover:underline cursor-pointer"
+                      >
+                        {isCustomCategory ? "← अस्तित्वात असलेल्या श्रेणींमधून निवडा" : "+ नवीन श्रेणी जोडा (Add New)"}
+                      </button>
+                    )}
+                  </div>
 
-                    <optgroup label="🛠️ Skilled & Worker Categories (कामगार व व्यवसाय श्रेणी)">
-                      <option value="Factory Workers">Factory Workers (कारखाना कामगार)</option>
-                      <option value="Construction & Building">Construction Workers (बांधकाम)</option>
-                      <option value="Technical Staff">Technical Staff (तांत्रिक कामगार)</option>
-                      <option value="Logistics & Drivers">Logistics & Drivers (ड्रायव्हर व वाहतूक)</option>
-                      <option value="Agriculture & Farming">Agriculture & Farming (शेती व कृषी)</option>
-                      <option value="Skilled Workers">Skilled Workers (कुशल कामगार)</option>
-                      <option value="Unskilled Workers">Unskilled Workers (अकुशल कामगार)</option>
-                      <option value="Electricians">Electricians & Maintenance (इलेक्ट्रीशियन व मेंटेनन्स)</option>
-                      <option value="Warehouse Workers">Warehouse Workers (वेअरहाउस)</option>
-                      <option value="Hotel & Restaurant">Hotel & Restaurant (हॉटेल व रेस्टॉरंट)</option>
-                      <option value="Security">Security Guards (सुरक्षा रक्षक)</option>
-                      <option value="Helpers">Helpers & Attendants (मदतनीस)</option>
-                    </optgroup>
-                  </select>
+                  {!isCustomCategory && existingCategories.length > 0 ? (
+                    <select
+                      value={formData.category}
+                      onChange={(e) => {
+                        if (e.target.value === "__NEW__") {
+                          setIsCustomCategory(true);
+                          setFormData((prev) => ({ ...prev, category: customCategoryInput }));
+                        } else {
+                          handleChange("category", e.target.value);
+                        }
+                      }}
+                      className="w-full h-11 rounded-lg border border-[#DCE5F0] bg-white px-3 text-xs font-bold text-[#10233F]"
+                    >
+                      {existingCategories.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                      <option value="__NEW__">+ नवीन श्रेणी टाईप करा (Add New Category)...</option>
+                    </select>
+                  ) : (
+                    <div className="space-y-1.5">
+                      <Input
+                        required
+                        placeholder="उदा. Farming, IT, Retail, Healthcare"
+                        value={formData.category}
+                        onChange={(e) => {
+                          setCustomCategoryInput(e.target.value);
+                          handleChange("category", e.target.value);
+                        }}
+                        className="h-11 border-[#DCE5F0] text-xs font-bold text-[#10233F]"
+                      />
+                      <p className="text-[11px] text-[#5B6B7F] font-semibold">
+                        💡 ही नवीन श्रेणी सिस्टीममध्ये सेव्ह होईल व पुढील सर्व एम्प्लॉयर्सना Dropdown मध्ये आपोआप दिसेल.
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -422,9 +467,10 @@ function PostJobPage() {
                     रिक्त जागांची संख्या (Vacancies)
                   </label>
                   <Input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     value={formData.vacancies}
-                    onChange={(e) => handleChange("vacancies", e.target.value)}
+                    onChange={(e) => handleChange("vacancies", e.target.value.replace(/\D/g, ""))}
                     className="h-11 border-[#DCE5F0] text-xs font-bold text-[#10233F]"
                   />
                 </div>
@@ -437,44 +483,85 @@ function PostJobPage() {
                 <Wallet className="size-5 text-[#125BB5]" /> 2. पगार व नोकरीचे स्वरूप (Salary & Type)
               </h2>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
                   <label className="block text-xs font-extrabold text-[#10233F] mb-1.5 uppercase">
-                    किमान पगार (Min Salary ₹)
+                    किमान पगार (Min Salary ₹) *
                   </label>
                   <Input
-                    placeholder="18,000"
+                    type="text"
+                    inputMode="numeric"
+                    required
+                    placeholder="18000"
                     value={formData.salaryMin}
-                    onChange={(e) => handleChange("salaryMin", e.target.value)}
+                    onChange={(e) => handleChange("salaryMin", e.target.value.replace(/\D/g, ""))}
                     className="h-11 border-[#DCE5F0] text-xs font-bold text-[#10233F]"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-extrabold text-[#10233F] mb-1.5 uppercase">
-                    कमाल पगार (Max Salary ₹)
+                    कमाल पगार (Max Salary ₹) *
                   </label>
                   <Input
-                    placeholder="25,000"
+                    type="text"
+                    inputMode="numeric"
+                    required
+                    placeholder="25000"
                     value={formData.salaryMax}
-                    onChange={(e) => handleChange("salaryMax", e.target.value)}
+                    onChange={(e) => handleChange("salaryMax", e.target.value.replace(/\D/g, ""))}
                     className="h-11 border-[#DCE5F0] text-xs font-bold text-[#10233F]"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-extrabold text-[#10233F] mb-1.5 uppercase">
-                    पगाराचा कालावधी (Salary Type)
-                  </label>
-                  <select
-                    value={formData.salaryType}
-                    onChange={(e) => handleChange("salaryType", e.target.value)}
-                    className="w-full h-11 rounded-lg border border-[#DCE5F0] bg-white px-3 text-xs font-bold text-[#10233F]"
-                  >
-                    <option value="Per Month">दरमहा (Per Month)</option>
-                    <option value="Per Day">दररोज (Per Day)</option>
-                    <option value="Per Year">वार्षिक (Per Year)</option>
-                  </select>
+                {/* Seeker Salary Visibility: Yes / No Option */}
+                <div className="sm:col-span-2 bg-[#F8FAFF] p-4 rounded-xl border border-[#DCE5F0] transition-all">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <label className="block text-xs font-black text-[#10233F]">
+                        Show Salary to Job Seekers? *
+                      </label>
+                      <p className="text-[11px] font-semibold text-[#5B6B7F] mt-0.5">
+                        {formData.showSalary ? (
+                          <span className="text-emerald-700 font-bold">
+                            ✅ 'Yes' selected — Salary will be visible to job seekers {formData.salaryMin ? `(e.g. ₹${Number(formData.salaryMin).toLocaleString('en-IN')}${formData.salaryMax ? ` - ₹${Number(formData.salaryMax).toLocaleString('en-IN')}` : ''})` : ''}
+                          </span>
+                        ) : (
+                          <span className="text-rose-700 font-bold">
+                            🔒 'No' selected — Salary will be hidden from job seekers ('Not Disclosed' will be shown).
+                          </span>
+                        )}
+                      </p>
+                    </div>
+
+                    {/* Yes / No Toggle Buttons */}
+                    <div className="flex items-center gap-2 shrink-0 bg-white p-1 rounded-xl border border-[#DCE5F0] shadow-xs">
+                      <button
+                        type="button"
+                        onClick={() => handleChange("showSalary", true)}
+                        className={`px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+                          formData.showSalary
+                            ? "bg-emerald-600 text-white shadow-sm"
+                            : "text-[#5B6B7F] hover:bg-gray-100"
+                        }`}
+                      >
+                        <span className="text-sm">✓</span>
+                        <span>Yes (Show Salary)</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleChange("showSalary", false)}
+                        className={`px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+                          !formData.showSalary
+                            ? "bg-rose-600 text-white shadow-sm"
+                            : "text-[#5B6B7F] hover:bg-gray-100"
+                        }`}
+                      >
+                        <span className="text-sm">✕</span>
+                        <span>No (Hide Salary)</span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 <div>
@@ -617,7 +704,11 @@ function PostJobPage() {
 
                 <div className="flex flex-wrap gap-2 text-xs font-bold">
                   <Badge className="bg-[#FFC400] text-[#082F63]">
-                    ₹{formData.salaryMin} - ₹{formData.salaryMax} {formData.salaryType}
+                    {formData.showSalary === false
+                      ? "🔒 Not Disclosed"
+                      : formData.salaryMin && formData.salaryMax
+                        ? `₹${Number(formData.salaryMin).toLocaleString('en-IN')} - ₹${Number(formData.salaryMax).toLocaleString('en-IN')}`
+                        : "₹18,000 - ₹25,000"}
                   </Badge>
                   <Badge variant="outline">{formData.experience}</Badge>
                   <Badge variant="outline">{formData.jobType}</Badge>
