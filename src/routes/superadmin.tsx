@@ -202,7 +202,7 @@ function SuperAdminPage() {
     description: "REAL JOB is a reliable employment portal that connects job seekers with trusted companies. We focus on creating real opportunities, building successful careers, and supporting growth for individuals and businesses across India."
   });
   const [companyPillars, setCompanyPillars] = useState<CompanyPillar[]>(defaultCompanyPillars);
-  const [categories, setCategories] = useState([
+  const [categories, setCategories] = useState<{ id?: string; label: string; iconName: string; theme: string }[]>([
     { label: "Factory Worker", iconName: "Factory", theme: "blue" },
     { label: "Construction", iconName: "HardHat", theme: "yellow" },
     { label: "Technical Staff", iconName: "Wrench", theme: "purple" },

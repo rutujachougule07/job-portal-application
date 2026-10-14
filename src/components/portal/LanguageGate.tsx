@@ -98,8 +98,16 @@ export function LanguageGate() {
 
   const proceedToRole = () => {
     setLang(selectedLang);
-    setStep("role");
-    navigate({ to: "/", hash: "role" });
+    if (typeof window !== "undefined") {
+      window.sessionStorage.setItem("karyam-gate-dismissed", "true");
+      window.localStorage.setItem("realjob-language", selectedLang);
+      window.localStorage.setItem("realjob-gate-done", "true");
+      window.localStorage.setItem("karyam-onboarding-done", "true");
+      window.dispatchEvent(new Event("realjob-auth-change"));
+      window.scrollTo({ top: 0, behavior: "instant" });
+    }
+    setOpen(false);
+    navigate({ to: "/", hash: "main" });
   };
 
   const handleSelectRole = (role: "user" | "admin") => {

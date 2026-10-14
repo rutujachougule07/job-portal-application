@@ -407,7 +407,7 @@ function JobsListingPage() {
             ) : (
               <div className="card-realjob p-12 text-center bg-white rounded-3xl border border-[#DCE5F0] max-w-xl mx-auto">
                 <Briefcase className="mx-auto size-14 text-[#5B6B7F] mb-4" />
-                <h3 className="text-xl font-black text-[#10233F]">No Job Categories Available</h3>
+                <h3 className="text-xl font-black text-[#10233F]">{t("noJobCategories")}</h3>
                 <p className="text-xs font-semibold text-[#5B6B7F] mt-2">
                   No jobs have been posted by the admin yet. Categories will appear here once jobs are posted.
                 </p>
@@ -574,7 +574,7 @@ function JobsListingPage() {
             ) : (
               <div className="card-realjob p-12 text-center bg-white rounded-3xl border border-[#DCE5F0]">
                 <Briefcase className="mx-auto size-14 text-[#5B6B7F] mb-4" />
-                <h3 className="text-xl font-black text-[#10233F]">No Jobs Found in this Category</h3>
+                <h3 className="text-xl font-black text-[#10233F]">{t("noJobsInCategory")}</h3>
                 <p className="text-xs font-semibold text-[#5B6B7F] mt-2">
                   No new jobs have been posted in this category yet. They will appear here once the admin posts them.
                 </p>

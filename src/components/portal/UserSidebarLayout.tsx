@@ -2,6 +2,7 @@ import { ReactNode, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { dataStore } from "@/lib/data-store";
 import { useI18n } from "@/lib/i18n";
+import { LanguageSwitcher } from "@/components/portal/LanguageSwitcher";
 import {
   Bookmark,
   User,
@@ -56,13 +57,16 @@ export function UserSidebarLayout({ children, activeTab }: { children: ReactNode
           </div>
         </div>
 
-        <button
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="p-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-all cursor-pointer shrink-0 ml-1"
-          aria-label="Toggle menu"
-        >
-          {isMobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
-        </button>
+        <div className="flex items-center gap-1.5 shrink-0 ml-1">
+          <LanguageSwitcher />
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="p-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-all cursor-pointer"
+            aria-label="Toggle menu"
+          >
+            {isMobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+          </button>
+        </div>
       </header>
 
       {/* ================= MOBILE SLIDE-OVER DRAWER MENU (Visible when hamburger is clicked) ================= */}
@@ -139,7 +143,7 @@ export function UserSidebarLayout({ children, activeTab }: { children: ReactNode
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold text-rose-400 hover:bg-rose-500/10 transition-colors"
               >
                 <LogOut className="size-4" />
-                <span>Sign Out</span>
+                <span>{t("signOut")}</span>
               </button>
             </div>
           </aside>
@@ -166,7 +170,11 @@ export function UserSidebarLayout({ children, activeTab }: { children: ReactNode
             <p className="text-xs font-semibold text-white/70 truncate px-2">{user.email || ""}</p>
 
             <div className="mt-2.5 inline-flex items-center gap-1.5 bg-[#FFC400]/20 border border-[#FFC400] text-[#FFC400] px-3 py-0.5 rounded-full text-[11px] font-black">
-              <BadgeCheck className="size-3.5" /> Verified User
+              <BadgeCheck className="size-3.5" /> {t("verifiedUser")}
+            </div>
+
+            <div className="mt-3 flex justify-center">
+              <LanguageSwitcher />
             </div>
           </div>
 
@@ -203,10 +211,10 @@ export function UserSidebarLayout({ children, activeTab }: { children: ReactNode
               navigate({ to: "/", hash: "main", replace: true });
               if (typeof window !== "undefined") window.scrollTo(0, 0);
             }}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-rose-400 hover:bg-rose-500/10 transition-colors"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
           >
             <LogOut className="size-4.5" />
-            <span>Sign Out</span>
+            <span>{t("signOut")}</span>
           </button>
         </div>
       </aside>

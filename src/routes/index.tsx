@@ -273,8 +273,8 @@ function LandingGatewayPage() {
               id: cat.id || `cat_${idx}`,
               label: cat.label || `Category ${idx + 1}`,
               iconName: cat.iconName || "Briefcase",
-              gradient: cat.gradient || palette.gradient,
-              iconBg: cat.iconBg || palette.iconBg,
+              gradient: cat.gradient || palette?.gradient || "from-blue-500/20 to-transparent",
+              iconBg: cat.iconBg || palette?.iconBg || "bg-[#063B78] text-white",
               ...cat,
             };
           });
@@ -471,7 +471,7 @@ function LandingGatewayPage() {
                 </div>
                 <div>
                   <strong className="block text-xl sm:text-2xl md:text-3xl font-black text-[#10233F] leading-tight">{metrics[0]?.value}</strong>
-                  <span className="text-[10px] sm:text-xs font-bold text-gray-500 block">{metrics[0]?.label}</span>
+                  <span className="text-[10px] sm:text-xs font-bold text-gray-500 block">{t("verifiedWorkersMetric")}</span>
                 </div>
               </div>
 
@@ -481,7 +481,7 @@ function LandingGatewayPage() {
                 </div>
                 <div>
                   <strong className="block text-xl sm:text-2xl md:text-3xl font-black text-[#10233F] leading-tight">{metrics[1]?.value}</strong>
-                  <span className="text-[10px] sm:text-xs font-bold text-gray-500 block">{metrics[1]?.label}</span>
+                  <span className="text-[10px] sm:text-xs font-bold text-gray-500 block">{t("liveJobOpeningsMetric")}</span>
                 </div>
               </div>
 
@@ -491,7 +491,7 @@ function LandingGatewayPage() {
                 </div>
                 <div>
                   <strong className="block text-xl sm:text-2xl md:text-3xl font-black text-[#10233F] leading-tight">{metrics[2]?.value}</strong>
-                  <span className="text-[10px] sm:text-xs font-bold text-gray-500 block">{metrics[2]?.label}</span>
+                  <span className="text-[10px] sm:text-xs font-bold text-gray-500 block">{t("employersMetric")}</span>
                 </div>
               </div>
 
@@ -501,7 +501,7 @@ function LandingGatewayPage() {
                 </div>
                 <div>
                   <strong className="block text-xl sm:text-2xl md:text-3xl font-black text-[#10233F] leading-tight">{metrics[3]?.value}</strong>
-                  <span className="text-[10px] sm:text-xs font-bold text-gray-500 block">{metrics[3]?.label}</span>
+                  <span className="text-[10px] sm:text-xs font-bold text-gray-500 block">{t("zeroCommissionMetric")}</span>
                 </div>
               </div>
 
@@ -533,10 +533,10 @@ function LandingGatewayPage() {
                           <UserCheck className="size-4 lg:size-5 text-[#D4AF37]" />
                         </div>
                         <span className="text-xs lg:text-sm font-black text-white leading-tight">
-                          {lang === "mr" ? "योग्य व्यक्ती" : "Right Person"}
+                          {t("rightPerson")}
                         </span>
-                        {lang === "mr" && (
-                          <span className="text-[9px] lg:text-[10px] text-[#D4AF37] font-semibold mt-0.5">Right Person</span>
+                        {lang !== "en" && (
+                          <span className="text-[9px] lg:text-[10px] text-[#D4AF37] font-semibold mt-0.5">{t("rightPerson")}</span>
                         )}
                       </div>
 
@@ -545,10 +545,10 @@ function LandingGatewayPage() {
                           <Briefcase className="size-4 lg:size-5 text-[#D4AF37]" />
                         </div>
                         <span className="text-xs lg:text-sm font-black text-white leading-tight">
-                          {lang === "mr" ? "योग्य काम" : "Right Job"}
+                          {t("rightJob")}
                         </span>
-                        {lang === "mr" && (
-                          <span className="text-[9px] lg:text-[10px] text-[#D4AF37] font-semibold mt-0.5">Right Job</span>
+                        {lang !== "en" && (
+                          <span className="text-[9px] lg:text-[10px] text-[#D4AF37] font-semibold mt-0.5">{t("rightJob")}</span>
                         )}
                       </div>
 
@@ -557,10 +557,10 @@ function LandingGatewayPage() {
                           <Sparkles className="size-4 lg:size-5 text-[#D4AF37]" />
                         </div>
                         <span className="text-xs lg:text-sm font-black text-white leading-tight">
-                          {lang === "mr" ? "योग्य संधी" : "Right Opportunity"}
+                          {t("rightOpportunity")}
                         </span>
-                        {lang === "mr" && (
-                          <span className="text-[9px] lg:text-[10px] text-[#D4AF37] font-semibold mt-0.5">Right Opportunity</span>
+                        {lang !== "en" && (
+                          <span className="text-[9px] lg:text-[10px] text-[#D4AF37] font-semibold mt-0.5">{t("rightOpportunity")}</span>
                         )}
                       </div>
                     </div>
@@ -572,29 +572,38 @@ function LandingGatewayPage() {
                   <div className="flex flex-wrap items-center gap-3 mb-4">
                     <div className="flex items-center gap-2">
                       <div className="h-[2px] w-8 bg-[#D4AF37]"></div>
-                      <span className="text-xs font-black text-[#082F63] tracking-[0.1em] uppercase">ABOUT REAL JOB</span>
+                      <span className="text-xs font-black text-[#082F63] tracking-[0.1em] uppercase">{t("aboutRealJob")}</span>
                     </div>
                     <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FEF9E7] border border-[#FDE68A] text-[#B45309] font-black text-[11px] shadow-2xs">
                       <Sparkles className="size-3 text-[#D97706]" />
                       <span>
-                        {lang === "mr" ? "योग्य व्यक्ती • योग्य काम • योग्य संधी" : "Right Person • Right Job • Right Opportunity"}
+                        {t("rightPerson")} • {t("rightJob")} • {t("rightOpportunity")}
                       </span>
                     </div>
                   </div>
 
                   <h2 className="text-4xl md:text-5xl font-black text-[#082F63] leading-[1.1] mb-6">
-                    {aboutData.title.split(' ').slice(0, -1).join(' ')} <span className="text-[#D4AF37]">{aboutData.title.split(' ').pop()}</span>
+                    {aboutData.title === "About Our Company" ? t("aboutOurCompany") : aboutData.title}
                   </h2>
 
                   <p className="text-[15px] font-medium text-gray-600 leading-relaxed mb-10 max-w-3xl whitespace-pre-wrap">
-                    {aboutData.description}
+                    {aboutData.description.includes("REAL JOB is a reliable employment portal") ? t("aboutRealJobDescription") : aboutData.description}
                   </p>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {companyPillars.map((pillar) => {
                       const IconComponent = PILLAR_ICONS[pillar.iconName] || Target;
-                      const title = pillar.title;
-                      const desc = pillar.description;
+                      const title = pillar.id === "mission" ? t("ourMission") :
+                                    pillar.id === "vision" ? t("ourVision") :
+                                    pillar.id === "values" ? t("ourValues") :
+                                    pillar.id === "belief" ? t("ourBelief") :
+                                    (lang === "mr" && pillar.titleMr ? pillar.titleMr : pillar.title);
+
+                      const desc = pillar.id === "mission" ? t("missionDesc") :
+                                   pillar.id === "vision" ? t("visionDesc") :
+                                   pillar.id === "values" ? t("valuesDesc") :
+                                   pillar.id === "belief" ? `${t("rightPerson")}\n${t("rightJob")}\n${t("rightOpportunity")}` :
+                                   (lang === "mr" && pillar.descriptionMr ? pillar.descriptionMr : pillar.description);
 
                       return (
                         <div
@@ -628,18 +637,18 @@ function LandingGatewayPage() {
             {/* Eyebrow Pill */}
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#FEF9E7] border border-[#FDE68A] text-[#B45309] font-black text-xs uppercase tracking-wider mb-3 shadow-sm hover:scale-105 transition-transform duration-300">
               <Briefcase className="size-4 text-[#D97706] animate-bounce" />
-              EXPLORE BY CATEGORY
+              {t("exploreByCategory")}
             </div>
 
             {/* Main Section Heading */}
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#082F63] mb-2 tracking-tight">
-              Popular Job <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#D4AF37] to-[#FDE047] animate-pulse">Categories</span>
+              {t("popularJobCategories")}
             </h2>
 
             {/* Subtitle with accent lines */}
             <div className="flex items-center justify-center gap-3 mb-10">
               <div className="h-[1.5px] w-12 md:w-20 bg-gradient-to-r from-transparent to-[#D4AF37]/60"></div>
-              <p className="text-xs md:text-sm font-extrabold text-[#5B6B7F]">Right opportunity for you — in your field!</p>
+              <p className="text-xs md:text-sm font-extrabold text-[#5B6B7F]">{t("rightOpportunityField")}</p>
               <div className="h-[1.5px] w-12 md:w-20 bg-gradient-to-l from-transparent to-[#D4AF37]/60"></div>
             </div>
 

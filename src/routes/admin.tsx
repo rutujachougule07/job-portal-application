@@ -802,7 +802,7 @@ function AdminDashboardPage() {
         <table style="width: 100%; border-collapse: collapse; background: linear-gradient(135deg, #021D3D 0%, #063B78 60%, #0B52A8 100%); border-radius: 12px; margin-bottom: 20px;">
           <tr>
             <td style="padding: 20px; vertical-align: middle;">
-              <div style="font-size: 10px; font-weight: bold; text-transform: uppercase; color: #F59E0B; letter-spacing: 1.5px; margin-bottom: 4px;">🌱 OFFICIAL WORKFORCE SALARY SLIP</div>
+              <div style="font-size: 10px; font-weight: bold; text-transform: uppercase; color: #F59E0B; letter-spacing: 1.5px; margin-bottom: 4px;">🌱 {t("officialWorkforceSalarySlip")}</div>
               <h1 style="font-size: 20px; font-weight: 900; margin: 0; color: #FFFFFF; letter-spacing: -0.3px;">${companyTitle}</h1>
               <div style="font-size: 12px; margin-top: 6px; color: #DCE5F0;">
                 Employer: <strong style="color: #FFFFFF;">${employerName}</strong> &bull; Work & Salary Settlement
@@ -810,7 +810,7 @@ function AdminDashboardPage() {
             </td>
             <td style="padding: 20px; text-align: right; vertical-align: middle; width: 190px;">
               <div style="background: rgba(255,255,255,0.15); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.25); text-align: right;">
-                <div style="font-size: 9px; font-weight: bold; color: #E2E8F0; text-transform: uppercase;">SLIP REFERENCE</div>
+                <div style="font-size: 9px; font-weight: bold; color: #E2E8F0; text-transform: uppercase;">{t("slipReference")}</div>
                 <div style="font-size: 13px; font-weight: 900; color: #FFFFFF; font-family: monospace; margin-top: 2px;">PAY-${worker.id.slice(-6).toUpperCase()}</div>
               </div>
             </td>
@@ -826,31 +826,31 @@ function AdminDashboardPage() {
           </tr>
           <tr>
             <td style="padding: 8px 16px; font-size: 12px; width: 50%; border-bottom: 1px solid #E2E8F0;">
-              <span style="color: #64748B; font-weight: 600;">Employee Name:</span> <strong style="color: #0F172A; font-weight: 800;">${worker.name}</strong>
+              <span style="color: #64748B; font-weight: 600;">{t("employeeNameField")}</span> <strong style="color: #0F172A; font-weight: 800;">${worker.name}</strong>
             </td>
             <td style="padding: 8px 16px; font-size: 12px; width: 50%; border-bottom: 1px solid #E2E8F0;">
-              <span style="color: #64748B; font-weight: 600;">Work Organization / Firm:</span> <strong style="color: #063B78; font-weight: 800;">${companyTitle}</strong>
+              <span style="color: #64748B; font-weight: 600;">{t("workOrgFirmField")}</span> <strong style="color: #063B78; font-weight: 800;">${companyTitle}</strong>
             </td>
           </tr>
           <tr>
             <td style="padding: 8px 16px; font-size: 12px; border-bottom: 1px solid #E2E8F0;">
-              <span style="color: #64748B; font-weight: 600;">Department:</span> <strong style="color: #063B78; font-weight: 800; background: #DBEAFE; padding: 2px 6px; border-radius: 4px;">${catName}</strong>
+              <span style="color: #64748B; font-weight: 600;">{t("departmentField")}</span> <strong style="color: #063B78; font-weight: 800; background: #DBEAFE; padding: 2px 6px; border-radius: 4px;">${catName}</strong>
             </td>
             <td style="padding: 8px 16px; font-size: 12px; border-bottom: 1px solid #E2E8F0;">
-              <span style="color: #64748B; font-weight: 600;">Role / Designation:</span> <strong style="color: #0F172A; font-weight: 700;">${worker.trade || "General Worker"}</strong>
+              <span style="color: #64748B; font-weight: 600;">{t("roleDesignationField")}</span> <strong style="color: #0F172A; font-weight: 700;">${worker.trade || "General Worker"}</strong>
             </td>
           </tr>
           <tr>
             <td style="padding: 8px 16px; font-size: 12px; border-bottom: 1px solid #E2E8F0;">
-              <span style="color: #64748B; font-weight: 600;">Mobile Number:</span> <strong style="color: #0F172A; font-weight: 700;">${worker.mobile || "N/A"}</strong>
+              <span style="color: #64748B; font-weight: 600;">{t("mobileNumberField")}</span> <strong style="color: #0F172A; font-weight: 700;">${worker.mobile || "N/A"}</strong>
             </td>
             <td style="padding: 8px 16px; font-size: 12px; border-bottom: 1px solid #E2E8F0;">
-              <span style="color: #64748B; font-weight: 600;">Daily Rate:</span> <strong style="color: #059669; font-weight: 900; font-size: 13px;">₹${worker.dailyRate} / day</strong>
+              <span style="color: #64748B; font-weight: 600;">{t("dailyRateField")}</span> <strong style="color: #059669; font-weight: 900; font-size: 13px;">₹${worker.dailyRate} / day</strong>
             </td>
           </tr>
           <tr>
             <td colspan="2" style="padding: 8px 16px; font-size: 12px;">
-              <span style="color: #64748B; font-weight: 600;">Report Timeframe:</span> <strong style="color: #0F172A; font-weight: 700;">${periodLabel} (${metrics.startDate} to ${metrics.endDate})</strong>
+              <span style="color: #64748B; font-weight: 600;">{t("reportTimeframeField")}</span> <strong style="color: #0F172A; font-weight: 700;">${periodLabel} (${metrics.startDate} to ${metrics.endDate})</strong>
             </td>
           </tr>
         </table>
@@ -859,23 +859,23 @@ function AdminDashboardPage() {
         <table style="width: 100%; border-collapse: separate; border-spacing: 6px 0; margin-bottom: 20px;">
           <tr>
             <td style="width: 20%; background: #F0FDF4; border: 1.5px solid #BBF7D0; border-radius: 8px; padding: 10px 4px; text-align: center;">
-              <div style="font-size: 9px; font-weight: 800; color: #166534; text-transform: uppercase;">PRESENT</div>
+              <div style="font-size: 9px; font-weight: 800; color: #166534; text-transform: uppercase;">{t("presentBadge")}</div>
               <div style="font-size: 20px; font-weight: 900; color: #15803D; margin-top: 2px;">${metrics.present}</div>
             </td>
             <td style="width: 20%; background: #FFFBEB; border: 1.5px solid #FDE68A; border-radius: 8px; padding: 10px 4px; text-align: center;">
-              <div style="font-size: 9px; font-weight: 800; color: #92400E; text-transform: uppercase;">HALF DAY</div>
+              <div style="font-size: 9px; font-weight: 800; color: #92400E; text-transform: uppercase;">{t("halfDayBadge")}</div>
               <div style="font-size: 20px; font-weight: 900; color: #B45309; margin-top: 2px;">${metrics.halfDay}</div>
             </td>
             <td style="width: 20%; background: #FFF1F2; border: 1.5px solid #FECDD3; border-radius: 8px; padding: 10px 4px; text-align: center;">
-              <div style="font-size: 9px; font-weight: 800; color: #9F1239; text-transform: uppercase;">ABSENT</div>
+              <div style="font-size: 9px; font-weight: 800; color: #9F1239; text-transform: uppercase;">{t("absentBadge")}</div>
               <div style="font-size: 20px; font-weight: 900; color: #BE123C; margin-top: 2px;">${metrics.absent}</div>
             </td>
             <td style="width: 20%; background: #EFF6FF; border: 1.5px solid #BFDBFE; border-radius: 8px; padding: 10px 4px; text-align: center;">
-              <div style="font-size: 9px; font-weight: 800; color: #1E40AF; text-transform: uppercase;">OVERTIME</div>
+              <div style="font-size: 9px; font-weight: 800; color: #1E40AF; text-transform: uppercase;">{t("overtimeBadge")}</div>
               <div style="font-size: 20px; font-weight: 900; color: #1D4ED8; margin-top: 2px;">${metrics.overtime}</div>
             </td>
             <td style="width: 20%; background: #F3E8FF; border: 1.5px solid #E9D5FF; border-radius: 8px; padding: 10px 4px; text-align: center;">
-              <div style="font-size: 9px; font-weight: 800; color: #6B21A8; text-transform: uppercase;">TOTAL DAYS</div>
+              <div style="font-size: 9px; font-weight: 800; color: #6B21A8; text-transform: uppercase;">{t("totalDaysBadge")}</div>
               <div style="font-size: 20px; font-weight: 900; color: #7E22CE; margin-top: 2px;">${metrics.totalDays}</div>
             </td>
           </tr>
@@ -885,15 +885,15 @@ function AdminDashboardPage() {
         <table style="width: 100%; border-collapse: collapse; border: 1.5px solid #CBD5E1; border-radius: 8px; overflow: hidden; margin-bottom: 20px;">
           <thead>
             <tr style="background: #063B78; color: #FFFFFF; font-size: 11px; font-weight: 800; text-transform: uppercase;">
-              <th style="padding: 10px 12px; text-align: left; width: 25%;">DATE</th>
-              <th style="padding: 10px 12px; text-align: left; width: 30%;">ATTENDANCE STATUS</th>
-              <th style="padding: 10px 12px; text-align: left; width: 25%;">DAILY RATE</th>
-              <th style="padding: 10px 12px; text-align: right; width: 20%;">EARNED PAY</th>
+              <th style="padding: 10px 12px; text-align: left; width: 25%;">{t("dateCol")}</th>
+              <th style="padding: 10px 12px; text-align: left; width: 30%;">{t("attendanceStatusCol")}</th>
+              <th style="padding: 10px 12px; text-align: left; width: 25%;">{t("dailyRateCol")}</th>
+              <th style="padding: 10px 12px; text-align: right; width: 20%;">{t("earnedPayCol")}</th>
             </tr>
           </thead>
           <tbody style="font-size: 12px; font-weight: 600;">
             ${metrics.records.length === 0
-        ? `<tr><td colspan="4" style="text-align:center; padding: 16px; color:#64748B;">No attendance logs recorded for this period.</td></tr>`
+        ? `<tr><td colspan="4" style="text-align:center; padding: 16px; color:#64748B;">{t("noAttendanceRecordsFound")}</td></tr>`
         : metrics.records.map((r, i) => {
           let pay = worker.dailyRate;
           if (r.status === "HalfDay") pay = Math.round(worker.dailyRate / 2);
@@ -931,11 +931,11 @@ function AdminDashboardPage() {
         <table style="width: 100%; border-collapse: collapse; background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%); border: 2px solid #059669; border-radius: 10px; margin-bottom: 24px;">
           <tr>
             <td style="padding: 16px 20px; vertical-align: middle;">
-              <div style="font-size: 10px; font-weight: 900; color: #047857; text-transform: uppercase; letter-spacing: 1px;">TOTAL EARNED SALARY SETTLEMENT</div>
+              <div style="font-size: 10px; font-weight: 900; color: #047857; text-transform: uppercase; letter-spacing: 1px;">{t("totalEarnedSalarySettlement")}</div>
               <div style="font-size: 12px; font-weight: 700; color: #065F46; margin-top: 2px;">Net payable wage amount calculated for ${worker.name}</div>
             </td>
             <td style="padding: 16px 20px; vertical-align: middle; text-align: right; width: 220px;">
-              <div style="font-size: 10px; font-weight: 800; color: #047857; text-transform: uppercase;">NET PAYABLE AMOUNT</div>
+              <div style="font-size: 10px; font-weight: 800; color: #047857; text-transform: uppercase;">{t("netPayableAmount")}</div>
               <div style="font-size: 28px; font-weight: 900; color: #047857; line-height: 1; margin-top: 2px;">₹${metrics.netPay.toLocaleString("en-IN")}</div>
             </td>
           </tr>
@@ -947,14 +947,14 @@ function AdminDashboardPage() {
             <td style="vertical-align: bottom; padding-top: 14px;">
               <div style="font-weight: bold; color: #063B78;">${companyTitle}</div>
               <div>Issued Date: ${new Date().toLocaleDateString("en-IN")}</div>
-              <div style="font-size: 9px; color: #94A3B8; margin-top: 2px;">Computer Generated Payroll Statement &bull; Verified</div>
+              <div style="font-size: 9px; color: #94A3B8; margin-top: 2px;">{t("computerGeneratedPayroll")}</div>
             </td>
             <td style="vertical-align: bottom; text-align: right; padding-top: 14px;">
               <div style="display: inline-block; text-align: center;">
                 <div style="border: 1.5px dashed #94A3B8; border-radius: 4px; padding: 4px 12px; margin-bottom: 6px; font-size: 9px; color: #063B78; font-weight: bold; background: #F8FAFC;">
                    OFFICIAL STAMP
                 </div>
-                <div style="border-top: 1.5px solid #063B78; width: 160px; padding-top: 4px; font-weight: bold; color: #063B78;">EMPLOYER SIGNATURE</div>
+                <div style="border-top: 1.5px solid #063B78; width: 160px; padding-top: 4px; font-weight: bold; color: #063B78;">{t("employerSignature")}</div>
               </div>
             </td>
           </tr>
@@ -1761,40 +1761,40 @@ function AdminDashboardPage() {
             <div className="bg-white rounded-2xl border border-[#E0E8F5] shadow-sm overflow-hidden">
               <div className="flex items-center gap-3 px-5 py-3 bg-[#F8FAFF] border-b border-[#E0E8F5]">
                 <span className="size-7 rounded-xl bg-[#063B78] text-white flex items-center justify-center text-xs font-black">1</span>
-                <h2 className="text-sm font-black text-[#10233F]">Basic Job Details</h2>
+                <h2 className="text-sm font-black text-[#10233F]">{t("basicJobDetails")}</h2>
               </div>
               <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Job Title *</label>
+                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">{t("jobTitleRequired")}</label>
                   <Input
                     required
                     value={jobForm.title}
                     onChange={(e) => setJ("title", e.target.value)}
-                    placeholder="e.g. Senior Software Engineer / Store Manager"
+                    placeholder={t("jobTitlePlaceholder")}
                     className="text-xs font-semibold"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Company Name *</label>
+                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">{t("companyNameRequired")}</label>
                   <Input
                     required
                     value={jobForm.company}
                     onChange={(e) => setJ("company", e.target.value)}
-                    placeholder="e.g. Acme Corporation"
+                    placeholder={t("companyNamePlaceholder")}
                     className="text-xs font-semibold"
                   />
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="block text-xs font-bold text-[#5B6B7F]">Category *</label>
-                    <span className="text-[10px] text-[#125BB5] font-bold">Pick existing or type new</span>
+                    <label className="block text-xs font-bold text-[#5B6B7F]">{t("categoryRequired")}</label>
+                    <span className="text-[10px] text-[#125BB5] font-bold">{t("pickExistingOrTypeNew")}</span>
                   </div>
                   <Input
                     list="admin-category-suggestions"
                     required
                     value={jobForm.category}
                     onChange={(e) => setJ("category", e.target.value)}
-                    placeholder="e.g. IT, Farming, Retail..."
+                    placeholder={t("categoryPlaceholder")}
                     className="text-xs font-semibold"
                   />
                   <datalist id="admin-category-suggestions">
@@ -1804,12 +1804,12 @@ function AdminDashboardPage() {
                   </datalist>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Location *</label>
+                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">{t("locationRequired")}</label>
                   <Input
                     required
                     value={jobForm.location}
                     onChange={(e) => setJ("location", e.target.value)}
-                    placeholder="e.g. Mumbai, Pune, Hybrid"
+                    placeholder={t("locationPlaceholder")}
                     className="text-xs font-semibold"
                   />
                 </div>
@@ -1820,11 +1820,11 @@ function AdminDashboardPage() {
             <div className="bg-white rounded-2xl border border-[#E0E8F5] shadow-sm overflow-hidden">
               <div className="flex items-center gap-3 px-5 py-3 bg-[#F8FAFF] border-b border-[#E0E8F5]">
                 <span className="size-7 rounded-xl bg-[#063B78] text-white flex items-center justify-center text-xs font-black">2</span>
-                <h2 className="text-sm font-black text-[#10233F]">Salary & Work Mode</h2>
+                <h2 className="text-sm font-black text-[#10233F]">{t("salaryAndWorkMode")}</h2>
               </div>
               <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Min Salary / किमान पगार (₹) *</label>
+                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">{t("minSalaryLabel")}</label>
                   <Input
                     type="text"
                     inputMode="numeric"
@@ -1836,7 +1836,7 @@ function AdminDashboardPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Max Salary / कमाल पगार (₹) *</label>
+                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">{t("maxSalaryLabel")}</label>
                   <Input
                     type="text"
                     inputMode="numeric"
@@ -1880,7 +1880,7 @@ function AdminDashboardPage() {
                         }`}
                       >
                         <span className="text-sm">✓</span>
-                        <span>Yes (Show Salary)</span>
+                        <span>{t("yesShowSalary")}</span>
                       </button>
                       <button
                         type="button"
@@ -1892,39 +1892,39 @@ function AdminDashboardPage() {
                         }`}
                       >
                         <span className="text-sm">✕</span>
-                        <span>No (Hide Salary)</span>
+                        <span>{t("noHideSalary")}</span>
                       </button>
                     </div>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Job Type</label>
+                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">{t("jobType")}</label>
                   <select
                     value={jobForm.jobType}
                     onChange={(e) => setJ("jobType", e.target.value)}
                     className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F]"
                   >
-                    <option value="Full Time">Full Time</option>
-                    <option value="Part Time">Part Time</option>
-                    <option value="Contract">Contract</option>
-                    <option value="Internship">Internship</option>
+                    <option value="Full Time">{t("fullTimeJob")}</option>
+                    <option value="Part Time">{t("partTimeJob")}</option>
+                    <option value="Contract">{t("contractJob")}</option>
+                    <option value="Internship">{t("internshipJob")}</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Work Mode</label>
+                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">{t("workMode")}</label>
                   <select
                     value={jobForm.workMode}
                     onChange={(e) => setJ("workMode", e.target.value)}
                     className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F]"
                   >
-                    <option value="On-site">On-site</option>
-                    <option value="Work From Home">Work From Home</option>
-                    <option value="Hybrid">Hybrid</option>
+                    <option value="On-site">{t("onSiteMode")}</option>
+                    <option value="Work From Home">{t("workFromHomeMode")}</option>
+                    <option value="Hybrid">{t("hybridMode")}</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Vacancies</label>
+                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">{t("vacancies")}</label>
                   <Input
                     type="text"
                     inputMode="numeric"
@@ -1941,36 +1941,36 @@ function AdminDashboardPage() {
             <div className="bg-white rounded-2xl border border-[#E0E8F5] shadow-sm overflow-hidden">
               <div className="flex items-center gap-3 px-5 py-3 bg-[#F8FAFF] border-b border-[#E0E8F5]">
                 <span className="size-7 rounded-xl bg-[#063B78] text-white flex items-center justify-center text-xs font-black">3</span>
-                <h2 className="text-sm font-black text-[#10233F]">Job Description & Requirements</h2>
+                <h2 className="text-sm font-black text-[#10233F]">{t("jobDescriptionAndRequirements")}</h2>
               </div>
               <div className="p-5 space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Job Description *</label>
+                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">{t("jobDescriptionRequired")}</label>
                   <textarea
                     required
                     rows={4}
                     value={jobForm.description}
                     onChange={(e) => setJ("description", e.target.value)}
-                    placeholder="Enter detailed job description, duties, and candidate expectations..."
+                    placeholder={t("jobDescriptionPlaceholder")}
                     className="w-full p-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F] focus:outline-none focus:border-[#063B78]"
                   />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Required Qualification</label>
+                    <label className="block text-xs font-bold text-[#5B6B7F] mb-1">{t("requiredQualificationLabel")}</label>
                     <Input
                       value={jobForm.education}
                       onChange={(e) => setJ("education", e.target.value)}
-                      placeholder="e.g. Graduate / B.E. / Any Degree"
+                      placeholder={t("qualificationPlaceholder")}
                       className="text-xs font-semibold"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Required Experience</label>
+                    <label className="block text-xs font-bold text-[#5B6B7F] mb-1">{t("requiredExperienceLabel")}</label>
                     <Input
                       value={jobForm.experience}
                       onChange={(e) => setJ("experience", e.target.value)}
-                      placeholder="e.g. 1 - 3 Years"
+                      placeholder={t("experiencePlaceholder")}
                       className="text-xs font-semibold"
                     />
                   </div>
@@ -1980,7 +1980,7 @@ function AdminDashboardPage() {
 
             {/* Bottom Actions */}
             <div className="bg-white rounded-2xl border border-[#E0E8F5] px-6 py-4 flex items-center justify-between sticky bottom-0 shadow-lg">
-              <p className="text-[10px] text-[#9DAEC5] font-semibold">* Required fields must be filled before submitting</p>
+              <p className="text-[10px] text-[#9DAEC5] font-semibold">*{t("requiredFieldsNote")}</p>
               <div className="flex gap-3">
                 <button type="button" onClick={() => setShowJobForm(false)} className="px-5 py-2.5 rounded-xl border border-[#DCE5F0] text-xs font-bold text-[#5B6B7F] hover:bg-[#F5F8FC] transition-all">
                   Cancel
@@ -2006,10 +2006,10 @@ function AdminDashboardPage() {
           </div>
           <div className="min-w-0 flex-1">
             <h1 suppressHydrationWarning className="font-black text-xs text-white truncate leading-tight">
-              {currentUser?.fullName || "Employer Portal"}
+              {currentUser?.fullName || t("employerPortal")}
             </h1>
             <span className="text-[10px] text-[#FFC400] font-black uppercase block tracking-wider leading-tight mt-0.5">
-              Employer Portal
+              {t("employerPortal")}
             </span>
           </div>
         </div>
@@ -2041,7 +2041,7 @@ function AdminDashboardPage() {
                     <h2 suppressHydrationWarning className="font-black text-sm text-white truncate">
                       {currentUser?.fullName || "Employer"}
                     </h2>
-                    <p className="text-[11px] text-[#FFC400] font-bold">Verified Employer</p>
+                    <p className="text-[11px] text-[#FFC400] font-bold">{t("verifiedEmployer")}</p>
                   </div>
                 </div>
                 <button onClick={() => setIsMobileMenuOpen(false)} className="p-1.5 rounded-lg text-white/60 hover:text-white hover:bg-white/10">
@@ -2122,17 +2122,17 @@ function AdminDashboardPage() {
               <Building2 className="size-5 text-[#021D3D]" />
             </div>
             <div className="min-w-0 flex-1">
-              <h1 suppressHydrationWarning className="font-black text-sm leading-tight tracking-tight uppercase truncate text-white" title={currentUser?.fullName || "Employer Portal"}>
-                {currentUser?.fullName || "Company Portal"}
+              <h1 suppressHydrationWarning className="font-black text-sm leading-tight tracking-tight uppercase truncate text-white" title={currentUser?.fullName || t("employerPortal")}>
+                {currentUser?.fullName || t("employerPortal")}
               </h1>
-              <span className="text-[10px] text-[#FFC400] font-black uppercase tracking-widest block">Employer Portal</span>
+              <span className="text-[10px] text-[#FFC400] font-black uppercase tracking-widest block">{t("employerPortal")}</span>
             </div>
           </div>
         </div>
 
         {/* Navigation Tabs */}
         <div className="flex-1 py-4 px-3 space-y-1 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
-          <div className="text-[10px] font-black uppercase text-[#9DAEC5] tracking-widest px-3 mb-2">Main Navigation</div>
+          <div className="text-[10px] font-black uppercase text-[#9DAEC5] tracking-widest px-3 mb-2">{t("mainNavigation")}</div>
           {[
             { id: "overview", label: t("dashboardOverview"), icon: BarChart3 },
             { id: "jobs", label: t("jobListings"), icon: BriefcaseBusiness, count: jobs.length },
@@ -2202,6 +2202,7 @@ function AdminDashboardPage() {
               {activeTab === "attendance" && t("attendancePayroll")}
               {activeTab === "packages" && t("myPackagesBilling")}
               {activeTab === "profile" && t("myProfile")}
+              {activeTab === "salary-slips" && t("employeeSalarySlipsTitle")}
             </h2>
           </div>
 
@@ -2210,22 +2211,24 @@ function AdminDashboardPage() {
             {!isSuperAdmin && (
               <div className="hidden sm:flex items-center gap-2 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl text-xs font-black text-amber-800 shrink-0">
                 <Zap className="size-4 fill-amber-400 text-amber-500" />
-                <span>Credits: {userCredits >= 999 ? "Unlimited" : userCredits}</span>
+                <span>{t("creditsLabel")} {userCredits >= 999 ? t("unlimitedLabel") : userCredits}</span>
                 <button
                   onClick={() => setShowPackageModal(true)}
                   className="ml-1 bg-amber-400 hover:bg-amber-500 text-[#063B78] px-2 py-0.5 rounded text-[10px] font-black transition-all cursor-pointer"
                 >
-                  + Add
+                  {t("addCreditsBtn")}
                 </button>
               </div>
             )}
 
+            <LanguageSwitcher />
+
             {/* Employer Profile Pill */}
             <div className="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-4 border-l border-[#E0E8F5] shrink-0">
               <div className="text-right hidden sm:block">
-                <div suppressHydrationWarning className="text-sm font-bold text-[#063B78]">{currentUser?.fullName || "Employer Account"}</div>
+                <div suppressHydrationWarning className="text-sm font-bold text-[#063B78]">{currentUser?.fullName || t("employerAccount")}</div>
                 <div className="text-[10px] font-bold text-amber-600 flex items-center justify-end gap-1">
-                  <ShieldCheck className="size-3" /> Verified Employer
+                  <ShieldCheck className="size-3" /> {t("verifiedEmployer")}
                 </div>
               </div>
               {currentUser?.profilePhoto ? (
@@ -2263,7 +2266,7 @@ function AdminDashboardPage() {
                     <div className="space-y-2.5 z-10 w-full md:w-auto">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-[11px] sm:text-xs font-black bg-gradient-to-r from-amber-400 to-yellow-300 text-[#021D3D] px-2.5 sm:px-3 py-1 rounded-full uppercase tracking-wider shadow-md">
-                          {latestPkg ? `${t("activePlan")}: ${latestPkg.planName}` : "No Active Package"}
+                          {latestPkg ? `${t("activePlan")}: ${latestPkg.planName}` : t("noActivePackage")}
                         </span>
                         {latestPkg && (
                           <span className="text-[10px] sm:text-xs font-bold text-amber-200 bg-white/10 px-2.5 py-0.5 rounded-full border border-white/15">
@@ -2272,16 +2275,16 @@ function AdminDashboardPage() {
                         )}
                       </div>
                       <h3 className="text-lg sm:text-xl font-black tracking-tight text-white leading-snug">
-                        {latestPkg ? `${t("yourPackageIsActive").replace("Package", latestPkg.planName)}` : "Purchase a Package to Start Posting Jobs & Adding Employees"}
+                        {latestPkg ? `${t("yourPackageIsActive").replace("Package", latestPkg.planName)}` : t("purchasePackageToStart")}
                       </h3>
                       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 text-xs text-slate-200 font-semibold pt-1">
                         <span className="flex items-center justify-between sm:justify-start gap-1.5 bg-white/10 px-3 py-2 rounded-xl border border-white/15">
                           <span>💼 {t("jobPostCredits")}:</span>
-                          <strong className="text-amber-300 text-xs sm:text-sm">{n(jobCredits)} {t("available")}</strong>
+                          <strong className="text-amber-300 text-xs sm:text-sm">{n(jobCredits)} {t("availableLabel")}</strong>
                         </span>
                         <span className="flex items-center justify-between sm:justify-start gap-1.5 bg-white/10 px-3 py-2 rounded-xl border border-white/15">
                           <span>👥 {t("employeeAdditionLimit")}:</span>
-                          <strong className="text-emerald-300 text-xs sm:text-sm">{workerLimit === 0 ? "0 (Package Required)" : (workerLimit >= 9999 ? "Unlimited" : `${n(workers.length)} / ${n(workerLimit)} ${t("added")}`)}</strong>
+                          <strong className="text-emerald-300 text-xs sm:text-sm">{workerLimit === 0 ? "0" : (workerLimit >= 9999 ? t("unlimitedLabel") : `${n(workers.length)} / ${n(workerLimit)} ${t("addedLabel")}`)}</strong>
                         </span>
                       </div>
                     </div>
@@ -2291,7 +2294,7 @@ function AdminDashboardPage() {
                         onClick={() => setShowPackageModal(true)}
                         className="w-full md:w-auto bg-gradient-to-r from-[#FFC400] to-[#FFA500] hover:from-[#FFA500] hover:to-[#FFC400] text-[#021D3D] font-black text-xs px-5 py-3 rounded-xl sm:rounded-2xl shadow-lg border-b-[3px] border-amber-600 transition-all active:scale-95 justify-center"
                       >
-                        {userPkgs.length > 0 ? "⚡ Upgrade Package" : "🛒 Buy Package Now"}
+                        {userPkgs.length > 0 ? t("upgradePackageBtn") : t("buyPackageNowBtn")}
                       </Button>
                       {userPkgs.length > 0 && (
                         <Button
@@ -2299,7 +2302,7 @@ function AdminDashboardPage() {
                           onClick={() => setActiveTab("packages")}
                           className="w-full md:w-auto bg-white/10 hover:bg-white/20 text-white font-bold text-xs px-4 py-3 rounded-xl sm:rounded-2xl border-white/20 justify-center"
                         >
-                          View Billing History
+                          {t("viewBillingHistory")}
                         </Button>
                       )}
                     </div>
@@ -2410,7 +2413,7 @@ function AdminDashboardPage() {
                 {applications.length === 0 ? (
                   <div className="py-8 text-center border-2 border-dashed border-[#E0E8F5] rounded-xl bg-[#F8FAFF]">
                     <FileText className="size-8 text-[#A0AEC0] mx-auto mb-2" />
-                    <p className="text-xs font-bold text-[#10233F]">No candidate applications received yet</p>
+                    <p className="text-xs font-bold text-[#10233F]">{t("noApplicationsFound")}</p>
                   </div>
                 ) : (
                   <div className="space-y-2.5 max-h-[320px] overflow-y-auto pr-1">
@@ -2442,24 +2445,24 @@ function AdminDashboardPage() {
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h3 className="text-lg font-black text-[#10233F]">
-                      👥 Registered Employees & Attendance Register
+                      👥 {t("registeredStaffRegister")}
                     </h3>
                     <p className="text-xs font-semibold text-[#5B6B7F] mt-0.5">
-                      Manage employee wage rates, daily attendance marking, and monthly payroll reports.
+                      {t("registeredStaffRegisterSub")}
                     </p>
                   </div>
                   <Button
                     onClick={() => setActiveTab("attendance")}
                     className="bg-[#063B78] text-white font-black text-xs hover:bg-[#0A4F9E]"
                   >
-                    View All →
+                    {t("viewAllArrow")}
                   </Button>
                 </div>
 
                 {workers.length === 0 ? (
                   <div className="py-8 text-center border-2 border-dashed border-[#E0E8F5] rounded-xl bg-[#F8FAFF]">
                     <Users className="size-8 text-[#A0AEC0] mx-auto mb-2" />
-                    <p className="text-xs font-bold text-[#10233F]">No employees registered yet</p>
+                    <p className="text-xs font-bold text-[#10233F]">{t("noEmployeesRegistered")}</p>
                   </div>
                 ) : (
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -2472,10 +2475,10 @@ function AdminDashboardPage() {
                         <div>
                           <div className="flex items-center justify-between mb-1.5">
                             <span className="text-xs font-black text-[#063B78]">{worker.name}</span>
-                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">₹{worker.dailyRate}/day</span>
+                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">₹{worker.dailyRate}{t("dailyRateUnit")}</span>
                           </div>
-                          <p className="text-xs font-semibold text-[#5B6B7F]">Department: <span className="font-bold text-[#10233F]">{formatCategoryName(worker.category || worker.trade)}</span></p>
-                          <p className="text-[11px] font-semibold text-[#5B6B7F]">Mobile: {worker.mobile || "N/A"}</p>
+                          <p className="text-xs font-semibold text-[#5B6B7F]">{t("departmentLabel")}: <span className="font-bold text-[#10233F]">{formatCategoryName(worker.category || worker.trade)}</span></p>
+                          <p className="text-[11px] font-semibold text-[#5B6B7F]">{t("mobileLabel")}: {worker.mobile || "N/A"}</p>
                         </div>
                       </div>
                     ))}
@@ -2491,10 +2494,10 @@ function AdminDashboardPage() {
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                   <h2 className="text-xl font-black text-[#10233F]">
-                    All Platform Job Listings
+                    {t("allPlatformJobListings")}
                   </h2>
                   <p className="text-xs font-semibold text-[#5B6B7F]">
-                    Total {jobs.length} job listings available. Manage or update job posts.
+                    {t("manageJobListingsSub")}
                   </p>
                 </div>
 
@@ -2504,13 +2507,13 @@ function AdminDashboardPage() {
                     className="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs px-4 py-2.5 rounded-xl flex items-center gap-2 shadow-md hover:shadow-lg transition-all w-full sm:w-auto shrink-0 cursor-pointer"
                   >
                     <Plus className="size-4" />
-                    <span>+ Post New Job</span>
+                    <span>{t("postNewJob")}</span>
                   </Button>
 
                   <div className="w-full sm:w-72 relative">
                     <Search className="absolute left-3 top-3 size-4 text-[#5B6B7F]" />
                     <Input
-                      placeholder="Search job title, company, or location..."
+                      placeholder={t("searchJobPlaceholder")}
                       value={jobSearch}
                       onChange={(e) => { setJobSearch(e.target.value); setJobsPage(1); }}
                       className="pl-9 text-xs font-bold"
@@ -2523,13 +2526,13 @@ function AdminDashboardPage() {
                 <table className="w-full text-left text-xs">
                   <thead className="bg-[#063B78] text-white font-black uppercase">
                     <tr>
-                      <th className="p-3.5">Job Title</th>
-                      <th className="p-3.5">Company</th>
-                      <th className="p-3.5">Location & Salary</th>
-                      <th className="p-3.5">Vacancies</th>
-                      <th className="p-3.5">Approval</th>
-                      <th className="p-3.5">Status</th>
-                      <th className="p-3.5 text-right">Actions</th>
+                      <th className="p-3.5">{t("jobTitleTh")}</th>
+                      <th className="p-3.5">{t("companyTh")}</th>
+                      <th className="p-3.5">{t("locationSalaryTh")}</th>
+                      <th className="p-3.5">{t("vacanciesTh")}</th>
+                      <th className="p-3.5">{t("approvalTh")}</th>
+                      <th className="p-3.5">{t("statusTh")}</th>
+                      <th className="p-3.5 text-right">{t("actionsTh")}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#DCE5F0] font-semibold text-[#10233F]">
@@ -2549,23 +2552,23 @@ function AdminDashboardPage() {
                             <span>{j.salary}</span>
                             {(j.showSalary === false || j.hideSalary) ? (
                               <span className="text-[10px] bg-rose-50 text-rose-700 border border-rose-200 px-1.5 py-0.5 rounded font-black">
-                                🔒 Hidden from Seekers
+                                🔒 {t("hiddenFromSeekers")}
                               </span>
                             ) : (
                               <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded font-black">
-                                👁️ Visible to Seekers
+                                👁️ {t("visibleToSeekers")}
                               </span>
                             )}
                           </div>
                         </td>
-                        <td className="p-3.5 font-black text-[#063B78]">{j.vacancies || 5} Openings</td>
+                        <td className="p-3.5 font-black text-[#063B78]">{j.vacancies || 5} {t("openingsLabel")}</td>
                         <td className="p-3.5">
                           {j.approvalStatus === "rejected" ? (
-                            <Badge className="bg-red-600 text-white font-bold"> Rejected</Badge>
+                            <Badge className="bg-red-600 text-white font-bold">{t("rejectedStatusTh")}</Badge>
                           ) : j.approvalStatus === "approved" || !j.approvalStatus ? (
-                            <Badge className="bg-emerald-600 text-white font-bold">✅ Approved</Badge>
+                            <Badge className="bg-emerald-600 text-white font-bold">✅ {t("approvedStatus")}</Badge>
                           ) : (
-                            <Badge className="bg-amber-500 text-white font-bold">⏳ Pending Approval</Badge>
+                            <Badge className="bg-amber-500 text-white font-bold">⏳ {t("pendingApprovalStatus")}</Badge>
                           )}
                         </td>
                         <td className="p-3.5">
@@ -2576,7 +2579,7 @@ function AdminDashboardPage() {
                                 : "bg-gray-500 text-white font-bold"
                             }
                           >
-                            {j.status}
+                            {j.status === "Active" ? t("activeStatus") : t("inactiveStatus")}
                           </Badge>
                         </td>
                         <td className="p-3.5 text-right">
@@ -2590,7 +2593,7 @@ function AdminDashboardPage() {
                               className="bg-[#063B78] text-white font-extrabold text-[11px] hover:bg-[#0A4F9E]"
                             >
                               <Users className="size-3.5 mr-1" />
-                              View Applications ({applications.filter((a) => a.jobId === j.id).length})
+                              {t("viewApplicationsCount")} ({applications.filter((a) => a.jobId === j.id).length})
                             </Button>
                             <Button
                               size="sm"
@@ -2598,7 +2601,7 @@ function AdminDashboardPage() {
                               onClick={() => handleEditJobClick(j)}
                               className="font-extrabold text-[11px] border-[#063B78] text-[#063B78] hover:bg-[#F0F5FF]"
                             >
-                              <Edit className="size-3.5 mr-1" /> Edit
+                              <Edit className="size-3.5 mr-1" /> {t("editBtn")}
                             </Button>
                             <Button
                               size="sm"
@@ -2676,10 +2679,10 @@ function AdminDashboardPage() {
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                   <h2 className="text-xl font-black text-[#10233F]">
-                    Job Applications & Applicants
+                    {t("jobApplicationsTitle")}
                   </h2>
                   <p className="text-xs font-semibold text-[#5B6B7F]">
-                    Total {applications.length} candidates applied. Contact candidates directly or update application status.
+                    {t("jobApplicationsSubtitle").replace("{count}", String(applications.length))}
                   </p>
                 </div>
 
@@ -2697,7 +2700,7 @@ function AdminDashboardPage() {
                   <div className="w-full sm:w-64 relative">
                     <Search className="absolute left-3 top-3 size-4 text-[#5B6B7F]" />
                     <Input
-                      placeholder="Search candidate name, job, or phone..."
+                      placeholder={t("searchCandidatePlaceholder")}
                       value={appSearch}
                       onChange={(e) => setAppSearch(e.target.value)}
                       className="pl-9 text-xs font-bold"
@@ -2710,12 +2713,12 @@ function AdminDashboardPage() {
                 <table className="w-full text-left text-xs">
                   <thead className="bg-[#063B78] text-white font-black uppercase">
                     <tr>
-                      <th className="p-3.5">Candidate Name</th>
-                      <th className="p-3.5">Applied Job</th>
-                      <th className="p-3.5">Direct Contact</th>
-                      <th className="p-3.5">Applied Date</th>
-                      <th className="p-3.5">Status</th>
-                      <th className="p-3.5 text-right">Details</th>
+                      <th className="p-3.5">{t("candidateNameTh")}</th>
+                      <th className="p-3.5">{t("appliedForLabel")}</th>
+                      <th className="p-3.5">{t("contactLabel")}</th>
+                      <th className="p-3.5">{t("appliedDateCol")}</th>
+                      <th className="p-3.5">{t("statusTh")}</th>
+                      <th className="p-3.5 text-right">{t("actionsTh")}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#DCE5F0] font-semibold text-[#10233F]">
@@ -2763,12 +2766,12 @@ function AdminDashboardPage() {
                                 onChange={(e) => handleUpdateAppStatus(a.id, e.target.value as any)}
                                 className="h-8 px-2 rounded-lg border border-[#DCE5F0] text-xs font-black focus:outline-none focus:border-[#063B78]"
                               >
-                                <option value="Applied"> Applied</option>
-                                <option value="Viewed"> Viewed</option>
-                                <option value="Shortlisted">⭐ Shortlisted</option>
-                                <option value="Interview">📅 Interview Scheduled</option>
-                                <option value="Selected">✅ Selected / Hired</option>
-                                <option value="Rejected"> Rejected</option>
+                                <option value="Applied"> {t("applied")}</option>
+                                <option value="Viewed"> {t("applicationViewed")}</option>
+                                <option value="Shortlisted">⭐ {t("statusShortlisted")}</option>
+                                <option value="Interview">📅 {t("interviewScheduled")}</option>
+                                <option value="Selected">✅ {t("selectedHired")}</option>
+                                <option value="Rejected"> {t("rejected")}</option>
                               </select>
                             </td>
                             <td className="p-3.5 text-right">
@@ -2789,7 +2792,7 @@ function AdminDashboardPage() {
                                   <div className="sticky left-0 md:static w-[88vw] sm:w-[90vw] md:w-full bg-white p-4 md:p-5 rounded-xl border border-[#E2E8F0] shadow-sm">
                                     <h4 className="font-bold text-[#10233F] mb-4 border-b pb-2 flex items-center gap-2">
                                       <FileText className="size-4 text-[#063B78]" />
-                                      Candidate Application Details
+                                      {t("candidateApplicationDetails")}
                                     </h4>
                                     <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                                       {a.fieldValues && Object.entries(a.fieldValues)
@@ -2809,7 +2812,7 @@ function AdminDashboardPage() {
                                           </div>
                                         ))}
                                       {(!a.fieldValues && !a.customAnswers) && (
-                                        <div className="text-sm font-semibold text-[#5B6B7F]">No additional application details provided.</div>
+                                        <div className="text-sm font-semibold text-[#5B6B7F]">{t("noAdditionalDetails")}</div>
                                       )}
 
                                     </div>
@@ -2821,7 +2824,7 @@ function AdminDashboardPage() {
                                       <div className="flex flex-col sm:flex-row gap-2">
                                         <input
                                           type="text"
-                                          placeholder="e.g. Selected! Please bring original documents on Monday at 10 AM."
+                                          placeholder={t("replyPlaceholder")}
                                           value={replyInputs[a.id] !== undefined ? replyInputs[a.id] : (a.replyMessage || "")}
                                           onChange={(e) => setReplyInputs(prev => ({ ...prev, [a.id]: e.target.value }))}
                                           className="flex-1 h-10 px-3.5 rounded-xl border border-[#DCE5F0] bg-[#F8FAFC] text-xs font-bold text-[#10233F] focus:outline-none focus:border-[#063B78]"
@@ -2869,13 +2872,13 @@ function AdminDashboardPage() {
                 <div className="space-y-1.5 min-w-[280px] flex-1">
                   <div className="inline-flex items-center gap-2 rounded-full bg-[#063B78]/10 px-3 py-1 text-[11px] sm:text-xs font-black text-[#063B78] max-w-full truncate">
                     <CalendarCheck className="size-3.5 text-[#063B78] shrink-0" />
-                    <span className="truncate">Employee Attendance & Payroll Management</span>
+                    <span className="truncate">{t("employeeAttendancePayrollMgmt")}</span>
                   </div>
                   <h2 className="text-xl sm:text-2xl font-black text-[#10233F] tracking-tight leading-snug break-words">
-                    Employee Attendance & Payroll Register
+                    {t("employeeAttendancePayrollRegister")}
                   </h2>
                   <p className="text-xs sm:text-sm font-semibold text-[#5B6B7F] max-w-2xl leading-relaxed">
-                    Manage employee details by department, set custom daily wage rates, mark daily attendance, and generate weekly/monthly payroll reports.
+                    {t("manageEmployeeDetailsDesc")}
                   </p>
                 </div>
 
@@ -2884,18 +2887,18 @@ function AdminDashboardPage() {
                   {attendanceMode === "field" ? (
                     <div
                       className="min-h-10 py-2 px-3.5 flex items-center gap-2 bg-gradient-to-r from-amber-500/15 to-amber-600/10 border border-amber-500/40 rounded-xl text-[11px] sm:text-xs font-black text-amber-950 shadow-2xs w-full sm:w-auto min-w-0 max-w-full"
-                      title="Auto-detected from company name: Attendance is marked manually by employer."
+                      title={t("autoDetectedFieldWorksite")}
                     >
                       <span className="size-2 rounded-full bg-amber-500 animate-pulse shrink-0"></span>
-                      <span className="leading-snug flex-1 min-w-0 break-words">🚜 Field / Moving Worksite (Auto-Detected: Employer Attendance)</span>
+                      <span className="leading-snug flex-1 min-w-0 break-words">{t("fieldMovingWorksite")}</span>
                     </div>
                   ) : (
                     <div
                       className="min-h-10 py-2 px-3.5 flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/90 rounded-xl text-[11px] sm:text-xs font-black text-[#063B78] shadow-2xs w-full sm:w-auto min-w-0 max-w-full"
-                      title="Auto-detected from company name: Employees punch in/out via mobile app."
+                      title={t("autoDetectedFixedWorksite")}
                     >
                       <span className="size-2 rounded-full bg-blue-600 animate-pulse shrink-0"></span>
-                      <span className="leading-snug flex-1 min-w-0 break-words">🏢 Fixed Worksite (Auto-Detected: App Punch In/Out)</span>
+                      <span className="leading-snug flex-1 min-w-0 break-words">{t("fixedWorksite")}</span>
                     </div>
                   )}
 
@@ -2930,10 +2933,10 @@ function AdminDashboardPage() {
                         variant="ghost"
                         size="sm"
                         className="h-8 px-2.5 text-xs font-extrabold text-emerald-700 hover:bg-emerald-100 hover:text-emerald-900 rounded-lg ml-1 shrink-0"
-                        title="Edit Worksite Location Link"
+                        title={t("editWorksiteLocationLink")}
                       >
                         <Edit className="size-3.5 mr-1" />
-                        <span>Edit</span>
+                        <span>{t("editWorksiteLocation")}</span>
                       </Button>
                     </div>
                   ) : (
@@ -2946,7 +2949,7 @@ function AdminDashboardPage() {
                       className="h-10 border-[#DCE5F0] text-[#5B6B7F] hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 font-extrabold text-xs px-4 rounded-xl shadow-2xs flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer w-full sm:w-auto"
                     >
                       <MapPin className="size-4 text-emerald-600" />
-                      <span> Set Worksite Location</span>
+                      <span>{t("setWorksiteLocation")}</span>
                     </Button>
                   ))}
 
@@ -2955,7 +2958,7 @@ function AdminDashboardPage() {
                     className="h-10 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-5 rounded-xl shadow-sm flex items-center justify-center gap-2 w-full sm:w-auto cursor-pointer shrink-0"
                   >
                     <UserPlus className="size-4" />
-                    <span>+ Add Employee</span>
+                    <span>{t("addEmployeeBtn")}</span>
                   </Button>
                 </div>
               </div>
@@ -2974,9 +2977,9 @@ function AdminDashboardPage() {
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 bg-white p-2 sm:p-3 rounded-2xl border border-[#DCE5F0] shadow-sm min-w-0">
                       <div className="grid grid-cols-3 gap-1.5 w-full sm:w-auto sm:flex sm:items-center min-w-0">
                         {[
-                          { id: "daily", fullLabel: "📋 Daily Attendance", shortLabel: "📋 Daily", icon: CalendarCheck },
-                          { id: "reports", fullLabel: "📊 Reports", shortLabel: "📊 Reports", icon: PieChart },
-                          { id: "directory", fullLabel: `👥 Employees (${workers.length})`, shortLabel: `👥 Staff (${workers.length})`, icon: Users },
+                          { id: "daily", fullLabel: t("dailyAttendanceSubTab"), shortLabel: t("dailyShortSubTab"), icon: CalendarCheck },
+                          { id: "reports", fullLabel: t("reportsSubTab"), shortLabel: t("reportsSubTab"), icon: PieChart },
+                          { id: "directory", fullLabel: `${t("employeesSubTab")} (${workers.length})`, shortLabel: `${t("employeesSubTab")} (${workers.length})`, icon: Users },
                         ].map((tab) => (
                           <button
                             key={tab.id}
@@ -2997,13 +3000,13 @@ function AdminDashboardPage() {
                         {/* Department Filter Dropdown Selector */}
                         <div className="flex items-center gap-1.5 bg-[#F8FAFF] px-3 py-2 rounded-xl border border-[#DCE5F0] w-full sm:w-auto min-w-0">
                           <Layers className="size-4 text-[#063B78] shrink-0" />
-                          <span className="text-xs font-black text-[#063B78] whitespace-nowrap">Department:</span>
+                          <span className="text-xs font-black text-[#063B78] whitespace-nowrap">{t("departmentFilterLabel")}</span>
                           <select
                             value={selectedCategoryFilter}
                             onChange={(e) => setSelectedCategoryFilter(e.target.value)}
                             className="bg-transparent font-bold text-xs text-[#10233F] focus:outline-none cursor-pointer outline-none w-full sm:max-w-[200px] truncate min-w-0"
                           >
-                            <option value="ALL">🏷️ All Categories ({workers.length})</option>
+                            <option value="ALL">{t("allCategoriesOption")} ({workers.length})</option>
                             {allCategories.map((cat) => {
                               const count = categoryCounts.get(cat) || 0;
                               return (
@@ -3023,7 +3026,7 @@ function AdminDashboardPage() {
                             className="text-xs font-black border-[#063B78] text-[#063B78] hover:bg-blue-50 flex items-center gap-1.5 h-9 shrink-0 cursor-pointer"
                           >
                             <Printer className="size-3.5" />
-                            <span>Print</span>
+                            <span>{t("printBtn")}</span>
                           </Button>
                         )}
                       </div>
@@ -3081,7 +3084,7 @@ function AdminDashboardPage() {
                             <div className="grid gap-3 grid-cols-2 sm:grid-cols-2 lg:grid-cols-5">
                               <div className="p-3.5 sm:p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between gap-2">
                                 <div className="min-w-0 flex-1">
-                                  <p className="text-[11px] sm:text-xs font-bold text-[#5B6B7F] truncate" title="Total Employees">Total Employees</p>
+                                  <p className="text-[11px] sm:text-xs font-bold text-[#5B6B7F] truncate" title={t("totalEmployeesLabel")}>{t("totalEmployeesLabel")}</p>
                                   <h4 className="text-xl sm:text-2xl font-black text-[#10233F] mt-0.5">{filteredByCat.length}</h4>
                                 </div>
                                 <div className="p-2.5 bg-blue-50 text-[#063B78] rounded-xl shrink-0">
@@ -3091,7 +3094,7 @@ function AdminDashboardPage() {
 
                               <div className="p-3.5 sm:p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between gap-2">
                                 <div className="min-w-0 flex-1">
-                                  <p className="text-[11px] sm:text-xs font-bold text-emerald-700 truncate" title="Present Today">Present Today</p>
+                                  <p className="text-[11px] sm:text-xs font-bold text-emerald-700 truncate" title={t("presentToday")}>{t("presentToday")}</p>
                                   <h4 className="text-xl sm:text-2xl font-black text-emerald-600 mt-0.5">{pCount}</h4>
                                 </div>
                                 <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl shrink-0">
@@ -3101,7 +3104,7 @@ function AdminDashboardPage() {
 
                               <div className="p-3.5 sm:p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between gap-2">
                                 <div className="min-w-0 flex-1">
-                                  <p className="text-[11px] sm:text-xs font-bold text-amber-700 truncate" title="Half Day Today">Half Day Today</p>
+                                  <p className="text-[11px] sm:text-xs font-bold text-amber-700 truncate" title={t("halfDayToday")}>{t("halfDayToday")}</p>
                                   <h4 className="text-xl sm:text-2xl font-black text-amber-600 mt-0.5">{hCount}</h4>
                                 </div>
                                 <div className="p-2.5 bg-amber-50 text-amber-600 rounded-xl shrink-0">
@@ -3111,7 +3114,7 @@ function AdminDashboardPage() {
 
                               <div className="p-3.5 sm:p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between gap-2">
                                 <div className="min-w-0 flex-1">
-                                  <p className="text-[11px] sm:text-xs font-bold text-rose-700 truncate" title="Absent Today">Absent Today</p>
+                                  <p className="text-[11px] sm:text-xs font-bold text-rose-700 truncate" title={t("absentToday")}>{t("absentToday")}</p>
                                   <h4 className="text-xl sm:text-2xl font-black text-rose-600 mt-0.5">{aCount}</h4>
                                 </div>
                                 <div className="p-2.5 bg-rose-50 text-rose-600 rounded-xl shrink-0">
@@ -3121,7 +3124,7 @@ function AdminDashboardPage() {
 
                               <div className="p-3.5 sm:p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between gap-2">
                                 <div className="min-w-0 flex-1">
-                                  <p className="text-[11px] sm:text-xs font-bold text-[#063B78] truncate" title="Today's Payable Wages">Payable Wages</p>
+                                  <p className="text-[11px] sm:text-xs font-bold text-[#063B78] truncate" title={t("payableWages")}>{t("payableWages")}</p>
                                   <h4 className="text-lg sm:text-xl font-black text-[#063B78] mt-0.5">₹{todayWageSum.toLocaleString("en-IN")}</h4>
                                 </div>
                                 <div className="p-2.5 bg-indigo-50 text-[#063B78] rounded-xl shrink-0">
@@ -3137,7 +3140,7 @@ function AdminDashboardPage() {
                           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                             <div className="flex items-center gap-2 bg-[#F8FAFF] px-3 py-1.5 rounded-xl border border-[#DCE5F0]">
                               <Calendar className="size-4 text-[#063B78] shrink-0" />
-                              <span className="text-xs font-extrabold text-[#10233F] whitespace-nowrap">Select Date:</span>
+                              <span className="text-xs font-extrabold text-[#10233F] whitespace-nowrap">{t("selectDateLabel")}:</span>
                               <input
                                 type="date"
                                 max={new Date().toISOString().split("T")[0]}
@@ -3164,7 +3167,7 @@ function AdminDashboardPage() {
                                 : "bg-white text-[#5B6B7F]"
                                 }`}
                             >
-                              Today
+                              {t("todayBtn")}
                             </Button>
 
                             <Button
@@ -3181,14 +3184,14 @@ function AdminDashboardPage() {
                                 : "bg-white text-[#5B6B7F]"
                                 }`}
                             >
-                              Yesterday
+                              {t("yesterdayBtn")}
                             </Button>
                           </div>
 
                           <div className="relative w-full sm:w-72 shrink-0">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#A0AEC0]" />
                             <Input
-                              placeholder="Search employee name or role..."
+                              placeholder={t("searchEmployeePlaceholder")}
                               value={workerSearch}
                               onChange={(e) => setWorkerSearch(e.target.value)}
                               className="pl-9 h-9 text-xs font-semibold rounded-xl border-[#DCE5F0]"
@@ -3201,15 +3204,15 @@ function AdminDashboardPage() {
                           <div className="flex items-center justify-between mb-5">
                             <div>
                               <h3 className="text-lg font-black text-[#10233F] flex items-center gap-2">
-                                <span>📅 Daily Attendance Sheet</span>
+                                <span>{t("dailyAttendanceSheetTitle")}</span>
                                 <Badge className="bg-[#063B78] text-white font-bold text-xs">
                                   {selectedAttendanceDate}
                                 </Badge>
                               </h3>
                               <p className="text-xs font-semibold text-[#5B6B7F] mt-1">
                                 {selectedCategoryFilter === "ALL"
-                                  ? "Showing attendance records for all departments:"
-                                  : `Showing attendance records for '${selectedCategoryFilter}' department:`}
+                                  ? t("showingAttendanceAllDept")
+                                  : `${t("showingAttendanceForDept")} '${selectedCategoryFilter}'`}
                               </p>
                             </div>
                           </div>
@@ -3218,13 +3221,13 @@ function AdminDashboardPage() {
                             <table className="w-full text-left border-collapse">
                               <thead>
                                 <tr className="border-b border-[#EBF1F8] bg-[#F8FAFF] text-[11px] uppercase tracking-wider text-[#5B6B7F] font-black">
-                                  <th className="p-4 rounded-l-xl">Employee Name</th>
-                                  <th className="p-4">Department / Category</th>
-                                  <th className="p-4">Role / Designation</th>
-                                  <th className="p-4">Daily Wage Rate</th>
-                                  {attendanceMode === "fixed" && <th className="p-4 text-center">Punch Times</th>}
-                                   {attendanceMode === "fixed" && <th className="p-4 text-center min-w-[200px]">Work Duration & Overtime</th>}
-                                  <th className="p-4 text-right rounded-r-xl">Today's Pay</th>
+                                  <th className="p-4 rounded-l-xl">{t("fullNameLabel")}</th>
+                                  <th className="p-4">{t("departmentLabel")}</th>
+                                  <th className="p-4">{t("jobTitleTh")}</th>
+                                  <th className="p-4">{t("dailyWageRateLabel")}</th>
+                                  {attendanceMode === "fixed" && <th className="p-4 text-center">{t("punchTimesTh")}</th>}
+                                   {attendanceMode === "fixed" && <th className="p-4 text-center min-w-[200px]">{t("workDurationOvertimeTh")}</th>}
+                                  <th className="p-4 text-right rounded-r-xl">{t("netSalaryLabel")}</th>
                                 </tr>
                               </thead>
                               <tbody className="divide-y divide-[#EBF1F8] text-xs font-semibold">
@@ -3255,17 +3258,17 @@ function AdminDashboardPage() {
                                             <Users className="size-10 text-[#A0AEC0] mx-auto mb-3" />
                                             <p className="text-sm font-extrabold text-[#10233F]">
                                               {selectedCategoryFilter === "ALL"
-                                                ? "No employees registered yet"
-                                                : `No employees found in '${selectedCategoryFilter}' department`}
+                                                ? t("noEmployeesRegistered")
+                                                : `${t("noEmployeesRegistered")} (${selectedCategoryFilter})`}
                                             </p>
                                             <p className="text-xs font-medium text-[#5B6B7F] mt-1 mb-4">
-                                              Click the <span className="font-bold text-emerald-700">'+ Add Employee'</span> button above to register your first worker.
+                                              {t("clickAddEmployeePrompt")}
                                             </p>
                                             <Button
                                               onClick={handleOpenAddWorker}
                                               className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-4 py-2 rounded-xl"
                                             >
-                                              <UserPlus className="size-4 mr-1.5" /> + Add Employee
+                                              <UserPlus className="size-4 mr-1.5" /> {t("addEmployeeBtn")}
                                             </Button>
                                           </div>
                                         </td>
@@ -3326,7 +3329,7 @@ function AdminDashboardPage() {
                                                      setCalendarYear(new Date().getFullYear());
                                                      setActiveCalendarDate(null);
                                                    }}
-                                                   title="Open Attendance Calendar (कॅलेंडर उघडा)"
+                                                   title={t("openAttendanceCalendar")}
                                                    className="size-7 rounded-lg bg-blue-50 hover:bg-[#063B78] text-[#063B78] hover:text-white border border-blue-200 flex items-center justify-center transition-all shadow-2xs hover:scale-110 cursor-pointer shrink-0"
                                                  >
                                                    <Calendar className="size-3.5 text-[#063B78] hover:text-white" />
@@ -3385,7 +3388,7 @@ function AdminDashboardPage() {
                                                    <div className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-300 text-emerald-900 px-3 py-1 rounded-xl shadow-xs font-black text-xs">
                                                      <Clock className="size-3.5 text-emerald-600" />
                                                      <span>
-                                                       {workInfo.isCurrentlyWorking ? "⏳ Live Work: " : "⏱️ Worked: "}
+                                                       {workInfo.isCurrentlyWorking ? `⏳ ${t("liveWorkLabel")} ` : `⏱️ ${t("workedLabel")} `}
                                                        <strong className="text-emerald-950 font-black">{workInfo.workedText}</strong>
                                                      </span>
                                                    </div>
@@ -3393,7 +3396,7 @@ function AdminDashboardPage() {
                                                      <div className="inline-flex items-center gap-1.5 bg-amber-100 border border-amber-400 text-amber-950 px-3 py-1 rounded-xl shadow-xs font-black text-xs animate-pulse">
                                                        <Zap className="size-3.5 text-amber-600 fill-amber-500" />
                                                        <span>
-                                                         Overtime: <strong className="text-amber-950 font-black">{workInfo.overtimeText}</strong>
+                                                         {t("overtimeLabel")} <strong className="text-amber-950 font-black">{workInfo.overtimeText}</strong>
                                                        </span>
                                                      </div>
                                                    )}
@@ -3402,7 +3405,7 @@ function AdminDashboardPage() {
                                                  <div className="inline-flex items-center gap-2 bg-slate-100 border border-slate-300 text-slate-600 px-3.5 py-1.5 rounded-2xl">
                                                    <Clock className="size-4 text-slate-400" />
                                                    <span className="font-extrabold text-xs">
-                                                     Auto: Absent (Not Punched In Yet)
+                                                     {t("autoAbsentNotPunched")}
                                                    </span>
                                                  </div>
                                                )}
@@ -3432,7 +3435,7 @@ function AdminDashboardPage() {
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="text-xs font-black text-[#10233F] mr-1 flex items-center gap-1">
                               <CalendarDays className="size-4 text-[#063B78]" />
-                              Report Period:
+                              {t("reportPeriodLabel")}
                             </span>
                             <button
                               onClick={() => setReportTimeframe("week")}
@@ -3473,7 +3476,7 @@ function AdminDashboardPage() {
                                 onChange={(e) => setReportStartDate(e.target.value)}
                                 className="bg-[#F8FAFF] border border-[#DCE5F0] rounded-xl px-3 py-1.5 text-xs font-bold text-[#063B78]"
                               />
-                              <span className="text-xs font-bold text-[#5B6B7F]">to</span>
+                              <span className="text-xs font-bold text-[#5B6B7F]">{t("toWord")}</span>
                               <input
                                 type="date"
                                 value={reportEndDate}
@@ -3519,7 +3522,7 @@ function AdminDashboardPage() {
                             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
                               <div className="p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between">
                                 <div>
-                                  <p className="text-xs font-extrabold text-[#5B6B7F]">Total Recorded Days</p>
+                                  <p className="text-xs font-extrabold text-[#5B6B7F]">{t("totalRecordedDays")}</p>
                                   <h4 className="text-2xl font-black text-[#10233F] mt-1">{reportAttendanceRecords.length}</h4>
                                 </div>
                                 <div className="p-3 bg-blue-50 text-[#063B78] rounded-xl">
@@ -3529,7 +3532,7 @@ function AdminDashboardPage() {
 
                               <div className="p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between">
                                 <div>
-                                  <p className="text-xs font-extrabold text-emerald-700">Total Present Days</p>
+                                  <p className="text-xs font-extrabold text-emerald-700">{t("totalPresentDays")}</p>
                                   <h4 className="text-2xl font-black text-emerald-600 mt-1">{totalPresentDays}</h4>
                                 </div>
                                 <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
@@ -3539,7 +3542,7 @@ function AdminDashboardPage() {
 
                               <div className="p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between">
                                 <div>
-                                  <p className="text-xs font-extrabold text-amber-700">Total Half Days</p>
+                                  <p className="text-xs font-extrabold text-amber-700">{t("totalHalfDays")}</p>
                                   <h4 className="text-2xl font-black text-amber-600 mt-1">{totalHalfDays}</h4>
                                 </div>
                                 <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
@@ -3549,7 +3552,7 @@ function AdminDashboardPage() {
 
                               <div className="p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between">
                                 <div>
-                                  <p className="text-xs font-extrabold text-rose-700">Total Absent Days</p>
+                                  <p className="text-xs font-extrabold text-rose-700">{t("totalAbsentDays")}</p>
                                   <h4 className="text-2xl font-black text-rose-600 mt-1">{totalAbsentDays}</h4>
                                 </div>
                                 <div className="p-3 bg-rose-50 text-rose-600 rounded-xl">
@@ -3559,7 +3562,7 @@ function AdminDashboardPage() {
 
                               <div className="p-4 rounded-2xl border border-[#DCE5F0] bg-white shadow-sm flex items-center justify-between">
                                 <div>
-                                  <p className="text-xs font-extrabold text-[#063B78]">Net Total Payroll</p>
+                                  <p className="text-xs font-extrabold text-[#063B78]">{t("netTotalPayroll")}</p>
                                   <h4 className="text-xl font-black text-[#063B78] mt-1">₹{totalPeriodPayroll.toLocaleString("en-IN")}</h4>
                                 </div>
                                 <div className="p-3 bg-indigo-50 text-[#063B78] rounded-xl">
@@ -3575,13 +3578,13 @@ function AdminDashboardPage() {
                           <div className="flex items-center justify-between mb-5">
                             <div>
                               <h3 className="text-lg font-black text-[#10233F] flex items-center gap-2">
-                                <span>📊 Employee Weekly & Monthly Payroll Summary</span>
+                                <span>📊 {t("payrollSummaryTitle")}</span>
                                 <Badge className="bg-[#063B78] text-white font-bold text-xs uppercase">
-                                  {reportTimeframe === "week" ? "Weekly Report" : reportTimeframe === "month" ? "Monthly Report" : "Custom Range"}
+                                  {reportTimeframe === "week" ? t("weeklyReportBadge") : reportTimeframe === "month" ? t("monthlyReportBadge") : t("customRangeBadge")}
                                 </Badge>
                               </h3>
                               <p className="text-xs font-semibold text-[#5B6B7F] mt-1">
-                                Individual employee present days, half days, absent days, overtime, and calculated net wages:
+                                {t("payrollSummaryDesc")}
                               </p>
                             </div>
                           </div>
@@ -3590,14 +3593,14 @@ function AdminDashboardPage() {
                             <table className="w-full text-left border-collapse">
                               <thead>
                                 <tr className="border-b border-[#EBF1F8] bg-[#F8FAFF] text-[11px] uppercase tracking-wider text-[#5B6B7F] font-black">
-                                  <th className="p-4 rounded-l-xl">Employee Name</th>
-                                  <th className="p-4">Department / Category</th>
-                                  <th className="p-4">Daily Wage Rate</th>
-                                  <th className="p-4 text-center text-emerald-700">Present Days</th>
-                                  <th className="p-4 text-center text-amber-700">Half Days</th>
-                                  <th className="p-4 text-center text-rose-700">Absent Days</th>
-                                  <th className="p-4 text-center text-blue-700">Overtime Days</th>
-                                  <th className="p-4 text-right rounded-r-xl">Net Payable Wages</th>
+                                  <th className="p-4 rounded-l-xl">{t("employeeName")}</th>
+                                  <th className="p-4">{t("department")}</th>
+                                  <th className="p-4">{t("dailyWageRate")}</th>
+                                  <th className="p-4 text-center text-emerald-700">{t("presentDaysTh")}</th>
+                                  <th className="p-4 text-center text-amber-700">{t("halfDaysTh")}</th>
+                                  <th className="p-4 text-center text-rose-700">{t("absentDaysTh")}</th>
+                                  <th className="p-4 text-center text-blue-700">{t("overtimeDaysTh")}</th>
+                                  <th className="p-4 text-right rounded-r-xl">{t("netPayableWagesTh")}</th>
                                 </tr>
                               </thead>
                               <tbody className="divide-y divide-[#EBF1F8] text-xs font-semibold">
@@ -3611,7 +3614,7 @@ function AdminDashboardPage() {
                                     return (
                                       <tr>
                                         <td colSpan={8} className="p-8 text-center text-xs font-bold text-[#5B6B7F]">
-                                          No employee attendance records found for the selected period.
+                                          {t("noEmployeeAttendanceRecords")}
                                         </td>
                                       </tr>
                                     );
@@ -3693,13 +3696,13 @@ function AdminDashboardPage() {
                         <div className="flex items-center justify-between">
                           <div>
                             <h3 className="text-lg font-black text-[#10233F] flex items-center gap-2">
-                              <span>👥 Registered Employee Directory</span>
+                              <span>👥 {t("registeredEmployeeDirectory")}</span>
                               <Badge className="bg-emerald-100 text-emerald-800 font-bold text-xs border border-emerald-300">
-                                {workers.length} Employees Total
+                                {workers.length} {t("employeesTotalBadge")}
                               </Badge>
                             </h3>
                             <p className="text-xs font-semibold text-[#5B6B7F] mt-1">
-                              Manage department employees, custom daily wage rates, mobile contacts, and designations.
+                              {t("manageEmployeesDesc")}
                             </p>
                           </div>
                         </div>
@@ -3708,20 +3711,20 @@ function AdminDashboardPage() {
                           <table className="w-full text-left border-collapse">
                             <thead>
                               <tr className="border-b border-[#EBF1F8] bg-[#F8FAFF] text-[11px] uppercase tracking-wider text-[#5B6B7F] font-black">
-                                <th className="p-4 rounded-l-xl">Employee Name</th>
-                                <th className="p-4">Department / Category</th>
-                                <th className="p-4">Role / Designation</th>
-                                <th className="p-4">Mobile Number</th>
-                                <th className="p-4">Daily Wage Rate</th>
-                                <th className="p-4">Joining Date</th>
-                                <th className="p-4 text-center rounded-r-xl">Actions</th>
+                                <th className="p-4 rounded-l-xl">{t("employeeName")}</th>
+                                <th className="p-4">{t("department")}</th>
+                                <th className="p-4">{t("roleDesignationTh")}</th>
+                                <th className="p-4">{t("mobileNumberTh")}</th>
+                                <th className="p-4">{t("dailyWageRate")}</th>
+                                <th className="p-4">{t("joiningDateTh")}</th>
+                                <th className="p-4 text-center rounded-r-xl">{t("actionsThDirectory")}</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-[#EBF1F8] text-xs font-semibold">
                               {workers.length === 0 ? (
                                 <tr>
                                   <td colSpan={7} className="p-8 text-center text-xs font-bold text-[#5B6B7F]">
-                                    No employees registered yet.
+                                    {t("noEmployeesRegistered")}
                                   </td>
                                 </tr>
                               ) : (
@@ -3735,7 +3738,7 @@ function AdminDashboardPage() {
                                       {(w.workShiftStart || w.workShiftEnd) && (
                                         <div className="text-[10px] text-[#063B78] font-bold mt-0.5 flex items-center gap-1">
                                           <Clock className="size-3 text-[#063B78]" />
-                                          <span>Shift: {formatTime12Hr(w.workShiftStart || "09:00")} - {formatTime12Hr(w.workShiftEnd || "18:00")}</span>
+                                          <span>{t("shiftLabel")} {formatTime12Hr(w.workShiftStart || "09:00")} - {formatTime12Hr(w.workShiftEnd || "18:00")}</span>
                                         </div>
                                       )}
                                       {w.customFields && w.customFields.length > 0 && (
@@ -3764,9 +3767,9 @@ function AdminDashboardPage() {
                                           size="sm"
                                           onClick={() => setSelectedWorkerReport(w)}
                                           className="h-8 px-2.5 rounded-lg border-blue-200 bg-blue-50/50 hover:bg-blue-100 text-xs font-bold text-[#063B78]"
-                                          title="View Report & Print Slip"
+                                          title={t("viewReportAndPrintSlip")}
                                         >
-                                          <FileText className="size-3.5 mr-1 text-[#063B78]" /> Slip
+                                          <FileText className="size-3.5 mr-1 text-[#063B78]" /> {t("slipBtn")}
                                         </Button>
                                         <Button
                                           variant="outline"
@@ -3782,7 +3785,7 @@ function AdminDashboardPage() {
                                           onClick={() => handleDeleteWorker(w.id, w.name)}
                                           className="h-8 px-2.5 rounded-lg border-rose-200 text-xs font-bold text-rose-600 hover:bg-rose-50"
                                         >
-                                          <Trash2 className="size-3.5 mr-1" /> Delete
+                                          <Trash2 className="size-3.5 mr-1" /> {t("deleteBtn")}
                                         </Button>
                                       </div>
                                     </td>
@@ -3810,12 +3813,12 @@ function AdminDashboardPage() {
                       <User className="size-6 text-[#063B78]" />
                     </div>
                     <div>
-                      <h2 className="text-xl font-black text-[#10233F]">Employer Profile Settings</h2>
-                      <p className="text-xs font-semibold text-[#5B6B7F]">Update your organization details, contact person, and profile photo</p>
+                      <h2 className="text-xl font-black text-[#10233F]">{t("employerProfileSettings")}</h2>
+                      <p className="text-xs font-semibold text-[#5B6B7F]">{t("updateOrgDetailsDesc")}</p>
                     </div>
                   </div>
                   <Badge className="bg-emerald-600 text-white font-bold text-xs px-3 py-1">
-                    ✓ Verified Employer
+                    ✓ {t("verifiedEmployer")}
                   </Badge>
                 </div>
 
@@ -3836,8 +3839,8 @@ function AdminDashboardPage() {
                       )}
                     </div>
                     <div className="flex-1 space-y-2 w-full text-center sm:text-left">
-                      <h3 className="text-sm font-black text-[#10233F]">Profile Picture / Logo URL</h3>
-                      <p className="text-xs text-[#5B6B7F]">Provide a valid photo or logo image URL</p>
+                      <h3 className="text-sm font-black text-[#10233F]">{t("profilePictureLogoUrl")}</h3>
+                      <p className="text-xs text-[#5B6B7F]">{t("providePhotoUrlDesc")}</p>
                       <Input
                         type="url"
                         placeholder="https://example.com/logo.jpg"
@@ -3851,7 +3854,7 @@ function AdminDashboardPage() {
                   {/* Form Fields Grid */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div>
-                      <label className="block text-xs font-bold text-[#5B6B7F] mb-1.5">Company / Organization Name *</label>
+                      <label className="block text-xs font-bold text-[#5B6B7F] mb-1.5">{t("companyOrgName")}</label>
                       <Input
                         required
                         value={profileForm.fullName}
@@ -3862,7 +3865,7 @@ function AdminDashboardPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-[#5B6B7F] mb-1.5">Contact Person Name</label>
+                      <label className="block text-xs font-bold text-[#5B6B7F] mb-1.5">{t("contactPersonName")}</label>
                       <Input
                         value={profileForm.contactPerson}
                         onChange={(e) => setProfileForm({ ...profileForm, contactPerson: e.target.value })}
@@ -3872,7 +3875,7 @@ function AdminDashboardPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-[#5B6B7F] mb-1.5">Email Address *</label>
+                      <label className="block text-xs font-bold text-[#5B6B7F] mb-1.5">{t("emailAddress")}</label>
                       <Input
                         required
                         type="email"
@@ -3884,7 +3887,7 @@ function AdminDashboardPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-[#5B6B7F] mb-1.5">Mobile / Phone Number *</label>
+                      <label className="block text-xs font-bold text-[#5B6B7F] mb-1.5">{t("mobilePhoneNumber")}</label>
                       <Input
                         required
                         value={profileForm.mobile}
@@ -3895,7 +3898,7 @@ function AdminDashboardPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-[#5B6B7F] mb-1.5">Location / Address</label>
+                      <label className="block text-xs font-bold text-[#5B6B7F] mb-1.5">{t("locationAddress")}</label>
                       <Input
                         value={profileForm.location}
                         onChange={(e) => setProfileForm({ ...profileForm, location: e.target.value })}
@@ -3905,7 +3908,7 @@ function AdminDashboardPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-[#5B6B7F] mb-1.5">Business Industry / Sector</label>
+                      <label className="block text-xs font-bold text-[#5B6B7F] mb-1.5">{t("businessIndustrySector")}</label>
                       <Input
                         value={profileForm.industry}
                         onChange={(e) => setProfileForm({ ...profileForm, industry: e.target.value })}
@@ -3920,7 +3923,7 @@ function AdminDashboardPage() {
                       type="submit"
                       className="px-6 py-2.5 rounded-xl bg-[#063B78] hover:bg-[#0A4F9E] text-white font-black text-xs shadow-md flex items-center gap-2"
                     >
-                      <CheckCircle2 className="size-4" /> Save Profile Details
+                      <CheckCircle2 className="size-4" /> {t("saveProfileDetails")}
                     </Button>
                   </div>
                 </form>
@@ -3942,13 +3945,13 @@ function AdminDashboardPage() {
                     <div className="bg-white rounded-2xl border border-[#DCE5F0] p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div>
                         <h2 className="text-xl font-black text-[#10233F] flex items-center gap-2">
-                          <span>💳 Active Package & Subscription Status</span>
+                          <span>💳 {t("activePackageStatus")}</span>
                           <span className="text-xs bg-emerald-100 text-emerald-800 border border-emerald-300 font-extrabold px-3 py-0.5 rounded-full">
-                            {userPkgs.length} Active Purchases
+                            {userPkgs.length} {t("activePurchases")}
                           </span>
                         </h2>
                         <p className="text-xs font-semibold text-[#5B6B7F] mt-1">
-                          Manage your active posting credits, worker limits, and view full transaction history.
+                          {t("manageActiveCreditsDesc")}
                         </p>
                       </div>
 
@@ -3956,20 +3959,20 @@ function AdminDashboardPage() {
                         onClick={() => setShowPackageModal(true)}
                         className="bg-[#063B78] hover:bg-[#0A4F9E] text-white font-black text-xs px-5 py-2.5 rounded-xl shadow-md shrink-0"
                       >
-                        + Buy / Upgrade Package
+                        {t("buyUpgradePackage")}
                       </Button>
                     </div>
 
                     {/* Active Plan Overview Cards Grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div className="bg-white p-5 rounded-2xl border border-[#DCE5F0] shadow-sm space-y-1">
-                        <span className="text-[11px] font-black uppercase text-[#5B6B7F] tracking-wider">Current Job Post Credits</span>
+                        <span className="text-[11px] font-black uppercase text-[#5B6B7F] tracking-wider">{t("currentJobCredits")}</span>
                         <div className="text-3xl font-black text-amber-600">{jobCredits} Available</div>
-                        <p className="text-xs text-slate-500 font-medium">Job postings remaining</p>
+                        <p className="text-xs text-slate-500 font-medium">{t("jobPostingsRemaining")}</p>
                       </div>
 
                       <div className="bg-white p-5 rounded-2xl border border-[#DCE5F0] shadow-sm space-y-1">
-                        <span className="text-[11px] font-black uppercase text-[#5B6B7F] tracking-wider">Employee Addition Limit</span>
+                        <span className="text-[11px] font-black uppercase text-[#5B6B7F] tracking-wider">{t("employeeAdditionLimit")}</span>
                         <div className="text-3xl font-black text-indigo-700">
                           {workerLimit === 0 ? "0 Allowed" : (workerLimit >= 9999 ? "Unlimited" : `${workerLimit} Employees`)}
                         </div>
@@ -3977,7 +3980,7 @@ function AdminDashboardPage() {
                       </div>
 
                       <div className="bg-white p-5 rounded-2xl border border-[#DCE5F0] shadow-sm space-y-1">
-                        <span className="text-[11px] font-black uppercase text-[#5B6B7F] tracking-wider">Total Amount Spent</span>
+                        <span className="text-[11px] font-black uppercase text-[#5B6B7F] tracking-wider">{t("totalAmountSpent")}</span>
                         <div className="text-3xl font-black text-emerald-600">
                           ₹{userPkgs.reduce((sum, p) => sum + (p.price || 0), 0)}
                         </div>
@@ -3987,13 +3990,13 @@ function AdminDashboardPage() {
 
                     {/* Transaction History Table */}
                     <div className="bg-white rounded-2xl border border-[#DCE5F0] p-6 shadow-sm space-y-4">
-                      <h3 className="text-base font-black text-[#10233F]">Package Purchase History</h3>
+                      <h3 className="text-base font-black text-[#10233F]">{t("packagePurchaseHistory")}</h3>
 
                       {userPkgs.length === 0 ? (
                         <div className="py-12 text-center border-2 border-dashed border-[#E0E8F5] rounded-xl bg-[#F8FAFF]">
                           <IndianRupee className="size-10 text-slate-300 mx-auto mb-2" />
-                          <p className="text-sm font-bold text-[#10233F]">No package purchases found</p>
-                          <p className="text-xs text-slate-500 mt-1 mb-4">Click below to choose a package and unlock job posting & employee addition.</p>
+                          <p className="text-sm font-bold text-[#10233F]">{t("noPackagePurchasesFound")}</p>
+                          <p className="text-xs text-slate-500 mt-1 mb-4">{t("clickToChoosePackageDesc")}</p>
                           <Button
                             onClick={() => setShowPackageModal(true)}
                             className="bg-[#063B78] text-white font-black text-xs px-6 py-2.5 rounded-xl shadow-md"
@@ -4006,14 +4009,14 @@ function AdminDashboardPage() {
                           <table className="w-full text-left text-xs">
                             <thead>
                               <tr className="bg-[#F8FAFF] border-b border-[#E0E8F5] text-[#5B6B7F] font-black uppercase tracking-wider text-[11px]">
-                                <th className="p-3 whitespace-nowrap">Transaction ID</th>
-                                <th className="p-3 whitespace-nowrap">Package Name</th>
-                                <th className="p-3 whitespace-nowrap">Price Paid (₹)</th>
-                                <th className="p-3 whitespace-nowrap">Job Credits</th>
-                                <th className="p-3 whitespace-nowrap">Employee Limit</th>
-                                <th className="p-3 whitespace-nowrap">Payment Method</th>
-                                <th className="p-3 whitespace-nowrap">Purchase Date</th>
-                                <th className="p-3 whitespace-nowrap">Status</th>
+                                <th className="p-3 whitespace-nowrap">{t("transactionIdCol")}</th>
+                                <th className="p-3 whitespace-nowrap">{t("packageNameCol")}</th>
+                                <th className="p-3 whitespace-nowrap">{t("pricePaidCol")}</th>
+                                <th className="p-3 whitespace-nowrap">{t("jobCredits")}</th>
+                                <th className="p-3 whitespace-nowrap">{t("employeeLimitCol")}</th>
+                                <th className="p-3 whitespace-nowrap">{t("paymentMethodCol")}</th>
+                                <th className="p-3 whitespace-nowrap">{t("purchaseDateCol")}</th>
+                                <th className="p-3 whitespace-nowrap">{t("status")}</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-[#E0E8F5] font-semibold text-[#10233F]">
@@ -4026,13 +4029,13 @@ function AdminDashboardPage() {
                                     </span>
                                   </td>
                                   <td className="p-3 font-black text-emerald-700 text-sm whitespace-nowrap">₹{tx.price}</td>
-                                  <td className="p-3 font-extrabold text-amber-700 whitespace-nowrap">{tx.jobCount >= 999 ? "Unlimited" : tx.jobCount}</td>
-                                  <td className="p-3 font-extrabold text-indigo-700 whitespace-nowrap">{tx.workerCount ? (Number(tx.workerCount) >= 9999 ? "Unlimited" : `${tx.workerCount} Employees`) : "3 Employees"}</td>
+                                  <td className="p-3 font-extrabold text-amber-700 whitespace-nowrap">{tx.jobCount >= 999 ? t("unlimitedLabel") : tx.jobCount}</td>
+                                  <td className="p-3 font-extrabold text-indigo-700 whitespace-nowrap">{tx.workerCount ? (Number(tx.workerCount) >= 9999 ? t("unlimitedLabel") : `${tx.workerCount} ${t("employeesSubTab")}`) : `3 ${t("employeesSubTab")}`}</td>
                                   <td className="p-3 font-bold uppercase text-slate-600 whitespace-nowrap">{tx.paymentMethod}</td>
                                   <td className="p-3 text-[#5B6B7F] font-medium whitespace-nowrap">{tx.purchaseDate}</td>
                                   <td className="p-3 whitespace-nowrap">
                                     <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black inline-block whitespace-nowrap">
-                                      Active / Completed
+                                      {t("activeCompletedStatus")}
                                     </span>
                                   </td>
                                 </tr>
@@ -4057,13 +4060,13 @@ function AdminDashboardPage() {
                 <div className="space-y-1.5 min-w-[280px] flex-1">
                   <div className="inline-flex items-center gap-2 rounded-full bg-[#063B78]/10 px-3 py-1 text-[11px] sm:text-xs font-black text-[#063B78] max-w-full truncate">
                     <FileText className="size-3.5 text-[#063B78] shrink-0" />
-                    <span className="truncate">E-Salary & Payslips Management</span>
+                    <span className="truncate">{t("eSalaryPayslipsManagement")}</span>
                   </div>
                   <h2 className="text-xl sm:text-2xl font-black text-[#10233F] tracking-tight leading-snug break-words">
-                    Employee Salary Slips
+                    {t("employeeSalarySlipsTitle")}
                   </h2>
                   <p className="text-xs sm:text-sm font-semibold text-[#5B6B7F] max-w-2xl leading-relaxed">
-                    Manage and view monthly salary slips for your registered employees. Click &quot;View Slip&quot; on any employee to open and download their official payslip.
+                    {t("employeeSalarySlipsDesc")}
                   </p>
                 </div>
 
@@ -4085,13 +4088,13 @@ function AdminDashboardPage() {
                   <table className="w-full text-left text-xs whitespace-nowrap">
                     <thead className="bg-[#063B78] text-white font-black uppercase tracking-wider text-[11px]">
                       <tr>
-                        <th className="p-4">Employee Name</th>
-                        <th className="p-4">Position</th>
-                        <th className="p-4 text-center">Wage Rate</th>
-                        <th className="p-4 text-center">Present</th>
-                        <th className="p-4 text-center">Absent</th>
-                        <th className="p-4 text-right">Net Earned</th>
-                        <th className="p-4 text-center">Action</th>
+                        <th className="p-4">{t("employeeName")}</th>
+                        <th className="p-4">{t("positionCol")}</th>
+                        <th className="p-4 text-center">{t("wageRateCol")}</th>
+                        <th className="p-4 text-center">{t("present")}</th>
+                        <th className="p-4 text-center">{t("absent")}</th>
+                        <th className="p-4 text-right">{t("netEarnedCol")}</th>
+                        <th className="p-4 text-center">{t("actionCol")}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#DCE5F0] font-semibold text-[#10233F]">
@@ -4129,7 +4132,7 @@ function AdminDashboardPage() {
                       {workers.length === 0 && (
                         <tr>
                           <td colSpan={7} className="p-8 text-center text-xs font-bold text-[#5B6B7F] bg-[#F8FAFF]">
-                            <p className="mb-2">No registered employees found. You can add employees in the Attendance tab!</p>
+                            <p className="mb-2">{t("noRegisteredEmployeesFound")}</p>
                             <Button
                               onClick={handleOpenAddWorker}
                               size="sm"
@@ -4279,10 +4282,10 @@ function AdminDashboardPage() {
                 </div>
                 <div>
                   <h3 className="text-xl font-black text-[#10233F]">
-                    Set Worksite Location
+                    {t("setWorksiteTitle")}
                   </h3>
                   <p className="text-xs text-slate-500 font-semibold mt-0.5">
-                    Set the official location for Employee Punch-in.
+                    {t("setWorksiteDesc")}
                   </p>
                 </div>
               </div>
@@ -4338,12 +4341,12 @@ function AdminDashboardPage() {
                     {isDetectingLocation ? (
                       <>
                         <Loader2 className="size-4 animate-spin" />
-                        <span>Detecting Exact GPS Location...</span>
+                        <span>{t("detectingGps")}</span>
                       </>
                     ) : (
                       <>
                         <Navigation className="size-4" />
-                        <span>📍 Use My Current Location (चालू स्थान वापरा)</span>
+                        <span>{t("useCurrentLocationBtn")}</span>
                       </>
                     )}
                   </Button>
@@ -4371,7 +4374,7 @@ function AdminDashboardPage() {
                       <Input
                         value={locationLinkInput}
                         onChange={(e) => setLocationLinkInput(e.target.value)}
-                        placeholder="Paste Google Maps or Bing Maps link here..."
+                        placeholder={t("pasteMapsPlaceholder")}
                         className="text-xs font-semibold pr-8"
                       />
                       {locationLinkInput && (
@@ -4419,10 +4422,10 @@ function AdminDashboardPage() {
                 </div>
                 <div>
                   <h3 className="text-xl font-black text-[#10233F]">
-                    {editingWorkerId ? "Edit Employee Information" : "Add New Employee"}
+                    {editingWorkerId ? t("editEmployeeTitle") : t("addNewEmployeeTitle")}
                   </h3>
                   <p className="text-xs text-slate-500 font-semibold mt-0.5">
-                    Enter employee details, designation, shift timings & custom fields.
+                    {t("employeeFormSubtitle")}
                   </p>
                 </div>
               </div>
@@ -4490,7 +4493,7 @@ function AdminDashboardPage() {
                 </Label>
                 <Input
                   required
-                  placeholder="e.g. Ramesh Pawar / Vijay Patil"
+                  placeholder={t("workerNamePlaceholder")}
                   value={workerForm.name}
                   onChange={(e) => setWorkerForm((p) => ({ ...p, name: e.target.value }))}
                   className="h-11 rounded-xl text-xs font-bold border-slate-300"
@@ -4572,7 +4575,7 @@ function AdminDashboardPage() {
                         >
                           <Input
                             autoFocus
-                            placeholder="Type new category..."
+                            placeholder={t("typeNewCategoryPlaceholder")}
                             value={newCustomCategoryInput}
                             onChange={(e) => setNewCustomCategoryInput(e.target.value)}
                             onKeyDown={(e) => {
@@ -4608,7 +4611,7 @@ function AdminDashboardPage() {
                           className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-black text-[#063B78] hover:bg-blue-50 transition-colors border-t border-slate-100 mt-1"
                         >
                           <Plus className="size-3.5" />
-                          <span>➕ Add New Custom Category...</span>
+                          <span>{t("addNewCategoryPrompt")}</span>
                         </button>
                       )}
                     </div>
@@ -4628,13 +4631,13 @@ function AdminDashboardPage() {
                         type="button"
                         onClick={() => handleRemoveStandardField("trade")}
                         className="text-rose-500 hover:text-rose-700 text-[11px] font-bold flex items-center gap-1 hover:bg-rose-50 px-1.5 py-0.5 rounded transition-colors"
-                        title="Remove Field"
+                        title={t("removeField")}
                       >
                         <Trash2 className="size-3.5" /> Remove
                       </button>
                     </div>
                     <Input
-                      placeholder="e.g. Tractor Driver / Grafting Specialist"
+                      placeholder={t("designationPlaceholder")}
                       value={workerForm.trade}
                       onChange={(e) => setWorkerForm((p) => ({ ...p, trade: e.target.value }))}
                       className="h-11 rounded-xl text-xs font-bold border-slate-300"
@@ -4652,7 +4655,7 @@ function AdminDashboardPage() {
                         type="button"
                         onClick={() => handleRemoveStandardField("mobile")}
                         className="text-rose-500 hover:text-rose-700 text-[11px] font-bold flex items-center gap-1 hover:bg-rose-50 px-1.5 py-0.5 rounded transition-colors"
-                        title="Remove Field"
+                        title={t("removeField")}
                       >
                         <Trash2 className="size-3.5" /> Remove
                       </button>
@@ -4677,7 +4680,7 @@ function AdminDashboardPage() {
                   <div className="p-3.5 bg-amber-50 rounded-xl border border-amber-200/90 space-y-1.5">
                     <div className="flex items-center gap-2 text-xs font-black text-amber-950">
                       <span className="size-2 rounded-full bg-amber-500 animate-pulse shrink-0"></span>
-                      <span>🚜 Field / Site Worksite (Auto-Detected: Employer Attendance)</span>
+                      <span>{t("fieldWorksiteOption")}</span>
                     </div>
                     <p className="text-[11px] text-amber-900/90 font-medium leading-relaxed">
                       Auto-detected from company name. Mobile GPS & selfie punch-in are not required. Daily attendance will be marked directly by employer.
@@ -4687,7 +4690,7 @@ function AdminDashboardPage() {
                   <div className="p-3.5 bg-blue-50/90 rounded-xl border border-blue-200/90 space-y-3">
                     <div className="flex items-center gap-2 text-xs font-black text-[#063B78]">
                       <span className="size-2 rounded-full bg-blue-600 animate-pulse shrink-0"></span>
-                      <span>🏢 Fixed Location Worksite (Auto-Detected: App Punch In/Out)</span>
+                      <span>{t("fixedWorksiteOption")}</span>
                     </div>
                     <p className="text-[11px] text-blue-900/90 font-medium leading-relaxed">
                       Auto-detected from company name. Employee punches in/out via mobile app (GPS + Camera).
@@ -4752,7 +4755,7 @@ function AdminDashboardPage() {
                         type="button"
                         onClick={() => handleRemoveStandardField("joiningDate")}
                         className="text-rose-500 hover:text-rose-700 text-[11px] font-bold flex items-center gap-1 hover:bg-rose-50 px-1.5 py-0.5 rounded transition-colors"
-                        title="Remove Field"
+                        title={t("removeField")}
                       >
                         <Trash2 className="size-3.5" /> Remove
                       </button>
@@ -4807,7 +4810,7 @@ function AdminDashboardPage() {
                         type="button"
                         onClick={() => handleRemoveStandardField("shiftTimes")}
                         className="text-rose-500 hover:text-rose-700 text-[11px] font-bold flex items-center gap-1 hover:bg-rose-50 px-1.5 py-0.5 rounded transition-colors"
-                        title="Remove Field"
+                        title={t("removeField")}
                       >
                         <Trash2 className="size-3.5" /> Remove
                       </button>
@@ -4908,7 +4911,7 @@ function AdminDashboardPage() {
                     {/* Overtime Rate Input Field */}
                     <div className="space-y-1.5">
                       <Label className="text-[11px] font-extrabold text-slate-700 uppercase flex items-center justify-between">
-                        <span>Overtime Rate (₹ / hr) *</span>
+                        <span>{t("overtimeRateLabel")}</span>
                         <span className="text-[10px] text-slate-500 font-bold lowercase">
                           (daily wage remains ₹{dailyWageNum}/day)
                         </span>
@@ -4958,7 +4961,7 @@ function AdminDashboardPage() {
                       type="button"
                       onClick={() => handleRemoveCustomField(idx)}
                       className="text-rose-500 hover:text-rose-700 text-[11px] font-bold flex items-center gap-1 hover:bg-rose-50 px-2 py-0.5 rounded transition-colors"
-                      title="Remove Field"
+                      title={t("removeField")}
                     >
                       <Trash2 className="size-3.5" /> Remove Field
                     </button>
@@ -5021,7 +5024,7 @@ function AdminDashboardPage() {
               </Label>
               <Input
                 autoFocus
-                placeholder="e.g. Aadhaar Card ID / Education / PF No"
+                placeholder={t("customFieldPlaceholder")}
                 value={newFieldNameInput}
                 onChange={(e) => setNewFieldNameInput(e.target.value)}
                 onKeyDown={(e) => {
@@ -5036,7 +5039,7 @@ function AdminDashboardPage() {
 
             {/* Quick Suggestion Chips */}
             <div className="space-y-1.5">
-              <span className="text-[11px] font-bold text-slate-500 uppercase">Quick Suggestions:</span>
+              <span className="text-[11px] font-bold text-slate-500 uppercase">{t("quickSuggestionsLabel")}</span>
               <div className="flex items-center gap-1.5 flex-wrap">
                 {["Aadhaar Card ID", "Education", "Alternate Mobile", "Bank Details", "PF Number"].map((preset) => (
                   <button
@@ -5087,10 +5090,10 @@ function AdminDashboardPage() {
               </div>
               <div>
                 <h3 className="text-xl font-black text-[#063B78]">
-                  Activate Job Posting Package
+                  {t("activatePackageTitle")}
                 </h3>
                 <p className="text-xs text-slate-500 font-semibold">
-                  You need an active job posting package to post new job listings.
+                  {t("activatePackageDesc")}
                 </p>
               </div>
             </div>
@@ -5137,11 +5140,11 @@ function AdminDashboardPage() {
             {/* Selected Plan Summary */}
             <div className="bg-[#F4F7FB] p-4 rounded-2xl border border-[#DCE5F0] my-4 flex justify-between items-center">
               <div>
-                <p className="text-xs font-bold text-slate-500">Selected Plan</p>
+                <p className="text-xs font-bold text-slate-500">{t("selectedPlanLabel")}</p>
                 <p className="text-sm font-extrabold text-[#063B78]">{activeSelectedPlan.name}</p>
               </div>
               <div className="text-right">
-                <p className="text-xs font-bold text-slate-500">Total Amount</p>
+                <p className="text-xs font-bold text-slate-500">{t("totalAmountLabel")}</p>
                 <p className="text-2xl font-black text-emerald-700">₹{activeSelectedPlan.price}</p>
               </div>
             </div>
@@ -5161,7 +5164,7 @@ function AdminDashboardPage() {
                     }`}
                 >
                   <Smartphone className="size-5" />
-                  <span>UPI / GPay</span>
+                  <span>{t("paymentUpi")}</span>
                 </button>
                 <button
                   type="button"
@@ -5172,7 +5175,7 @@ function AdminDashboardPage() {
                     }`}
                 >
                   <CreditCard className="size-5" />
-                  <span>Debit / Card</span>
+                  <span>{t("paymentCard")}</span>
                 </button>
                 <button
                   type="button"
@@ -5183,7 +5186,7 @@ function AdminDashboardPage() {
                     }`}
                 >
                   <Building2 className="size-5" />
-                  <span>NetBanking</span>
+                  <span>{t("paymentNetbanking")}</span>
                 </button>
               </div>
 
@@ -5193,7 +5196,7 @@ function AdminDashboardPage() {
                     Enter UPI ID (or pay via PhonePe / GPay)
                   </Label>
                   <Input
-                    placeholder="e.g. 9876543210@paytm"
+                    placeholder={t("upiPlaceholder")}
                     value={upiId}
                     onChange={(e) => setUpiId(e.target.value)}
                     className="h-11 rounded-xl text-sm font-semibold border-slate-300"
@@ -5217,7 +5220,7 @@ function AdminDashboardPage() {
                 className="flex-1 py-6 rounded-2xl font-black bg-[#063B78] hover:bg-[#082F63] text-white shadow-lg"
               >
                 {isProcessingPackage ? (
-                  <span>Activating...</span>
+                  <span>{t("activatingStatus")}</span>
                 ) : (
                   <span>Pay ₹{activeSelectedPlan.price} & Post Job</span>
                 )}
@@ -5308,27 +5311,27 @@ function AdminDashboardPage() {
                   <div className="space-y-5">
                     <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                       <div className="p-3.5 rounded-2xl border border-emerald-200 bg-emerald-50/60 text-center">
-                        <p className="text-[10px] font-black uppercase text-emerald-800">Present</p>
+                        <p className="text-[10px] font-black uppercase text-emerald-800">{t("present")}</p>
                         <h4 className="text-xl font-black text-emerald-700 mt-1">{metrics.present} Days</h4>
                       </div>
 
                       <div className="p-3.5 rounded-2xl border border-amber-200 bg-amber-50/60 text-center">
-                        <p className="text-[10px] font-black uppercase text-amber-800">Half Day</p>
+                        <p className="text-[10px] font-black uppercase text-amber-800">{t("halfDay")}</p>
                         <h4 className="text-xl font-black text-amber-700 mt-1">{metrics.halfDay} Days</h4>
                       </div>
 
                       <div className="p-3.5 rounded-2xl border border-rose-200 bg-rose-50/60 text-center">
-                        <p className="text-[10px] font-black uppercase text-rose-800">Absent</p>
+                        <p className="text-[10px] font-black uppercase text-rose-800">{t("absent")}</p>
                         <h4 className="text-xl font-black text-rose-700 mt-1">{metrics.absent} Days</h4>
                       </div>
 
                       <div className="p-3.5 rounded-2xl border border-blue-200 bg-blue-50/60 text-center">
-                        <p className="text-[10px] font-black uppercase text-blue-800">Overtime</p>
+                        <p className="text-[10px] font-black uppercase text-blue-800">{t("overtime")}</p>
                         <h4 className="text-xl font-black text-blue-700 mt-1">{metrics.overtime} Days</h4>
                       </div>
 
                       <div className="p-3.5 rounded-2xl border border-emerald-300 bg-emerald-100/70 text-center col-span-2 sm:col-span-1">
-                        <p className="text-[10px] font-black uppercase text-emerald-900">Total Wage</p>
+                        <p className="text-[10px] font-black uppercase text-emerald-900">{t("totalWageLabel")}</p>
                         <h4 className="text-lg font-black text-emerald-800 mt-1">₹{metrics.netPay.toLocaleString("en-IN")}</h4>
                       </div>
                     </div>
@@ -5345,9 +5348,9 @@ function AdminDashboardPage() {
                           <thead>
                             <tr className="border-b border-[#EBF1F8] bg-slate-50 text-[10px] uppercase font-black text-[#5B6B7F]">
                               <th className="p-2.5">Date</th>
-                              <th className="p-2.5">Status</th>
+                              <th className="p-2.5">{t("status")}</th>
                               <th className="p-2.5">Rate</th>
-                              <th className="p-2.5 text-right">Earned Wage</th>
+                              <th className="p-2.5 text-right">{t("earnedWageLabel")}</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-[#EBF1F8] font-semibold">
@@ -5415,10 +5418,10 @@ function AdminDashboardPage() {
             <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl border border-slate-100 relative max-h-[90vh] overflow-y-auto print:max-h-none print:shadow-none print:border-none print:rounded-none">
               <div className="print:hidden sticky top-0 bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between z-10 rounded-t-3xl">
                 <div className="flex flex-wrap items-center gap-3">
-                  <h3 className="font-black text-[#10233F] text-lg">Employee Salary Slip</h3>
+                  <h3 className="font-black text-[#10233F] text-lg">{t("employeeSalarySlipsTitle")}</h3>
                   <div className="flex bg-slate-100 rounded-lg p-1">
-                    <button onClick={() => setViewSlipPeriod("week")} className={`text-xs px-3 py-1 font-bold rounded-md ${viewSlipPeriod === "week" ? "bg-white shadow-sm text-[#063B78]" : "text-slate-500"}`}>Week</button>
-                    <button onClick={() => setViewSlipPeriod("month")} className={`text-xs px-3 py-1 font-bold rounded-md ${viewSlipPeriod === "month" ? "bg-white shadow-sm text-[#063B78]" : "text-slate-500"}`}>Month</button>
+                    <button onClick={() => setViewSlipPeriod("week")} className={`text-xs px-3 py-1 font-bold rounded-md ${viewSlipPeriod === "week" ? "bg-white shadow-sm text-[#063B78]" : "text-slate-500"}`}>{t("salarySlipPeriodWeek")}</button>
+                    <button onClick={() => setViewSlipPeriod("month")} className={`text-xs px-3 py-1 font-bold rounded-md ${viewSlipPeriod === "month" ? "bg-white shadow-sm text-[#063B78]" : "text-slate-500"}`}>{t("salarySlipPeriodMonth")}</button>
                   </div>
                   {/* Month Selector */}
                   <select
@@ -5445,7 +5448,7 @@ function AdminDashboardPage() {
                   {/* If Week is selected, show Date Range picker e.g. 10 to 20 */}
                   {viewSlipPeriod === "week" && (
                     <div className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200 text-xs">
-                      <span className="font-black text-slate-600 text-[11px]">Dates:</span>
+                      <span className="font-black text-slate-600 text-[11px]">{t("datesLabel")}</span>
                       <select
                         value={slipRangeStartDay}
                         onChange={(e) => {
@@ -5459,7 +5462,7 @@ function AdminDashboardPage() {
                           <option key={d} value={d}>Day {d}</option>
                         ))}
                       </select>
-                      <span className="font-bold text-slate-400">to</span>
+                      <span className="font-bold text-slate-400">{t("toWord")}</span>
                       <select
                         value={slipRangeEndDay}
                         onChange={(e) => {
@@ -5492,7 +5495,7 @@ function AdminDashboardPage() {
                   <button
                     onClick={() => setViewSlipWorker(null)}
                     className="text-slate-400 hover:text-slate-700 font-extrabold text-xl p-1 rounded-full hover:bg-slate-100 cursor-pointer"
-                    title="Close"
+                    title={t("closeBtn")}
                   >
                     ✕
                   </button>
@@ -5727,7 +5730,7 @@ function AdminDashboardPage() {
                       setOvertimeModalDate(null);
                     }}
                     className="size-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold text-lg transition-all cursor-pointer"
-                    title="बंद करा (Close)"
+                    title={t("closeBtn")}
                   >
                     ✕
                   </button>
@@ -5752,7 +5755,7 @@ function AdminDashboardPage() {
                         setActiveCalendarDate(null);
                       }}
                       className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold transition-all cursor-pointer"
-                      title="Previous Month"
+                      title={t("previousMonthTitle")}
                     >
                       <ChevronLeft className="size-4" />
                     </button>
@@ -5796,7 +5799,7 @@ function AdminDashboardPage() {
                         setActiveCalendarDate(null);
                       }}
                       className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold transition-all cursor-pointer"
-                      title="Next Month"
+                      title={t("nextMonthTitle")}
                     >
                       <ChevronRight className="size-4" />
                     </button>
@@ -5850,7 +5853,7 @@ function AdminDashboardPage() {
                         {/* Cell Attendance Status / Action Button */}
                         <div className="mt-auto relative">
                           {isFuture ? (
-                            <div className="w-full flex items-center justify-center py-1 text-[11px] font-bold text-slate-300 select-none cursor-not-allowed" title="भविष्यातील तारीख (Future date)">
+                            <div className="w-full flex items-center justify-center py-1 text-[11px] font-bold text-slate-300 select-none cursor-not-allowed" title={t("futureDateTitle")}>
                               --
                             </div>
                           ) : rec?.status === "Present" ? (
@@ -5861,7 +5864,7 @@ function AdminDashboardPage() {
                                 setActiveCalendarDate(isSelected ? null : dateStr);
                               }}
                               className="w-full flex items-center justify-center py-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-all cursor-pointer"
-                              title="Present (हजर) - Click to edit"
+                              title={t("clickToEditPresent")}
                             >
                               <div className="size-6 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-xs">
                                 <Check className="size-3.5 stroke-[3]" />
@@ -5875,7 +5878,7 @@ function AdminDashboardPage() {
                                 setActiveCalendarDate(isSelected ? null : dateStr);
                               }}
                               className="w-full flex items-center justify-center py-1 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-all cursor-pointer"
-                              title="Absent (गैरहजर) - Click to edit"
+                              title={t("clickToEditAbsent")}
                             >
                               <div className="size-6 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-xs">
                                 <X className="size-3.5 stroke-[3]" />
@@ -5889,7 +5892,7 @@ function AdminDashboardPage() {
                                 setActiveCalendarDate(isSelected ? null : dateStr);
                               }}
                               className="w-full flex items-center justify-center py-1 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 transition-all cursor-pointer"
-                              title="Half Day (अर्धा दिवस) - Click to edit"
+                              title={t("clickToEditHalfDay")}
                             >
                               <div className="size-6 rounded-full bg-amber-500 text-white flex items-center justify-center shadow-xs font-black text-[10px]">
                                 ½
@@ -5942,7 +5945,7 @@ function AdminDashboardPage() {
                                 <div className="size-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-2xs">
                                   <Check className="size-3 stroke-[3]" />
                                 </div>
-                                <span>Present</span>
+                                <span>{t("present")}</span>
                               </button>
 
                               <button
@@ -5956,7 +5959,7 @@ function AdminDashboardPage() {
                                 <div className="size-5 rounded-full bg-rose-500 text-white flex items-center justify-center shrink-0 shadow-2xs">
                                   <X className="size-3 stroke-[3]" />
                                 </div>
-                                <span>Absent</span>
+                                <span>{t("absent")}</span>
                               </button>
 
                               <button
@@ -5970,7 +5973,7 @@ function AdminDashboardPage() {
                                 <div className="size-5 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-2xs font-black text-[10px]">
                                   ½
                                 </div>
-                                <span>Half Day</span>
+                                <span>{t("halfDay")}</span>
                               </button>
 
                               <button
@@ -5985,7 +5988,7 @@ function AdminDashboardPage() {
                                 <div className="size-5 rounded-full bg-[#7C3AED] text-white flex items-center justify-center shrink-0 shadow-2xs">
                                   <Clock className="size-3" />
                                 </div>
-                                <span>Overtime</span>
+                                <span>{t("overtime")}</span>
                               </button>
 
                               {rec && (
@@ -6000,7 +6003,7 @@ function AdminDashboardPage() {
                                   className="w-full flex items-center gap-2 px-3 py-1.5 mt-1 border-t border-slate-100 text-slate-400 hover:text-rose-600 text-[11px] font-bold transition-all cursor-pointer"
                                 >
                                   <Trash2 className="size-3" />
-                                  <span>Clear Attendance</span>
+                                  <span>{t("clearAttendanceBtn")}</span>
                                 </button>
                               )}
                             </div>
@@ -6017,28 +6020,28 @@ function AdminDashboardPage() {
                     <div className="size-6 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-2xs">
                       <Check className="size-3.5 stroke-[3]" />
                     </div>
-                    <span className="font-extrabold text-slate-800">Present</span>
+                    <span className="font-extrabold text-slate-800">{t("present")}</span>
                   </div>
 
                   <div className="flex items-center gap-2">
                     <div className="size-6 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-2xs">
                       <X className="size-3.5 stroke-[3]" />
                     </div>
-                    <span className="font-extrabold text-slate-800">Absent</span>
+                    <span className="font-extrabold text-slate-800">{t("absent")}</span>
                   </div>
 
                   <div className="flex items-center gap-2">
                     <div className="size-6 rounded-full bg-amber-500 text-white flex items-center justify-center shadow-2xs font-black text-[10px]">
                       ½
                     </div>
-                    <span className="font-extrabold text-slate-800">Half Day</span>
+                    <span className="font-extrabold text-slate-800">{t("halfDay")}</span>
                   </div>
 
                   <div className="flex items-center gap-2">
                     <div className="size-6 rounded-full bg-[#7C3AED] text-white flex items-center justify-center shadow-2xs">
                       <Clock className="size-3.5" />
                     </div>
-                    <span className="font-extrabold text-slate-800">Overtime (with hours)</span>
+                    <span className="font-extrabold text-slate-800">{t("overtime")} ({t("hoursWord")})</span>
                   </div>
                 </div>
 
@@ -6058,7 +6061,7 @@ function AdminDashboardPage() {
 
                   <div className="flex items-center gap-4 border-t sm:border-t-0 sm:border-l border-white/20 pt-3 sm:pt-0 sm:pl-4">
                     <div>
-                      <div className="text-[10px] text-white/70 font-bold uppercase tracking-wider">Est. Total Salary</div>
+                      <div className="text-[10px] text-white/70 font-bold uppercase tracking-wider">{t("estTotalSalaryLabel")}</div>
                       <div className="text-xl sm:text-2xl font-black text-amber-300">
                         ₹{Math.round(totalEarned).toLocaleString("en-IN")}
                       </div>
@@ -6099,7 +6102,7 @@ function AdminDashboardPage() {
                       <div className="size-8 rounded-full bg-[#7C3AED] text-white flex items-center justify-center shadow-sm">
                         <Clock className="size-4" />
                       </div>
-                      <h4 className="text-base font-black text-slate-900">Overtime Hours</h4>
+                      <h4 className="text-base font-black text-slate-900">{t("overtimeHoursTitle")}</h4>
                     </div>
                     <button
                       type="button"
@@ -6126,7 +6129,7 @@ function AdminDashboardPage() {
                         className="w-full font-black text-base bg-transparent outline-hidden text-slate-900"
                         autoFocus
                       />
-                      <span className="text-xs font-bold text-slate-400 mr-2">hours</span>
+                      <span className="text-xs font-bold text-slate-400 mr-2">{t("hoursWord")}</span>
                     </div>
                   </div>
 

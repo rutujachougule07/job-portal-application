@@ -440,7 +440,7 @@ function JobDetailPage() {
                         <Briefcase className="size-4 text-[#5B6B7F]" />
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-[#5B6B7F]">Experience Required</p>
+                        <p className="text-xs font-bold text-[#5B6B7F]">{t("experienceRequired")}</p>
                         <p className="text-sm font-black text-[#10233F]">{job.experience}</p>
                       </div>
                     </div>
@@ -449,7 +449,7 @@ function JobDetailPage() {
                         <Wallet className="size-4 text-[#5B6B7F]" />
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-[#5B6B7F]">Salary</p>
+                        <p className="text-xs font-bold text-[#5B6B7F]">{t("salary")}</p>
                         <p className="text-sm font-black text-[#10233F]">{isSalaryHidden ? "Not Disclosed" : job.salary}</p>
                       </div>
                     </div>
@@ -458,7 +458,7 @@ function JobDetailPage() {
                         <User className="size-4 text-[#5B6B7F]" />
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-[#5B6B7F]">Vacancies</p>
+                        <p className="text-xs font-bold text-[#5B6B7F]">{t("vacancies")}</p>
                         <p className="text-sm font-black text-[#10233F]">{job.vacancies || job.openings || 1}</p>
                       </div>
                     </div>
