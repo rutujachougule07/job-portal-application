@@ -342,7 +342,7 @@ function LandingGatewayPage() {
         </section>
 
         {/* METRICS & ADVANTAGES */}
-        <section className="relative z-20 pt-8 lg:pt-12 pb-4 lg:pb-8 bg-[#f8f9fa]">
+        <section className="relative z-20 pt-4 sm:pt-6 lg:pt-8 pb-1 sm:pb-2 bg-[#f8f9fa]">
           <div className="w-full px-4 sm:px-8 lg:px-12">
             <div className="grid grid-cols-2 md:grid-cols-4 lg:flex lg:flex-wrap lg:justify-between items-start sm:items-center gap-y-8 gap-x-2 sm:gap-4 bg-white rounded-[2rem] md:rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-gray-100 p-6 md:p-8 mx-auto w-full max-w-[1400px]">
 
@@ -391,7 +391,7 @@ function LandingGatewayPage() {
         </section>
 
         {/* ABOUT COMPANY */}
-        <section className="relative bg-[#f8f9fa] pt-20 pb-10 lg:pt-28 lg:pb-12 overflow-hidden">
+        <section className="relative bg-[#f8f9fa] pt-2 sm:pt-4 lg:pt-6 pb-10 lg:pb-12 overflow-hidden">
           <div className="relative z-10 mx-auto max-w-[1500px] px-4">
             <div className="bg-white rounded-[30px] border border-gray-100 shadow-[0_10px_40px_rgb(0,0,0,0.05)] overflow-hidden">
               <div className="grid grid-cols-1 lg:grid-cols-12">
