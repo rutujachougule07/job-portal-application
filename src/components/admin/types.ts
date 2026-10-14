@@ -13,7 +13,7 @@ export interface EmployerWorker {
   education?: string;
   dailyRate: number;
   joiningDate: string;
-  status: "Active" | "Inactive" | "Deleted";
+  status: "Active" | "Inactive";
   workShiftStart?: string;
   workShiftEnd?: string;
   dailyWorkingHours?: number;

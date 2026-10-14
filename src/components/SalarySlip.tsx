@@ -730,11 +730,23 @@ const SalarySlip: React.FC<SalarySlipProps> = ({
               </div>
               <div className="flex justify-between">
                 <span>Overtime Hours</span>
-                <strong className="text-emerald-700">: {overtimeHours} Hrs</strong>
+                <strong className="text-purple-700">: {overtimeHours} Hrs</strong>
+              </div>
+              <div className="flex justify-between">
+                <span>Overtime Rate</span>
+                <strong className="text-purple-700">: ₹{overtimeRate} / Hr</strong>
+              </div>
+              <div className="flex justify-between">
+                <span>Overtime Pay</span>
+                <strong className="text-emerald-700 font-black">: ₹{computedOtPay}</strong>
               </div>
               <div className="flex justify-between">
                 <span>Total Earnings Days</span>
                 <strong className="text-slate-900">: {computedEarningsDays} Days</strong>
+              </div>
+              <div className="flex justify-between border-t border-emerald-300 pt-1.5 mt-1">
+                <span className="font-black text-slate-800 text-xs">Total Net Pay</span>
+                <strong className="text-emerald-800 font-black text-sm">: ₹{netPay}</strong>
               </div>
             </div>
           </div>

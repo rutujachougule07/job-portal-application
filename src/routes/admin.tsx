@@ -10,6 +10,7 @@ import {
   Plus,
   Trash2,
   Edit,
+  Edit3,
   Search,
   BarChart3,
   FileText,
@@ -111,6 +112,17 @@ function formatTime12Hr(timeStr?: string): string {
   if (hours === 0) hours = 12;
   const hoursStr = hours.toString().padStart(2, "0");
   return `${hoursStr}:${minutes} ${ampm}`;
+}
+
+function computeHoursFromTimes(startStr?: string, endStr?: string): number {
+  if (!startStr || !endStr) return 9;
+  const start = parseTimeStringToMinutes(startStr);
+  const end = parseTimeStringToMinutes(endStr);
+  if (start !== null && end !== null && end > start) {
+    const diff = end - start;
+    return Math.round((diff / 60) * 10) / 10;
+  }
+  return 9;
 }
 
 function calculateWorkAndOvertime(
@@ -337,6 +349,9 @@ function AdminDashboardPage() {
     joiningDate: new Date().toISOString().split("T")[0]!,
     workShiftStart: "09:00",
     workShiftEnd: "18:00",
+    dailyWorkingHours: "9",
+    overtimeRate: "56",
+    overtimeRateMode: "auto" as "auto" | "manual",
     notes: "",
     pin: "1234",
     locationType: "fixed" as "fixed" | "field",
@@ -741,7 +756,11 @@ function AdminDashboardPage() {
         overtime++;
         const otH = r.overtimeHours || 2;
         totalOvertimeHours += otH;
-        netPay += Math.round(worker.dailyRate + otH * (worker.dailyRate / 8) * 1.5);
+        const shiftH = computeHoursFromTimes(worker.workShiftStart, worker.workShiftEnd) || 9;
+        const otHourlyRate = worker.overtimeRate !== undefined && worker.overtimeRate !== null && Number(worker.overtimeRate) > 0
+          ? Number(worker.overtimeRate)
+          : Math.round(worker.dailyRate / shiftH);
+        netPay += Math.round(worker.dailyRate + (otH * otHourlyRate));
       }
     });
 
@@ -879,7 +898,14 @@ function AdminDashboardPage() {
           let pay = worker.dailyRate;
           if (r.status === "HalfDay") pay = Math.round(worker.dailyRate / 2);
           if (r.status === "Absent") pay = 0;
-          if (r.status === "Overtime") pay = Math.round(worker.dailyRate * 1.5);
+          if (r.status === "Overtime") {
+            const otH = r.overtimeHours || 2;
+            const shiftH = computeHoursFromTimes(worker.workShiftStart, worker.workShiftEnd) || 9;
+            const otHourlyRate = worker.overtimeRate !== undefined && worker.overtimeRate !== null && Number(worker.overtimeRate) > 0
+              ? Number(worker.overtimeRate)
+              : Math.round(worker.dailyRate / shiftH);
+            pay = worker.dailyRate + (otH * otHourlyRate);
+          }
           const bg = i % 2 === 0 ? "#FFFFFF" : "#F8FAFC";
           return `
                       <tr style="background: ${bg}; border-bottom: 1px solid #E2E8F0;">
@@ -1272,6 +1298,12 @@ function AdminDashboardPage() {
       return;
     }
 
+    const defStart = "09:00";
+    const defEnd = "18:00";
+    const defHours = computeHoursFromTimes(defStart, defEnd);
+    const defDailyWage = 500;
+    const defOtRate = Math.round(defDailyWage / defHours);
+
     setEditingWorkerId(null);
     setWorkerForm({
       name: "",
@@ -1281,8 +1313,11 @@ function AdminDashboardPage() {
       education: "",
       dailyRate: "500",
       joiningDate: new Date().toISOString().split("T")[0]!,
-      workShiftStart: "09:00",
-      workShiftEnd: "18:00",
+      workShiftStart: defStart,
+      workShiftEnd: defEnd,
+      dailyWorkingHours: defHours.toString(),
+      overtimeRate: defOtRate.toString(),
+      overtimeRateMode: "auto",
       notes: "",
       pin: "1234",
       locationType: attendanceMode === "field" ? "field" : "fixed",
@@ -1299,6 +1334,14 @@ function AdminDashboardPage() {
     setCustomCategories(getStoredCustomCats());
     const locType = (w.locationType || (w.attendanceMode === "manual" ? "field" : "fixed")) as "fixed" | "field";
     const attMode = (w.attendanceMode || (locType === "field" ? "manual" : "punch")) as "punch" | "manual";
+    const start = w.workShiftStart || "09:00";
+    const end = w.workShiftEnd || "18:00";
+    const calcHours = computeHoursFromTimes(start, end);
+    const workerHours = w.dailyWorkingHours ?? calcHours;
+    const mode = w.overtimeRateMode || (w.overtimeRate ? "manual" : "auto");
+    const autoRate = calcHours > 0 ? Math.round(w.dailyRate / calcHours) : 56;
+    const finalOtRate = w.overtimeRate !== undefined ? w.overtimeRate.toString() : autoRate.toString();
+
     setWorkerForm({
       name: w.name,
       mobile: w.mobile,
@@ -1307,8 +1350,11 @@ function AdminDashboardPage() {
       education: w.education || "",
       dailyRate: w.dailyRate.toString(),
       joiningDate: w.joiningDate || new Date().toISOString().split("T")[0]!,
-      workShiftStart: w.workShiftStart || "09:00",
-      workShiftEnd: w.workShiftEnd || "18:00",
+      workShiftStart: start,
+      workShiftEnd: end,
+      dailyWorkingHours: workerHours.toString(),
+      overtimeRate: finalOtRate,
+      overtimeRateMode: mode,
       notes: w.notes || "",
       pin: (w as any).pin || "1234",
       locationType: locType,
@@ -1331,6 +1377,12 @@ function AdminDashboardPage() {
       toast.error("Please enter employee name");
       return;
     }
+    const baseHrsNum = computeHoursFromTimes(workerForm.workShiftStart, workerForm.workShiftEnd);
+    const dailyWageNum = Number(workerForm.dailyRate) || 500;
+    const workingHrsNum = Number(workerForm.dailyWorkingHours) || baseHrsNum;
+    const autoOtRate = baseHrsNum > 0 ? Math.round(dailyWageNum / baseHrsNum) : 50;
+    const otRateNum = Number(workerForm.overtimeRate) || autoOtRate;
+
     const activeEmpId = currentUser?.id || currentUser?.fullName || currentUser?.email || empIdentifier;
     dataStore.saveEmployerWorker({
       ...(editingWorkerId ? { id: editingWorkerId } : {}),
@@ -1340,11 +1392,14 @@ function AdminDashboardPage() {
       trade: workerForm.trade.trim() || "General Worker",
       category: workerForm.category.trim() || "Plant Nursery & Care",
       education: workerForm.education.trim(),
-      dailyRate: Number(workerForm.dailyRate) || 500,
+      dailyRate: dailyWageNum,
       joiningDate: workerForm.joiningDate || new Date().toISOString().split("T")[0]!,
       status: "Active",
       workShiftStart: workerForm.workShiftStart,
       workShiftEnd: workerForm.workShiftEnd,
+      dailyWorkingHours: workingHrsNum,
+      overtimeRate: otRateNum,
+      overtimeRateMode: workerForm.overtimeRateMode,
       notes: workerForm.notes.trim(),
       pin: workerForm.pin || "1234",
       locationType: workerForm.locationType,
@@ -4599,8 +4654,19 @@ function AdminDashboardPage() {
                     required
                     placeholder="500"
                     value={workerForm.dailyRate}
-                    onChange={(e) => setWorkerForm((p) => ({ ...p, dailyRate: e.target.value.replace(/\D/g, "") }))}
-                    className="h-11 rounded-xl text-xs font-bold border-slate-300 text-emerald-700"
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, "");
+                      setWorkerForm((p) => {
+                        const next = { ...p, dailyRate: val };
+                        if (p.overtimeRateMode === "auto") {
+                          const baseHrs = computeHoursFromTimes(p.workShiftStart, p.workShiftEnd);
+                          const rateNum = Number(val) || 0;
+                          next.overtimeRate = baseHrs > 0 ? Math.round(rateNum / baseHrs).toString() : "0";
+                        }
+                        return next;
+                      });
+                    }}
+                    className="h-11 rounded-xl text-xs font-bold border-slate-300 text-emerald-700 font-black"
                   />
                 </div>
 
@@ -4639,7 +4705,23 @@ function AdminDashboardPage() {
                     <Input
                       type="time"
                       value={workerForm.workShiftStart}
-                      onChange={(e) => setWorkerForm((p) => ({ ...p, workShiftStart: e.target.value }))}
+                      onChange={(e) => {
+                        const startVal = e.target.value;
+                        setWorkerForm((p) => {
+                          const next = { ...p, workShiftStart: startVal };
+                          const newBaseHrs = computeHoursFromTimes(startVal, p.workShiftEnd);
+                          const oldBaseHrs = computeHoursFromTimes(p.workShiftStart, p.workShiftEnd);
+                          const prevTotal = Number(p.dailyWorkingHours) || oldBaseHrs;
+                          const currentOt = Math.max(0, Math.min(4, Math.round((prevTotal - oldBaseHrs) * 10) / 10));
+                          const nextTotal = newBaseHrs + currentOt;
+                          next.dailyWorkingHours = nextTotal.toString();
+                          if (p.overtimeRateMode === "auto") {
+                            const rateNum = Number(p.dailyRate) || 500;
+                            next.overtimeRate = newBaseHrs > 0 ? Math.round(rateNum / newBaseHrs).toString() : "50";
+                          }
+                          return next;
+                        });
+                      }}
                       className="h-11 rounded-xl text-xs font-bold border-slate-300"
                     />
                   </div>
@@ -4661,12 +4743,137 @@ function AdminDashboardPage() {
                     <Input
                       type="time"
                       value={workerForm.workShiftEnd}
-                      onChange={(e) => setWorkerForm((p) => ({ ...p, workShiftEnd: e.target.value }))}
+                      onChange={(e) => {
+                        const endVal = e.target.value;
+                        setWorkerForm((p) => {
+                          const next = { ...p, workShiftEnd: endVal };
+                          const newBaseHrs = computeHoursFromTimes(p.workShiftStart, endVal);
+                          const oldBaseHrs = computeHoursFromTimes(p.workShiftStart, p.workShiftEnd);
+                          const prevTotal = Number(p.dailyWorkingHours) || oldBaseHrs;
+                          const currentOt = Math.max(0, Math.min(4, Math.round((prevTotal - oldBaseHrs) * 10) / 10));
+                          const nextTotal = newBaseHrs + currentOt;
+                          next.dailyWorkingHours = nextTotal.toString();
+                          if (p.overtimeRateMode === "auto") {
+                            const rateNum = Number(p.dailyRate) || 500;
+                            next.overtimeRate = newBaseHrs > 0 ? Math.round(rateNum / newBaseHrs).toString() : "50";
+                          }
+                          return next;
+                        });
+                      }}
                       className="h-11 rounded-xl text-xs font-bold border-slate-300"
                     />
                   </div>
                 </div>
               ) : null}
+
+              {/* 5.1 OVERTIME HOURLY RATE CONFIGURATION */}
+              {(() => {
+                const baseShiftHrs = computeHoursFromTimes(workerForm.workShiftStart, workerForm.workShiftEnd);
+                const dailyWageNum = Number(workerForm.dailyRate) || 500;
+                const autoHourlyRate = baseShiftHrs > 0 ? Math.round(dailyWageNum / baseShiftHrs) : 56;
+
+                return (
+                  <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-50/80 via-blue-50/40 to-slate-50 border-2 border-amber-200 shadow-xs space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-200/80 pb-2.5">
+                      <div className="flex items-center gap-2">
+                        <div className="size-7 rounded-lg bg-amber-500 text-white flex items-center justify-center font-black text-xs shadow-xs">
+                          <Zap className="size-4 fill-white" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-black text-[#10233F] uppercase tracking-wide flex items-center gap-1.5">
+                            Overtime Hourly Rate (₹ / hr)
+                            <Badge className="bg-amber-100 text-amber-900 border-amber-300 font-extrabold text-[10px] px-1.5 py-0">
+                              {workerForm.overtimeRateMode === "auto"
+                                ? `⚡ Auto (${dailyWageNum} ÷ ${baseShiftHrs}h = ₹${autoHourlyRate}/hr)`
+                                : "✏️ Custom Manual Rate"}
+                            </Badge>
+                          </h4>
+                          <p className="text-[10px] font-bold text-slate-500">
+                            Daily Wage (₹{dailyWageNum}) ÷ Shift ({baseShiftHrs}h) = ₹{autoHourlyRate}/hr default rate.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Mode Selector Toggle: Auto vs Manual */}
+                      <div className="flex items-center bg-white p-0.5 rounded-xl border border-amber-300 shadow-2xs">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setWorkerForm((p) => ({
+                              ...p,
+                              overtimeRateMode: "auto",
+                              overtimeRate: autoHourlyRate.toString(),
+                            }));
+                          }}
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-black transition-all flex items-center gap-1 cursor-pointer ${
+                            workerForm.overtimeRateMode === "auto"
+                              ? "bg-amber-500 text-white shadow-xs"
+                              : "text-slate-600 hover:text-slate-900"
+                          }`}
+                        >
+                          <Zap className="size-3 fill-current" /> Auto Calculate
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setWorkerForm((p) => ({
+                              ...p,
+                              overtimeRateMode: "manual",
+                            }));
+                          }}
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-black transition-all flex items-center gap-1 cursor-pointer ${
+                            workerForm.overtimeRateMode === "manual"
+                              ? "bg-[#063B78] text-white shadow-xs"
+                              : "text-slate-600 hover:text-slate-900"
+                          }`}
+                        >
+                          <Edit3 className="size-3" /> Manual Rate
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Overtime Rate Input Field */}
+                    <div className="space-y-1.5">
+                      <Label className="text-[11px] font-extrabold text-slate-700 uppercase flex items-center justify-between">
+                        <span>Overtime Rate (₹ / hr) *</span>
+                        <span className="text-[10px] text-slate-500 font-bold lowercase">
+                          (daily wage remains ₹{dailyWageNum}/day)
+                        </span>
+                      </Label>
+                      <div className="relative max-w-sm">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-black text-slate-400">
+                          ₹
+                        </span>
+                        <Input
+                          type="number"
+                          placeholder={autoHourlyRate.toString()}
+                          value={workerForm.overtimeRate}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setWorkerForm((p) => ({
+                              ...p,
+                              overtimeRate: val,
+                              overtimeRateMode: "manual",
+                            }));
+                          }}
+                          className={`h-11 pl-8 pr-16 rounded-xl text-sm font-black border-slate-300 ${
+                            workerForm.overtimeRateMode === "auto"
+                              ? "bg-amber-50/60 text-amber-950 border-amber-300 font-extrabold"
+                              : "bg-white text-emerald-800 border-emerald-400 ring-2 ring-emerald-400/20"
+                          }`}
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-extrabold text-slate-400">
+                          / Hour
+                        </span>
+                      </div>
+                      <p className="text-[10px] font-bold text-slate-500 mt-1">
+                        💡 Note: Overtime hours (1h, 2h, etc.) are recorded per day in the Attendance Calendar. In Salary Slip, overtime will be calculated as: <strong>Total Overtime Hours × ₹{workerForm.overtimeRate || autoHourlyRate}/hr</strong>.
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* 6. DYNAMIC ADDED CUSTOM FIELDS (Rendered AT THE VERY BOTTOM OF ALL INPUT FIELDS) */}
               {customFields.map((field, idx) => (
@@ -5261,10 +5468,14 @@ function AdminDashboardPage() {
                   const aDays = metrics.absent;
                   const otDays = metrics.overtime;
                   const otHours = metrics.totalOvertimeHours;
+                  const shiftH = computeHoursFromTimes(v.workShiftStart, v.workShiftEnd) || 9;
+                  const effectiveOtRate = v.overtimeRate !== undefined && v.overtimeRate !== null && Number(v.overtimeRate) > 0
+                    ? Number(v.overtimeRate)
+                    : Math.round(rate / shiftH);
                   const basic = (pDays * rate) + Math.round(hdDays * (rate / 2));
                   const daAmt = Math.round(basic * 0.2);
                   const hraAmt = Math.round(basic * 0.1667);
-                  const otAmt = Math.round(otHours * (rate / 8) * 1.5);
+                  const otAmt = Math.round(otHours * effectiveOtRate);
                   const pfAmt = Math.round((basic + daAmt) * 0.12);
                   const esiAmt = Math.round((basic + daAmt + hraAmt + otAmt) * 0.0075);
 
@@ -5329,7 +5540,7 @@ function AdminDashboardPage() {
                       da={daAmt}
                       hra={hraAmt}
                       overtimeHours={otHours}
-                      overtimeRate={Math.round((rate / 8) * 1.5)}
+                      overtimeRate={effectiveOtRate}
                       overtimePay={otAmt}
                       providentFund={pfAmt}
                       esi={esiAmt}
@@ -5362,9 +5573,16 @@ function AdminDashboardPage() {
         const monthStartStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, "0")}-01`;
         const monthEndStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, "0")}-${String(daysInMonth).padStart(2, "0")}`;
 
+        // Get active up-to-date worker record
+        const activeWorker = workers.find(w => w.id === calendarWorker.id) || calendarWorker;
+        const shiftH = computeHoursFromTimes(activeWorker.workShiftStart, activeWorker.workShiftEnd) || 9;
+        const effectiveOtRate = activeWorker.overtimeRate !== undefined && activeWorker.overtimeRate !== null && Number(activeWorker.overtimeRate) > 0
+          ? Number(activeWorker.overtimeRate)
+          : Math.round(activeWorker.dailyRate / shiftH);
+
         // Get all attendance records for this month
         const monthRangeRecords = dataStore.getEmployerAttendanceRange(activeEmpId, monthStartStr, monthEndStr)
-          .filter(r => r.workerId === calendarWorker.id);
+          .filter(r => r.workerId === activeWorker.id);
         const recordsMap = new Map<string, DailyAttendanceRecord>();
         monthRangeRecords.forEach(r => recordsMap.set(r.date, r));
 
@@ -5382,17 +5600,17 @@ function AdminDashboardPage() {
           if (rec) {
             if (rec.status === "Present") {
               presentCount++;
-              totalEarned += calendarWorker.dailyRate;
+              totalEarned += activeWorker.dailyRate;
             } else if (rec.status === "HalfDay") {
               halfDayCount++;
-              totalEarned += (calendarWorker.dailyRate / 2);
+              totalEarned += (activeWorker.dailyRate / 2);
             } else if (rec.status === "Absent") {
               absentCount++;
             } else if (rec.status === "Overtime") {
               overtimeCount++;
-              const otH = rec.overtimeHours || 2;
+              const otH = rec.overtimeHours !== undefined ? Number(rec.overtimeHours) : 1;
               totalOvertimeHours += otH;
-              totalEarned += calendarWorker.dailyRate + otH * (calendarWorker.dailyRate / 8) * 1.5;
+              totalEarned += activeWorker.dailyRate + (otH * effectiveOtRate);
             }
           }
         }
@@ -5411,18 +5629,18 @@ function AdminDashboardPage() {
               <div className="bg-[#021D3D] text-white p-4 sm:p-5 flex items-center justify-between shadow-md">
                 <div className="flex items-center gap-3">
                   <div className="size-11 sm:size-12 rounded-2xl bg-[#063B78] border border-white/20 flex items-center justify-center text-lg sm:text-xl font-black text-amber-300 shadow-inner">
-                    {calendarWorker.name.charAt(0).toUpperCase()}
+                    {activeWorker.name.charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <h3 className="text-base sm:text-lg font-black tracking-tight">{calendarWorker.name}</h3>
+                    <h3 className="text-base sm:text-lg font-black tracking-tight">{activeWorker.name}</h3>
                     <div className="flex flex-wrap items-center gap-2 text-xs text-white/80 mt-0.5">
-                      <span className="flex items-center gap-1">✂️ {calendarWorker.category || calendarWorker.trade || "कर्मचारी"}</span>
+                      <span className="flex items-center gap-1">✂️ {activeWorker.category || activeWorker.trade || "कर्मचारी"}</span>
                       <span>•</span>
-                      <span>{calendarWorker.trade || "General Worker"}</span>
-                      {calendarWorker.mobile && (
+                      <span>{activeWorker.trade || "General Worker"}</span>
+                      {activeWorker.mobile && (
                         <>
                           <span>•</span>
-                          <span className="flex items-center gap-1 text-emerald-400 font-bold"><Phone className="size-3" /> {calendarWorker.mobile}</span>
+                          <span className="flex items-center gap-1 text-emerald-400 font-bold"><Phone className="size-3" /> {activeWorker.mobile}</span>
                         </>
                       )}
                     </div>
@@ -5634,7 +5852,7 @@ function AdminDashboardPage() {
                               <button
                                 type="button"
                                 onClick={() => {
-                                  handleMarkAttendance(calendarWorker, "Present", dateStr);
+                                  handleMarkAttendance(activeWorker, "Present", dateStr);
                                   setActiveCalendarDate(null);
                                 }}
                                 className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-emerald-50 text-slate-800 hover:text-emerald-700 text-xs font-bold transition-all text-left cursor-pointer"
@@ -5648,7 +5866,7 @@ function AdminDashboardPage() {
                               <button
                                 type="button"
                                 onClick={() => {
-                                  handleMarkAttendance(calendarWorker, "Absent", dateStr);
+                                  handleMarkAttendance(activeWorker, "Absent", dateStr);
                                   setActiveCalendarDate(null);
                                 }}
                                 className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-rose-50 text-slate-800 hover:text-rose-700 text-xs font-bold transition-all text-left cursor-pointer"
@@ -5662,7 +5880,7 @@ function AdminDashboardPage() {
                               <button
                                 type="button"
                                 onClick={() => {
-                                  handleMarkAttendance(calendarWorker, "HalfDay", dateStr);
+                                  handleMarkAttendance(activeWorker, "HalfDay", dateStr);
                                   setActiveCalendarDate(null);
                                 }}
                                 className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-amber-50 text-slate-800 hover:text-amber-700 text-xs font-bold transition-all text-left cursor-pointer"
@@ -5678,7 +5896,7 @@ function AdminDashboardPage() {
                                 onClick={() => {
                                   setActiveCalendarDate(null);
                                   setOvertimeModalDate(dateStr);
-                                  setOvertimeModalHours(rec?.overtimeHours || 3);
+                                  setOvertimeModalHours(rec?.overtimeHours || 1);
                                 }}
                                 className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl bg-purple-50/70 hover:bg-purple-100 text-[#7C3AED] text-xs font-bold transition-all text-left cursor-pointer"
                               >
@@ -5692,7 +5910,7 @@ function AdminDashboardPage() {
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    dataStore.deleteAttendanceRecord(calendarWorker.id, dateStr);
+                                    dataStore.deleteAttendanceRecord(activeWorker.id, dateStr);
                                     loadAttendanceData();
                                     setActiveCalendarDate(null);
                                     toast.success(`Cleared for ${dateStr}`);
@@ -5771,7 +5989,7 @@ function AdminDashboardPage() {
                         setSelectedSalaryMonth(mName);
                         setSelectedSalaryYear(yStr);
                         setViewSlipPeriod("month");
-                        setViewSlipWorker(calendarWorker);
+                        setViewSlipWorker(activeWorker);
                         setCalendarWorker(null);
                       }}
                       className="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs px-3.5 py-2 rounded-xl shadow-md cursor-pointer"
@@ -5841,7 +6059,7 @@ function AdminDashboardPage() {
                     <button
                       type="button"
                       onClick={() => {
-                        handleMarkAttendance(calendarWorker, "Overtime", overtimeModalDate, overtimeModalHours);
+                        handleMarkAttendance(activeWorker, "Overtime", overtimeModalDate, overtimeModalHours);
                         setOvertimeModalDate(null);
                         toast.success(`Overtime (${overtimeModalHours} hrs) saved for ${overtimeModalDate}`);
                       }}

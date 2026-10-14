@@ -239,7 +239,12 @@ export const AttendanceAndPayrollSection: React.FC<AttendanceAndPayrollSectionPr
                             </button>
 
                             <button
-                              onClick={() => handleMarkAttendance(worker, "Overtime", { overtimeHours: 1, overtimePay: worker.overtimeRate || 100 })}
+                              onClick={() => {
+                                const otRate = (worker.overtimeRate !== undefined && worker.overtimeRate !== null && Number(worker.overtimeRate) > 0)
+                                  ? Number(worker.overtimeRate)
+                                  : Math.round(worker.dailyRate / 9);
+                                handleMarkAttendance(worker, "Overtime", { overtimeHours: 1, overtimePay: otRate });
+                              }}
                               className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all flex items-center gap-1 ${
                                 currentStatus === "Overtime"
                                   ? "bg-[#063B78] text-white shadow-xs"

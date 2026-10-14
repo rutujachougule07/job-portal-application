@@ -1,64 +1,33 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { UserPlus, Users, Edit, Trash2, CalendarCheck, ShieldCheck } from "lucide-react";
 import { AddEmployeeModal } from "./AddEmployeeModal";
 import { EmployerWorker } from "./types";
-import { dataStore } from "@/lib/data-store";
 
-export interface AddEmployeePageProps {
-  empIdentifier?: string;
-}
-
-export const AddEmployeePage: React.FC<AddEmployeePageProps> = ({ empIdentifier }) => {
+export const AddEmployeePageDemo: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingWorker, setEditingWorker] = useState<EmployerWorker | null>(null);
 
-  const [workersList, setWorkersList] = useState<EmployerWorker[]>(() => {
-    if (empIdentifier) {
-      return (dataStore.getEmployerWorkers(empIdentifier) as unknown as EmployerWorker[]) || [];
-    }
-    return [
-      {
-        id: "emp-101",
-        employerId: "admin-001",
-        name: "Ramesh Pawar",
-        mobile: "9822112233",
-        trade: "General Worker",
-        category: "💻 Software Developer / Engineer",
-        dailyRate: 600,
-        joiningDate: "2026-08-01",
-        status: "Active",
-        workShiftStart: "09:00",
-        workShiftEnd: "18:00",
-        dailyWorkingHours: 9,
-        overtimeRate: 67,
-        pin: "1234",
-        customFields: [{ label: "Aadhaar Card ID", value: "1234-5678-9012" }],
-      },
-    ];
-  });
-
-  const loadData = () => {
-    if (empIdentifier) {
-      setWorkersList((dataStore.getEmployerWorkers(empIdentifier) as unknown as EmployerWorker[]) || []);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, [empIdentifier]);
+  const [workersList, setWorkersList] = useState<EmployerWorker[]>([
+    {
+      id: "emp-101",
+      employerId: "admin-001",
+      name: "Ramesh Pawar",
+      mobile: "9822112233",
+      trade: "General Worker",
+      category: "💻 Software Developer / Engineer",
+      dailyRate: 600,
+      joiningDate: "2026-08-01",
+      status: "Active",
+      workShiftStart: "09:00",
+      workShiftEnd: "18:00",
+      dailyWorkingHours: 9,
+      overtimeRate: 67,
+      pin: "1234",
+      customFields: [{ label: "Aadhaar Card ID", value: "1234-5678-9012" }],
+    },
+  ]);
 
   const handleSave = (savedData: Partial<EmployerWorker>) => {
-    if (empIdentifier) {
-      dataStore.saveEmployerWorker({
-        ...savedData,
-        employerId: empIdentifier,
-      } as any);
-      setIsModalOpen(false);
-      setEditingWorker(null);
-      loadData();
-      return;
-    }
-
     if (editingWorker) {
       setWorkersList((prev) =>
         prev.map((w) => (w.id === editingWorker.id ? ({ ...w, ...savedData } as EmployerWorker) : w))
@@ -83,18 +52,11 @@ export const AddEmployeePage: React.FC<AddEmployeePageProps> = ({ empIdentifier 
       };
       setWorkersList((prev) => [newWorker, ...prev]);
     }
-    setIsModalOpen(false);
-    setEditingWorker(null);
   };
 
   const handleDelete = (id: string) => {
     if (confirm("Are you sure you want to delete this employee?")) {
-      if (empIdentifier) {
-        dataStore.deleteEmployerWorker(id);
-        loadData();
-      } else {
-        setWorkersList((prev) => prev.filter((w) => w.id !== id));
-      }
+      setWorkersList((prev) => prev.filter((w) => w.id !== id));
     }
   };
 
@@ -195,31 +157,18 @@ export const AddEmployeePage: React.FC<AddEmployeePageProps> = ({ empIdentifier 
               </div>
             </div>
           ))}
-
-          {workersList.length === 0 && (
-            <div className="col-span-full py-16 text-center bg-white rounded-3xl border border-slate-200">
-              <Users className="size-12 text-slate-300 mx-auto mb-3" />
-              <h3 className="text-base font-black text-slate-700">No Employees Registered</h3>
-              <p className="text-xs text-slate-400 font-semibold mt-1">Click "+ Add New Employee" above to add your first team member.</p>
-            </div>
-          )}
         </div>
 
+        {/* Modal Component Mount */}
+        <AddEmployeeModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSave={handleSave}
+          initialData={editingWorker}
+        />
       </div>
-
-      <AddEmployeeModal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setEditingWorker(null);
-        }}
-        onSave={handleSave}
-        initialData={editingWorker}
-        empIdentifier={empIdentifier || "admin-001"}
-      />
     </div>
   );
 };
 
-export const AddEmployeePageDemo = AddEmployeePage;
-export default AddEmployeePage;
+export default AddEmployeePageDemo;

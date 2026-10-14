@@ -704,8 +704,8 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
               </div>
             )}
 
-            {/* 7. OVERTIME RATE & WORKING HOURS CONFIGURATION */}
-            <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-50/80 via-blue-50/40 to-slate-50 border-2 border-amber-200 shadow-xs space-y-3.5">
+            {/* 7. OVERTIME HOURLY RATE CONFIGURATION */}
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-50/80 via-blue-50/40 to-slate-50 border-2 border-amber-200 shadow-xs space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-200/80 pb-2.5">
                 <div className="flex items-center gap-2">
                   <div className="size-7 rounded-lg bg-amber-500 text-white flex items-center justify-center font-black text-xs shadow-xs">
@@ -713,15 +713,15 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                   </div>
                   <div>
                     <h4 className="text-xs font-black text-[#10233F] uppercase tracking-wide flex items-center gap-1.5">
-                      Overtime Rate & Working Hours
+                      Overtime Hourly Rate (₹ / hr)
                       <span className="bg-amber-100 text-amber-900 border border-amber-300 font-extrabold text-[10px] px-1.5 py-0 rounded">
                         {workerForm.overtimeRateMode === "auto"
-                          ? `⚡ Auto (₹${dailyWageNum} ÷ ${baseShiftHrs}h = ₹${autoHourlyRate}/hr)`
-                          : "✏️ Manual"}
+                          ? `⚡ Auto (${dailyWageNum} ÷ ${baseShiftHrs}h = ₹${autoHourlyRate}/hr)`
+                          : "✏️ Custom Manual Rate"}
                       </span>
                     </h4>
                     <p className="text-[10px] font-bold text-slate-500">
-                      Daily Wage (₹{dailyWageNum}) ÷ Base Shift ({baseShiftHrs}h) = ₹{autoHourlyRate}/hr Overtime Rate
+                      Daily Wage (₹{dailyWageNum}) ÷ Shift ({baseShiftHrs}h) = ₹{autoHourlyRate}/hr default rate.
                     </p>
                   </div>
                 </div>
@@ -762,121 +762,43 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                {/* Total Working Hours & OT Buttons */}
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-[11px] font-extrabold text-slate-700 uppercase flex items-center gap-1">
-                      <Clock className="size-3 text-[#063B78]" /> Total Working Hours
-                    </label>
-                    <span className="text-[10px] font-extrabold text-[#063B78] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded">
-                      Shift: {baseShiftHrs} hrs ({formatTime12Hr(workerForm.workShiftStart)} - {formatTime12Hr(workerForm.workShiftEnd)})
-                    </span>
-                  </div>
-
-                  <div className="relative">
-                    <input
-                      type="number"
-                      step="0.5"
-                      min="1"
-                      max="24"
-                      value={workerForm.dailyWorkingHours}
-                      onChange={(e) => {
-                        const hrsVal = e.target.value;
-                        setWorkerForm((p) => ({ ...p, dailyWorkingHours: hrsVal }));
-                      }}
-                      className="w-full h-10 px-3 pr-14 rounded-xl text-xs font-black border border-slate-300 text-[#10233F]"
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-extrabold text-slate-400">
-                      Hours
-                    </span>
-                  </div>
-
-                  {/* Overtime Hours Quick Selection: 0h, 1h, 2h, 3h, 4h */}
-                  <div className="mt-2 p-2.5 rounded-xl bg-white border border-amber-200 shadow-2xs space-y-1.5">
-                    <div className="flex items-center justify-between text-[10px]">
-                      <span className="font-black text-slate-700 uppercase flex items-center gap-1">
-                        <Zap className="size-3 text-amber-600 fill-amber-500" /> Overtime Hours Selection:
-                      </span>
-                      <span className="font-extrabold text-amber-900 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded">
-                        {addedOtHours > 0 ? `+${addedOtHours}h Overtime (+₹${addedOtHours * activeHourlyRate})` : "Standard Shift (₹0 OT)"}
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-5 gap-1.5">
-                      {[0, 1, 2, 3, 4].map((otHr) => {
-                        const targetTotal = baseShiftHrs + otHr;
-                        const isSelected = Math.abs(currentWorkingHrs - targetTotal) < 0.05;
-                        const extraPay = otHr * activeHourlyRate;
-                        return (
-                          <button
-                            key={otHr}
-                            type="button"
-                            onClick={() => {
-                              setWorkerForm((p) => ({ ...p, dailyWorkingHours: targetTotal.toString() }));
-                            }}
-                            className={`py-1.5 px-1 rounded-lg text-xs font-black transition-all flex flex-col items-center justify-center cursor-pointer border ${
-                              isSelected
-                                ? "bg-[#063B78] text-white border-[#063B78] shadow-xs scale-[1.02]"
-                                : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-amber-50 hover:border-amber-300"
-                            }`}
-                          >
-                            <span className="text-[11px] leading-tight font-black">
-                              {otHr === 0 ? "0h OT" : `+${otHr}h OT`}
-                            </span>
-                            <span className={`text-[9px] font-bold leading-tight ${isSelected ? "text-amber-300" : "text-emerald-700"}`}>
-                              {otHr === 0 ? `₹${dailyWageNum}` : `+₹${extraPay}`}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Overtime Rate (₹ / hr) */}
-                <div>
-                  <label className="text-[11px] font-extrabold text-slate-700 uppercase mb-1 flex items-center justify-between">
-                    <span className="flex items-center gap-1">
-                      <Zap className="size-3 text-amber-600 fill-amber-500" /> Overtime Rate (₹ / hr) *
-                    </span>
-                    <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded ${
+              {/* Overtime Rate Input Field */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-extrabold text-slate-700 uppercase flex items-center justify-between">
+                  <span>Overtime Rate (₹ / hr) *</span>
+                  <span className="text-[10px] text-slate-500 font-bold lowercase">
+                    (daily wage remains ₹{dailyWageNum}/day)
+                  </span>
+                </label>
+                <div className="relative max-w-sm">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-black text-slate-400">
+                    ₹
+                  </span>
+                  <input
+                    type="number"
+                    placeholder={autoHourlyRate.toString()}
+                    value={workerForm.overtimeRate}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setWorkerForm((p) => ({
+                        ...p,
+                        overtimeRate: val,
+                        overtimeRateMode: "manual",
+                      }));
+                    }}
+                    className={`w-full h-11 pl-8 pr-16 rounded-xl text-sm font-black border ${
                       workerForm.overtimeRateMode === "auto"
-                        ? "bg-amber-100 text-amber-900 border border-amber-300"
-                        : "bg-blue-100 text-[#063B78] border border-blue-300"
-                    }`}>
-                      {workerForm.overtimeRateMode === "auto" ? "⚡ Auto" : "✏️ Manual"}
-                    </span>
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">
-                      ₹
-                    </span>
-                    <input
-                      type="number"
-                      value={workerForm.overtimeRate}
-                      onChange={(e) => {
-                        setWorkerForm((p) => ({
-                          ...p,
-                          overtimeRate: e.target.value,
-                          overtimeRateMode: "manual",
-                        }));
-                      }}
-                      className="w-full h-10 pl-7 pr-16 rounded-xl text-xs font-black border border-slate-300"
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-extrabold text-slate-400">
-                      / Hour
-                    </span>
-                  </div>
-
-                  <div className="mt-2 text-[10px] font-semibold space-y-1">
-                    <div className="bg-amber-50 p-2.5 rounded-xl border border-amber-200 text-amber-950">
-                      <p className="leading-relaxed">
-                        Daily Wage ₹{dailyWageNum} ÷ {baseShiftHrs}h Shift = <strong>₹{activeHourlyRate}/hr</strong>.
-                      </p>
-                    </div>
-                  </div>
+                        ? "bg-amber-50/60 text-amber-950 border-amber-300 font-extrabold"
+                        : "bg-white text-emerald-800 border-emerald-400 ring-2 ring-emerald-400/20"
+                    }`}
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-extrabold text-slate-400">
+                    / Hour
+                  </span>
                 </div>
+                <p className="text-[10px] font-bold text-slate-500 mt-1">
+                  💡 Note: Overtime hours (1h, 2h, etc.) are recorded per day in the Attendance Calendar. In Salary Slip, overtime will be calculated as: <strong>Total Overtime Hours × ₹{workerForm.overtimeRate || autoHourlyRate}/hr</strong>.
+                </p>
               </div>
             </div>
 

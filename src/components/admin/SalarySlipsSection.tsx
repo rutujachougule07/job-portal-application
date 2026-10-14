@@ -3,6 +3,25 @@ import { FileText, Calendar, Download, Eye, X } from "lucide-react";
 import { dataStore, EmployerWorker } from "@/lib/data-store";
 import SalarySlip from "@/components/SalarySlip";
 
+function computeHoursFromTimes(startStr?: string, endStr?: string): number {
+  if (!startStr || !endStr) return 9;
+  const parseToMinutes = (str: string): number => {
+    const s = str.trim().toUpperCase();
+    const isPM = s.includes("PM");
+    const isAM = s.includes("AM");
+    const clean = s.replace(/(AM|PM)/g, "").trim();
+    const parts = clean.split(":").map(p => parseInt(p, 10));
+    let hours = parts[0] || 0;
+    const mins = parts[1] || 0;
+    if (isPM && hours < 12) hours += 12;
+    if (isAM && hours === 12) hours = 0;
+    return hours * 60 + mins;
+  };
+  const diff = parseToMinutes(endStr) - parseToMinutes(startStr);
+  const diffHours = diff > 0 ? diff / 60 : (diff + 24 * 60) / 60;
+  return Math.round(diffHours * 10) / 10 || 9;
+}
+
 interface SalarySlipsSectionProps {
   empIdentifier: string;
   companyName?: string;
@@ -38,6 +57,11 @@ export const SalarySlipsSection: React.FC<SalarySlipsSectionProps> = ({
       return match && r.date >= startDate && r.date <= endDate;
     });
 
+    const shiftH = computeHoursFromTimes(worker.workShiftStart, worker.workShiftEnd) || 9;
+    const effectiveOtRate = worker.overtimeRate !== undefined && worker.overtimeRate !== null && Number(worker.overtimeRate) > 0
+      ? Number(worker.overtimeRate)
+      : Math.round(worker.dailyRate / shiftH);
+
     let present = 0;
     let halfDay = 0;
     let absent = 0;
@@ -53,7 +77,7 @@ export const SalarySlipsSection: React.FC<SalarySlipsSectionProps> = ({
         overtime++;
         const h = r.overtimeHours || 1;
         otHours += h;
-        otPay += r.overtimePay || Math.round((worker.dailyRate / 8) * h);
+        otPay += r.overtimePay || Math.round(effectiveOtRate * h);
       }
     });
 
@@ -92,6 +116,7 @@ export const SalarySlipsSection: React.FC<SalarySlipsSectionProps> = ({
       overtime,
       otHours,
       otPay,
+      effectiveOtRate,
       weeklyOffCount,
       totalWorkDays,
       basic,
@@ -233,6 +258,7 @@ export const SalarySlipsSection: React.FC<SalarySlipsSectionProps> = ({
                 dailyRate={viewWorker.dailyRate}
                 basicSalary={met.basic}
                 overtimeHours={met.otHours}
+                overtimeRate={met.effectiveOtRate}
                 overtimePay={met.otPay}
                 totalWorkHours={met.totalWorkHours}
                 totalEarningsDays={met.totalEarningsDays}

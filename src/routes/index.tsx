@@ -25,10 +25,31 @@ import {
   Star,
   Monitor,
   Sparkles,
+  Award,
+  Heart,
+  CheckCircle2,
 } from "lucide-react";
 
 const ICONS: Record<string, React.ElementType> = {
-  Factory, HardHat, Wrench, Truck, Zap, Shield, Briefcase, Users, Monitor
+  Factory,
+  HardHat,
+  Wrench,
+  Truck,
+  Zap,
+  Shield,
+  Briefcase,
+  Users,
+  Monitor,
+  Building2,
+  Search,
+  Target,
+  Award,
+  Star,
+  Heart,
+  Crown,
+  Sparkles,
+  TrendingUp,
+  CheckCircle2,
 };
 
 const THEMES: Record<string, any> = {
@@ -73,6 +94,66 @@ const heroImages = [
   "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&q=80",
 ];
 
+export interface CompanyPillar {
+  id: string;
+  title: string;
+  titleMr?: string;
+  description: string;
+  descriptionMr?: string;
+  iconName: string;
+}
+
+const defaultCompanyPillars: CompanyPillar[] = [
+  {
+    id: "mission",
+    title: "Our Mission",
+    titleMr: "आमचे ध्येय",
+    description: "To provide the right employment opportunity to everyone.",
+    descriptionMr: "प्रत्येकाला रोजगाराची योग्य संधी मिळवून देणे.",
+    iconName: "Target",
+  },
+  {
+    id: "vision",
+    title: "Our Vision",
+    titleMr: "आमचे व्हिजन",
+    description: "To become the most trusted employment portal in India.",
+    descriptionMr: "भारतातील सर्वात विश्वासार्ह रोजगार मंच बनणे.",
+    iconName: "Eye",
+  },
+  {
+    id: "values",
+    title: "Our Values",
+    titleMr: "आमची मूल्ये",
+    description: "Trust, transparency, quality, and consistent service.",
+    descriptionMr: "विश्वास, पारदर्शकता, गुणवत्ता आणि निरंतर सेवा.",
+    iconName: "Users",
+  },
+  {
+    id: "belief",
+    title: "Our Belief",
+    titleMr: "आमचा विश्वास",
+    description: "Right Person\nRight Job\nRight Opportunity",
+    descriptionMr: "योग्य व्यक्ती\nयोग्य काम\nयोग्य संधी",
+    iconName: "Handshake",
+  },
+];
+
+const PILLAR_ICONS: Record<string, React.ElementType> = {
+  Target,
+  Eye,
+  Users,
+  Handshake,
+  Star,
+  Shield,
+  Sparkles,
+  TrendingUp,
+  Building2,
+  Award,
+  CheckCircle2,
+  Heart,
+  Crown,
+};
+
 function LandingGatewayPage() {
   const { t, lang } = useI18n();
   const navigate = useNavigate();
@@ -93,6 +174,7 @@ function LandingGatewayPage() {
     title: "About Our Company",
     description: "REAL JOB is a reliable employment portal that connects job seekers with trusted companies. We focus on creating real opportunities, building successful careers, and supporting growth for individuals and businesses across India."
   });
+  const [companyPillars, setCompanyPillars] = useState<CompanyPillar[]>(defaultCompanyPillars);
   const [categories, setCategories] = useState([
     {
       id: "construction",
@@ -158,21 +240,48 @@ function LandingGatewayPage() {
     const savedMetrics = localStorage.getItem("cms_metrics");
     const savedAbout = localStorage.getItem("cms_aboutData");
     const savedCategories = localStorage.getItem("cms_categories");
+    const savedPillars = localStorage.getItem("cms_companyPillars");
 
     if (savedTitle) setHeroTitle(savedTitle);
     if (savedSubtitle) setHeroSubtitle(savedSubtitle);
     if (savedImages) setImages(JSON.parse(savedImages));
     if (savedMetrics) setMetrics(JSON.parse(savedMetrics));
     if (savedAbout) setAboutData(JSON.parse(savedAbout));
+    if (savedPillars) {
+      try {
+        setCompanyPillars(JSON.parse(savedPillars));
+      } catch (e) {}
+    }
     if (savedCategories) {
       try {
         const parsed = JSON.parse(savedCategories);
-        if (Array.isArray(parsed) && parsed.length >= 5) {
-          // Keep only first 5
-          setCategories(parsed.slice(0, 5));
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const CATEGORY_PALETTES = [
+            { gradient: "from-blue-500/20 to-transparent", iconBg: "bg-blue-600 text-white" },
+            { gradient: "from-amber-500/20 to-transparent", iconBg: "bg-amber-600 text-white" },
+            { gradient: "from-purple-500/20 to-transparent", iconBg: "bg-purple-600 text-white" },
+            { gradient: "from-emerald-500/20 to-transparent", iconBg: "bg-emerald-600 text-white" },
+            { gradient: "from-orange-500/20 to-transparent", iconBg: "bg-orange-600 text-white" },
+            { gradient: "from-rose-500/20 to-transparent", iconBg: "bg-rose-600 text-white" },
+            { gradient: "from-cyan-500/20 to-transparent", iconBg: "bg-cyan-600 text-white" },
+            { gradient: "from-indigo-500/20 to-transparent", iconBg: "bg-indigo-600 text-white" },
+          ];
+
+          const formatted = parsed.map((cat: any, idx: number) => {
+            const palette = CATEGORY_PALETTES[idx % CATEGORY_PALETTES.length];
+            return {
+              id: cat.id || `cat_${idx}`,
+              label: cat.label || `Category ${idx + 1}`,
+              iconName: cat.iconName || "Briefcase",
+              gradient: cat.gradient || palette.gradient,
+              iconBg: cat.iconBg || palette.iconBg,
+              ...cat,
+            };
+          });
+          setCategories(formatted);
         }
       } catch (e) {
-        // use default 5
+        console.error("Failed to load saved categories:", e);
       }
     }
   }, []);
@@ -471,74 +580,30 @@ function LandingGatewayPage() {
                     {aboutData.description}
                   </p>
 
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {/* Mission */}
-                    <div className="group bg-white rounded-2xl p-5 shadow-[0_4px_20px_rgb(0,0,0,0.06)] border border-gray-100 flex flex-col items-center text-center transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_15px_30px_rgba(212,175,55,0.15)] hover:border-[#D4AF37]/40 relative overflow-hidden">
-                      <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                      <div className="size-12 rounded-full border-2 border-[#D4AF37] flex items-center justify-center mb-4 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-12 group-hover:bg-[#D4AF37] z-10">
-                        <Target className="size-6 text-[#D4AF37] group-hover:text-white transition-colors duration-300" />
-                      </div>
-                      <h4 className="text-[14px] font-black text-[#082F63] mb-2 z-10 relative">
-                        {lang === "mr" ? "आमचे ध्येय" : "Our Mission"}
-                      </h4>
-                      <p className="text-[11px] font-semibold text-gray-500 leading-snug z-10 relative">
-                        {lang === "mr" ? "प्रत्येकाला रोजगाराची योग्य संधी मिळवून देणे." : "To provide the right employment opportunity to everyone."}
-                      </p>
-                    </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {companyPillars.map((pillar) => {
+                      const IconComponent = PILLAR_ICONS[pillar.iconName] || Target;
+                      const title = pillar.title;
+                      const desc = pillar.description;
 
-                    {/* Vision */}
-                    <div className="group bg-white rounded-2xl p-5 shadow-[0_4px_20px_rgb(0,0,0,0.06)] border border-gray-100 flex flex-col items-center text-center transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_15px_30px_rgba(212,175,55,0.15)] hover:border-[#D4AF37]/40 relative overflow-hidden">
-                      <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                      <div className="size-12 rounded-full border-2 border-[#D4AF37] flex items-center justify-center mb-4 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-12 group-hover:bg-[#D4AF37] z-10">
-                        <Eye className="size-6 text-[#D4AF37] group-hover:text-white transition-colors duration-300" />
-                      </div>
-                      <h4 className="text-[14px] font-black text-[#082F63] mb-2 z-10 relative">
-                        {lang === "mr" ? "आमचे व्हिजन" : "Our Vision"}
-                      </h4>
-                      <p className="text-[11px] font-semibold text-gray-500 leading-snug z-10 relative">
-                        {lang === "mr" ? "भारतातील सर्वात विश्वासार्ह रोजगार मंच बनणे." : "To become the most trusted employment portal in India."}
-                      </p>
-                    </div>
-
-                    {/* Values */}
-                    <div className="group bg-white rounded-2xl p-5 shadow-[0_4px_20px_rgb(0,0,0,0.06)] border border-gray-100 flex flex-col items-center text-center transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_15px_30px_rgba(212,175,55,0.15)] hover:border-[#D4AF37]/40 relative overflow-hidden">
-                      <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                      <div className="size-12 rounded-full border-2 border-[#D4AF37] flex items-center justify-center mb-4 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-12 group-hover:bg-[#D4AF37] z-10">
-                        <Users className="size-6 text-[#D4AF37] group-hover:text-white transition-colors duration-300" />
-                      </div>
-                      <h4 className="text-[14px] font-black text-[#082F63] mb-2 z-10 relative">
-                        {lang === "mr" ? "आमची मूल्ये" : "Our Values"}
-                      </h4>
-                      <p className="text-[11px] font-semibold text-gray-500 leading-snug z-10 relative">
-                        {lang === "mr" ? "विश्वास, पारदर्शकता, गुणवत्ता आणि निरंतर सेवा." : "Trust, transparency, quality, and consistent service."}
-                      </p>
-                    </div>
-
-                    {/* Belief */}
-                    <div className="group bg-white rounded-2xl p-5 shadow-[0_4px_20px_rgb(0,0,0,0.06)] border border-gray-100 flex flex-col items-center text-center transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_15px_30px_rgba(212,175,55,0.15)] hover:border-[#D4AF37]/40 relative overflow-hidden">
-                      <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                      <div className="size-12 rounded-full border-2 border-[#D4AF37] flex items-center justify-center mb-4 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-12 group-hover:bg-[#D4AF37] z-10">
-                        <Handshake className="size-6 text-[#D4AF37] group-hover:text-white transition-colors duration-300" />
-                      </div>
-                      <h4 className="text-[14px] font-black text-[#082F63] mb-2 z-10 relative">
-                        {lang === "mr" ? "आमचा विश्वास" : "Our Belief"}
-                      </h4>
-                      <p className="text-[11px] font-semibold text-gray-500 leading-snug z-10 relative">
-                        {lang === "mr" ? (
-                          <>
-                            योग्य व्यक्ती<br />
-                            योग्य काम<br />
-                            योग्य संधी
-                          </>
-                        ) : (
-                          <>
-                            Right Person<br />
-                            Right Job<br />
-                            Right Opportunity
-                          </>
-                        )}
-                      </p>
-                    </div>
+                      return (
+                        <div
+                          key={pillar.id || pillar.title}
+                          className="group bg-white rounded-2xl p-5 shadow-[0_4px_20px_rgb(0,0,0,0.06)] border border-gray-100 flex flex-col items-center text-center transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_15px_30px_rgba(212,175,55,0.15)] hover:border-[#D4AF37]/40 relative overflow-hidden"
+                        >
+                          <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                          <div className="size-12 rounded-full border-2 border-[#D4AF37] flex items-center justify-center mb-4 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-12 group-hover:bg-[#D4AF37] z-10">
+                            <IconComponent className="size-6 text-[#D4AF37] group-hover:text-white transition-colors duration-300" />
+                          </div>
+                          <h4 className="text-[14px] font-black text-[#082F63] mb-2 z-10 relative">
+                            {title}
+                          </h4>
+                          <p className="text-[11px] font-semibold text-gray-500 leading-snug z-10 relative whitespace-pre-line">
+                            {desc}
+                          </p>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -582,7 +647,7 @@ function LandingGatewayPage() {
                   return (
                     <div
                       key={`${catData.id || i}-${i}`}
-                      onClick={() => navigate({ to: '/jobs', search: { category: catData.id } })}
+                      onClick={() => navigate({ to: '/auth', search: { mode: 'login', role: 'worker' } })}
                       className={`group relative shrink-0 w-[220px] sm:w-[250px] h-[100px] sm:h-[110px] rounded-[1.5rem] border border-white/60 bg-white/40 backdrop-blur-md p-4 flex items-center justify-center gap-4 cursor-pointer transition-all duration-500 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgba(212,175,55,0.15)] hover:-translate-y-2 hover:scale-[1.03] overflow-hidden`}
                     >
                       {/* Animated Border Gradient on Hover */}

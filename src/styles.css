@@ -218,6 +218,10 @@ input[type="number"] {
   animation: marquee 30s linear infinite;
 }
 
+.animate-marquee-slow:hover {
+  animation-play-state: paused;
+}
+
 
 @media (prefers-reduced-motion: reduce) {
 
