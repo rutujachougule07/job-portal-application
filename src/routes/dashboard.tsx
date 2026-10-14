@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { dataStore, JobSeekerProfile } from "@/lib/data-store";
+import { uploadFileToFirebaseStorage } from "@/lib/storage-service";
 import {
   Briefcase,
   Bookmark,
@@ -562,26 +563,37 @@ function UserProfileSection({ user }: { user: any }) {
     }));
   };
 
-  const handlePhotoUploadInProfile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUploadInProfile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
         toast.error("Photo size should be less than 5MB");
         return;
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const photoUrl = reader.result as string;
-        const updated = { ...profile, profilePhoto: photoUrl };
+      const tId = toast.loading("Uploading photo to Firebase Storage...");
+      try {
+        const { downloadUrl, isFirebaseStorage } = await uploadFileToFirebaseStorage(
+          file,
+          "profile-photos",
+          `${user.id}_profile_${file.name}`
+        );
+        const updated = { ...profile, profilePhoto: downloadUrl };
         setProfile(updated);
         dataStore.saveJobSeekerProfile(updated);
-        toast.success("Profile photo updated successfully!");
-      };
-      reader.readAsDataURL(file);
+        toast.dismiss(tId);
+        toast.success(
+          isFirebaseStorage
+            ? "✅ Profile photo uploaded to Firebase Storage!"
+            : "Profile photo updated successfully!"
+        );
+      } catch (err) {
+        toast.dismiss(tId);
+        toast.error("Failed to upload photo. Please try again.");
+      }
     }
   };
 
-  const handleResumeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 10 * 1024 * 1024) {
@@ -589,19 +601,30 @@ function UserProfileSection({ user }: { user: any }) {
         return;
       }
       const fileName = file.name;
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const fileDataUrl = reader.result as string;
+      const tId = toast.loading(`Uploading resume "${fileName}" to Firebase Storage...`);
+      try {
+        const { downloadUrl, isFirebaseStorage } = await uploadFileToFirebaseStorage(
+          file,
+          "resumes",
+          `${user.id}_resume_${fileName}`
+        );
         const updated = {
           ...profile,
-          resume: fileDataUrl,
+          resume: downloadUrl,
           resumeName: fileName
         };
         setProfile(updated);
         dataStore.saveJobSeekerProfile(updated);
-        toast.success(`Resume "${fileName}" uploaded successfully!`);
-      };
-      reader.readAsDataURL(file);
+        toast.dismiss(tId);
+        toast.success(
+          isFirebaseStorage
+            ? `✅ Resume "${fileName}" uploaded to Firebase Storage!`
+            : `Resume "${fileName}" uploaded successfully!`
+        );
+      } catch (err) {
+        toast.dismiss(tId);
+        toast.error("Failed to upload resume. Please try again.");
+      }
     }
   };
 

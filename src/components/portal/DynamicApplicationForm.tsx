@@ -15,8 +15,11 @@ import {
   HardHat,
   Wrench,
   Sprout,
+  Loader2,
 } from "lucide-react";
 import { groupFieldsBySection } from "@/lib/applicationConfig";
+import { uploadFileToFirebaseStorage } from "@/lib/storage-service";
+import { toast } from "sonner";
 
 export const DynamicApplicationForm = ({
   appConfig,
@@ -35,10 +38,38 @@ export const DynamicApplicationForm = ({
   lang: string;
   category: string;
 }) => {
+  const [uploadingField, setUploadingField] = React.useState<string | null>(null);
+
   const handleFieldChange = (key: string, val: any) =>
     setFieldValues((p) => ({ ...p, [key]: val }));
   const handleCustomChange = (id: string, val: any) =>
     setCustomAnswers((p) => ({ ...p, [id]: val }));
+
+  const handleFileUpload = async (fieldKey: string, file: File | undefined) => {
+    if (!file) return;
+    setUploadingField(fieldKey);
+    const tId = toast.loading(`Uploading "${file.name}" to Firebase Storage...`);
+    try {
+      const { downloadUrl, isFirebaseStorage } = await uploadFileToFirebaseStorage(
+        file,
+        "application-documents",
+        `app_${fieldKey}_${Date.now()}_${file.name}`
+      );
+      handleFieldChange(fieldKey, downloadUrl);
+      handleFieldChange(`${fieldKey}_name`, file.name);
+      toast.dismiss(tId);
+      toast.success(
+        isFirebaseStorage
+          ? `✅ "${file.name}" uploaded to Firebase Storage!`
+          : `✓ "${file.name}" attached successfully!`
+      );
+    } catch (err) {
+      toast.dismiss(tId);
+      toast.error("Failed to upload file. Please try again.");
+    } finally {
+      setUploadingField(null);
+    }
+  };
 
   const catStr = (category || "").toLowerCase();
 
@@ -563,7 +594,9 @@ export const DynamicApplicationForm = ({
                 { key: "resume", label: "Resume / CV (Optional)", accept: ".pdf,.doc,.docx" },
                 { key: "expCert", label: "Experience Certificate (If any)", accept: ".pdf,.jpg,.png" },
               ].map((doc) => {
-                const fileName = fieldValues[doc.key];
+                const fileVal = fieldValues[doc.key];
+                const fileName = fieldValues[`${doc.key}_name`] || (typeof fileVal === "string" && !fileVal.startsWith("http") && !fileVal.startsWith("data:") ? fileVal : (fileVal ? "Attached Document" : ""));
+                const isUploading = uploadingField === doc.key;
                 return (
                   <div key={doc.key} className="space-y-1">
                     <span className="block text-[11px] font-bold text-[#5B6B7F]">
@@ -571,14 +604,18 @@ export const DynamicApplicationForm = ({
                     </span>
                     <div
                       className={`border border-dashed ${
-                        fileName
+                        fileName || fileVal
                           ? "border-emerald-500 bg-emerald-50"
                           : "border-[#DCE5F0] hover:border-[#063B78] hover:bg-[#F5F8FC]"
                       } rounded-lg p-2.5 flex items-center justify-between text-center transition-colors relative h-12`}
                     >
-                      {fileName ? (
+                      {isUploading ? (
+                        <span className="text-xs font-bold text-blue-600 flex items-center gap-1.5 animate-pulse">
+                          <Loader2 className="size-3.5 animate-spin text-blue-600" /> Uploading to Storage...
+                        </span>
+                      ) : (fileName || fileVal) ? (
                         <span className="text-xs font-black text-emerald-700 truncate">
-                          ✓ {fileName}
+                          ✓ {fileName || "Document Attached"}
                         </span>
                       ) : (
                         <span className="text-[11px] font-semibold text-[#5B6B7F] flex items-center gap-1">
@@ -588,8 +625,9 @@ export const DynamicApplicationForm = ({
                       <input
                         type="file"
                         accept={doc.accept}
-                        onChange={(e) => handleFieldChange(doc.key, e.target.files?.[0]?.name)}
-                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                        disabled={isUploading}
+                        onChange={(e) => handleFileUpload(doc.key, e.target.files?.[0])}
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full disabled:cursor-not-allowed"
                       />
                     </div>
                   </div>
@@ -1626,7 +1664,9 @@ export const DynamicApplicationForm = ({
               { key: "passportSizePhoto", label: "Passport Size Photo", req: false, accept: ".jpg,.png" },
               { key: "medicalRegistrationCertificate", label: "Medical Registration Certificate", req: false, accept: ".pdf,.jpg,.png" },
             ].map((doc) => {
-              const fileName = fieldValues[doc.key];
+              const fileVal = fieldValues[doc.key];
+              const fileName = fieldValues[`${doc.key}_name`] || (typeof fileVal === "string" && !fileVal.startsWith("http") && !fileVal.startsWith("data:") ? fileVal : (fileVal ? "Attached Document" : ""));
+              const isUploading = uploadingField === doc.key;
               return (
                 <div key={doc.key} className="space-y-1.5">
                   <label className="block text-xs font-extrabold text-[#10233F]">
@@ -1634,18 +1674,22 @@ export const DynamicApplicationForm = ({
                   </label>
                   <div
                     className={`border-2 border-dashed ${
-                      fileName
+                      fileName || fileVal
                         ? "border-emerald-500 bg-emerald-50"
                         : "border-[#DCE5F0] hover:border-[#063B78] hover:bg-[#F5F8FC]"
                     } rounded-xl p-3 flex flex-col items-center justify-center text-center transition-colors relative h-24`}
                   >
-                    {fileName ? (
+                    {isUploading ? (
+                      <span className="text-xs font-bold text-blue-600 flex items-center gap-1.5 animate-pulse">
+                        <Loader2 className="size-4 animate-spin text-blue-600" /> Uploading to Storage...
+                      </span>
+                    ) : (fileName || fileVal) ? (
                       <>
                         <div className="size-7 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 mb-1">
                           <CheckCircle2 className="size-4" />
                         </div>
                         <span className="text-xs font-black text-emerald-700 truncate max-w-[90%]">
-                          {fileName}
+                          {fileName || "Document Attached"}
                         </span>
                       </>
                     ) : (
@@ -1658,10 +1702,11 @@ export const DynamicApplicationForm = ({
                     )}
                     <input
                       type="file"
-                      required={doc.req && !fileName}
+                      required={doc.req && !fileName && !fileVal}
                       accept={doc.accept}
-                      onChange={(e) => handleFieldChange(doc.key, e.target.files?.[0]?.name)}
-                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                      disabled={isUploading}
+                      onChange={(e) => handleFileUpload(doc.key, e.target.files?.[0])}
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full disabled:cursor-not-allowed"
                     />
                   </div>
                 </div>
@@ -1798,7 +1843,9 @@ export const DynamicApplicationForm = ({
       fieldKey.toLowerCase().includes("proof") ||
       fieldKey.toLowerCase().includes("portfolio")
     ) {
-      const fileName = fieldValues[fieldKey];
+      const fileVal = fieldValues[fieldKey];
+      const fileName = fieldValues[`${fieldKey}_name`] || (typeof fileVal === "string" && !fileVal.startsWith("http") && !fileVal.startsWith("data:") ? fileVal : (fileVal ? "Attached Document" : ""));
+      const isUploading = uploadingField === fieldKey;
       return (
         <div key={fieldKey} className="space-y-1.5">
           <label className="block text-sm font-extrabold text-[#10233F]">
@@ -1809,18 +1856,23 @@ export const DynamicApplicationForm = ({
           </label>
           <div
             className={`border-2 border-dashed ${
-              fileName
+              fileName || fileVal
                 ? "border-emerald-500 bg-emerald-50"
                 : "border-[#DCE5F0] hover:border-[#125BB5] hover:bg-[#F5F8FC]"
             } rounded-xl p-4 flex flex-col items-center justify-center text-center transition-colors relative h-28`}
           >
-            {fileName ? (
+            {isUploading ? (
+              <div className="flex flex-col items-center justify-center gap-1.5">
+                <Loader2 className="size-6 animate-spin text-[#125BB5]" />
+                <span className="text-xs font-bold text-[#125BB5] animate-pulse">Uploading to Firebase Storage...</span>
+              </div>
+            ) : (fileName || fileVal) ? (
               <>
                 <div className="size-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 mb-2">
                   <CheckCircle2 className="size-5" />
                 </div>
                 <span className="text-xs font-black text-emerald-700 truncate max-w-[90%]">
-                  {fileName}
+                  {fileName || "Document Attached"}
                 </span>
                 <span className="text-[10px] font-bold text-emerald-600/70 mt-0.5">
                   Click to change file
@@ -1845,9 +1897,10 @@ export const DynamicApplicationForm = ({
             )}
             <input
               type="file"
-              required={isReq && !fileName}
-              onChange={(e) => handleFieldChange(fieldKey, e.target.files?.[0]?.name)}
-              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+              required={isReq && !fileName && !fileVal}
+              disabled={isUploading}
+              onChange={(e) => handleFileUpload(fieldKey, e.target.files?.[0])}
+              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full disabled:cursor-not-allowed"
               title={fileName || "Upload file"}
             />
           </div>

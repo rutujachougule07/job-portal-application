@@ -39,6 +39,8 @@ export type Job = {
   id: string;
   title: string;
   company: string;
+  employerId?: string;
+  employerName?: string;
   location: string;
   salary: string;
   experience: string;
@@ -375,6 +377,9 @@ export function JobCard({
     }
 
     try {
+      const existingProfile = seekerId ? dataStore.getJobSeekerProfile(seekerId) : null;
+      const finalResume = fieldValues['resume'] || existingProfile?.resume || `${seekerName.replaceAll(" ", "_")}_Resume.pdf`;
+
       dataStore.createApplication({
         jobId: job.id,
         employerId: job.company,
@@ -386,7 +391,7 @@ export function JobCard({
         companyName: job.company,
         location: job.location,
         salary: job.salary,
-        resume: fieldValues['resume'] || `${seekerName.replaceAll(" ", "_")}_Resume.pdf`,
+        resume: finalResume,
         fieldValues,
         customAnswers,
         category: job.category
@@ -515,6 +520,16 @@ export function JobCard({
               </span>
               <ExternalLink className="size-3 text-[#125BB5] shrink-0" />
             </a>
+
+            {/* Job Posted as Employer Display */}
+            {((job as any).employerName || (job as any).employerId) && (
+              <div className="mt-0.5 flex items-center gap-1 text-[11px] font-semibold text-[#5B6B7F]">
+                <span>{lang === "mr" ? "जॉब पोस्टकर्ता:" : "Job Posted as:"}</span>
+                <span className="font-bold text-[#063B78] truncate max-w-[170px]">
+                  {(job as any).employerName || dataStore.findRegisteredAccount((job as any).employerId)?.fullName || (job as any).employerId || job.company}
+                </span>
+              </div>
+            )}
 
             <div className="mt-1 flex items-center gap-2 text-xs font-semibold text-[#5B6B7F]">
               <button

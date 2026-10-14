@@ -47,7 +47,7 @@ const en = {
   userLogin: "Worker Login",
   employeeLogin: "Employee Login",
   seekerLogin: "Seeker Login",
-  adminLogin: "Employer Login",
+  adminLogin: "Job Poster Login",
   register: "Register",
   logout: "Logout",
 
@@ -370,7 +370,7 @@ const partial: Record<string, Partial<Record<TranslationKeys, string>>> = {
     userLogin: "कामगार लॉगिन",
     employeeLogin: "कर्मचारी (Employee) लॉगिन",
     seekerLogin: "नोकरी शोधणारे लॉगिन",
-    adminLogin: "कंपनी / मालक लॉगिन",
+    adminLogin: "जॉब पोस्टर लॉगिन",
     register: "रजिस्टर",
     logout: "लॉगआउट",
 
@@ -683,7 +683,7 @@ const partial: Record<string, Partial<Record<TranslationKeys, string>>> = {
     userLogin: "यूजर लॉगिन",
     employeeLogin: "कर्मचारी लॉगिन",
     seekerLogin: "नौकरी खोजने वाले लॉगिन",
-    adminLogin: "कंपनी / मालक लॉगिन",
+    adminLogin: "जॉब पोस्टर लॉगिन",
     register: "पंजीकरण करें",
     logout: "लॉगआउट",
 

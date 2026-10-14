@@ -26,6 +26,7 @@ import { Label } from "@/components/ui/label";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 import { dataStore, type EmployerWorker } from "@/lib/data-store";
+import { uploadFileToFirebaseStorage, uploadDataUrlToFirebaseStorage } from "@/lib/storage-service";
 
 const searchSchema = z.object({
   mode: z.string().optional().catch("login"),
@@ -123,12 +124,23 @@ function AuthPage() {
     }
   };
 
-  const confirmCapturedPhoto = () => {
+  const confirmCapturedPhoto = async () => {
     if (tempCaptured) {
-      setProfilePhoto(tempCaptured);
-      toast.success(lang === "mr" ? "फोटो कॅमेऱ्यातून यशस्वीरीत्या घेतला!" : "Photo captured successfully!");
+      stopCamera();
+      const tId = toast.loading("Uploading photo to Firebase Storage...");
+      try {
+        const res = await uploadDataUrlToFirebaseStorage(tempCaptured, "profile-photos", `cam_${Date.now()}.jpg`);
+        setProfilePhoto(res.downloadUrl);
+        toast.dismiss(tId);
+        toast.success(lang === "mr" ? "फोटो कॅमेऱ्यातून यशस्वीरीत्या घेतला!" : "Photo captured & uploaded successfully!");
+      } catch {
+        toast.dismiss(tId);
+        setProfilePhoto(tempCaptured);
+        toast.success(lang === "mr" ? "फोटो कॅमेऱ्यातून घेतला!" : "Photo captured successfully!");
+      }
+    } else {
+      stopCamera();
     }
-    stopCamera();
   };
 
   // Worker registration extra fields
@@ -144,18 +156,23 @@ function AuthPage() {
   const [serverOtp, setServerOtp] = useState("");
   const [inputOtp, setInputOtp] = useState("");
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
         toast.error("Photo size should be less than 5MB");
         return;
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfilePhoto(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      const tId = toast.loading("Uploading photo to Firebase Storage...");
+      try {
+        const res = await uploadFileToFirebaseStorage(file, "profile-photos", `${Date.now()}_${file.name}`);
+        setProfilePhoto(res.downloadUrl);
+        toast.dismiss(tId);
+        toast.success(res.isFirebaseStorage ? "✅ Photo uploaded to Firebase Storage!" : "✓ Photo attached!");
+      } catch (err) {
+        toast.dismiss(tId);
+        toast.error("Failed to upload photo");
+      }
     }
   };
 
@@ -245,6 +262,16 @@ function AuthPage() {
         const credential = await createUserWithEmailAndPassword(auth, finalEmail, password);
         const uid = credential.user.uid;
 
+        let finalPhoto = profilePhoto || "";
+        if (finalPhoto && finalPhoto.startsWith("data:")) {
+          try {
+            const res = await uploadDataUrlToFirebaseStorage(finalPhoto, "profile-photos", `${uid}_profile.jpg`);
+            finalPhoto = res.downloadUrl;
+          } catch (e) {
+            console.warn("Storage upload fallback", e);
+          }
+        }
+
         const userObj = {
           id: uid,
           email: finalEmail,
@@ -252,7 +279,7 @@ function AuthPage() {
           role: role === "admin" ? "employer" : role,
           fullName: nameString,
           mobile: userMobile || "",
-          profilePhoto: profilePhoto || "",
+          profilePhoto: finalPhoto,
         };
 
         // Save to Firestore
@@ -529,10 +556,10 @@ function AuthPage() {
           <h1 className="text-lg sm:text-xl font-black text-[#0A3B7B] tracking-tight leading-tight">
             {role === "admin"
               ? mode === "register"
-                ? "Employer / Admin Registration"
+                ? "Job Poster Registration"
                 : mode === "forgot"
                   ? "Reset Password"
-                  : "Employer / Admin Login"
+                  : "Job Poster Login"
               : role === "employee"
                 ? "Employee Login"
               : mode === "register"

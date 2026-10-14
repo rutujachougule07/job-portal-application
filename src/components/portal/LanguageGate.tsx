@@ -1,22 +1,45 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, Building2, Check, Globe2, ShieldCheck, UserRound, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Building2, Check, Globe2, ShieldCheck, UserRound, Sparkles, X } from "lucide-react";
 import { languages, useI18n, type LanguageCode } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { LogoIcon } from "@/components/portal/Brand";
 import { toast } from "sonner";
 
-let hasShownGateThisSession = false;
+function isPageReload(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const navEntries = window.performance?.getEntriesByType?.("navigation");
+    if (navEntries && navEntries.length > 0) {
+      return (navEntries[0] as PerformanceNavigationTiming).type === "reload";
+    }
+    return (window.performance as any)?.navigation?.type === 1;
+  } catch {
+    return false;
+  }
+}
 
 export function LanguageGate() {
   const { lang, setLang, t } = useI18n();
   const navigate = useNavigate();
   const [open, setOpen] = useState(() => {
-    if (typeof window !== "undefined" && window.location.hash === "#main") {
-      hasShownGateThisSession = true;
-      return false;
-    }
-    if (!hasShownGateThisSession) {
+    if (typeof window !== "undefined") {
+      const hash = window.location.hash;
+      if (hash === "#role" || hash === "#language") {
+        return true;
+      }
+      if (hash === "#main") {
+        return false;
+      }
+      // If the user refreshed the page (F5 / reload), keep them on the landing page
+      if (isPageReload()) {
+        return false;
+      }
+      // If user already dismissed or finished the gate in this session, keep closed
+      if (window.sessionStorage.getItem("karyam-gate-dismissed") === "true") {
+        return false;
+      }
+      // On initial link open / first visit: open language gate
       return true;
     }
     return false;
@@ -42,11 +65,11 @@ export function LanguageGate() {
       if (hash === "role") {
         setOpen(true);
         setStep("role");
-      } else if (hash === "main") {
-        setOpen(false);
       } else if (hash === "language") {
         setOpen(true);
         setStep("language");
+      } else if (hash === "main") {
+        setOpen(false);
       }
     }
   }, [location.hash, location.pathname]);
@@ -54,7 +77,7 @@ export function LanguageGate() {
   useEffect(() => {
     const handleOpen = (e: Event) => {
       const customEvent = e as CustomEvent<{ step?: "language" | "role" }>;
-      const targetStep = customEvent?.detail?.step || "role";
+      const targetStep = customEvent?.detail?.step || "language";
       setStep(targetStep);
       setOpen(true);
     };
@@ -95,12 +118,12 @@ export function LanguageGate() {
 
   const handleSelectRole = (role: "user" | "admin") => {
     if (typeof window !== "undefined") {
+      window.sessionStorage.setItem("karyam-gate-dismissed", "true");
       window.localStorage.setItem("realjob-role", role);
       window.localStorage.setItem("realjob-gate-done", "true");
       window.localStorage.setItem("karyam-onboarding-done", "true");
       window.dispatchEvent(new Event("realjob-auth-change"));
     }
-    hasShownGateThisSession = true;
     setOpen(false);
     if (typeof window !== "undefined") {
       window.scrollTo({ top: 0, behavior: 'instant' });
@@ -135,6 +158,22 @@ export function LanguageGate() {
 
       <div className="flex min-h-full items-center justify-center p-3 sm:p-6">
         <div className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl border border-white/40 overflow-hidden p-6 sm:p-10 transition-all duration-300">
+
+        {/* Close Button on Top Right */}
+        <button
+          type="button"
+          onClick={() => {
+            setOpen(false);
+            if (typeof window !== "undefined") {
+              window.sessionStorage.setItem("karyam-gate-dismissed", "true");
+              window.localStorage.setItem("realjob-gate-done", "true");
+            }
+          }}
+          className="absolute top-4 sm:top-6 right-4 sm:right-6 z-20 text-gray-400 hover:text-[#063B78] hover:bg-gray-100 rounded-full h-10 w-10 flex items-center justify-center transition-colors cursor-pointer"
+          title="Close"
+        >
+          <X className="size-5" />
+        </button>
 
         {/* Header Branding & Progress Bar */}
         <div className="flex flex-col items-center text-center mb-3 sm:mb-4">

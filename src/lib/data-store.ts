@@ -56,6 +56,7 @@ export type ApprovalStatus = "pending" | "approved" | "rejected";
 export type JobRecord = {
   id: string;
   employerId: string;
+  employerName?: string;
   title: string;
   company: string;
   category: string;
@@ -240,6 +241,9 @@ export type EmployerWorker = {
   isDeleted?: boolean;
   workShiftStart?: string;
   workShiftEnd?: string;
+  dailyWorkingHours?: number;
+  overtimeRate?: number;
+  overtimeRateMode?: "auto" | "manual";
   customFields?: Array<{ label: string; value: string }>;
   pin?: string;
   attendanceMode?: "punch" | "manual";
@@ -255,6 +259,7 @@ export type DailyAttendanceRecord = {
   date: string;
   status: "Present" | "HalfDay" | "Absent" | "Overtime";
   overtimeHours?: number;
+  overtimePay?: number;
   punchInTime?: string;
   punchOutTime?: string;
   punchInLocation?: { lat: number; lng: number };
@@ -263,6 +268,61 @@ export type DailyAttendanceRecord = {
   punchLog?: Array<{ type: "in" | "out"; time: string; location: { lat: number; lng: number } }>;
   updatedAt: string;
 };
+
+export type SubAdminPermission =
+  | "job-approvals"
+  | "users-directory"
+  | "job-applications"
+  | "packages"
+  | "landing-page";
+
+export type SubAdmin = {
+  id: string;
+  fullName: string;
+  username?: string;
+  email: string;
+  mobile: string;
+  password?: string;
+  role: "subadmin";
+  designation: string;
+  permissions: SubAdminPermission[];
+  status: "active" | "inactive";
+  createdBy: string;
+  createdAt: string;
+  updatedAt?: string;
+  lastLogin?: string;
+};
+
+const INITIAL_SUBADMINS: SubAdmin[] = [
+  {
+    id: "subadmin_demo_1",
+    fullName: "Rahul Patil",
+    username: "rahul123",
+    email: "rahul.subadmin@realjob.com",
+    mobile: "9823456789",
+    password: "subadmin123",
+    role: "subadmin",
+    designation: "Operations & Verification Admin",
+    permissions: ["job-approvals", "users-directory", "job-applications"],
+    status: "active",
+    createdBy: "superadmin",
+    createdAt: "2026-03-01T10:00:00.000Z",
+  },
+  {
+    id: "subadmin_demo_2",
+    fullName: "Pooja Deshmukh",
+    username: "pooja123",
+    email: "pooja.subadmin@realjob.com",
+    mobile: "9876543210",
+    password: "subadmin123",
+    role: "subadmin",
+    designation: "Content & Portal Moderator",
+    permissions: ["landing-page", "job-applications"],
+    status: "active",
+    createdBy: "superadmin",
+    createdAt: "2026-03-15T14:30:00.000Z",
+  }
+];
 
 export type RegisteredUser = {
   id: string;
@@ -308,6 +368,7 @@ export class DataStoreManager {
     PACKAGES: "realjob_db_packages",
     EMP_WORKERS: "realjob_db_emp_workers",
     ATTENDANCE: "realjob_db_attendance",
+    SUBADMINS: "realjob_db_subadmins",
   };
 
   constructor() {
@@ -344,6 +405,9 @@ export class DataStoreManager {
     }
     if (!localStorage.getItem(this.STORAGE_KEYS.ATTENDANCE)) {
       localStorage.setItem(this.STORAGE_KEYS.ATTENDANCE, JSON.stringify([]));
+    }
+    if (!localStorage.getItem(this.STORAGE_KEYS.SUBADMINS)) {
+      localStorage.setItem(this.STORAGE_KEYS.SUBADMINS, JSON.stringify(INITIAL_SUBADMINS));
     }
     
     // Bidirectional sync with Firebase
@@ -389,19 +453,63 @@ export class DataStoreManager {
       }
 
       if (!usersSnap.empty) {
-        const fbUsers = usersSnap.docs.map(d => d.data() as RegisteredUser);
-        const localUsers: RegisteredUser[] = JSON.parse(localStorage.getItem("realjob_db_registered_users") || "[]");
-        const map = new Map<string, RegisteredUser>();
-        fbUsers.forEach(u => {
-          if (u.id) map.set(u.id, u);
-          else if (u.email) map.set(u.email.toLowerCase(), u);
-        });
-        localUsers.forEach(u => {
-          if (u.id) map.set(u.id, u);
-          else if (u.email) map.set(u.email.toLowerCase(), u);
-        });
-        const merged = Array.from(map.values());
-        localStorage.setItem("realjob_db_registered_users", JSON.stringify(merged));
+        // Group docs by lowercase email (or mobile if email is absent)
+        const emailToDocs = new Map<string, Array<{ id: string; data: RegisteredUser }>>();
+        
+        for (const docItem of usersSnap.docs) {
+          const u = docItem.data() as RegisteredUser;
+          const email = (u.email || "").trim().toLowerCase();
+          const cleanMobile = (u.mobile || "").replace(/\D/g, "");
+          const key = email || (cleanMobile ? `${cleanMobile}@realjob.com` : docItem.id);
+          
+          if (!emailToDocs.has(key)) {
+            emailToDocs.set(key, []);
+          }
+          emailToDocs.get(key)!.push({ id: docItem.id, data: { ...u, id: u.id || docItem.id } });
+        }
+
+        const validUsers: RegisteredUser[] = [];
+
+        for (const [key, docList] of emailToDocs.entries()) {
+          if (docList.length === 1 && docList[0]) {
+            validUsers.push(docList[0].data);
+            continue;
+          }
+
+          // Multiple docs found for the same user -> Deduplicate!
+          // Priority 1: Auth UID document (document id does NOT start with 'usr-')
+          let primary = docList.find(d => !d.id.startsWith("usr-"));
+          if (!primary && docList.length > 0) {
+            // If all documents are usr- IDs, pick the latest one
+            primary = docList[docList.length - 1];
+          }
+
+          if (!primary) continue;
+
+          // Merge fields so no profile/mobile info is lost from duplicate entries
+          let mergedData = { ...primary.data };
+          for (const d of docList) {
+            if (d.id !== primary.id) {
+              mergedData = {
+                ...d.data,
+                ...mergedData,
+                id: primary.id,
+              };
+            }
+          }
+
+          validUsers.push(mergedData);
+
+          // Purge all duplicate documents from Firestore!
+          for (const d of docList) {
+            if (d.id !== primary.id) {
+              console.log(`[Deduplicate] Purging duplicate Firestore user document: '${d.id}' for '${key}'`);
+              deleteDoc(doc(db, "users", d.id)).catch(() => {});
+            }
+          }
+        }
+
+        localStorage.setItem("realjob_db_registered_users", JSON.stringify(validUsers));
       } else {
         const localUsers: RegisteredUser[] = JSON.parse(localStorage.getItem("realjob_db_registered_users") || "[]");
         for (const user of localUsers) {
@@ -487,7 +595,122 @@ export class DataStoreManager {
           await setDoc(doc(db, "attendance", a.id), a, { merge: true }).catch(() => {});
         }
       }
+
+      try {
+        const subadminsSnap = await getDocs(collection(db, "subadmins"));
+        if (!subadminsSnap.empty) {
+          const fbSub = subadminsSnap.docs.map(d => d.data());
+          localStorage.setItem(this.STORAGE_KEYS.SUBADMINS, JSON.stringify(fbSub));
+        } else {
+          const localSub: SubAdmin[] = JSON.parse(localStorage.getItem(this.STORAGE_KEYS.SUBADMINS) || "[]");
+          for (const s of localSub) {
+            await setDoc(doc(db, "subadmins", s.id), s);
+          }
+        }
+      } catch (e) {
+        // Fallback gracefully if collection not initialized
+      }
     });
+  }
+
+  // --- SUB-ADMIN MANAGEMENT ---
+  public getSubAdmins(): SubAdmin[] {
+    if (typeof window === "undefined") return INITIAL_SUBADMINS;
+    const raw = localStorage.getItem(this.STORAGE_KEYS.SUBADMINS);
+    if (!raw) return INITIAL_SUBADMINS;
+    try {
+      const list = JSON.parse(raw);
+      if (!Array.isArray(list) || list.length === 0) {
+        localStorage.setItem(this.STORAGE_KEYS.SUBADMINS, JSON.stringify(INITIAL_SUBADMINS));
+        return INITIAL_SUBADMINS;
+      }
+      return list;
+    } catch {
+      return INITIAL_SUBADMINS;
+    }
+  }
+
+  public findSubAdminByLogin(credential: string): SubAdmin | null {
+    if (!credential) return null;
+    const list = this.getSubAdmins();
+    const clean = credential.trim().toLowerCase();
+    return list.find(s => 
+      s.email.toLowerCase() === clean || 
+      (s.username && s.username.toLowerCase() === clean)
+    ) || null;
+  }
+
+  public addSubAdmin(data: {
+    fullName: string;
+    username?: string;
+    email: string;
+    mobile: string;
+    password?: string;
+    designation: string;
+    permissions: SubAdminPermission[];
+    status?: "active" | "inactive";
+    createdBy?: string;
+  }): SubAdmin {
+    const list = this.getSubAdmins();
+    const cleanEmail = data.email.trim().toLowerCase();
+    const cleanUsername = (data.username || cleanEmail.split("@")[0] || "subadmin").trim().toLowerCase().replace(/\s+/g, "_");
+    const newSub: SubAdmin = {
+      id: `subadmin_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      fullName: data.fullName.trim(),
+      username: cleanUsername,
+      email: cleanEmail,
+      mobile: data.mobile.trim(),
+      password: data.password || "subadmin123",
+      role: "subadmin",
+      designation: data.designation?.trim() || "Sub-Admin",
+      permissions: data.permissions && data.permissions.length > 0 
+        ? data.permissions 
+        : ["job-approvals", "users-directory", "job-applications"],
+      status: data.status || "active",
+      createdBy: data.createdBy || "superadmin",
+      createdAt: new Date().toISOString(),
+    };
+    list.unshift(newSub);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(this.STORAGE_KEYS.SUBADMINS, JSON.stringify(list));
+      fbSync(() => setDoc(doc(db, "subadmins", newSub.id), newSub));
+    }
+    return newSub;
+  }
+
+  public updateSubAdmin(id: string, updates: Partial<SubAdmin>): SubAdmin | null {
+    const list = this.getSubAdmins();
+    const idx = list.findIndex(s => s.id === id);
+    if (idx === -1) return null;
+    const updated: SubAdmin = {
+      ...list[idx],
+      ...updates,
+      updatedAt: new Date().toISOString()
+    } as SubAdmin;
+    list[idx] = updated;
+    if (typeof window !== "undefined") {
+      localStorage.setItem(this.STORAGE_KEYS.SUBADMINS, JSON.stringify(list));
+      fbSync(() => updateDoc(doc(db, "subadmins", id), updates));
+    }
+    return updated;
+  }
+
+  public deleteSubAdmin(id: string): boolean {
+    let list = this.getSubAdmins();
+    list = list.filter(s => s.id !== id);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(this.STORAGE_KEYS.SUBADMINS, JSON.stringify(list));
+      fbSync(() => deleteDoc(doc(db, "subadmins", id)));
+    }
+    return true;
+  }
+
+  public toggleSubAdminStatus(id: string): SubAdmin | null {
+    const list = this.getSubAdmins();
+    const target = list.find(s => s.id === id);
+    if (!target) return null;
+    const nextStatus = target.status === "active" ? "inactive" : "active";
+    return this.updateSubAdmin(id, { status: nextStatus });
   }
 
   /** Force-push all local data to Firebase (use from Admin panel) */
@@ -524,32 +747,44 @@ export class DataStoreManager {
     return this.getRegisteredUserAccounts();
   }
 
-  public registerAccount(user: { email: string; password?: string; mobile?: string; role: UserRole; fullName: string; profilePhoto?: string }): RegisteredUser {
+  public registerAccount(user: { id?: string; email: string; password?: string; mobile?: string; role: UserRole; fullName: string; profilePhoto?: string }): RegisteredUser {
     const list = this.getRegisteredUserAccounts();
     const cleanEmail = user.email.trim().toLowerCase();
-    const existingIndex = list.findIndex(u => u.email.toLowerCase() === cleanEmail);
+    const existingIndex = list.findIndex(u => (u.email && u.email.toLowerCase() === cleanEmail) || (user.id && u.id === user.id));
     const fallbackName = cleanEmail.split("@")[0] || "User";
     
+    const existing = existingIndex >= 0 ? list[existingIndex] : undefined;
+    // Canonical ID: prefer given user.id (e.g. Firebase Auth UID) -> existing.id -> generate usr- timestamp
+    const finalId = user.id || existing?.id || `usr-${Date.now()}`;
+
+    let oldIdToDelete: string | null = null;
+    if (existing && existing.id && existing.id !== finalId) {
+      oldIdToDelete = existing.id;
+    }
+
     const account: RegisteredUser = {
-      id: `usr-${Date.now()}`,
+      id: finalId,
       email: cleanEmail,
-      password: user.password || "",
-      mobile: user.mobile || "",
-      role: user.role,
-      fullName: user.fullName || fallbackName,
-      profilePhoto: user.profilePhoto || "",
-      createdAt: new Date().toISOString(),
+      password: user.password !== undefined ? user.password : (existing?.password || ""),
+      mobile: user.mobile !== undefined ? user.mobile : (existing?.mobile || ""),
+      role: user.role || existing?.role || "worker",
+      fullName: user.fullName || existing?.fullName || fallbackName,
+      profilePhoto: user.profilePhoto !== undefined ? user.profilePhoto : (existing?.profilePhoto || ""),
+      createdAt: existing?.createdAt || new Date().toISOString(),
     };
 
     if (existingIndex >= 0) {
-      list[existingIndex] = { ...list[existingIndex], ...account };
+      list[existingIndex] = account;
     } else {
       list.push(account);
     }
 
     if (typeof window !== "undefined") {
       localStorage.setItem("realjob_db_registered_users", JSON.stringify(list));
-      fbSync(() => setDoc(doc(db, "users", account.id), account));
+      if (oldIdToDelete) {
+        fbSync(() => deleteDoc(doc(db, "users", oldIdToDelete!)).catch(() => {}));
+      }
+      fbSync(() => setDoc(doc(db, "users", account.id), account, { merge: true }).catch(() => {}));
     }
     return account;
   }
@@ -562,12 +797,19 @@ export class DataStoreManager {
     }
 
     let updated: RegisteredUser;
-    if (index >= 0) {
-      updated = { ...list[index], ...updates } as RegisteredUser;
+    let oldIdToDelete: string | null = null;
+
+    if (index >= 0 && list[index]) {
+      const existing = list[index]!;
+      const newId = updates.id || userId || existing.id;
+      if (existing.id && existing.id !== newId) {
+        oldIdToDelete = existing.id;
+      }
+      updated = { ...existing, ...updates, id: newId } as RegisteredUser;
       list[index] = updated;
     } else {
       updated = {
-        id: userId || `usr-${Date.now()}`,
+        id: userId || updates.id || `usr-${Date.now()}`,
         email: updates.email || "",
         password: updates.password || "",
         mobile: updates.mobile || "",
@@ -582,7 +824,10 @@ export class DataStoreManager {
 
     if (typeof window !== "undefined") {
       localStorage.setItem("realjob_db_registered_users", JSON.stringify(list));
-      fbSync(() => setDoc(doc(db, "users", updated.id), updated, { merge: true }));
+      if (oldIdToDelete) {
+        fbSync(() => deleteDoc(doc(db, "users", oldIdToDelete!)).catch(() => {}));
+      }
+      fbSync(() => setDoc(doc(db, "users", updated.id), updated, { merge: true }).catch(() => {}));
       this.setCurrentUser(updated);
     }
     return updated;
@@ -931,6 +1176,10 @@ export class DataStoreManager {
   }
 
   // --- COMMON APPLICATION SYSTEM ---
+  public getApplications(): ApplicationRecord[] {
+    return this.getAllApplications();
+  }
+
   public getAllApplications(): ApplicationRecord[] {
     if (typeof window === "undefined") return [];
     const raw = localStorage.getItem(this.STORAGE_KEYS.APPLICATIONS);
@@ -1576,6 +1825,17 @@ export class DataStoreManager {
     }
   }
 
+  public getAllAttendance(): DailyAttendanceRecord[] {
+    if (typeof window === "undefined") return [];
+    const raw = localStorage.getItem(this.STORAGE_KEYS.ATTENDANCE);
+    if (!raw) return [];
+    try {
+      return JSON.parse(raw) as DailyAttendanceRecord[];
+    } catch {
+      return [];
+    }
+  }
+
   public getEmployerAttendance(employerId: string, date?: string): DailyAttendanceRecord[] {
     if (typeof window === "undefined") return [];
     const raw = localStorage.getItem(this.STORAGE_KEYS.ATTENDANCE);
@@ -1675,12 +1935,16 @@ export class DataStoreManager {
       punchInLocation?: { lat: number; lng: number };
       punchOutLocation?: { lat: number; lng: number };
     },
-    overtimeHours?: number
+    overtimeHoursOrExtra?: number | { overtimeHours?: number; overtimePay?: number },
+    extraDataParam?: { overtimeHours?: number; overtimePay?: number }
   ): DailyAttendanceRecord {
     const raw = typeof window !== "undefined" ? localStorage.getItem(this.STORAGE_KEYS.ATTENDANCE) : null;
     const all: DailyAttendanceRecord[] = raw ? JSON.parse(raw) : [];
     const recordId = `att-${workerId}-${date}`;
     const index = all.findIndex((a) => a.id === recordId || (a.workerId === workerId && a.date === date));
+
+    const extraData = typeof overtimeHoursOrExtra === "object" ? overtimeHoursOrExtra : extraDataParam;
+    const numericOtHours = typeof overtimeHoursOrExtra === "number" ? overtimeHoursOrExtra : extraData?.overtimeHours;
     
     let newRecord: DailyAttendanceRecord;
     
@@ -1698,14 +1962,16 @@ export class DataStoreManager {
       const updatedPunchLog = existing.punchLog ? [...existing.punchLog] : [];
       if (newPunchLogEntry) updatedPunchLog.unshift(newPunchLogEntry); // Keep newest at the top
       
-      const finalOtHours = overtimeHours !== undefined
-        ? overtimeHours
+      const finalOtHours = numericOtHours !== undefined
+        ? numericOtHours
         : (status === "Overtime" ? (existing.overtimeHours || 2) : 0);
+      const finalOtPay = extraData?.overtimePay !== undefined ? extraData.overtimePay : existing.overtimePay;
 
       newRecord = {
         ...existing,
         status: status,
         overtimeHours: finalOtHours,
+        ...(finalOtPay !== undefined ? { overtimePay: finalOtPay } : {}),
         punchLog: updatedPunchLog,
         updatedAt: new Date().toISOString(),
       };
@@ -1726,9 +1992,10 @@ export class DataStoreManager {
       }
       all[index] = newRecord;
     } else {
-      const finalOtHours = overtimeHours !== undefined
-        ? overtimeHours
+      const finalOtHours = numericOtHours !== undefined
+        ? numericOtHours
         : (status === "Overtime" ? 2 : 0);
+      const finalOtPay = extraData?.overtimePay !== undefined ? extraData.overtimePay : undefined;
 
       newRecord = {
         id: recordId,
@@ -1738,6 +2005,7 @@ export class DataStoreManager {
         date,
         status,
         overtimeHours: finalOtHours,
+        ...(finalOtPay !== undefined ? { overtimePay: finalOtPay } : {}),
         notes: notes || "",
         punchInTime: punchData?.punchInTime,
         punchOutTime: punchData?.punchOutTime,
@@ -1751,7 +2019,8 @@ export class DataStoreManager {
     
     if (typeof window !== "undefined") {
       localStorage.setItem(this.STORAGE_KEYS.ATTENDANCE, JSON.stringify(all));
-      fbSync(() => setDoc(doc(db, "attendance", newRecord.id), newRecord));
+      const cleanRecord = JSON.parse(JSON.stringify(newRecord));
+      fbSync(() => setDoc(doc(db, "attendance", newRecord.id), cleanRecord));
     }
     return newRecord;
   }
@@ -1802,7 +2071,8 @@ export class DataStoreManager {
         all.push(record);
       }
       savedRecords.push(record);
-      fbSync(() => setDoc(doc(db, "attendance", record.id), record));
+      const cleanRecord = JSON.parse(JSON.stringify(record));
+      fbSync(() => setDoc(doc(db, "attendance", record.id), cleanRecord));
     });
 
     if (typeof window !== "undefined") {
@@ -1830,7 +2100,302 @@ export class DataStoreManager {
       return false;
     }
   }
+
+  public removeAttendanceStatus(workerId: string, date: string): boolean {
+    return this.deleteAttendanceRecord(workerId, date);
+  }
+
+  public replyToApplication(applicationId: string, replyMessage: string): ApplicationRecord | null {
+    return this.updateApplicationReply(applicationId, replyMessage);
+  }
 }
 
 export const dataStore = new DataStoreManager();
+
+function escapeHtmlStr(str: string): string {
+  return (str || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+export async function openApplicationDocument(
+  app: Partial<ApplicationRecord>,
+  fieldKey: string = "resume",
+  rawValue: string = ""
+): Promise<void> {
+  if (typeof window === "undefined") return;
+
+  const kLower = (fieldKey || "resume").toLowerCase();
+  const fieldVals = (app.fieldValues || {}) as Record<string, any>;
+
+  // Determine display file name
+  let fileName =
+    rawValue && !rawValue.startsWith("data:")
+      ? rawValue.trim()
+      : app.resume && !app.resume.startsWith("data:")
+      ? app.resume.trim()
+      : `${(app.candidateName || "Candidate").replace(/\s+/g, "_")}_${fieldKey}.pdf`;
+
+  // Open target tab synchronously on user click so popup blocker never blocks it
+  const win = window.open("", "_blank");
+  if (!win) return;
+
+  win.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Opening ${escapeHtmlStr(fileName)}...</title>
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; background: #525659; color: #fff; display: flex; align-items: center; justify-content: center; height: 100vh; }
+  </style>
+</head>
+<body>
+  <div>Loading ${escapeHtmlStr(fileName)}...</div>
+</body>
+</html>`);
+
+  // 1. Try to locate base64 data URL or direct URL in application/profile state
+  let fileDataUrl = "";
+  if (typeof fieldVals[`_file_${fieldKey}`] === "string" && fieldVals[`_file_${fieldKey}`]) {
+    fileDataUrl = fieldVals[`_file_${fieldKey}`];
+  } else if (typeof fieldVals[`${fieldKey}DataUrl`] === "string" && fieldVals[`${fieldKey}DataUrl`]) {
+    fileDataUrl = fieldVals[`${fieldKey}DataUrl`];
+  } else if (
+    typeof rawValue === "string" &&
+    (rawValue.startsWith("data:") || rawValue.startsWith("http://") || rawValue.startsWith("https://") || rawValue.startsWith("blob:"))
+  ) {
+    fileDataUrl = rawValue;
+  } else if (kLower.includes("resume") || kLower.includes("cv")) {
+    if (
+      typeof app.resume === "string" &&
+      (app.resume.startsWith("data:") || app.resume.startsWith("http://") || app.resume.startsWith("https://"))
+    ) {
+      fileDataUrl = app.resume;
+    }
+    if (!fileDataUrl) {
+      const p1 = app.jobSeekerId ? dataStore.getJobSeekerProfile(app.jobSeekerId) : null;
+      const p2 = !p1 && app.candidateEmail ? dataStore.getJobSeekerProfile(app.candidateEmail) : null;
+      const prof = p1 || p2;
+      if (prof?.resume && (prof.resume.startsWith("data:") || prof.resume.startsWith("http"))) {
+        fileDataUrl = prof.resume;
+        if (prof.resumeName && !rawValue) fileName = prof.resumeName;
+      }
+    }
+    if (!fileDataUrl) {
+      try {
+        const allApps = dataStore.getAllApplications();
+        const other = allApps.find(
+          (oa) =>
+            oa.fieldValues?.[`_file_${fieldKey}`]?.startsWith("data:") &&
+            fileName &&
+            oa.fieldValues?.[fieldKey] === fileName
+        );
+        if (other?.fieldValues?.[`_file_${fieldKey}`]) {
+          fileDataUrl = other.fieldValues[`_file_${fieldKey}`] || "";
+        }
+      } catch {}
+    }
+  }
+
+  // 2. If direct external URL or blob URL, navigate immediately
+  if (
+    fileDataUrl.startsWith("http://") ||
+    fileDataUrl.startsWith("https://") ||
+    fileDataUrl.startsWith("blob:")
+  ) {
+    win.location.replace(fileDataUrl);
+    return;
+  }
+
+  // 3. Resolve actual file Blob (either from data: URL or from local server / uploads folder)
+  let fileBlob: Blob | null = null;
+  let mimeType = "";
+
+  if (fileDataUrl.startsWith("data:")) {
+    try {
+      const commaIdx = fileDataUrl.indexOf(",");
+      const header = commaIdx >= 0 ? fileDataUrl.slice(0, commaIdx) : "";
+      const base64Data = commaIdx >= 0 ? fileDataUrl.slice(commaIdx + 1) : "";
+      const mimeMatch = header.match(/data:([^;]+)/i);
+      mimeType = (mimeMatch && mimeMatch[1]) ? mimeMatch[1].toLowerCase() : "";
+      const binaryStr = atob(base64Data);
+      const bytes = new Uint8Array(binaryStr.length);
+      for (let i = 0; i < binaryStr.length; i++) {
+        bytes[i] = binaryStr.charCodeAt(i);
+      }
+      fileBlob = new Blob([bytes], { type: mimeType || "application/octet-stream" });
+    } catch (e) {
+      console.error("Failed decoding data URL:", e);
+    }
+  }
+
+  if (!fileBlob && fileName) {
+    try {
+      const res = await fetch(`/__local_file?name=${encodeURIComponent(fileName)}`);
+      if (res.ok) {
+        mimeType = (res.headers.get("content-type") || "").toLowerCase();
+        fileBlob = await res.blob();
+      } else {
+        const fallbackRes = await fetch(`/uploads/${encodeURIComponent(fileName)}`);
+        if (fallbackRes.ok) {
+          mimeType = (fallbackRes.headers.get("content-type") || "").toLowerCase();
+          fileBlob = await fallbackRes.blob();
+        }
+      }
+    } catch (e) {
+      console.warn("Local file fetch error:", e);
+    }
+  }
+
+  if (!fileBlob) {
+    win.document.open();
+    win.document.write(`<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>${escapeHtmlStr(fileName)}</title></head>
+<body style="font-family:system-ui,sans-serif;padding:40px;text-align:center;background:#F8FAFC;color:#10233F;">
+  <h2>File "${escapeHtmlStr(fileName)}" could not be found</h2>
+  <p style="color:#5B6B7F;margin-top:8px;">Please re-upload the file to view it.</p>
+</body>
+</html>`);
+    win.document.close();
+    return;
+  }
+
+  const isPdf = mimeType.includes("pdf") || /\.pdf$/i.test(fileName);
+  const isImage = mimeType.startsWith("image/") || /\.(png|jpe?g|gif|webp|svg)$/i.test(fileName);
+  const isDocx =
+    /\.docx$/i.test(fileName) ||
+    mimeType.includes("officedocument.wordprocessingml.document");
+
+  // 4. Native browser view for PDF and Images
+  if (isPdf || isImage) {
+    const typedBlob = new Blob([fileBlob], {
+      type: isPdf ? "application/pdf" : mimeType || "image/png",
+    });
+    const blobUrl = URL.createObjectURL(typedBlob);
+    win.location.replace(blobUrl);
+    return;
+  }
+
+  // 5. Exact Word (.docx) document rendering in the opened tab using docx-preview
+  if (isDocx) {
+    const downloadUrl = URL.createObjectURL(
+      new Blob([fileBlob], {
+        type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      })
+    );
+
+    win.document.open();
+    win.document.write(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${escapeHtmlStr(fileName)}</title>
+  <style id="docx-styles">
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      background: #525659;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    .viewer-toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: #323639;
+      color: #f1f1f1;
+      height: 48px;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+    }
+    .viewer-title {
+      font-size: 14px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .viewer-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .viewer-btn {
+      background: #8ab4f8;
+      color: #202124;
+      border: none;
+      border-radius: 4px;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .viewer-btn.secondary {
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+    }
+    #docx-container {
+      min-height: calc(100vh - 48px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 12px;
+    }
+    @media print {
+      body { background: #fff; }
+      .viewer-toolbar { display: none !important; }
+      #docx-container { padding: 0; }
+    }
+  </style>
+  <div id="docx-injected-styles"></div>
+</head>
+<body>
+  <div class="viewer-toolbar">
+    <div class="viewer-title">${escapeHtmlStr(fileName)}</div>
+    <div class="viewer-actions">
+      <a class="viewer-btn" href="${downloadUrl}" download="${escapeHtmlStr(fileName)}">⬇ Download</a>
+    </div>
+  </div>
+  <div id="docx-container"></div>
+</body>
+</html>`);
+    win.document.close();
+
+    try {
+      const { renderAsync } = await import("docx-preview");
+      const container = win.document.getElementById("docx-container");
+      const styleContainer = win.document.getElementById("docx-injected-styles") || undefined;
+      if (container) {
+        await renderAsync(fileBlob, container, styleContainer, {
+          inWrapper: true,
+          ignoreWidth: false,
+          ignoreHeight: false,
+          ignoreFonts: false,
+          breakPages: true,
+          useBase64URL: true,
+        });
+      }
+    } catch (err) {
+      console.error("docx-preview error:", err);
+      win.location.replace(downloadUrl);
+    }
+    return;
+  }
+
+  // 6. Any other file format (.doc, etc.) -> open/download blob directly
+  const blobUrl = URL.createObjectURL(fileBlob);
+  win.location.replace(blobUrl);
+}
 

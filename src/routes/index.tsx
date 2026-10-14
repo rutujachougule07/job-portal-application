@@ -44,6 +44,7 @@ import careerTeam from "@/assets/career-team.jpg";
 import { Brand } from "@/components/portal/Brand";
 import { LanguageGate } from "@/components/portal/LanguageGate";
 import { LoginDropdown } from "@/components/portal/LoginDropdown";
+import { LanguageSwitcher } from "@/components/portal/LanguageSwitcher";
 
 import { PublicFooter } from "@/components/portal/PublicFooter";
 import { Button } from "@/components/ui/button";
@@ -245,6 +246,7 @@ function LandingGatewayPage() {
           <Brand className="h-10 sm:h-12 md:h-14 shrink-0" />
 
           <div className="flex items-center gap-2 sm:gap-3">
+            <LanguageSwitcher />
             {currentUser ? (
               <div className="flex items-center gap-2">
                 <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#EBF1F8] border border-[#B8D3F2] text-xs font-black text-[#063B78]">
@@ -267,48 +269,7 @@ function LandingGatewayPage() {
                 </Button>
               </div>
             ) : (
-              <div className="flex items-center gap-2">
-                {/* Desktop view 3 inline buttons */}
-                <div className="hidden lg:flex items-center gap-2">
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="bg-white border-[#063B78] text-[#063B78] font-extrabold hover:bg-[#063B78] hover:text-white text-xs px-3 h-9 rounded-lg shadow-xs whitespace-nowrap"
-                  >
-                    <Link to="/auth" search={{ mode: "login", role: "worker" }}>
-                      <UserCheck className="size-4 mr-1.5" />
-                      {t("seekerLogin")}
-                    </Link>
-                  </Button>
-
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="bg-white border-emerald-600 text-emerald-700 font-extrabold hover:bg-emerald-600 hover:text-white text-xs px-3 h-9 rounded-lg shadow-xs whitespace-nowrap"
-                  >
-                    <Link to="/auth" search={{ mode: "login", role: "employee" }}>
-                      <Briefcase className="size-4 mr-1.5" />
-                      {t("employeeLogin")}
-                    </Link>
-                  </Button>
-
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="bg-white border-[#063B78] text-[#063B78] font-extrabold hover:bg-[#063B78] hover:text-white text-xs px-3 h-9 rounded-lg shadow-xs whitespace-nowrap"
-                  >
-                    <Link to="/auth" search={{ mode: "login", role: "admin" }}>
-                      <ShieldCheck className="size-4 mr-1.5 text-[#FFC400]" />
-                      {t("adminLogin")}
-                    </Link>
-                  </Button>
-                </div>
-
-                {/* Mobile / Compact Single Hoverable Dropdown Menu on Top Right */}
-                <div className="lg:hidden">
-                  <LoginDropdown />
-                </div>
-              </div>
+              <LoginDropdown />
             )}
           </div>
         </div>
@@ -339,7 +300,7 @@ function LandingGatewayPage() {
         </section>
 
         {/* METRICS & ADVANTAGES */}
-        <section className="relative z-20 pt-8 lg:pt-12 pb-4 lg:pb-8 bg-[#f8f9fa]">
+        <section className="relative z-20 pt-4 sm:pt-8 lg:pt-12 pb-2 sm:pb-3 lg:pb-6 bg-[#f8f9fa]">
           <div className="w-full px-4 sm:px-8 lg:px-12">
             <div className="grid grid-cols-2 md:grid-cols-4 lg:flex lg:flex-wrap lg:justify-between items-start sm:items-center gap-y-8 gap-x-2 sm:gap-4 bg-white rounded-[2rem] md:rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-gray-100 p-6 md:p-8 mx-auto w-full max-w-[1400px]">
 
@@ -388,7 +349,7 @@ function LandingGatewayPage() {
         </section>
 
         {/* ABOUT COMPANY */}
-        <section className="relative bg-[#f8f9fa] pt-20 pb-10 lg:pt-28 lg:pb-12 overflow-hidden">
+        <section className="relative bg-[#f8f9fa] pt-3 sm:pt-6 lg:pt-12 pb-10 lg:pb-12 overflow-hidden">
           <div className="relative z-10 mx-auto max-w-[1500px] px-4">
             <div className="bg-white rounded-[30px] border border-gray-100 shadow-[0_10px_40px_rgb(0,0,0,0.05)] overflow-hidden">
               <div className="grid grid-cols-1 lg:grid-cols-12">

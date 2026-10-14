@@ -287,6 +287,8 @@ function AdminDashboardPage() {
   const [calendarYear, setCalendarYear] = useState<number>(() => new Date().getFullYear());
   const [activeCalendarDate, setActiveCalendarDate] = useState<string | null>(null);
   const [customOtHoursInput, setCustomOtHoursInput] = useState<number>(2);
+  const [overtimeModalDate, setOvertimeModalDate] = useState<string | null>(null);
+  const [overtimeModalHours, setOvertimeModalHours] = useState<number>(3);
   const [showBulkFillSection, setShowBulkFillSection] = useState(false);
   const [bulkFillStatus, setBulkFillStatus] = useState<"Present" | "HalfDay" | "Absent" | "Overtime">("Present");
   const [bulkFillOtHours, setBulkFillOtHours] = useState<number>(2);
@@ -322,6 +324,8 @@ function AdminDashboardPage() {
   const [selectedSalaryYear, setSelectedSalaryYear] = useState<string>(() => {
     return new Date().getFullYear().toString();
   });
+  const [slipRangeStartDay, setSlipRangeStartDay] = useState<number>(10);
+  const [slipRangeEndDay, setSlipRangeEndDay] = useState<number>(20);
 
   const [workerForm, setWorkerForm] = useState({
     name: "",
@@ -668,33 +672,60 @@ function AdminDashboardPage() {
     return cleaned || cat;
 
   };
-  const getWorkerReportMetrics = (worker: EmployerWorker, period: "week" | "month" | "all") => {
+  const getWorkerReportMetrics = (
+    worker: EmployerWorker, 
+    period: "week" | "month" | "all",
+    targetMonthName?: string,
+    targetYearStr?: string,
+    customStartDate?: string,
+    customEndDate?: string
+  ) => {
     let startDate = "";
+    let endDate = "";
     const now = new Date();
-    const endDate = now.toISOString().split("T")[0];
 
-    if (period === "week") {
+    const activeEmpId = currentUser?.id || currentUser?.fullName || currentUser?.email || empIdentifier;
+
+    const monthMap: Record<string, number> = {
+      January: 0, February: 1, March: 2, April: 3,
+      May: 4, June: 5, July: 6, August: 7,
+      September: 8, October: 9, November: 10, December: 11
+    };
+
+    const effectiveMonthName = targetMonthName || selectedSalaryMonth || now.toLocaleDateString("en-US", { month: "long" });
+    const effectiveYearStr = targetYearStr || selectedSalaryYear || String(now.getFullYear());
+    const mIdx = monthMap[effectiveMonthName] !== undefined ? monthMap[effectiveMonthName] : now.getMonth();
+    const yVal = parseInt(effectiveYearStr, 10) || now.getFullYear();
+    const daysInTargetMonth = new Date(yVal, mIdx + 1, 0).getDate();
+
+    if (customStartDate && customEndDate) {
+      startDate = customStartDate;
+      endDate = customEndDate;
+    } else if (period === "week") {
       const d = new Date();
       d.setDate(d.getDate() - 6);
       startDate = d.toISOString().split("T")[0]!;
+      endDate = now.toISOString().split("T")[0]!;
     } else if (period === "month") {
-      const d = new Date(now.getFullYear(), now.getMonth(), 1);
-      startDate = d.toISOString().split("T")[0]!;
+      startDate = `${yVal}-${String(mIdx + 1).padStart(2, "0")}-01`;
+      endDate = `${yVal}-${String(mIdx + 1).padStart(2, "0")}-${String(daysInTargetMonth).padStart(2, "0")}`;
     } else {
       startDate = worker.joiningDate || "2020-01-01";
+      endDate = `${yVal}-${String(mIdx + 1).padStart(2, "0")}-${String(daysInTargetMonth).padStart(2, "0")}`;
     }
 
-    if (worker.joiningDate && worker.joiningDate > startDate) {
+    if (worker.joiningDate && period === "all" && worker.joiningDate > startDate) {
       startDate = worker.joiningDate;
     }
 
-    const rangeRecords = dataStore.getEmployerAttendanceRange(empIdentifier, startDate, endDate);
+    const rangeRecords = dataStore.getEmployerAttendanceRange(activeEmpId, startDate, endDate);
     const workerRecords = rangeRecords.filter((r) => r.workerId === worker.id);
 
     let present = 0;
     let halfDay = 0;
     let absent = 0;
     let overtime = 0;
+    let totalOvertimeHours = 0;
     let netPay = 0;
 
     workerRecords.forEach((r) => {
@@ -708,7 +739,9 @@ function AdminDashboardPage() {
         absent++;
       } else if (r.status === "Overtime") {
         overtime++;
-        netPay += Math.round(worker.dailyRate * 1.5);
+        const otH = r.overtimeHours || 2;
+        totalOvertimeHours += otH;
+        netPay += Math.round(worker.dailyRate + otH * (worker.dailyRate / 8) * 1.5);
       }
     });
 
@@ -720,7 +753,9 @@ function AdminDashboardPage() {
       halfDay,
       absent,
       overtime,
+      totalOvertimeHours,
       totalDays: workerRecords.length,
+      daysInMonth: daysInTargetMonth,
       netPay,
     };
   };
@@ -3061,7 +3096,7 @@ function AdminDashboardPage() {
                                   <th className="p-4">Role / Designation</th>
                                   <th className="p-4">Daily Wage Rate</th>
                                   {attendanceMode === "fixed" && <th className="p-4 text-center">Punch Times</th>}
-                                  <th className="p-4 text-center min-w-[360px]">{attendanceMode === "fixed" ? "Work Duration & Overtime" : "Mark Attendance & Overtime"}</th>
+                                   {attendanceMode === "fixed" && <th className="p-4 text-center min-w-[200px]">Work Duration & Overtime</th>}
                                   <th className="p-4 text-right rounded-r-xl">Today's Pay</th>
                                 </tr>
                               </thead>
@@ -3088,7 +3123,7 @@ function AdminDashboardPage() {
                                   if (list.length === 0) {
                                     return (
                                       <tr>
-                                        <td colSpan={attendanceMode === "fixed" ? 7 : 6} className="py-12 text-center text-xs font-bold text-[#5B6B7F]">
+                                        <td colSpan={attendanceMode === "fixed" ? 7 : 5} className="py-12 text-center text-xs font-bold text-[#5B6B7F]">
                                           <div className="max-w-md mx-auto">
                                             <Users className="size-10 text-[#A0AEC0] mx-auto mb-3" />
                                             <p className="text-sm font-extrabold text-[#10233F]">
@@ -3148,35 +3183,35 @@ function AdminDashboardPage() {
 
                                     return (
                                       <tr key={worker.id} className="hover:bg-[#F8FAFF] transition-colors">
-                                        <td className="p-4 font-black text-[#10233F]">
-                                          <div className="flex items-center gap-3">
-                                            <div className="size-9 rounded-full bg-[#063B78]/10 text-[#063B78] font-black flex items-center justify-center text-sm shrink-0">
-                                              {worker.name.slice(0, 1).toUpperCase()}
-                                            </div>
-                                            <div>
-                                              <div className="text-sm font-black text-[#10233F] flex items-center gap-2 flex-wrap">
-                                                <span>{worker.name}</span>
-                                                <button
-                                                  type="button"
-                                                  onClick={() => {
-                                                    setCalendarWorker(worker);
-                                                    setCalendarMonth(new Date().getMonth());
-                                                    setCalendarYear(new Date().getFullYear());
-                                                    setActiveCalendarDate(null);
-                                                  }}
-                                                  title="Open Employee Attendance Calendar (कॅलेंडर उघडा)"
-                                                  className="inline-flex items-center gap-1 text-[11px] font-black px-2 py-0.5 rounded-lg bg-blue-50 text-[#063B78] border border-blue-200 hover:bg-[#063B78] hover:text-white transition-all shadow-2xs"
-                                                >
-                                                  <Calendar className="size-3 text-[#125BB5]" />
-                                                  <span>📅 Calendar</span>
-                                                </button>
-                                              </div>
-                                              <div className="text-[10px] text-[#5B6B7F]">
-                                                📞 {worker.mobile || "N/A"}
-                                              </div>
-                                            </div>
-                                          </div>
-                                        </td>
+                                         <td className="p-4 font-black text-[#10233F] min-w-[200px] whitespace-nowrap">
+                                           <div className="flex items-center gap-3">
+                                             <div className="size-9 rounded-full bg-[#063B78]/10 text-[#063B78] font-black flex items-center justify-center text-sm shrink-0">
+                                               {worker.name.slice(0, 1).toUpperCase()}
+                                             </div>
+                                             <div className="min-w-0">
+                                               <div className="flex items-center gap-2">
+                                                 <span className="text-sm font-black text-[#10233F] whitespace-nowrap">{worker.name}</span>
+                                                 <button
+                                                   type="button"
+                                                   onClick={() => {
+                                                     setCalendarWorker(worker);
+                                                     setCalendarMonth(new Date().getMonth());
+                                                     setCalendarYear(new Date().getFullYear());
+                                                     setActiveCalendarDate(null);
+                                                   }}
+                                                   title="Open Attendance Calendar (कॅलेंडर उघडा)"
+                                                   className="size-7 rounded-lg bg-blue-50 hover:bg-[#063B78] text-[#063B78] hover:text-white border border-blue-200 flex items-center justify-center transition-all shadow-2xs hover:scale-110 cursor-pointer shrink-0"
+                                                 >
+                                                   <Calendar className="size-3.5 text-[#063B78] hover:text-white" />
+                                                 </button>
+                                               </div>
+                                               <div className="flex items-center gap-1.5 text-xs text-[#5B6B7F] font-bold whitespace-nowrap mt-0.5">
+                                                 <Phone className="size-3 text-slate-400 shrink-0" />
+                                                 <span>{worker.mobile || "N/A"}</span>
+                                               </div>
+                                             </div>
+                                           </div>
+                                         </td>
 
                                         <td className="p-4">
                                           <Badge className="bg-emerald-50 text-emerald-800 border border-emerald-200 font-extrabold text-[11px]">
@@ -3215,160 +3250,38 @@ function AdminDashboardPage() {
                                           </td>
                                         )}
 
-                                        <td className="p-4 text-center min-w-[360px]">
-                                          {isFixed ? (
-                                            /* FIXED LOCATION: AUTOMATIC WORK DURATION & OVERTIME DISPLAY */
-                                            <div className="flex flex-col items-center justify-center gap-1.5">
-                                              {record?.punchInTime ? (
-                                                <div className="flex flex-col items-center gap-1">
-                                                  {/* Total Work Time Badge */}
-                                                  <div className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-300 text-emerald-900 px-3 py-1 rounded-xl shadow-xs font-black text-xs">
-                                                    <Clock className="size-3.5 text-emerald-600" />
-                                                    <span>
-                                                      {workInfo.isCurrentlyWorking ? "⏳ Live Work: " : "⏱️ Worked: "}
-                                                      <strong className="text-emerald-950 font-black">{workInfo.workedText}</strong>
-                                                    </span>
-                                                  </div>
-
-                                                  {/* Overtime Badge (if worked > 9 hrs or has overtime) */}
-                                                  {workInfo.overtimeText ? (
-                                                    <div className="inline-flex items-center gap-1.5 bg-amber-100 border border-amber-400 text-amber-950 px-3 py-1 rounded-xl shadow-xs font-black text-xs animate-pulse">
-                                                      <Zap className="size-3.5 text-amber-600 fill-amber-500" />
-                                                      <span>
-                                                        Overtime: <strong className="text-amber-950 font-black">{workInfo.overtimeText}</strong>
-                                                      </span>
-                                                    </div>
-                                                  ) : (
-                                                    <span className="text-[10px] font-bold text-slate-400">
-                                                      (Shift: 9 AM - 6 PM)
-                                                    </span>
-                                                  )}
-                                                </div>
-                                              ) : (
-                                                <div className="inline-flex items-center gap-2 bg-slate-100 border border-slate-300 text-slate-600 px-3.5 py-1.5 rounded-2xl">
-                                                  <Clock className="size-4 text-slate-400" />
-                                                  <span className="font-extrabold text-xs">
-                                                    Auto: Absent (Not Punched In Yet)
-                                                  </span>
-                                                </div>
-                                              )}
-                                            </div>
-                                          ) : (
-                                            /* FIELD / SITE WORKER: MANUAL ATTENDANCE WITH DURATION */
-                                            <div className="flex flex-col items-center gap-2">
-                                              {record?.punchInTime ? (
-                                                <div className="flex items-center gap-2">
-                                                  <div className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-300 text-emerald-900 px-2.5 py-1 rounded-xl font-black text-xs">
-                                                    <Clock className="size-3.5 text-emerald-600" />
-                                                    <span>⏱️ Worked: {workInfo.workedText}</span>
-                                                  </div>
-                                                  {workInfo.overtimeText && (
-                                                    <div className="inline-flex items-center gap-1 bg-amber-100 border border-amber-400 text-amber-900 px-2.5 py-1 rounded-xl font-black text-xs">
-                                                      <Zap className="size-3.5 text-amber-600 fill-amber-500" />
-                                                      <span> OT: {workInfo.overtimeText}</span>
-                                                    </div>
-                                                  )}
-                                                </div>
-                                              ) : null}
-
-                                              <div className="flex flex-col sm:flex-row items-center gap-2">
-                                                <div className="inline-flex items-center gap-1 bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80 shadow-inner whitespace-nowrap">
-                                                  {/* 🟢 PRESENT (Green) */}
-                                                  <button
-                                                    type="button"
-                                                    onClick={() => handleMarkAttendance(worker, "Present")}
-                                                    className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 ${currentStatus === "Present"
-                                                      ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/30 scale-[1.02]"
-                                                      : "text-slate-600 hover:text-emerald-700 hover:bg-emerald-50/80"
-                                                      }`}
-                                                    title="Mark Present (हिरवा - हजर)"
-                                                  >
-                                                    <CheckCircle2 className="size-3.5" />
-                                                    <span>Present</span>
-                                                  </button>
-
-                                                  {/* 🟠 HALF DAY (Orange) */}
-                                                  <button
-                                                    type="button"
-                                                    onClick={() => handleMarkAttendance(worker, "HalfDay")}
-                                                    className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 ${currentStatus === "HalfDay"
-                                                      ? "bg-amber-500 text-white shadow-md shadow-amber-500/30 scale-[1.02]"
-                                                      : "text-slate-600 hover:text-amber-700 hover:bg-amber-50/80"
-                                                      }`}
-                                                    title="Mark Half Day (नारंगी - अर्धा दिवस)"
-                                                  >
-                                                    <Clock className="size-3.5" />
-                                                    <span>Half Day</span>
-                                                  </button>
-
-                                                  {/* 🔴 ABSENT (Red) */}
-                                                  <button
-                                                    type="button"
-                                                    onClick={() => handleMarkAttendance(worker, "Absent")}
-                                                    className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 ${currentStatus === "Absent"
-                                                      ? "bg-rose-600 text-white shadow-md shadow-rose-600/30 scale-[1.02]"
-                                                      : "text-slate-600 hover:text-rose-700 hover:bg-rose-50/80"
-                                                      }`}
-                                                    title="Mark Absent (लाल - गैरहजर)"
-                                                  >
-                                                    <XCircle className="size-3.5" />
-                                                    <span>Absent</span>
-                                                  </button>
-
-                                                  {/* 🔵 OVERTIME (Blue) */}
-                                                  <button
-                                                    type="button"
-                                                    onClick={() => handleMarkAttendance(worker, "Overtime", selectedAttendanceDate, record?.overtimeHours || 2)}
-                                                    className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 ${currentStatus === "Overtime"
-                                                      ? "bg-blue-600 text-white shadow-md shadow-blue-600/30 scale-[1.02]"
-                                                      : "text-slate-600 hover:text-blue-700 hover:bg-blue-50/80"
-                                                      }`}
-                                                    title="Mark Overtime (निळा - ओव्हरटाईम)"
-                                                  >
-                                                    <Zap className="size-3.5 text-amber-300 fill-amber-300" />
-                                                    <span>Overtime</span>
-                                                  </button>
-                                                </div>
-
-                                                {/* 📅 CALENDAR BUTTON FOR EMPLOYEE */}
-                                                <button
-                                                  type="button"
-                                                  onClick={() => {
-                                                    setCalendarWorker(worker);
-                                                    setCalendarMonth(new Date().getMonth());
-                                                    setCalendarYear(new Date().getFullYear());
-                                                    setActiveCalendarDate(null);
-                                                  }}
-                                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-gradient-to-r from-[#063B78] to-blue-700 text-white hover:from-blue-800 hover:to-indigo-800 transition-all shadow-xs hover:shadow-md hover:scale-[1.02] whitespace-nowrap cursor-pointer"
-                                                  title="कॅलेंडर उघडा व मागील १५ दिवसांची हजेरी एका क्लिकमध्ये भरा"
-                                                >
-                                                  <Calendar className="size-3.5 text-amber-300" />
-                                                  <span>📅 कॅलेंडर</span>
-                                                </button>
-                                              </div>
-
-                                              {/* 🔵 OVERTIME HOURS MANUAL INPUT */}
-                                              {currentStatus === "Overtime" && (
-                                                <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-200 text-blue-950 px-3 py-1 rounded-xl text-xs font-bold animate-in fade-in">
-                                                  <Zap className="size-3.5 text-blue-600 fill-blue-600" />
-                                                  <span>ओव्हरटाईम वेळ (Hours):</span>
-                                                  <input
-                                                    type="number"
-                                                    min={1}
-                                                    max={16}
-                                                    value={record?.overtimeHours || 2}
-                                                    onChange={(e) => {
-                                                      const hours = Math.max(1, Math.min(16, Number(e.target.value) || 1));
-                                                      handleMarkAttendance(worker, "Overtime", selectedAttendanceDate, hours);
-                                                    }}
-                                                    className="w-12 h-6 text-center font-black bg-white border border-blue-300 rounded shadow-xs text-xs focus:ring-1 focus:ring-blue-500"
-                                                  />
-                                                  <span className="text-[11px] font-bold text-blue-800">तास</span>
-                                                </div>
-                                              )}
-                                            </div>
-                                          )}
-                                        </td>
+                                         {attendanceMode === "fixed" && (
+                                           <td className="p-4 text-center min-w-[200px]">
+                                             <div className="flex flex-col items-center justify-center gap-1.5">
+                                               {record?.punchInTime ? (
+                                                 <div className="flex flex-col items-center gap-1">
+                                                   <div className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-300 text-emerald-900 px-3 py-1 rounded-xl shadow-xs font-black text-xs">
+                                                     <Clock className="size-3.5 text-emerald-600" />
+                                                     <span>
+                                                       {workInfo.isCurrentlyWorking ? "⏳ Live Work: " : "⏱️ Worked: "}
+                                                       <strong className="text-emerald-950 font-black">{workInfo.workedText}</strong>
+                                                     </span>
+                                                   </div>
+                                                   {workInfo.overtimeText && (
+                                                     <div className="inline-flex items-center gap-1.5 bg-amber-100 border border-amber-400 text-amber-950 px-3 py-1 rounded-xl shadow-xs font-black text-xs animate-pulse">
+                                                       <Zap className="size-3.5 text-amber-600 fill-amber-500" />
+                                                       <span>
+                                                         Overtime: <strong className="text-amber-950 font-black">{workInfo.overtimeText}</strong>
+                                                       </span>
+                                                     </div>
+                                                   )}
+                                                 </div>
+                                               ) : (
+                                                 <div className="inline-flex items-center gap-2 bg-slate-100 border border-slate-300 text-slate-600 px-3.5 py-1.5 rounded-2xl">
+                                                   <Clock className="size-4 text-slate-400" />
+                                                   <span className="font-extrabold text-xs">
+                                                     Auto: Absent (Not Punched In Yet)
+                                                   </span>
+                                                 </div>
+                                               )}
+                                             </div>
+                                           </td>
+                                         )}
 
                                         <td className="p-4 text-right font-black text-emerald-700 text-sm">
                                           ₹{earnedAmount.toLocaleString("en-IN")}
@@ -4056,7 +3969,7 @@ function AdminDashboardPage() {
                     </thead>
                     <tbody className="divide-y divide-[#DCE5F0] font-semibold text-[#10233F]">
                       {workers.map((emp) => {
-                        const metrics = getWorkerReportMetrics(emp, "month");
+                        const metrics = getWorkerReportMetrics(emp, "month", selectedSalaryMonth, selectedSalaryYear);
 
                         return (
                           <tr key={emp.id} className="hover:bg-[#F5F8FC] transition-colors">
@@ -4073,7 +3986,10 @@ function AdminDashboardPage() {
                             </td>
                             <td className="p-4 text-center">
                               <Button
-                                onClick={() => setViewSlipWorker(emp)}
+                                onClick={() => {
+                                  setViewSlipPeriod("month");
+                                  setViewSlipWorker(emp);
+                                }}
                                 size="sm"
                                 className="bg-[#063B78] hover:bg-[#082F63] text-white text-xs font-black px-4 shadow-sm cursor-pointer"
                               >
@@ -5192,47 +5108,15 @@ function AdminDashboardPage() {
                     </div>
 
                     {/* Print & Download Action Buttons */}
-                    <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                    <div className="pt-2">
                       <Button
                         onClick={() => {
                           setViewSlipWorker(w);
                           setViewSlipPeriod(workerReportPeriod === "all" ? "month" : workerReportPeriod);
                         }}
-                        className="flex-1 bg-[#063B78] hover:bg-[#082F63] text-white font-extrabold text-xs py-5 rounded-xl shadow-md flex items-center justify-center gap-2"
+                        className="w-full bg-[#063B78] hover:bg-[#082F63] text-white font-extrabold text-xs py-5 rounded-xl shadow-md flex items-center justify-center gap-2 cursor-pointer"
                       >
                         <FileText className="size-4" /> View & Download Payslip
-                      </Button>
-
-                      <Button
-                        variant="outline"
-                        onClick={() => handleDownloadCSV(w, workerReportPeriod)}
-                        className="flex-1 border-[#DCE5F0] text-[#063B78] hover:bg-blue-50 font-extrabold text-xs py-5 rounded-xl flex items-center justify-center gap-2"
-                      >
-                        <Download className="size-4" /> Export CSV Salary Data
-                      </Button>
-
-                      <Button
-                        onClick={() => {
-                          if (!w.mobile) {
-                            toast.error("कर्मचाऱ्याचा मोबाईल नंबर उपलब्ध नाही. (Mobile number not found)");
-                            return;
-                          }
-                          const periodText = workerReportPeriod === "month" ? "या महिन्याची" : "या आठवड्याची";
-                          let msg = `नमस्कार ${w.name},\n\nतुमची ${periodText} सॅलरी स्लिप तयार आहे.\n\n`;
-                          msg += ` 📅 हजेरी: ${metrics.present} दिवस\n`;
-                          if (metrics.overtime > 0) {
-                            msg += ` ⏰ ओव्हरटाईम: ${metrics.overtime} दिवस\n`;
-                          }
-                          msg += ` 💰 निव्वळ पगार (Net Pay): ₹${metrics.netPay.toLocaleString("en-IN")}\n\n`;
-                          msg += `- धन्यवाद.`;
-
-                          const encodedMsg = encodeURIComponent(msg);
-                          const waLink = `https://wa.me/91${w.mobile.replace(/\D/g, "")}?text=${encodedMsg}`;
-                          window.open(waLink, '_blank');
-                        }}
-                        className="flex-1 bg-[#25D366] hover:bg-[#1DA851] text-white font-extrabold text-xs py-5 rounded-xl shadow-md flex items-center justify-center gap-2"
-                      >
-                        <MessageCircle className="size-4" /> Send to WhatsApp
                       </Button>
                     </div>
                   </div>
@@ -5251,41 +5135,85 @@ function AdminDashboardPage() {
           <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in print:bg-white print:p-0">
             <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl border border-slate-100 relative max-h-[90vh] overflow-y-auto print:max-h-none print:shadow-none print:border-none print:rounded-none">
               <div className="print:hidden sticky top-0 bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between z-10 rounded-t-3xl">
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-3">
                   <h3 className="font-black text-[#10233F] text-lg">Employee Salary Slip</h3>
                   <div className="flex bg-slate-100 rounded-lg p-1">
                     <button onClick={() => setViewSlipPeriod("week")} className={`text-xs px-3 py-1 font-bold rounded-md ${viewSlipPeriod === "week" ? "bg-white shadow-sm text-[#063B78]" : "text-slate-500"}`}>Week</button>
                     <button onClick={() => setViewSlipPeriod("month")} className={`text-xs px-3 py-1 font-bold rounded-md ${viewSlipPeriod === "month" ? "bg-white shadow-sm text-[#063B78]" : "text-slate-500"}`}>Month</button>
                   </div>
+                  {/* Month Selector */}
+                  <select
+                    value={selectedSalaryMonth}
+                    onChange={(e) => setSelectedSalaryMonth(e.target.value)}
+                    className="h-8 px-2.5 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 text-xs font-black text-[#063B78] focus:outline-none cursor-pointer"
+                  >
+                    {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map((m) => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
+
+                  {/* Year Selector (2024, 2025, 2026, etc.) */}
+                  <select
+                    value={selectedSalaryYear}
+                    onChange={(e) => setSelectedSalaryYear(e.target.value)}
+                    className="h-8 px-2.5 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 text-xs font-black text-[#063B78] focus:outline-none cursor-pointer"
+                  >
+                    {["2023", "2024", "2025", "2026", "2027", "2028"].map((y) => (
+                      <option key={y} value={y}>{y}</option>
+                    ))}
+                  </select>
+
+                  {/* If Week is selected, show Date Range picker e.g. 10 to 20 */}
+                  {viewSlipPeriod === "week" && (
+                    <div className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200 text-xs">
+                      <span className="font-black text-slate-600 text-[11px]">Dates:</span>
+                      <select
+                        value={slipRangeStartDay}
+                        onChange={(e) => {
+                          const v = Number(e.target.value);
+                          setSlipRangeStartDay(v);
+                          if (v > slipRangeEndDay) setSlipRangeEndDay(v);
+                        }}
+                        className="h-7 px-1.5 bg-white rounded border border-slate-200 text-xs font-black text-[#063B78] cursor-pointer"
+                      >
+                        {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                          <option key={d} value={d}>Day {d}</option>
+                        ))}
+                      </select>
+                      <span className="font-bold text-slate-400">to</span>
+                      <select
+                        value={slipRangeEndDay}
+                        onChange={(e) => {
+                          const v = Number(e.target.value);
+                          setSlipRangeEndDay(v);
+                          if (v < slipRangeStartDay) setSlipRangeStartDay(v);
+                        }}
+                        className="h-7 px-1.5 bg-white rounded border border-slate-200 text-xs font-black text-[#063B78] cursor-pointer"
+                      >
+                        {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                          <option key={d} value={d}>Day {d}</option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => { setSlipRangeStartDay(10); setSlipRangeEndDay(20); }}
+                        className={`ml-1 px-2 py-0.5 rounded text-[10px] font-black cursor-pointer border ${
+                          slipRangeStartDay === 10 && slipRangeEndDay === 20
+                            ? "bg-[#063B78] text-white border-[#063B78]"
+                            : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
+                        }`}
+                        title="Set 10 to 20"
+                      >
+                        10-20
+                      </button>
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center gap-3">
-                  <Button
-                    onClick={() => {
-                      if (!v.mobile) {
-                        toast.error("कर्मचाऱ्याचा मोबाईल नंबर उपलब्ध नाही. (Mobile number not found)");
-                        return;
-                      }
-                      const metrics = getWorkerReportMetrics(v, viewSlipPeriod);
-                      const periodText = viewSlipPeriod === "month" ? (selectedSalaryMonth ? `${selectedSalaryMonth} महिन्याची` : "या महिन्याची") : "या आठवड्याची";
-                      let msg = `नमस्कार ${v.name},\n\nतुमची ${periodText} सॅलरी स्लिप तयार आहे.\n\n`;
-                      msg += `• हजेरी (Present): ${metrics.present} दिवस\n`;
-                      if (metrics.overtime > 0) {
-                        msg += `• ओव्हरटाईम (Overtime): ${metrics.overtime} तास\n`;
-                      }
-                      msg += `• निव्वळ पगार (Net Pay): ₹${metrics.netPay.toLocaleString("en-IN")}\n\n`;
-                      msg += `- धन्यवाद.`;
-
-                      const encodedMsg = encodeURIComponent(msg);
-                      const waLink = `https://wa.me/91${v.mobile.replace(/\D/g, "")}?text=${encodedMsg}`;
-                      window.open(waLink, '_blank');
-                    }}
-                    className="bg-[#25D366] hover:bg-[#1DA851] text-white font-black text-xs px-4"
-                  >
-                    <MessageCircle className="size-4 mr-2" /> WhatsApp
-                  </Button>
                   <button
                     onClick={() => setViewSlipWorker(null)}
-                    className="text-slate-400 hover:text-slate-700 font-extrabold text-xl p-1 rounded-full hover:bg-slate-100"
+                    className="text-slate-400 hover:text-slate-700 font-extrabold text-xl p-1 rounded-full hover:bg-slate-100 cursor-pointer"
+                    title="Close"
                   >
                     ✕
                   </button>
@@ -5295,20 +5223,86 @@ function AdminDashboardPage() {
               {/* Print Area */}
               <div className="bg-white overflow-hidden relative">
                 {(() => {
-                  const metrics = getWorkerReportMetrics(v, viewSlipPeriod);
+                  const effectiveMonthName = selectedSalaryMonth || new Date().toLocaleDateString("en-US", { month: "long" });
+                  const effectiveYearStr = selectedSalaryYear || String(new Date().getFullYear());
+                  
+                  const monthMap: Record<string, number> = {
+                    January: 0, February: 1, March: 2, April: 3,
+                    May: 4, June: 5, July: 6, August: 7,
+                    September: 8, October: 9, November: 10, December: 11
+                  };
+                  const mIdx = monthMap[effectiveMonthName] !== undefined ? monthMap[effectiveMonthName] : new Date().getMonth();
+                  const yVal = parseInt(effectiveYearStr, 10) || new Date().getFullYear();
+                  const daysInTargetMonth = new Date(yVal, mIdx + 1, 0).getDate();
+
+                  const isCustomRange = viewSlipPeriod === "week";
+                  const startDay = isCustomRange ? Math.min(slipRangeStartDay, slipRangeEndDay, daysInTargetMonth) : 1;
+                  const endDay = isCustomRange ? Math.min(Math.max(slipRangeStartDay, slipRangeEndDay), daysInTargetMonth) : daysInTargetMonth;
+
+                  const customStartDate = `${yVal}-${String(mIdx + 1).padStart(2, "0")}-${String(startDay).padStart(2, "0")}`;
+                  const customEndDate = `${yVal}-${String(mIdx + 1).padStart(2, "0")}-${String(endDay).padStart(2, "0")}`;
+                  const customPayPeriod = `${String(startDay).padStart(2, "0")}-${String(mIdx + 1).padStart(2, "0")}-${yVal} to ${String(endDay).padStart(2, "0")}-${String(mIdx + 1).padStart(2, "0")}-${yVal}`;
+
+                  const metrics = getWorkerReportMetrics(
+                    v, 
+                    viewSlipPeriod, 
+                    effectiveMonthName, 
+                    effectiveYearStr,
+                    isCustomRange ? customStartDate : undefined,
+                    isCustomRange ? customEndDate : undefined
+                  );
                   const empCompanyName = currentUser?.fullName || (currentUser as any)?.companyName || "REAL JOB Construction Pvt. Ltd.";
                   const empCompanyAddress = currentUser?.location || "MIDC Industrial Area, Pune, Maharashtra 411026";
                   const empIndustry = currentUser?.industry || "Building Better Opportunities";
-                  const currentMonthName = new Date().toLocaleDateString("en-US", { month: "long" });
-                  const currentYear = new Date().getFullYear().toString();
+
                   const rate = v.dailyRate || 600;
-                  const pDays = metrics.present || 26;
-                  const basic = pDays * rate;
+                  const pDays = metrics.present;
+                  const hdDays = metrics.halfDay;
+                  const aDays = metrics.absent;
+                  const otDays = metrics.overtime;
+                  const otHours = metrics.totalOvertimeHours;
+                  const basic = (pDays * rate) + Math.round(hdDays * (rate / 2));
                   const daAmt = Math.round(basic * 0.2);
                   const hraAmt = Math.round(basic * 0.1667);
-                  const otAmt = metrics.overtime ? Math.round(metrics.overtime * rate * 1.5) : 600;
+                  const otAmt = Math.round(otHours * (rate / 8) * 1.5);
                   const pfAmt = Math.round((basic + daAmt) * 0.12);
                   const esiAmt = Math.round((basic + daAmt + hraAmt + otAmt) * 0.0075);
+
+                  // Generate realistic attendance calendar based on actual saved attendance records
+                  const recordsMap = new Map<string, DailyAttendanceRecord>();
+                  metrics.records.forEach((r) => recordsMap.set(r.date, r));
+
+                  const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                  const attendanceGrid: Array<{
+                    day: number;
+                    weekday: string;
+                    status: 'P' | 'A' | 'L' | 'WO' | 'HD' | 'OT' | '-';
+                  }> = [];
+
+                  let weeklyOffCount = 0;
+                  for (let d = startDay; d <= endDay; d++) {
+                    const dateStr = `${yVal}-${String(mIdx + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+                    const dateObj = new Date(yVal, mIdx, d);
+                    const wd = weekdays[dateObj.getDay()] || 'Mon';
+                    const isSun = dateObj.getDay() === 0;
+                    const rec = recordsMap.get(dateStr);
+
+                    let status: 'P' | 'A' | 'L' | 'WO' | 'HD' | 'OT' | '-' = '-';
+                    if (rec) {
+                      if (rec.status === "Present") status = 'P';
+                      else if (rec.status === "Absent") status = 'A';
+                      else if (rec.status === "HalfDay") status = 'HD';
+                      else if (rec.status === "Overtime") status = 'OT';
+                    } else if (isSun) {
+                      status = 'WO';
+                      weeklyOffCount++;
+                    }
+                    attendanceGrid.push({ day: d, weekday: wd, status });
+                  }
+
+                  const totalDaysInSelection = endDay - startDay + 1;
+                  const totalWorkHours = (pDays * 8) + (hdDays * 4) + otHours;
+                  const totalEarningsDays = pDays + weeklyOffCount + (hdDays * 0.5) + otDays;
 
                   return (
                     <SalarySlip
@@ -5316,29 +5310,35 @@ function AdminDashboardPage() {
                       companyAddress={empCompanyAddress}
                       companyTagline={empIndustry}
                       employeeName={v.name}
-                      employeeId={`RJW-${v.id.slice(-6).toUpperCase()}`}
                       mobile={v.mobile || "9876543210"}
                       designation={v.trade || "Worker"}
                       department={v.category || "Construction"}
                       location={currentUser?.location || "Site - Pune"}
                       joiningDate={v.joiningDate || "01-08-2026"}
-                      month={viewSlipPeriod === "month" ? (selectedSalaryMonth || currentMonthName) : "Weekly"}
-                      year={selectedSalaryYear || currentYear}
-                      totalDaysInMonth={31}
+                      month={effectiveMonthName}
+                      year={effectiveYearStr}
+                      payPeriod={isCustomRange ? customPayPeriod : undefined}
+                      totalDaysInMonth={totalDaysInSelection}
                       presentDays={pDays}
-                      absentDays={metrics.absent || 2}
-                      halfDays={metrics.halfDay || 1}
-                      weeklyOffDays={2}
+                      absentDays={aDays}
+                      halfDays={hdDays}
+                      weeklyOffDays={weeklyOffCount}
+                      publicHolidays={0}
                       dailyRate={rate}
                       basicSalary={basic}
                       da={daAmt}
                       hra={hraAmt}
-                      overtimeHours={metrics.overtime ? metrics.overtime * 4 : 4}
-                      overtimeRate={Math.round(rate / 4)}
+                      overtimeHours={otHours}
+                      overtimeRate={Math.round((rate / 8) * 1.5)}
                       overtimePay={otAmt}
                       providentFund={pfAmt}
                       esi={esiAmt}
                       professionalTax={200}
+                      attendanceGrid={attendanceGrid}
+                      absentDatesText={aDays > 0 ? `(${aDays} days absent)` : "No absent days recorded"}
+                      halfDayDatesText={hdDays > 0 ? `(${hdDays} half days)` : "No half days recorded"}
+                      totalWorkHours={totalWorkHours}
+                      totalEarningsDays={totalEarningsDays}
                     />
                   );
                 })()}
@@ -5397,74 +5397,32 @@ function AdminDashboardPage() {
           }
         }
 
-        // Active date record if any
-        const activeRec = activeCalendarDate ? recordsMap.get(activeCalendarDate) : undefined;
-        const activeStatus = activeRec?.status || "None";
-        const activeOtHours = activeRec?.overtimeHours || customOtHoursInput;
-
-        // Handler to execute past 15 days / 30 days bulk fill
-        const executeBulkFill = (presetDays?: number) => {
-          let fromD = bulkFillFromDate;
-          let toD = bulkFillToDate;
-          if (presetDays) {
-            const today = new Date();
-            toD = today.toISOString().split("T")[0]!;
-            const past = new Date();
-            past.setDate(today.getDate() - (presetDays - 1));
-            fromD = past.toISOString().split("T")[0]!;
-          }
-
-          const datesToFill: string[] = [];
-          const curr = new Date(fromD);
-          const end = new Date(toD);
-          while (curr <= end) {
-            if (!bulkSkipSundays || curr.getDay() !== 0) {
-              const y = curr.getFullYear();
-              const m = String(curr.getMonth() + 1).padStart(2, "0");
-              const d = String(curr.getDate()).padStart(2, "0");
-              datesToFill.push(`${y}-${m}-${d}`);
-            }
-            curr.setDate(curr.getDate() + 1);
-          }
-
-          if (datesToFill.length === 0) {
-            toast.error("निवडलेल्या कालावधीत एकही तारीख उपलब्ध नाही!");
-            return;
-          }
-
-          handleBulkMarkAttendance(
-            calendarWorker,
-            datesToFill,
-            bulkFillStatus,
-            bulkFillStatus === "Overtime" ? bulkFillOtHours : undefined
-          );
-        };
-
         return (
-          <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overflow-y-auto animate-in fade-in duration-200">
-            <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[94vh] flex flex-col overflow-hidden my-auto">
+          <div 
+            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overflow-y-auto animate-in fade-in duration-200"
+            onClick={() => setActiveCalendarDate(null)}
+          >
+            <div 
+              className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[94vh] flex flex-col overflow-hidden my-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
               
               {/* MODAL HEADER */}
-              <div className="bg-gradient-to-r from-[#021D3D] via-[#063B78] to-[#125BB5] text-white p-4 sm:p-5 flex items-center justify-between shadow-md">
+              <div className="bg-[#021D3D] text-white p-4 sm:p-5 flex items-center justify-between shadow-md">
                 <div className="flex items-center gap-3">
-                  <div className="size-11 sm:size-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-lg sm:text-xl font-black text-amber-300 shadow-inner">
+                  <div className="size-11 sm:size-12 rounded-2xl bg-[#063B78] border border-white/20 flex items-center justify-center text-lg sm:text-xl font-black text-amber-300 shadow-inner">
                     {calendarWorker.name.charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-base sm:text-lg font-black tracking-tight">{calendarWorker.name}</h3>
-                      <span className="text-[11px] font-black bg-amber-400 text-slate-950 px-2 py-0.5 rounded-full">
-                        ₹{calendarWorker.dailyRate}/दिवस
-                      </span>
-                    </div>
+                    <h3 className="text-base sm:text-lg font-black tracking-tight">{calendarWorker.name}</h3>
                     <div className="flex flex-wrap items-center gap-2 text-xs text-white/80 mt-0.5">
-                      <span>{calendarWorker.category || calendarWorker.trade || "कर्मचारी"}</span>
+                      <span className="flex items-center gap-1">✂️ {calendarWorker.category || calendarWorker.trade || "कर्मचारी"}</span>
                       <span>•</span>
                       <span>{calendarWorker.trade || "General Worker"}</span>
                       {calendarWorker.mobile && (
                         <>
                           <span>•</span>
-                          <span>📞 {calendarWorker.mobile}</span>
+                          <span className="flex items-center gap-1 text-emerald-400 font-bold"><Phone className="size-3" /> {calendarWorker.mobile}</span>
                         </>
                       )}
                     </div>
@@ -5476,8 +5434,9 @@ function AdminDashboardPage() {
                     onClick={() => {
                       setCalendarWorker(null);
                       setActiveCalendarDate(null);
+                      setOvertimeModalDate(null);
                     }}
-                    className="size-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold text-lg transition-all"
+                    className="size-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold text-lg transition-all cursor-pointer"
                     title="बंद करा (Close)"
                   >
                     ✕
@@ -5486,400 +5445,301 @@ function AdminDashboardPage() {
               </div>
 
               {/* MODAL BODY */}
-              <div className="p-4 sm:p-6 overflow-y-auto space-y-6 flex-1 bg-slate-50/60">
+              <div className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1 bg-white" onClick={() => setActiveCalendarDate(null)}>
                 
-                {/* ── 1. PAST ATTENDANCE / BULK FILL TOOL ── */}
-                <div className="bg-white rounded-2xl border border-blue-200 shadow-sm p-4 sm:p-5">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
-                    <div className="flex items-center gap-2">
-                      <div className="size-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-black">
-                        ⚡
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-black text-slate-900">
-                          ⚡ Bulk Fill — Past 15 Days (1-Click)
-                        </h4>
-                        <p className="text-[11px] text-slate-500 font-medium">
-                          Mark attendance for multiple past days in one click:
-                        </p>
-                      </div>
+                {/* Month Navigation & Controls */}
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (calendarMonth === 0) {
+                          setCalendarMonth(11);
+                          setCalendarYear(calendarYear - 1);
+                        } else {
+                          setCalendarMonth(calendarMonth - 1);
+                        }
+                        setActiveCalendarDate(null);
+                      }}
+                      className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold transition-all cursor-pointer"
+                      title="Previous Month"
+                    >
+                      <ChevronLeft className="size-4" />
+                    </button>
+
+                    <div className="flex items-center gap-1.5 px-1">
+                      <select
+                        value={calendarMonth}
+                        onChange={(e) => {
+                          setCalendarMonth(Number(e.target.value));
+                          setActiveCalendarDate(null);
+                        }}
+                        className="text-xs sm:text-sm font-black text-slate-900 bg-slate-50 border border-slate-200 rounded-lg py-1 px-2 cursor-pointer focus:outline-none"
+                      >
+                        {monthNames.map((m, idx) => (
+                          <option key={m} value={idx}>📅 {m}</option>
+                        ))}
+                      </select>
+                      <select
+                        value={calendarYear}
+                        onChange={(e) => {
+                          setCalendarYear(Number(e.target.value));
+                          setActiveCalendarDate(null);
+                        }}
+                        className="text-xs sm:text-sm font-black text-slate-900 bg-slate-50 border border-slate-200 rounded-lg py-1 px-2 cursor-pointer focus:outline-none"
+                      >
+                        {[2023, 2024, 2025, 2026, 2027, 2028].map((y) => (
+                          <option key={y} value={y}>{y}</option>
+                        ))}
+                      </select>
                     </div>
-
-                    <button
-                      type="button"
-                      onClick={() => setShowBulkFillSection(!showBulkFillSection)}
-                      className="text-xs font-black text-blue-700 hover:text-blue-900 underline self-start sm:self-auto cursor-pointer"
-                    >
-                      {showBulkFillSection ? "Hide Options ▲" : "Custom Options ▼"}
-                    </button>
-                  </div>
-
-                  {/* Quick 1-Click Buttons */}
-                  <div className="flex flex-wrap items-center gap-2 mb-3">
-                    <button
-                      type="button"
-                      onClick={() => executeBulkFill(15)}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-black bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm hover:scale-[1.02] transition-all cursor-pointer"
-                      title="Mark last 15 days as Present"
-                    >
-                      <span>⚡ Fill Last 15 Days as Present</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => executeBulkFill(30)}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-black bg-blue-600 hover:bg-blue-700 text-white shadow-sm hover:scale-[1.02] transition-all cursor-pointer"
-                      title="Mark last 30 days as Present"
-                    >
-                      <span>⚡ Fill Last 30 Days as Present</span>
-                    </button>
 
                     <button
                       type="button"
                       onClick={() => {
-                        const now = new Date();
-                        const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0]!;
-                        const today = now.toISOString().split("T")[0]!;
-                        setBulkFillFromDate(start);
-                        setBulkFillToDate(today);
-                        setShowBulkFillSection(true);
+                        if (calendarMonth === 11) {
+                          setCalendarMonth(0);
+                          setCalendarYear(calendarYear + 1);
+                        } else {
+                          setCalendarMonth(calendarMonth + 1);
+                        }
+                        setActiveCalendarDate(null);
                       }}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all cursor-pointer"
+                      className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold transition-all cursor-pointer"
+                      title="Next Month"
                     >
-                      <span>📅 Current Month (1st to Today)</span>
+                      <ChevronRight className="size-4" />
                     </button>
                   </div>
-
-                  {/* Expandable Custom Bulk Fill Settings */}
-                  {showBulkFillSection && (
-                    <div className="mt-3 pt-3 border-t border-slate-100 bg-blue-50/50 p-3.5 rounded-xl space-y-3">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-                        <div>
-                          <label className="text-[11px] font-black text-slate-700 block mb-1">From Date:</label>
-                          <input
-                            type="date"
-                            value={bulkFillFromDate}
-                            onChange={(e) => setBulkFillFromDate(e.target.value)}
-                            className="w-full text-xs font-bold p-2 bg-white border border-slate-300 rounded-lg"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="text-[11px] font-black text-slate-700 block mb-1">To Date:</label>
-                          <input
-                            type="date"
-                            value={bulkFillToDate}
-                            onChange={(e) => setBulkFillToDate(e.target.value)}
-                            className="w-full text-xs font-bold p-2 bg-white border border-slate-300 rounded-lg"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="text-[11px] font-black text-slate-700 block mb-1">Attendance Status:</label>
-                          <select
-                            value={bulkFillStatus}
-                            onChange={(e) => setBulkFillStatus(e.target.value as any)}
-                            className="w-full text-xs font-bold p-2 bg-white border border-slate-300 rounded-lg"
-                          >
-                            <option value="Present">🟢 Present</option>
-                            <option value="HalfDay">🟠 Half Day</option>
-                            <option value="Absent">🔴 Absent</option>
-                            <option value="Overtime">🔵 Overtime</option>
-                          </select>
-                        </div>
-
-                        {bulkFillStatus === "Overtime" ? (
-                          <div>
-                            <label className="text-[11px] font-black text-slate-700 block mb-1">Daily Overtime Hours:</label>
-                            <input
-                              type="number"
-                              min={1}
-                              max={16}
-                              value={bulkFillOtHours}
-                              onChange={(e) => setBulkFillOtHours(Number(e.target.value) || 2)}
-                              className="w-full text-xs font-bold p-2 bg-white border border-blue-300 rounded-lg"
-                            />
-                          </div>
-                        ) : (
-                          <div className="flex items-center pt-5">
-                            <label className="inline-flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700">
-                              <input
-                                type="checkbox"
-                                checked={bulkSkipSundays}
-                                onChange={(e) => setBulkSkipSundays(e.target.checked)}
-                                className="rounded size-4 text-blue-600 focus:ring-blue-500"
-                              />
-                              <span>Skip Sundays</span>
-                            </label>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex items-center justify-between pt-1">
-                        <label className="inline-flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700">
-                          {bulkFillStatus === "Overtime" && (
-                            <>
-                              <input
-                                type="checkbox"
-                                checked={bulkSkipSundays}
-                                onChange={(e) => setBulkSkipSundays(e.target.checked)}
-                                className="rounded size-4 text-blue-600 focus:ring-blue-500"
-                              />
-                              <span>Skip Sundays</span>
-                            </>
-                          )}
-                        </label>
-
-                        <button
-                          type="button"
-                          onClick={() => executeBulkFill()}
-                          className="px-4 py-2 rounded-xl text-xs font-black bg-blue-700 hover:bg-blue-800 text-white shadow-sm transition-all"
-                        >
-                          ⚡ Save Attendance for Selected Days
-                        </button>
-                      </div>
-                    </div>
-                  )}
                 </div>
 
-                {/* ── 2. MONTH CALENDAR VIEW ── */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5 overflow-visible">
-                  
-                  {/* Month Navigation Header */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100">
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (calendarMonth === 0) {
-                            setCalendarMonth(11);
-                            setCalendarYear(calendarYear - 1);
-                          } else {
-                            setCalendarMonth(calendarMonth - 1);
-                          }
-                          setActiveCalendarDate(null);
-                        }}
-                        className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold transition-all"
-                        title="मागील महिना (Previous Month)"
-                      >
-                        <ChevronLeft className="size-4" />
-                      </button>
-
-                      <div className="text-sm sm:text-base font-black text-slate-900 px-2 min-w-[200px] text-center">
-                        📅 {monthNames[calendarMonth]} {calendarYear}
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (calendarMonth === 11) {
-                            setCalendarMonth(0);
-                            setCalendarYear(calendarYear + 1);
-                          } else {
-                            setCalendarMonth(calendarMonth + 1);
-                          }
-                          setActiveCalendarDate(null);
-                        }}
-                        className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold transition-all"
-                        title="Next Month"
-                      >
-                        <ChevronRight className="size-4" />
-                      </button>
+                {/* ── 7-DAY CALENDAR GRID (Matches Design in Image 1) ── */}
+                <div className="grid grid-cols-7 gap-1.5 sm:gap-2.5">
+                  {/* Day Names */}
+                  {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((dayName, idx) => (
+                    <div
+                      key={dayName}
+                      className={`text-center text-xs py-1.5 ${idx === 0 ? "text-rose-500 font-extrabold" : "text-slate-600 font-extrabold"}`}
+                    >
+                      {dayName}
                     </div>
+                  ))}
 
-                    {/* Color Legend */}
-                    <div className="flex flex-wrap items-center gap-2 text-[11px] font-black">
-                      <span className="flex items-center gap-1 text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                        <span className="size-2 rounded-full bg-emerald-500"></span>
-                        Present
-                      </span>
-                      <span className="flex items-center gap-1 text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                        <span className="size-2 rounded-full bg-amber-500"></span>
-                        Half Day
-                      </span>
-                      <span className="flex items-center gap-1 text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
-                        <span className="size-2 rounded-full bg-rose-500"></span>
-                        Absent
-                      </span>
-                      <span className="flex items-center gap-1 text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
-                        <span className="size-2 rounded-full bg-blue-500"></span>
-                        Overtime
-                      </span>
-                    </div>
-                  </div>
+                  {/* Leading empty spaces before 1st of month */}
+                  {Array.from({ length: firstDayOfWeek }).map((_, i) => (
+                    <div key={`empty-${i}`} className="min-h-[72px] sm:min-h-[82px] rounded-2xl bg-slate-50/40 border border-slate-100/60"></div>
+                  ))}
 
-                  {/* ── 7-DAY CALENDAR GRID ── */}
-                  <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-4 overflow-visible">
-                    {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((dayName, idx) => (
+                  {/* Days of Month */}
+                  {Array.from({ length: daysInMonth }).map((_, i) => {
+                    const dayNum = i + 1;
+                    const dateStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, "0")}-${String(dayNum).padStart(2, "0")}`;
+                    const rec = recordsMap.get(dateStr);
+                    const isSelected = activeCalendarDate === dateStr;
+                    const isSunday = (firstDayOfWeek + i) % 7 === 0;
+
+                    return (
                       <div
-                        key={dayName}
-                        className={`text-center font-black text-[11px] py-1.5 rounded-lg ${idx === 0 ? "text-rose-600 bg-rose-50" : "text-slate-600 bg-slate-100"}`}
+                        key={dateStr}
+                        className={`relative min-h-[72px] sm:min-h-[82px] p-2 rounded-2xl border flex flex-col justify-between transition-all bg-white hover:border-slate-300 ${
+                          isSunday ? "border-slate-100" : "border-slate-200"
+                        } ${isSelected ? "ring-2 ring-[#7C3AED] shadow-lg z-30" : "shadow-2xs"}`}
                       >
-                        {dayName}
-                      </div>
-                    ))}
-
-                    {/* Leading empty spaces before 1st of month */}
-                    {Array.from({ length: firstDayOfWeek }).map((_, i) => (
-                      <div key={`empty-${i}`} className="min-h-[64px] sm:min-h-[76px] rounded-xl bg-slate-50/50 border border-transparent"></div>
-                    ))}
-
-                    {/* Days of Month */}
-                    {Array.from({ length: daysInMonth }).map((_, i) => {
-                      const dayNum = i + 1;
-                      const dateStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, "0")}-${String(dayNum).padStart(2, "0")}`;
-                      const rec = recordsMap.get(dateStr);
-                      const isSelected = activeCalendarDate === dateStr;
-                      const isSunday = (firstDayOfWeek + i) % 7 === 0;
-
-                      let statusBadge = null;
-                      let bgClass = "bg-white hover:border-blue-400 border-slate-200";
-
-                      if (rec?.status === "Present") {
-                        bgClass = "bg-emerald-50/90 border-emerald-400 shadow-xs";
-                        statusBadge = (
-                          <div className="text-[10px] font-black text-white bg-emerald-600 px-1.5 py-0.5 rounded-md truncate w-full text-center">
-                            🟢 Present
-                          </div>
-                        );
-                      } else if (rec?.status === "HalfDay") {
-                        bgClass = "bg-amber-50/90 border-amber-400 shadow-xs";
-                        statusBadge = (
-                          <div className="text-[10px] font-black text-white bg-amber-500 px-1.5 py-0.5 rounded-md truncate w-full text-center">
-                            🟠 Half Day
-                          </div>
-                        );
-                      } else if (rec?.status === "Absent") {
-                        bgClass = "bg-rose-50/90 border-rose-400 shadow-xs";
-                        statusBadge = (
-                          <div className="text-[10px] font-black text-white bg-rose-600 px-1.5 py-0.5 rounded-md truncate w-full text-center">
-                            🔴 Absent
-                          </div>
-                        );
-                      } else if (rec?.status === "Overtime") {
-                        bgClass = "bg-blue-50/90 border-blue-400 shadow-xs";
-                        statusBadge = (
-                          <div className="text-[10px] font-black text-white bg-blue-600 px-1.5 py-0.5 rounded-md truncate w-full text-center">
-                            🔵 OT ({rec.overtimeHours || 2}h)
-                          </div>
-                        );
-                      } else {
-                        statusBadge = (
-                          <div className="text-[9px] font-bold text-slate-400 border border-dashed border-slate-200 rounded px-1 py-0.5 w-full text-center group-hover:text-blue-600 group-hover:border-blue-300">
-                            + Mark
-                          </div>
-                        );
-                      }
-
-                      return (
-                        <div
-                          key={dateStr}
-                          className={`relative min-h-[64px] sm:min-h-[76px] p-1.5 rounded-xl border flex flex-col justify-between cursor-pointer transition-all hover:scale-[1.03] group ${bgClass} ${isSelected ? "ring-2 ring-blue-600 shadow-md" : ""}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (activeCalendarDate === dateStr) {
-                              setActiveCalendarDate(null);
-                            } else {
-                              setActiveCalendarDate(dateStr);
-                              if (rec?.overtimeHours) setCustomOtHoursInput(rec.overtimeHours);
-                            }
-                          }}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className={`text-xs font-black ${isSunday ? "text-rose-600" : "text-slate-800"}`}>
-                              {dayNum}
-                            </span>
-                            {rec?.overtimeHours && (
-                              <span className="text-[9px] font-black text-blue-700 bg-blue-100 px-1 rounded">
-                                ⚡{rec.overtimeHours}h
-                              </span>
-                            )}
-                          </div>
-                          <div className="mt-1">
-                            {isSelected ? (
-                              <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
-                                {/* 4 Status buttons with labels */}
-                                <div className="flex items-center gap-0.5">
-                                  <button type="button" title="Present"
-                                    onClick={(e) => { e.stopPropagation(); handleMarkAttendance(calendarWorker, "Present", dateStr); setActiveCalendarDate(null); }}
-                                    className={`flex-1 flex flex-col items-center justify-center py-1 rounded-md transition-all cursor-pointer gap-0 ${
-                                      activeStatus === "Present" ? "bg-emerald-600 text-white" : "bg-emerald-100 text-emerald-700 hover:bg-emerald-300"
-                                    }`}>
-                                    <CheckCircle2 className="size-3" />
-                                    <span className="text-[8px] font-black leading-tight">Present</span>
-                                  </button>
-                                  <button type="button" title="Half Day"
-                                    onClick={(e) => { e.stopPropagation(); handleMarkAttendance(calendarWorker, "HalfDay", dateStr); setActiveCalendarDate(null); }}
-                                    className={`flex-1 flex flex-col items-center justify-center py-1 rounded-md transition-all cursor-pointer gap-0 ${
-                                      activeStatus === "HalfDay" ? "bg-amber-500 text-white" : "bg-amber-100 text-amber-700 hover:bg-amber-300"
-                                    }`}>
-                                    <Clock className="size-3" />
-                                    <span className="text-[8px] font-black leading-tight">Half</span>
-                                  </button>
-                                  <button type="button" title="Absent"
-                                    onClick={(e) => { e.stopPropagation(); handleMarkAttendance(calendarWorker, "Absent", dateStr); setActiveCalendarDate(null); }}
-                                    className={`flex-1 flex flex-col items-center justify-center py-1 rounded-md transition-all cursor-pointer gap-0 ${
-                                      activeStatus === "Absent" ? "bg-rose-600 text-white" : "bg-rose-100 text-rose-700 hover:bg-rose-300"
-                                    }`}>
-                                    <XCircle className="size-3" />
-                                    <span className="text-[8px] font-black leading-tight">Absent</span>
-                                  </button>
-                                  <button type="button" title="Overtime"
-                                    onClick={(e) => { e.stopPropagation(); handleMarkAttendance(calendarWorker, "Overtime", dateStr, customOtHoursInput); setActiveCalendarDate(null); }}
-                                    className={`flex-1 flex flex-col items-center justify-center py-1 rounded-md transition-all cursor-pointer gap-0 ${
-                                      activeStatus === "Overtime" ? "bg-blue-600 text-white" : "bg-blue-100 text-blue-700 hover:bg-blue-300"
-                                    }`}>
-                                    <Zap className="size-3" />
-                                    <span className="text-[8px] font-black leading-tight">OT</span>
-                                  </button>
-                                </div>
-                                {/* Clear button — only visible if attendance already marked */}
-                                {activeRec && (
-                                  <button
-                                    type="button"
-                                    title="Clear attendance for this date"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      const activeEmpId = currentUser?.id || currentUser?.fullName || currentUser?.email || empIdentifier;
-                                      dataStore.deleteAttendanceRecord(calendarWorker.id, dateStr);
-                                      loadAttendanceData();
-                                      setActiveCalendarDate(null);
-                                      toast.success(`Attendance cleared for ${dateStr}`);
-                                    }}
-                                    className="w-full flex items-center justify-center gap-1 py-0.5 rounded-md bg-slate-100 hover:bg-red-100 text-slate-400 hover:text-red-600 transition-all cursor-pointer"
-                                  >
-                                    <Trash2 className="size-2.5" />
-                                    <span className="text-[8px] font-black">Clear</span>
-                                  </button>
-                                )}
-                              </div>
-                            ) : (
-                              statusBadge
-                            )}
-                          </div>
+                        <div className="flex items-center justify-between">
+                          <span className={`text-xs font-black ${isSunday ? "text-rose-500 font-black" : "text-slate-800 font-extrabold"}`}>
+                            {dayNum}
+                          </span>
                         </div>
-                      );
-                    })}
+
+                        {/* Cell Attendance Status / Action Button */}
+                        <div className="mt-auto relative">
+                          {rec?.status === "Present" ? (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveCalendarDate(isSelected ? null : dateStr);
+                              }}
+                              className="w-full flex items-center justify-center py-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-all cursor-pointer"
+                              title="Present (हजर) - Click to edit"
+                            >
+                              <div className="size-6 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-xs">
+                                <Check className="size-3.5 stroke-[3]" />
+                              </div>
+                            </button>
+                          ) : rec?.status === "Absent" ? (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveCalendarDate(isSelected ? null : dateStr);
+                              }}
+                              className="w-full flex items-center justify-center py-1 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-all cursor-pointer"
+                              title="Absent (गैरहजर) - Click to edit"
+                            >
+                              <div className="size-6 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-xs">
+                                <X className="size-3.5 stroke-[3]" />
+                              </div>
+                            </button>
+                          ) : rec?.status === "HalfDay" ? (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveCalendarDate(isSelected ? null : dateStr);
+                              }}
+                              className="w-full flex items-center justify-center py-1 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 transition-all cursor-pointer"
+                              title="Half Day (अर्धा दिवस) - Click to edit"
+                            >
+                              <div className="size-6 rounded-full bg-amber-500 text-white flex items-center justify-center shadow-xs font-black text-[10px]">
+                                ½
+                              </div>
+                            </button>
+                          ) : rec?.status === "Overtime" ? (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveCalendarDate(isSelected ? null : dateStr);
+                              }}
+                              className="w-full flex items-center justify-center gap-1.5 py-1 px-2 rounded-xl bg-purple-50 hover:bg-purple-100 border border-purple-200 transition-all cursor-pointer"
+                              title={`Overtime: ${rec.overtimeHours || 2} hours - Click to edit`}
+                            >
+                              <div className="size-5 rounded-full bg-[#7C3AED] text-white flex items-center justify-center shadow-xs shrink-0">
+                                <Clock className="size-3" />
+                              </div>
+                              <span className="text-xs font-black text-[#7C3AED]">
+                                {rec.overtimeHours || 2}h
+                              </span>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveCalendarDate(isSelected ? null : dateStr);
+                              }}
+                              className="text-[11px] font-bold text-slate-500 hover:text-blue-700 bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-200 rounded-xl py-1 px-2 transition-all w-full text-center cursor-pointer shadow-2xs"
+                            >
+                              + Mark
+                            </button>
+                          )}
+
+                          {/* ── DROPDOWN POPOVER FOR MARKING ATTENDANCE (Matches Image 1) ── */}
+                          {isSelected && (
+                            <div
+                              className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-44 bg-white rounded-2xl p-1.5 shadow-2xl border border-slate-200 z-50 animate-in fade-in zoom-in-95"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  handleMarkAttendance(calendarWorker, "Present", dateStr);
+                                  setActiveCalendarDate(null);
+                                }}
+                                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-emerald-50 text-slate-800 hover:text-emerald-700 text-xs font-bold transition-all text-left cursor-pointer"
+                              >
+                                <div className="size-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                                  <Check className="size-3 stroke-[3]" />
+                                </div>
+                                <span>Present</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  handleMarkAttendance(calendarWorker, "Absent", dateStr);
+                                  setActiveCalendarDate(null);
+                                }}
+                                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-rose-50 text-slate-800 hover:text-rose-700 text-xs font-bold transition-all text-left cursor-pointer"
+                              >
+                                <div className="size-5 rounded-full bg-rose-500 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                                  <X className="size-3 stroke-[3]" />
+                                </div>
+                                <span>Absent</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  handleMarkAttendance(calendarWorker, "HalfDay", dateStr);
+                                  setActiveCalendarDate(null);
+                                }}
+                                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-amber-50 text-slate-800 hover:text-amber-700 text-xs font-bold transition-all text-left cursor-pointer"
+                              >
+                                <div className="size-5 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-2xs font-black text-[10px]">
+                                  ½
+                                </div>
+                                <span>Half Day</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveCalendarDate(null);
+                                  setOvertimeModalDate(dateStr);
+                                  setOvertimeModalHours(rec?.overtimeHours || 3);
+                                }}
+                                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl bg-purple-50/70 hover:bg-purple-100 text-[#7C3AED] text-xs font-bold transition-all text-left cursor-pointer"
+                              >
+                                <div className="size-5 rounded-full bg-[#7C3AED] text-white flex items-center justify-center shrink-0 shadow-2xs">
+                                  <Clock className="size-3" />
+                                </div>
+                                <span>Overtime</span>
+                              </button>
+
+                              {rec && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    dataStore.deleteAttendanceRecord(calendarWorker.id, dateStr);
+                                    loadAttendanceData();
+                                    setActiveCalendarDate(null);
+                                    toast.success(`Cleared for ${dateStr}`);
+                                  }}
+                                  className="w-full flex items-center gap-2 px-3 py-1.5 mt-1 border-t border-slate-100 text-slate-400 hover:text-rose-600 text-[11px] font-bold transition-all cursor-pointer"
+                                >
+                                  <Trash2 className="size-3" />
+                                  <span>Clear Attendance</span>
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* ── 3. BOTTOM LEGEND (Matches Image 1) ── */}
+                <div className="bg-[#FAF8FF] border border-purple-100 rounded-2xl p-3.5 flex flex-wrap items-center justify-around gap-3 text-xs font-bold text-slate-700 mt-2">
+                  <div className="flex items-center gap-2">
+                    <div className="size-6 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-2xs">
+                      <Check className="size-3.5 stroke-[3]" />
+                    </div>
+                    <span className="font-extrabold text-slate-800">Present</span>
                   </div>
 
-                  {/* ── OT Hours strip — shows below grid only for Overtime date ── */}
-                  {activeCalendarDate && activeStatus === "Overtime" && (
-                    <div className="mt-2 flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-xl px-3 py-2" onClick={(e) => e.stopPropagation()}>
-                      <Zap className="size-4 text-blue-600 fill-blue-600 shrink-0" />
-                      <span className="text-xs font-black text-blue-800 shrink-0">OT Hours — {activeCalendarDate}:</span>
-                      <input
-                        type="number" min={1} max={16} value={activeOtHours}
-                        onChange={(e) => {
-                          const val = Math.max(1, Math.min(16, Number(e.target.value) || 1));
-                          setCustomOtHoursInput(val);
-                          handleMarkAttendance(calendarWorker, "Overtime", activeCalendarDate, val);
-                        }}
-                        className="w-16 h-8 text-center font-black bg-white border border-blue-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
-                      />
-                      <span className="text-xs font-bold text-slate-500">hrs</span>
+                  <div className="flex items-center gap-2">
+                    <div className="size-6 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-2xs">
+                      <X className="size-3.5 stroke-[3]" />
                     </div>
-                  )}
+                    <span className="font-extrabold text-slate-800">Absent</span>
+                  </div>
 
+                  <div className="flex items-center gap-2">
+                    <div className="size-6 rounded-full bg-amber-500 text-white flex items-center justify-center shadow-2xs font-black text-[10px]">
+                      ½
+                    </div>
+                    <span className="font-extrabold text-slate-800">Half Day</span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <div className="size-6 rounded-full bg-[#7C3AED] text-white flex items-center justify-center shadow-2xs">
+                      <Clock className="size-3.5" />
+                    </div>
+                    <span className="font-extrabold text-slate-800">Overtime (with hours)</span>
+                  </div>
                 </div>
 
                 {/* ── 4. MONTHLY SUMMARY & PAYROLL CARD ── */}
@@ -5892,7 +5752,7 @@ function AdminDashboardPage() {
                       <span className="text-emerald-400">🟢 Present: {presentCount} days</span>
                       <span className="text-amber-400">🟠 Half Day: {halfDayCount} days</span>
                       <span className="text-rose-400">🔴 Absent: {absentCount} days</span>
-                      <span className="text-blue-300">🔵 Overtime: {overtimeCount} days ({totalOvertimeHours} hrs)</span>
+                      <span className="text-purple-300">🟣 Overtime: {overtimeCount} days ({totalOvertimeHours} hrs)</span>
                     </div>
                   </div>
 
@@ -5906,6 +5766,11 @@ function AdminDashboardPage() {
 
                     <Button
                       onClick={() => {
+                        const mName = monthNames[calendarMonth];
+                        const yStr = String(calendarYear);
+                        setSelectedSalaryMonth(mName);
+                        setSelectedSalaryYear(yStr);
+                        setViewSlipPeriod("month");
                         setViewSlipWorker(calendarWorker);
                         setCalendarWorker(null);
                       }}
@@ -5918,6 +5783,77 @@ function AdminDashboardPage() {
 
               </div>
             </div>
+
+            {/* ── OVERTIME HOURS INPUT MODAL (Matches Image 1) ── */}
+            {overtimeModalDate && (
+              <div
+                className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in"
+                onClick={() => setOvertimeModalDate(null)}
+              >
+                <div
+                  className="bg-white rounded-3xl p-6 shadow-2xl border border-slate-200 w-full max-w-sm space-y-4 animate-in zoom-in-95"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="size-8 rounded-full bg-[#7C3AED] text-white flex items-center justify-center shadow-sm">
+                        <Clock className="size-4" />
+                      </div>
+                      <h4 className="text-base font-black text-slate-900">Overtime Hours</h4>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setOvertimeModalDate(null)}
+                      className="size-7 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition-all cursor-pointer font-bold"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-black text-slate-700 block mb-2">
+                      Enter Hours
+                    </label>
+                    <div className="flex items-center border border-slate-200 rounded-2xl p-2.5 bg-slate-50/50 focus-within:border-[#7C3AED] focus-within:ring-2 focus-within:ring-[#7C3AED]/20 transition-all">
+                      <Clock className="size-5 text-slate-400 shrink-0 ml-1 mr-3" />
+                      <input
+                        type="number"
+                        min={1}
+                        max={16}
+                        step={0.5}
+                        value={overtimeModalHours}
+                        onChange={(e) => setOvertimeModalHours(Math.max(1, Math.min(16, Number(e.target.value) || 1)))}
+                        className="w-full font-black text-base bg-transparent outline-hidden text-slate-900"
+                        autoFocus
+                      />
+                      <span className="text-xs font-bold text-slate-400 mr-2">hours</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setOvertimeModalDate(null)}
+                      className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-50 transition-all cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleMarkAttendance(calendarWorker, "Overtime", overtimeModalDate, overtimeModalHours);
+                        setOvertimeModalDate(null);
+                        toast.success(`Overtime (${overtimeModalHours} hrs) saved for ${overtimeModalDate}`);
+                      }}
+                      className="flex-1 py-2.5 rounded-xl bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-black text-xs shadow-md transition-all cursor-pointer"
+                    >
+                      Save
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
           </div>
         );
       })()}

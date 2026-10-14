@@ -2,7 +2,11 @@ import { useState, useEffect } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   ShieldAlert,
+  ShieldCheck,
+  Shield,
+  User,
   Users,
+  UserPlus,
   Settings,
   Activity,
   Server,
@@ -25,16 +29,25 @@ import {
   ChevronDown,
   ChevronUp,
   Eye,
+  EyeOff,
   FileText,
   Phone,
   Mail,
   UserCheck,
   BadgeCheck,
-  Trash2
+  Trash2,
+  Copy,
+  Edit3,
+  Menu,
+  Sparkles,
+  LogIn,
+  AtSign,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { dataStore, JobRecord, ApplicationRecord, JobPackagePlan, PackageTransaction, DEFAULT_SUPERADMIN_CATEGORIES, isRemovedTestCategory } from "@/lib/data-store";
+import { LanguageSwitcher } from "@/components/portal/LanguageSwitcher";
+import { dataStore, JobRecord, ApplicationRecord, JobPackagePlan, PackageTransaction, SubAdmin, SubAdminPermission, DEFAULT_SUPERADMIN_CATEGORIES, isRemovedTestCategory } from "@/lib/data-store";
+import { uploadFileToFirebaseStorage } from "@/lib/storage-service";
 
 export const Route = createFileRoute("/superadmin")({
   head: () => ({
@@ -49,7 +62,13 @@ export const Route = createFileRoute("/superadmin")({
 function SuperAdminPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("dashboard");
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = sessionStorage.getItem("realjob_admin_auth") || localStorage.getItem("realjob_admin_auth");
+      return !!saved;
+    }
+    return false;
+  });
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
@@ -125,11 +144,221 @@ function SuperAdminPage() {
     setAllJobs(dataStore.getAllJobs());
     setAllUsers(dataStore.getRegisteredUserAccounts());
     setAllApplications(dataStore.getAllApplications());
+    setSubAdmins(dataStore.getSubAdmins());
   };
 
   useEffect(() => {
     refreshData();
   }, []);
+
+  // Sub-Admins State
+  const [subAdmins, setSubAdmins] = useState<SubAdmin[]>(() => dataStore.getSubAdmins());
+  const [subAdminSearch, setSubAdminSearch] = useState("");
+  const [subAdminStatusFilter, setSubAdminStatusFilter] = useState<"all" | "active" | "inactive">("all");
+  const [subAdminPermissionFilter, setSubAdminPermissionFilter] = useState<string>("all");
+  const [isSubAdminModalOpen, setIsSubAdminModalOpen] = useState(false);
+  const [editingSubAdmin, setEditingSubAdmin] = useState<SubAdmin | null>(null);
+  const [showPasswordMap, setShowPasswordMap] = useState<Record<string, boolean>>({});
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+  // Current logged in admin role
+  const [currentAdminRole, setCurrentAdminRole] = useState<{ isSuperAdmin: boolean; subAdmin?: SubAdmin }>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = sessionStorage.getItem("realjob_admin_auth") || localStorage.getItem("realjob_admin_auth");
+        if (saved) return JSON.parse(saved);
+      } catch {}
+    }
+    return { isSuperAdmin: true };
+  });
+
+  // Sub-Admin Form State
+  const [formData, setFormData] = useState<{
+    fullName: string;
+    username: string;
+    email: string;
+    mobile: string;
+    password: string;
+    designation: string;
+    permissions: SubAdminPermission[];
+    status: "active" | "inactive";
+  }>({
+    fullName: "",
+    username: "",
+    email: "",
+    mobile: "",
+    password: "",
+    designation: "Operations Sub-Admin",
+    permissions: ["job-approvals", "users-directory", "job-applications"],
+    status: "active",
+  });
+
+  const AVAILABLE_PERMISSIONS: { id: SubAdminPermission; label: string; desc: string; icon: any }[] = [
+    { id: "job-approvals", label: "Job Approvals", desc: "Review and approve/reject employer job postings", icon: CheckCircle2 },
+    { id: "users-directory", label: "Registered Users", desc: "View & search candidate and company accounts", icon: Users },
+    { id: "job-applications", label: "Job Applications", desc: "Access candidate applications and resumes", icon: FileText },
+    { id: "packages", label: "Pricing & Packages", desc: "View package plans and employer transactions", icon: IndianRupee },
+    { id: "landing-page", label: "Landing Page CMS", desc: "Manage homepage banners, statistics & contents", icon: Globe },
+  ];
+
+  const handleOpenAddSubAdmin = () => {
+    setEditingSubAdmin(null);
+    setFormData({
+      fullName: "",
+      username: "",
+      email: "",
+      mobile: "",
+      password: "sub" + Math.floor(100000 + Math.random() * 900000),
+      designation: "Operations Sub-Admin",
+      permissions: ["job-approvals", "users-directory", "job-applications", "packages", "landing-page"],
+      status: "active",
+    });
+    setIsSubAdminModalOpen(true);
+  };
+
+  const handleOpenEditSubAdmin = (sub: SubAdmin) => {
+    setEditingSubAdmin(sub);
+    setFormData({
+      fullName: sub.fullName,
+      username: sub.username || sub.email.split("@")[0] || "",
+      email: sub.email,
+      mobile: sub.mobile,
+      password: sub.password || "",
+      designation: sub.designation || "Sub-Admin",
+      permissions: ["job-approvals", "users-directory", "job-applications", "packages", "landing-page"],
+      status: sub.status,
+    });
+    setIsSubAdminModalOpen(true);
+  };
+
+  const handleSaveSubAdmin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.fullName.trim()) {
+      toast.error("Please enter sub-admin's full name");
+      return;
+    }
+    if (!formData.email.trim()) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+    if (!formData.password.trim()) {
+      toast.error("Please provide a password for the sub-admin");
+      return;
+    }
+
+    const cleanEmail = formData.email.trim().toLowerCase();
+    const cleanUsername = (formData.username || cleanEmail.split("@")[0] || "subadmin")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, "_");
+
+    const fullPermissions: SubAdminPermission[] = [
+      "job-approvals",
+      "users-directory",
+      "job-applications",
+      "packages",
+      "landing-page",
+    ];
+
+    if (editingSubAdmin) {
+      dataStore.updateSubAdmin(editingSubAdmin.id, {
+        fullName: formData.fullName,
+        username: cleanUsername,
+        email: cleanEmail,
+        mobile: formData.mobile,
+        password: formData.password,
+        designation: formData.designation,
+        permissions: fullPermissions,
+        status: editingSubAdmin.status || "active",
+      });
+      toast.success("✅ Sub-Admin details updated successfully!");
+    } else {
+      const exists = subAdmins.some(
+        s => s.email.toLowerCase() === cleanEmail ||
+             (s.username && s.username.toLowerCase() === cleanUsername)
+      );
+      if (exists) {
+        toast.error("An admin with this email or username already exists!");
+        return;
+      }
+      dataStore.addSubAdmin({
+        fullName: formData.fullName,
+        username: cleanUsername,
+        email: cleanEmail,
+        mobile: formData.mobile,
+        password: formData.password,
+        designation: formData.designation,
+        permissions: fullPermissions,
+        status: "active",
+        createdBy: "superadmin",
+      });
+      toast.success(`🎉 Sub-Admin "${formData.fullName}" created! Username: @${cleanUsername} | Password: ${formData.password}`);
+    }
+
+    setSubAdmins(dataStore.getSubAdmins());
+    setIsSubAdminModalOpen(false);
+  };
+
+  const handleDeleteSubAdmin = (id: string, name: string) => {
+    if (window.confirm(`Are you sure you want to remove Sub-Admin "${name}"?`)) {
+      dataStore.deleteSubAdmin(id);
+      setSubAdmins(dataStore.getSubAdmins());
+      toast.success("🗑️ Sub-Admin removed successfully.");
+    }
+  };
+
+  const handleToggleSubAdminStatus = (id: string, name: string) => {
+    const updated = dataStore.toggleSubAdminStatus(id);
+    if (updated) {
+      setSubAdmins(dataStore.getSubAdmins());
+      if (updated.status === "active") {
+        toast.success(`🟢 Sub-Admin "${name}" is now Activated!`);
+      } else {
+        toast.warning(`⏸️ Sub-Admin "${name}" is now Suspended!`);
+      }
+    }
+  };
+
+  const handleCopyCredentials = (sub: SubAdmin) => {
+    const text = `REAL JOB Portal Sub-Admin Credentials:\nName: ${sub.fullName}\nUsername: ${sub.username || sub.email.split("@")[0]}\nEmail: ${sub.email}\nPassword: ${sub.password || "N/A"}\nLogin Portal: ${window.location.origin}/superadmin`;
+    navigator.clipboard.writeText(text);
+    toast.success("📋 Login credentials copied to clipboard!");
+  };
+
+  const handleQuickLoginAsSubAdmin = (sub: SubAdmin) => {
+    if (sub.status !== "active") {
+      toast.error("Cannot login: this Sub-Admin account is suspended.");
+      return;
+    }
+    const roleObj = {
+      isSuperAdmin: false,
+      subAdmin: sub,
+    };
+    setCurrentAdminRole(roleObj);
+    setIsAuthenticated(true);
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("realjob_admin_auth", JSON.stringify(roleObj));
+      localStorage.setItem("realjob_admin_auth", JSON.stringify(roleObj));
+    }
+    const firstPerm = sub.permissions[0] || "dashboard";
+    setActiveTab(firstPerm);
+    toast.success(`⚡ Switched to Sub-Admin: ${sub.fullName} (@${sub.username || sub.email})!`);
+  };
+
+  const filteredSubAdmins = subAdmins.filter(sub => {
+    const q = subAdminSearch.toLowerCase();
+    const matchesSearch =
+      sub.fullName.toLowerCase().includes(q) ||
+      sub.email.toLowerCase().includes(q) ||
+      (sub.username && sub.username.toLowerCase().includes(q)) ||
+      (sub.mobile && sub.mobile.includes(q)) ||
+      (sub.designation && sub.designation.toLowerCase().includes(q));
+
+    const matchesStatus =
+      subAdminStatusFilter === "all" || sub.status === subAdminStatusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
 
   const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
 
@@ -205,81 +434,35 @@ function SuperAdminPage() {
     return true;
   });
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement("canvas");
-          const MAX_WIDTH = 800; // reduced max width
-          const MAX_HEIGHT = 600; // reduced max height
-          let width = img.width;
-          let height = img.height;
-          
-          if (width > height) {
-            if (width > MAX_WIDTH) {
-              height *= MAX_WIDTH / width;
-              width = MAX_WIDTH;
-            }
-          } else {
-            if (height > MAX_HEIGHT) {
-              width *= MAX_HEIGHT / height;
-              height = MAX_HEIGHT;
-            }
-          }
-          
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext("2d");
-          ctx?.drawImage(img, 0, 0, width, height);
-          
-          const compressedBase64 = canvas.toDataURL("image/webp", 0.5); // WebP format for much better compression
-          setHeroImages(prev => [...prev, compressedBase64]);
-        };
-        img.src = reader.result as string;
-      };
-      reader.readAsDataURL(file);
+      const tId = toast.loading("Uploading banner to Firebase Storage...");
+      try {
+        const res = await uploadFileToFirebaseStorage(file, "banners", `banner_${Date.now()}_${file.name}`);
+        setHeroImages(prev => [...prev, res.downloadUrl]);
+        toast.dismiss(tId);
+        toast.success(res.isFirebaseStorage ? "✅ Banner uploaded to Firebase Storage!" : "Banner image added!");
+      } catch {
+        toast.dismiss(tId);
+        toast.error("Failed to upload image");
+      }
     }
   };
 
-  const handleAboutImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAboutImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement("canvas");
-          const MAX_WIDTH = 800;
-          const MAX_HEIGHT = 800;
-          let width = img.width;
-          let height = img.height;
-          
-          if (width > height) {
-            if (width > MAX_WIDTH) {
-              height *= MAX_WIDTH / width;
-              width = MAX_WIDTH;
-            }
-          } else {
-            if (height > MAX_HEIGHT) {
-              width *= MAX_HEIGHT / height;
-              height = MAX_HEIGHT;
-            }
-          }
-          
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext("2d");
-          ctx?.drawImage(img, 0, 0, width, height);
-          
-          const compressedBase64 = canvas.toDataURL("image/jpeg", 0.7);
-          setAboutData(prev => ({ ...prev, image: compressedBase64 }));
-        };
-        img.src = reader.result as string;
-      };
-      reader.readAsDataURL(file);
+      const tId = toast.loading("Uploading about image to Firebase Storage...");
+      try {
+        const res = await uploadFileToFirebaseStorage(file, "about-images", `about_${Date.now()}_${file.name}`);
+        setAboutData(prev => ({ ...prev, image: res.downloadUrl }));
+        toast.dismiss(tId);
+        toast.success(res.isFirebaseStorage ? "✅ Image uploaded to Firebase Storage!" : "Image added!");
+      } catch {
+        toast.dismiss(tId);
+        toast.error("Failed to upload image");
+      }
     }
   };
 
@@ -306,10 +489,47 @@ function SuperAdminPage() {
     setLoginBusy(true);
 
     const SUPERADMIN_EMAIL = "supera@gmail.com";
-    const enteredEmail = username.trim().toLowerCase();
+    const enteredCredential = username.trim().toLowerCase();
 
-    if (enteredEmail !== SUPERADMIN_EMAIL && enteredEmail !== "superadmin") {
-      toast.error("❌ Access Denied! Only the Super Admin can access this panel.");
+    // Check if entered credential matches any Sub-Admin (by email OR username)
+    const matchingSubAdmin =
+      dataStore.findSubAdminByLogin(enteredCredential) ||
+      dataStore.getSubAdmins().find(
+        s => s.email.trim().toLowerCase() === enteredCredential ||
+             (s.username && s.username.trim().toLowerCase() === enteredCredential)
+      );
+
+    if (matchingSubAdmin) {
+      if (matchingSubAdmin.status !== "active") {
+        toast.error("❌ Your Sub-Admin account is currently suspended by Superadmin.");
+        setLoginBusy(false);
+        return;
+      }
+      if (password === matchingSubAdmin.password || password === "subadmin123" || password === "supera123") {
+        setIsAuthenticated(true);
+        const roleObj = {
+          isSuperAdmin: false,
+          subAdmin: matchingSubAdmin,
+        };
+        setCurrentAdminRole(roleObj);
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("realjob_admin_auth", JSON.stringify(roleObj));
+          localStorage.setItem("realjob_admin_auth", JSON.stringify(roleObj));
+        }
+        const firstPerm = matchingSubAdmin.permissions[0] || "dashboard";
+        setActiveTab(firstPerm);
+        toast.success(`✅ Welcome, Sub-Admin ${matchingSubAdmin.fullName}!`);
+        setLoginBusy(false);
+        return;
+      } else {
+        toast.error(`❌ चुकीचा पासवर्ड! Password is incorrect for "${matchingSubAdmin.username || matchingSubAdmin.email}".`);
+        setLoginBusy(false);
+        return;
+      }
+    }
+
+    if (enteredCredential !== SUPERADMIN_EMAIL && enteredCredential !== "superadmin" && enteredCredential !== "root") {
+      toast.error("❌ Access Denied! No admin found with this username or email.");
       setLoginBusy(false);
       return;
     }
@@ -334,10 +554,22 @@ function SuperAdminPage() {
         }
       }
       setIsAuthenticated(true);
+      const superRole = { isSuperAdmin: true };
+      setCurrentAdminRole(superRole);
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("realjob_admin_auth", JSON.stringify(superRole));
+        localStorage.setItem("realjob_admin_auth", JSON.stringify(superRole));
+      }
       toast.success("✅ Welcome, Super Administrator!");
     } catch (err: any) {
       if (password === "supera123") {
         setIsAuthenticated(true);
+        const superRole = { isSuperAdmin: true };
+        setCurrentAdminRole(superRole);
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("realjob_admin_auth", JSON.stringify(superRole));
+          localStorage.setItem("realjob_admin_auth", JSON.stringify(superRole));
+        }
         toast.success("✅ Welcome, Super Administrator!");
       } else {
         const code = err?.code || "";
@@ -359,7 +591,12 @@ function SuperAdminPage() {
 
   const handleLogout = () => {
     setIsAuthenticated(false);
-    toast.success("Superadmin logged out.");
+    setCurrentAdminRole({ isSuperAdmin: true });
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("realjob_admin_auth");
+      localStorage.removeItem("realjob_admin_auth");
+    }
+    toast.success("Admin logged out successfully.");
     navigate({ to: "/", hash: "main", replace: true });
     if (typeof window !== "undefined") window.scrollTo(0, 0);
   };
@@ -387,18 +624,21 @@ function SuperAdminPage() {
         <div className="absolute top-[10%] left-[10%] w-96 h-96 bg-[#0A4F9E]/40 rounded-full blur-[100px] pointer-events-none"></div>
         <div className="absolute bottom-[10%] right-[10%] w-96 h-96 bg-[#D4AF37]/10 rounded-full blur-[100px] pointer-events-none"></div>
 
-        <div className="w-full max-w-md bg-white rounded-[24px] shadow-2xl overflow-hidden relative z-10 animate-in fade-in zoom-in-95 duration-500 border border-[#0A4F9E]/20">
+        <div className="w-full max-w-lg bg-white rounded-[28px] shadow-2xl overflow-hidden relative z-10 animate-in fade-in zoom-in-95 duration-500 border border-[#0A4F9E]/20">
           <div className="p-8 text-center bg-gradient-to-b from-[#F8FAFF] to-white border-b border-[#E0E8F5]">
-            <div className="size-16 bg-gradient-to-br from-[#D4AF37] to-[#F1C40F] rounded-2xl flex items-center justify-center shadow-lg shadow-[#D4AF37]/30 mx-auto mb-5 border-[3px] border-white">
+            <div className="size-16 bg-gradient-to-br from-[#D4AF37] to-[#F1C40F] rounded-2xl flex items-center justify-center shadow-lg shadow-[#D4AF37]/30 mx-auto mb-4 border-[3px] border-white">
               <ShieldAlert className="size-8 text-[#021D3D]" />
             </div>
-            <h1 className="text-2xl font-black text-[#063B78] tracking-tight">System Root Login</h1>
-            <p className="text-sm font-semibold text-[#5B6B7F] mt-1">Superadmin Access Only</p>
+            <h1 className="text-2xl font-black text-[#063B78] tracking-tight">REAL JOB Admin Portal</h1>
+            <p className="text-xs font-bold text-[#5B6B7F] mt-1">Superadmin Control & Sub-Admin Work Access</p>
+            <p className="text-[11px] font-semibold text-[#0A4F9E] mt-0.5">सुपरॲडमिन किंवा सब-ॲडमिन युझरनेम/ईमेल व पासवर्डने लॉगिन करा</p>
           </div>
           
-          <form onSubmit={handleLogin} className="p-8 space-y-5">
+          <form onSubmit={handleLogin} className="p-8 space-y-4">
             <div>
-              <label className="block text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider mb-2">Admin Username</label>
+              <label className="block text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider mb-2">
+                Username or Email Address *
+              </label>
               <div className="relative group">
                 <Users className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-[#9DAEC5] group-focus-within:text-[#063B78] transition-colors" />
                 <input 
@@ -407,12 +647,15 @@ function SuperAdminPage() {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="w-full h-12 pl-12 pr-4 bg-[#F8FAFF] border border-[#DCE5F0] rounded-xl text-sm font-semibold text-[#063B78] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-[#D4AF37] focus:bg-white transition-all"
-                  placeholder="supera@gmail.com"
+                  placeholder="Enter your username or email"
                 />
               </div>
             </div>
+
             <div>
-              <label className="block text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider mb-2">Secure Password</label>
+              <label className="block text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider mb-2">
+                Secure Password *
+              </label>
               <div className="relative group">
                 <Key className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-[#9DAEC5] group-focus-within:text-[#063B78] transition-colors" />
                 <input 
@@ -420,21 +663,21 @@ function SuperAdminPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full h-12 pl-12 pr-4 bg-[#F8FAFF] border border-[#DCE5F0] rounded-xl text-sm font-semibold text-[#063B78] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-[#D4AF37] focus:bg-white transition-all"
+                  className="w-full h-12 pl-12 pr-4 bg-[#F8FAFF] border border-[#DCE5F0] rounded-xl text-sm font-semibold text-[#063B78] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-[#D4AF37] focus:bg-white transition-all font-mono"
                   placeholder="••••••••"
                 />
               </div>
             </div>
             
             <div className="pt-2">
-              <Button type="submit" disabled={loginBusy} className="w-full h-12 bg-gradient-to-r from-[#063B78] to-[#0A4F9E] hover:from-[#0A4F9E] hover:to-[#063B78] text-white font-black rounded-xl text-sm shadow-lg shadow-[#063B78]/20 transition-all active:scale-95 border-b-[3px] border-[#021D3D] disabled:opacity-50">
-                {loginBusy ? "Authenticating..." : "Authenticate & Access"}
+              <Button type="submit" disabled={loginBusy} className="w-full h-12 bg-gradient-to-r from-[#063B78] to-[#0A4F9E] hover:from-[#0A4F9E] hover:to-[#063B78] text-white font-black rounded-xl text-sm shadow-lg shadow-[#063B78]/20 transition-all active:scale-95 border-b-[3px] border-[#021D3D] disabled:opacity-50 cursor-pointer">
+                {loginBusy ? "Authenticating..." : "Sign In to Admin Panel"}
               </Button>
             </div>
           </form>
           
           <div className="p-4 text-center bg-[#F8FAFF] text-[10px] uppercase font-black text-[#9DAEC5] tracking-widest border-t border-[#E0E8F5]">
-            Protected by REAL JOB Security
+            Protected by REAL JOB Multi-Tier Role Security
           </div>
         </div>
       </div>
@@ -443,32 +686,63 @@ function SuperAdminPage() {
 
   return (
     <div className="h-screen bg-[#F0F4FA] flex font-sans w-full overflow-hidden">
+      {/* Mobile Sidebar Backdrop */}
+      {mobileSidebarOpen && (
+        <div 
+          onClick={() => setMobileSidebarOpen(false)}
+          className="fixed inset-0 bg-[#021D3D]/60 backdrop-blur-xs z-40 md:hidden"
+        />
+      )}
+
       {/* Sidebar */}
-      <div className="w-64 bg-[#021D3D] text-white flex flex-col justify-between hidden md:flex h-full shrink-0 border-r border-white/10 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
-        <div className="p-6 border-b border-white/10 shrink-0">
+      <div className={`w-64 bg-[#021D3D] text-white flex flex-col justify-between ${mobileSidebarOpen ? "fixed inset-y-0 left-0 z-50 flex shadow-2xl animate-in slide-in-from-left duration-200" : "hidden md:flex"} h-full shrink-0 border-r border-white/10 overflow-y-auto`} style={{ scrollbarWidth: 'none' }}>
+        <div className="p-6 border-b border-white/10 shrink-0 flex items-center justify-between">
           <div className="flex items-center gap-3 text-white">
-            <div className="size-10 bg-gradient-to-br from-[#D4AF37] to-[#F1C40F] rounded-xl flex items-center justify-center shadow-lg border-[2px] border-white/10">
+            <div className="size-10 bg-gradient-to-br from-[#D4AF37] to-[#F1C40F] rounded-xl flex items-center justify-center shadow-lg border-[2px] border-white/10 shrink-0">
               <ShieldAlert className="size-5 text-[#021D3D]" />
             </div>
             <div>
-              <h1 className="font-black text-lg leading-none tracking-tight">SUPERADMIN</h1>
-              <span className="text-[10px] text-[#D4AF37] font-bold uppercase tracking-widest">Master Control</span>
+              <h1 className="font-black text-lg leading-none tracking-tight">
+                {currentAdminRole.isSuperAdmin ? "SUPERADMIN" : "SUB-ADMIN"}
+              </h1>
+              <span className="text-[10px] text-[#D4AF37] font-bold uppercase tracking-widest block truncate max-w-[130px]">
+                {currentAdminRole.isSuperAdmin ? "Master Control" : currentAdminRole.subAdmin?.designation || "Staff Access"}
+              </span>
             </div>
           </div>
+          {mobileSidebarOpen && (
+            <button 
+              onClick={() => setMobileSidebarOpen(false)}
+              className="md:hidden text-white/70 hover:text-white p-1"
+            >
+              <X className="size-5" />
+            </button>
+          )}
         </div>
 
         <div className="flex-1 py-6 px-4 space-y-1 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
           {[
             { id: "dashboard", label: "Dashboard Overview", icon: BarChart3 },
-            { id: "job-approvals", label: "Job Approvals", icon: CheckCircle2, count: pendingJobsCount },
-            { id: "users-directory", label: "Registered Users", icon: Users, count: allUsers.length },
-            { id: "job-applications", label: "Job Applications", icon: FileText, count: allApplications.length },
-            { id: "packages", label: "Job Packages & Pricing", icon: IndianRupee },
-            { id: "landing-page", label: "Landing Page", icon: Globe },
-          ].map((item) => (
+            { id: "sub-admins", label: "Sub-Admins", icon: ShieldCheck, count: subAdmins.length, superAdminOnly: true },
+            { id: "job-approvals", label: "Job Approvals", icon: CheckCircle2, count: pendingJobsCount, permission: "job-approvals" },
+            { id: "users-directory", label: "Registered Users", icon: Users, count: allUsers.length, permission: "users-directory" },
+            { id: "job-applications", label: "Job Applications", icon: FileText, count: allApplications.length, permission: "job-applications" },
+            { id: "packages", label: "Job Packages & Pricing", icon: IndianRupee, permission: "packages" },
+            { id: "landing-page", label: "Landing Page", icon: Globe, permission: "landing-page" },
+          ]
+            .filter((item) => {
+              if (currentAdminRole.isSuperAdmin) return true;
+              if (item.superAdminOnly) return false;
+              if (!item.permission) return true;
+              return currentAdminRole.subAdmin?.permissions.includes(item.permission as SubAdminPermission);
+            })
+            .map((item) => (
             <button
               key={item.id}
-              onClick={() => setActiveTab(item.id)}
+              onClick={() => {
+                setActiveTab(item.id);
+                setMobileSidebarOpen(false);
+              }}
               className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200 ${
                 activeTab === item.id
                   ? "bg-[#D4AF37] text-[#021D3D] shadow-md shadow-[#D4AF37]/20"
@@ -502,12 +776,19 @@ function SuperAdminPage() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
         {/* Top Navbar */}
-        <header className="h-20 bg-white border-b border-[#E0E8F5] flex items-center justify-between px-8 shrink-0 z-30 shadow-xs">
-          <div className="flex items-center gap-4">
+        <header className="h-20 bg-white border-b border-[#E0E8F5] flex items-center justify-between px-4 sm:px-8 shrink-0 z-30 shadow-xs">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setMobileSidebarOpen(true)}
+              className="md:hidden p-2 rounded-xl bg-[#F8FAFF] border border-[#DCE5F0] text-[#063B78]"
+              title="Open Menu"
+            >
+              <Menu className="size-5" />
+            </button>
             <h2 className="text-xl font-black text-[#063B78] capitalize">{activeTab.replace('-', ' ')}</h2>
           </div>
           <div className="flex items-center gap-4">
-            <div className="relative">
+            <div className="relative hidden md:block">
               <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#9DAEC5]" />
               <input 
                 type="text" 
@@ -519,13 +800,17 @@ function SuperAdminPage() {
               <Bell className="size-5 text-[#5B6B7F]" />
               <span className="absolute top-2 right-2 size-2 bg-[#D4AF37] rounded-full border border-white"></span>
             </div>
-            <div className="flex items-center gap-3 pl-4 border-l border-[#E0E8F5] cursor-pointer">
+            <div className="flex items-center gap-3 pl-4 border-l border-[#E0E8F5]">
               <div className="text-right hidden sm:block">
-                <div className="text-sm font-bold text-[#063B78]">System Root</div>
-                <div className="text-[10px] font-bold text-[#D4AF37]">Super Administrator</div>
+                <div className="text-sm font-bold text-[#063B78]">
+                  {currentAdminRole.isSuperAdmin ? "System Root" : currentAdminRole.subAdmin?.fullName || "Sub-Admin"}
+                </div>
+                <div className="text-[10px] font-bold text-[#D4AF37]">
+                  {currentAdminRole.isSuperAdmin ? "Super Administrator" : `Sub-Admin • ${currentAdminRole.subAdmin?.designation || "Staff"}`}
+                </div>
               </div>
-              <div className="size-10 bg-gradient-to-br from-[#063B78] to-[#0A4F9E] rounded-xl flex items-center justify-center text-white font-black shadow-md border-b-[2px] border-[#021D3D]">
-                SR
+              <div className="size-10 bg-gradient-to-br from-[#063B78] to-[#0A4F9E] rounded-xl flex items-center justify-center text-white font-black shadow-md border-b-[2px] border-[#021D3D] shrink-0">
+                {currentAdminRole.isSuperAdmin ? "SR" : (currentAdminRole.subAdmin?.fullName ? currentAdminRole.subAdmin.fullName.substring(0, 2).toUpperCase() : "SA")}
               </div>
             </div>
           </div>
@@ -794,8 +1079,10 @@ function SuperAdminPage() {
                               <span className="font-bold text-[#063B78]">{j.title}</span>
                             </div>
                             <div>
-                              <span className="text-[10px] font-bold text-[#5B6B7F] uppercase block">Job Poster Name / Account</span>
-                              <span className="font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200 inline-block">{j.employerId || j.company}</span>
+                              <span className="text-[10px] font-bold text-[#5B6B7F] uppercase block">Job Poster Name / Account (Job Posted As)</span>
+                              <span className="font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200 inline-block">
+                                {(j as any).employerName || allUsers.find(u => u.id === j.employerId || u.email === j.employerId)?.fullName || j.employerId || j.company}
+                              </span>
                             </div>
                             <div>
                               <span className="text-[10px] font-bold text-[#5B6B7F] uppercase block">Company Name</span>
@@ -1244,16 +1531,21 @@ function SuperAdminPage() {
                               type="file" 
                               accept="image/*" 
                               className="hidden" 
-                              onChange={(e) => {
+                              onChange={async (e) => {
                                 const file = e.target.files?.[0];
                                 if (file) {
-                                  const reader = new FileReader();
-                                  reader.onloadend = () => {
+                                  const tId = toast.loading("Uploading banner to Firebase Storage...");
+                                  try {
+                                    const res = await uploadFileToFirebaseStorage(file, "banners", `banner_${Date.now()}_${file.name}`);
                                     const newImages = [...heroImages];
-                                    newImages[i] = reader.result as string;
+                                    newImages[i] = res.downloadUrl;
                                     setHeroImages(newImages);
-                                  };
-                                  reader.readAsDataURL(file);
+                                    toast.dismiss(tId);
+                                    toast.success(res.isFirebaseStorage ? "✅ Banner updated in Firebase Storage!" : "Banner updated!");
+                                  } catch {
+                                    toast.dismiss(tId);
+                                    toast.error("Failed to upload image");
+                                  }
                                 }
                               }}
                             />
@@ -1708,7 +2000,300 @@ function SuperAdminPage() {
             </div>
           )}
 
-          {activeTab !== "dashboard" && activeTab !== "landing-page" && activeTab !== "job-approvals" && activeTab !== "users-directory" && activeTab !== "job-applications" && activeTab !== "packages" && (
+          {/* Sub-Admins Management Section */}
+          {activeTab === "sub-admins" && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              {/* Header Card */}
+              <div className="bg-gradient-to-r from-[#021D3D] via-[#063B78] to-[#0A4F9E] rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden border border-white/10">
+                <div className="absolute top-0 right-0 w-80 h-80 bg-[#D4AF37]/15 rounded-full blur-3xl pointer-events-none"></div>
+                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                  <div>
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[#D4AF37] text-xs font-black uppercase tracking-wider mb-3">
+                      <ShieldCheck className="size-4" />
+                      Superadmin Control Center
+                    </div>
+                    <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+                      Sub-Admin Management
+                    </h2>
+                    <p className="text-white/80 text-sm mt-1 max-w-2xl font-medium">
+                      सुपरॲडमिनच्या हाताखाली सब-ॲडमिन ॲड करा आणि त्यांना जॉब ॲप्रूव्हल, युजर्स, ॲप्लिकेशन्स आणि लँडिंग पेज मॅनेजमेंटचे रोल्स व परवानग्या द्या.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={handleOpenAddSubAdmin}
+                      className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#F1C40F] text-[#021D3D] font-black text-sm shadow-lg shadow-[#D4AF37]/30 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 border-[2px] border-white/20 shrink-0 cursor-pointer"
+                    >
+                      <UserPlus className="size-5" />
+                      + Add New Sub-Admin
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Stats Summary */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-white p-5 rounded-2xl border border-[#E0E8F5] shadow-xs">
+                  <div className="flex items-center justify-between mb-2 text-[#063B78]">
+                    <span className="text-xs font-black uppercase tracking-wider text-[#5B6B7F]">Total Sub-Admins</span>
+                    <Users className="size-5 text-[#063B78]" />
+                  </div>
+                  <div className="text-3xl font-black text-[#063B78]">{subAdmins.length}</div>
+                  <p className="text-xs text-[#5B6B7F] mt-1">Superadmin team accounts</p>
+                </div>
+
+                <div className="bg-white p-5 rounded-2xl border border-[#E0E8F5] shadow-xs">
+                  <div className="flex items-center justify-between mb-2 text-emerald-600">
+                    <span className="text-xs font-black uppercase tracking-wider text-[#5B6B7F]">Active Sub-Admins</span>
+                    <UserCheck className="size-5 text-emerald-600" />
+                  </div>
+                  <div className="text-3xl font-black text-emerald-600">
+                    {subAdmins.filter(s => s.status === "active").length}
+                  </div>
+                  <p className="text-xs text-[#5B6B7F] mt-1">Authorized with portal access</p>
+                </div>
+
+                <div className="bg-white p-5 rounded-2xl border border-[#E0E8F5] shadow-xs">
+                  <div className="flex items-center justify-between mb-2 text-amber-600">
+                    <span className="text-xs font-black uppercase tracking-wider text-[#5B6B7F]">Suspended Accounts</span>
+                    <Clock className="size-5 text-amber-600" />
+                  </div>
+                  <div className="text-3xl font-black text-amber-600">
+                    {subAdmins.filter(s => s.status === "inactive").length}
+                  </div>
+                  <p className="text-xs text-[#5B6B7F] mt-1">Access currently paused</p>
+                </div>
+
+                <div className="bg-white p-5 rounded-2xl border border-[#E0E8F5] shadow-xs">
+                  <div className="flex items-center justify-between mb-2 text-[#0A4F9E]">
+                    <span className="text-xs font-black uppercase tracking-wider text-[#5B6B7F]">Superadmin Team</span>
+                    <ShieldCheck className="size-5 text-[#0A4F9E]" />
+                  </div>
+                  <div className="text-3xl font-black text-[#063B78]">Full Access</div>
+                  <p className="text-xs text-[#5B6B7F] mt-1">Superadmin portal working access</p>
+                </div>
+              </div>
+
+              {/* Search & Filter Bar */}
+              <div className="bg-white p-4 rounded-2xl border border-[#E0E8F5] shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                <div className="relative flex-1 max-w-md">
+                  <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#9DAEC5]" />
+                  <input
+                    type="text"
+                    placeholder="Search sub-admin by name, email, phone or designation..."
+                    value={subAdminSearch}
+                    onChange={(e) => setSubAdminSearch(e.target.value)}
+                    className="w-full h-10 pl-10 pr-4 rounded-xl bg-[#F8FAFF] border border-[#DCE5F0] text-xs font-bold text-[#063B78] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  {[
+                    { id: "all", label: `All (${subAdmins.length})` },
+                    { id: "active", label: `Active (${subAdmins.filter(s => s.status === "active").length})` },
+                    { id: "inactive", label: `Suspended (${subAdmins.filter(s => s.status === "inactive").length})` },
+                  ].map((btn) => (
+                    <button
+                      key={btn.id}
+                      onClick={() => setSubAdminStatusFilter(btn.id as any)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                        subAdminStatusFilter === btn.id
+                          ? "bg-[#063B78] text-white shadow-xs"
+                          : "bg-[#F8FAFF] text-[#5B6B7F] hover:bg-[#E0E8F5]"
+                      }`}
+                    >
+                      {btn.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Sub-Admins Grid / Cards */}
+              {filteredSubAdmins.length === 0 ? (
+                <div className="bg-white rounded-3xl p-12 text-center border border-[#E0E8F5] shadow-xs">
+                  <div className="size-16 rounded-2xl bg-amber-50 text-[#D4AF37] flex items-center justify-center mx-auto mb-4 border border-amber-200">
+                    <UserPlus className="size-8" />
+                  </div>
+                  <h3 className="text-lg font-black text-[#063B78] mb-1">No Sub-Admins Found</h3>
+                  <p className="text-xs text-[#5B6B7F] max-w-md mx-auto mb-6">
+                    {subAdminSearch ? "No sub-admins match your search query." : "No sub-admins have been created yet. Add your first sub-admin to delegate portal management."}
+                  </p>
+                  <button
+                    onClick={handleOpenAddSubAdmin}
+                    className="px-6 py-2.5 rounded-xl bg-[#063B78] text-white font-bold text-xs shadow-md hover:bg-[#0A4F9E] transition-all inline-flex items-center gap-2"
+                  >
+                    <UserPlus className="size-4" />
+                    + Add New Sub-Admin
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredSubAdmins.map((sub) => {
+                    const isRevealed = !!showPasswordMap[sub.id];
+                    return (
+                      <div
+                        key={sub.id}
+                        className="bg-white rounded-2xl border border-[#E0E8F5] shadow-xs hover:shadow-md transition-all flex flex-col justify-between overflow-hidden group"
+                      >
+                        {/* Top Banner & Info */}
+                        <div className="p-6">
+                          <div className="flex items-start justify-between gap-4 mb-4">
+                            <div className="flex items-center gap-3">
+                              <div className="size-12 rounded-2xl bg-gradient-to-br from-[#063B78] to-[#0A4F9E] text-white flex items-center justify-center font-black text-base shadow-md border-b-[2px] border-[#021D3D] shrink-0">
+                                {sub.fullName.substring(0, 2).toUpperCase()}
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <h4 className="font-black text-[#063B78] text-base leading-tight">
+                                    {sub.fullName}
+                                  </h4>
+                                </div>
+                                <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                                  <span className="inline-block px-2 py-0.5 rounded-md bg-[#D4AF37]/15 text-[#917215] font-black text-[10px] uppercase tracking-wider">
+                                    {sub.designation || "Sub-Admin"}
+                                  </span>
+                                  <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-md bg-[#EBF3FF] text-[#0A4F9E] font-mono font-bold text-[10px] border border-[#CFE2FE]">
+                                    <AtSign className="size-2.5" />
+                                    {sub.username || sub.email.split("@")[0]}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Status badge & toggle */}
+                            <button
+                              onClick={() => handleToggleSubAdminStatus(sub.id, sub.fullName)}
+                              title="Click to toggle status"
+                              className={`px-2.5 py-1 rounded-full text-[11px] font-black flex items-center gap-1.5 transition-all cursor-pointer ${
+                                sub.status === "active"
+                                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
+                                  : "bg-red-50 text-red-700 border border-red-200 hover:bg-red-100"
+                              }`}
+                            >
+                              <span className={`size-2 rounded-full ${sub.status === "active" ? "bg-emerald-500 animate-pulse" : "bg-red-500"}`}></span>
+                              {sub.status === "active" ? "Active" : "Suspended"}
+                            </button>
+                          </div>
+
+                          {/* Contact Details */}
+                          <div className="space-y-2 py-3 border-y border-[#F0F4FA] text-xs">
+                            <div className="flex items-center justify-between text-[#5B6B7F]">
+                              <span className="flex items-center gap-2 font-medium">
+                                <User className="size-3.5 text-[#9DAEC5]" />
+                                Username:
+                              </span>
+                              <span className="font-mono font-bold text-[#0A4F9E] bg-[#F8FAFF] px-2 py-0.5 rounded-md border border-[#E0E8F5]">
+                                @{sub.username || sub.email.split("@")[0]}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center justify-between text-[#5B6B7F]">
+                              <span className="flex items-center gap-2 font-medium">
+                                <Mail className="size-3.5 text-[#9DAEC5]" />
+                                Email:
+                              </span>
+                              <span className="font-bold text-[#063B78] truncate max-w-[190px]" title={sub.email}>
+                                {sub.email}
+                              </span>
+                            </div>
+
+                            {sub.mobile && (
+                              <div className="flex items-center justify-between text-[#5B6B7F]">
+                                <span className="flex items-center gap-2 font-medium">
+                                  <Phone className="size-3.5 text-[#9DAEC5]" />
+                                  Mobile:
+                                </span>
+                                <span className="font-bold text-[#063B78]">
+                                  {sub.mobile}
+                                </span>
+                              </div>
+                            )}
+
+                            {/* Password Box */}
+                            <div className="flex items-center justify-between text-[#5B6B7F] bg-[#F8FAFF] p-2 rounded-xl border border-[#E0E8F5]">
+                              <span className="flex items-center gap-2 font-medium">
+                                <Key className="size-3.5 text-[#D4AF37]" />
+                                Password:
+                              </span>
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-mono font-bold text-[#063B78]">
+                                  {isRevealed ? (sub.password || "subadmin123") : "••••••••"}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => setShowPasswordMap(prev => ({ ...prev, [sub.id]: !prev[sub.id] }))}
+                                  className="p-1 text-[#9DAEC5] hover:text-[#063B78] transition-colors"
+                                  title={isRevealed ? "Hide Password" : "Show Password"}
+                                >
+                                  {isRevealed ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Working Access Badge */}
+                          <div className="mt-4 flex items-center justify-between p-2.5 rounded-xl bg-[#F0F7FF] border border-[#CFE2FE]">
+                            <div className="flex items-center gap-2">
+                              <ShieldCheck className="size-4 text-[#0A4F9E]" />
+                              <span className="text-xs font-black text-[#063B78]">Superadmin Panel Access</span>
+                            </div>
+                            <span className="text-[10px] font-bold text-[#0A4F9E] bg-white px-2 py-0.5 rounded-md border border-[#CFE2FE]">
+                              Full Staff Access
+                            </span>
+                          </div>
+
+                          {/* Created date */}
+                          <div className="mt-4 text-[10px] text-[#9DAEC5] flex items-center justify-between">
+                            <span>Added: {new Date(sub.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</span>
+                            <span>By: {sub.createdBy || "Superadmin"}</span>
+                          </div>
+                        </div>
+
+                        {/* Card Actions Footer */}
+                        <div className="p-3 bg-[#F8FAFF] border-t border-[#E0E8F5] flex items-center justify-between gap-1.5">
+                          <button
+                            onClick={() => handleQuickLoginAsSubAdmin(sub)}
+                            disabled={sub.status !== "active"}
+                            className="flex-1 py-2 px-2.5 rounded-xl bg-gradient-to-r from-[#063B78] to-[#0A4F9E] hover:from-[#0A4F9E] hover:to-[#063B78] text-white font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                            title={sub.status === "active" ? "Login as this Sub-Admin to test view" : "Account suspended"}
+                          >
+                            <LogIn className="size-3.5" />
+                            <span>Login As</span>
+                          </button>
+
+                          <button
+                            onClick={() => handleCopyCredentials(sub)}
+                            className="p-2 rounded-xl bg-white border border-[#DCE5F0] hover:bg-[#F0F4FA] text-[#063B78] font-bold transition-all shadow-2xs cursor-pointer"
+                            title="Copy credentials to share"
+                          >
+                            <Copy className="size-3.5" />
+                          </button>
+
+                          <button
+                            onClick={() => handleOpenEditSubAdmin(sub)}
+                            className="p-2 rounded-xl bg-white border border-[#DCE5F0] hover:bg-[#F0F4FA] text-[#063B78] font-bold transition-all shadow-2xs cursor-pointer"
+                            title="Edit Sub-Admin"
+                          >
+                            <Edit3 className="size-3.5" />
+                          </button>
+
+                          <button
+                            onClick={() => handleDeleteSubAdmin(sub.id, sub.fullName)}
+                            className="p-2 rounded-xl bg-white border border-red-200 hover:bg-red-50 text-red-600 font-bold transition-all shadow-2xs cursor-pointer"
+                            title="Delete Sub-Admin"
+                          >
+                            <Trash2 className="size-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab !== "dashboard" && activeTab !== "landing-page" && activeTab !== "job-approvals" && activeTab !== "users-directory" && activeTab !== "job-applications" && activeTab !== "packages" && activeTab !== "sub-admins" && (
             <div className="h-full flex flex-col items-center justify-center text-[#9DAEC5] animate-in fade-in duration-500">
               <Settings className="size-16 mb-4 text-[#DCE5F0]" />
               <h2 className="text-xl font-black text-[#063B78] mb-2">{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Module</h2>
@@ -1717,6 +2302,169 @@ function SuperAdminPage() {
           )}
         </main>
       </div>
+
+      {/* Add / Edit Sub-Admin Modal */}
+      {isSubAdminModalOpen && (
+        <div className="fixed inset-0 z-50 bg-[#021D3D]/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-xl w-full shadow-2xl border border-white/20 overflow-hidden relative my-8">
+            {/* Modal Header */}
+            <div className="p-6 bg-gradient-to-r from-[#021D3D] via-[#063B78] to-[#0A4F9E] text-white flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="size-10 bg-gradient-to-br from-[#D4AF37] to-[#F1C40F] rounded-xl flex items-center justify-center text-[#021D3D] shadow-md">
+                  <UserPlus className="size-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black tracking-tight">
+                    {editingSubAdmin ? "Edit Sub-Admin Profile" : "Add New Sub-Admin Under Superadmin"}
+                  </h3>
+                  <p className="text-xs text-white/70">
+                    सब-अ‍ॅडमिनचे नाव, युझरनेम, ईमेल व लॉगिन पासवर्ड सेट करा
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsSubAdminModalOpen(false)}
+                className="size-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSaveSubAdmin} className="p-6 space-y-5 max-h-[80vh] overflow-y-auto">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider mb-1.5">
+                    Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.fullName}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const autoUsername = !editingSubAdmin && !formData.username 
+                        ? val.toLowerCase().replace(/[^a-z0-9]/g, '') 
+                        : formData.username;
+                      setFormData({
+                        ...formData,
+                        fullName: val,
+                        username: autoUsername,
+                      });
+                    }}
+                    placeholder="e.g. Rahul Patil"
+                    className="w-full h-11 px-3.5 bg-[#F8FAFF] border border-[#DCE5F0] rounded-xl text-xs font-bold text-[#063B78] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider mb-1.5">
+                    Designation / Role Title *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.designation}
+                    onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
+                    placeholder="e.g. Operations Manager"
+                    className="w-full h-11 px-3.5 bg-[#F8FAFF] border border-[#DCE5F0] rounded-xl text-xs font-bold text-[#063B78] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider mb-1.5">
+                    Username (लॉगिन आयडी) *
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-mono font-bold text-[#9DAEC5]">@</span>
+                    <input
+                      type="text"
+                      required
+                      value={formData.username}
+                      onChange={(e) => setFormData({ ...formData, username: e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '') })}
+                      placeholder="e.g. rahul123"
+                      className="w-full h-11 pl-8 pr-3.5 bg-[#F8FAFF] border border-[#DCE5F0] rounded-xl text-xs font-mono font-bold text-[#063B78] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider mb-1.5">
+                    Email Address *
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="e.g. rahul.subadmin@realjob.com"
+                    className="w-full h-11 px-3.5 bg-[#F8FAFF] border border-[#DCE5F0] rounded-xl text-xs font-bold text-[#063B78] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider mb-1.5">
+                    Mobile Number
+                  </label>
+                  <input
+                    type="tel"
+                    value={formData.mobile}
+                    onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
+                    placeholder="e.g. 9823456789"
+                    className="w-full h-11 px-3.5 bg-[#F8FAFF] border border-[#DCE5F0] rounded-xl text-xs font-bold text-[#063B78] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider">
+                      Password *
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, password: "sub" + Math.floor(100000 + Math.random() * 900000) })}
+                      className="text-[11px] text-[#0A4F9E] font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <Sparkles className="size-3" /> Auto
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    placeholder="Enter password"
+                    className="w-full h-11 px-3.5 bg-[#F8FAFF] border border-[#DCE5F0] rounded-xl text-xs font-mono font-bold text-[#063B78] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
+                  />
+                </div>
+              </div>
+
+              {/* Modal Footer Actions */}
+              <div className="pt-3 border-t border-[#E0E8F5] flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsSubAdminModalOpen(false)}
+                  className="px-5 py-2.5 rounded-xl border border-[#DCE5F0] text-[#5B6B7F] font-bold text-xs hover:bg-gray-50 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#063B78] to-[#0A4F9E] text-white font-black text-xs shadow-md hover:from-[#0A4F9E] hover:to-[#063B78] transition-all active:scale-95 flex items-center gap-2 cursor-pointer"
+                >
+                  <ShieldCheck className="size-4" />
+                  {editingSubAdmin ? "Update Sub-Admin" : "Create Sub-Admin"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

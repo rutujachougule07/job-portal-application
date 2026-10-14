@@ -441,7 +441,13 @@ function RecentCandidates({ employerName }: { employerName: string }) {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => toast.info(`Viewing resume: ${app.resume}`)}
+              onClick={() => {
+                if (app.resume && (app.resume.startsWith("http") || app.resume.startsWith("data:"))) {
+                  window.open(app.resume, "_blank");
+                } else {
+                  toast.info(`Resume: ${app.resume || "No resume file available"}`);
+                }
+              }}
               className="font-bold text-xs border-[#063B78] text-[#063B78]"
             >
               📄 Resume

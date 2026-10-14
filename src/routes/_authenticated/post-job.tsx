@@ -272,6 +272,7 @@ function PostJobPage() {
 
     const currentUser = dataStore.getCurrentUser();
     const employerId = currentUser ? (currentUser.id || currentUser.email) : formData.company;
+    const employerName = currentUser?.fullName || formData.company || "Employer";
 
     const cleanMin = formData.salaryMin ? formData.salaryMin.replace(/[^0-9]/g, '') : '';
     const cleanMax = formData.salaryMax ? formData.salaryMax.replace(/[^0-9]/g, '') : '';
@@ -287,6 +288,7 @@ function PostJobPage() {
 
     dataStore.createJob({
       employerId,
+      employerName,
       title: formData.title,
       company: formData.company,
       category: formData.category,
@@ -358,11 +360,11 @@ function PostJobPage() {
 
                 <div>
                   <label className="block text-xs font-extrabold text-[#10233F] mb-1.5 uppercase">
-                    कंपनीचे नाव (Company Name) *
+                    कंपनी / एम्प्लॉयरचे नाव (Employer Name - Job Posted As) *
                   </label>
                   <Input
                     required
-                    placeholder="उदा. Tata Auto Components Ltd."
+                    placeholder="उदा. Tata Auto Components Ltd. / Employer Name"
                     value={formData.company}
                     onChange={(e) => handleChange("company", e.target.value)}
                     className="h-11 border-[#DCE5F0] text-xs font-bold text-[#10233F]"

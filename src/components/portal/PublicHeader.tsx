@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Brand } from "./Brand";
 import { LoginDropdown } from "./LoginDropdown";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
@@ -75,6 +76,7 @@ export function PublicHeader() {
 
         {/* Action Buttons & Utilities */}
         <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+          <LanguageSwitcher />
 
           {user ? (
             <div className="flex items-center gap-2">
@@ -107,32 +109,7 @@ export function PublicHeader() {
               </Button>
             </div>
           ) : (
-            <>
-              {/* Desktop Login Buttons */}
-              <Button asChild variant="outline" className="hidden lg:inline-flex border-[#063B78] text-[#063B78] font-extrabold hover:bg-[#063B78] hover:text-white text-xs px-2.5 h-9 rounded-lg shadow-2xs shrink-0 whitespace-nowrap">
-                <Link to="/auth" search={{ mode: "login", role: "worker" }} className="inline-flex items-center gap-1.5">
-                  <UserRound className="size-3.5" />
-                  <span>{t("seekerLogin")}</span>
-                </Link>
-              </Button>
-
-              <Button asChild variant="outline" className="hidden lg:inline-flex border-emerald-600 text-emerald-700 font-extrabold hover:bg-emerald-600 hover:text-white text-xs px-2.5 h-9 rounded-lg shadow-2xs shrink-0 whitespace-nowrap">
-                <Link to="/auth" search={{ mode: "login", role: "employee" }} className="inline-flex items-center gap-1.5">
-                  <Briefcase className="size-3.5" />
-                  <span>{t("employeeLogin")}</span>
-                </Link>
-              </Button>
-
-              <Button asChild className="hidden lg:inline-flex bg-[#063B78] hover:bg-[#082F63] text-white font-extrabold text-xs px-2.5 h-9 rounded-lg shadow-xs shrink-0 whitespace-nowrap">
-                <Link to="/auth" search={{ mode: "login", role: "admin" }} className="inline-flex items-center gap-1.5">
-                  <ShieldCheck className="size-3.5 text-[#FFC400]" />
-                  <span>{t("adminLogin")}</span>
-                </Link>
-              </Button>
-
-              {/* Mobile / Tablet Single Hoverable Login Dropdown */}
-              <LoginDropdown className="lg:hidden" />
-            </>
+            <LoginDropdown />
           )}
 
           {/* Mobile Menu Toggle Button */}

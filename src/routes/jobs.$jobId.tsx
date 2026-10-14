@@ -137,7 +137,7 @@ function JobDetailPage() {
         companyName: job.company,
         location: job.location,
         salary: job.salary,
-        resume: fieldValues['resume'] || `${name.replaceAll(" ", "_")}_Resume.pdf`,
+        resume: fieldValues['resume'] || dataStore.getJobSeekerProfile(seekerId)?.resume || `${name.replaceAll(" ", "_")}_Resume.pdf`,
         fieldValues,
         customAnswers,
         category: job.category
@@ -220,8 +220,12 @@ function JobDetailPage() {
                     <p className="text-sm font-extrabold text-[#125BB5] flex items-center gap-1.5">
                       <Building2 className="size-4" /> {job.company}
                     </p>
-                    <span className="text-xs font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200 flex items-center gap-1">
-                      <User className="size-3.5" /> Job Poster: <strong>{(job as any).employerId || job.company}</strong>
+                    <span className="text-xs font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-200 flex items-center gap-1.5">
+                      <User className="size-3.5 text-indigo-700" />
+                      <span>{lang === "mr" ? "जॉब पोस्टकर्ता (Job Posted as):" : "Job Posted as:"}</span>
+                      <strong className="text-indigo-950 font-black">
+                        {(job as any).employerName || dataStore.findRegisteredAccount((job as any).employerId)?.fullName || job.company}
+                      </strong>
                     </span>
                   </div>
 

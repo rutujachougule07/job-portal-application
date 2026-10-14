@@ -1,4 +1,4 @@
-import { Check, ChevronDown, Globe2, UserCheck } from "lucide-react";
+import { Check, UserCheck } from "lucide-react";
 import { languages, useI18n } from "@/lib/i18n";
 import {
   DropdownMenu,
@@ -29,23 +29,23 @@ export function LanguageSwitcher({
       <DropdownMenuTrigger asChild>
         <Button
           variant="outline"
-          size="sm"
-          className="h-9 gap-1.5 px-2.5 sm:px-3 text-xs font-bold bg-white border-[#DCE5F0] hover:bg-[#F5F8FC] transition-all shadow-2xs text-[#10233F]"
+          size="icon"
+          className="h-9 w-9 p-1 rounded-xl bg-white border-[#DCE5F0] hover:bg-[#F5F8FC] hover:border-[#063B78]/40 transition-all shadow-2xs cursor-pointer shrink-0"
+          title="Change Language • भाषा बदला"
+          aria-label="Change Language"
         >
-          <Globe2 className="size-4 text-[#063B78] shrink-0" />
-          <span className="hidden md:inline">{label}</span>
-          {showCurrent && (
-            <span className="rounded bg-[#063B78]/10 px-1.5 py-0.5 text-[11px] font-extrabold text-[#063B78]">
-              {currentItem.native}
-            </span>
-          )}
-          <ChevronDown className="size-3.5 opacity-60 ml-0.5" />
+          <img
+            src="/language-icon.png"
+            alt="Language"
+            className="size-7 rounded-lg object-contain"
+          />
         </Button>
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" className="w-56 p-2 shadow-2xl border-[#DCE5F0] bg-white text-[#10233F] z-[60] rounded-xl notranslate">
-        <DropdownMenuLabel className="text-[11px] font-black uppercase tracking-wider text-[#5B6B7F] px-2 py-1">
-          {t("chooseLanguage")} • भाषा निवडा
+        <DropdownMenuLabel className="text-[11px] font-black uppercase tracking-wider text-[#5B6B7F] px-2 py-1 flex items-center gap-1.5">
+          <img src="/language-icon.png" alt="Language" className="size-4 rounded-full object-contain" />
+          <span>{t("chooseLanguage")} • भाषा निवडा</span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="my-1.5 bg-[#DCE5F0]" />
 
