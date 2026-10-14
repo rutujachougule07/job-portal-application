@@ -43,6 +43,7 @@ const THEMES: Record<string, any> = {
 import careerTeam from "@/assets/career-team.jpg";
 import { Brand } from "@/components/portal/Brand";
 import { LanguageGate } from "@/components/portal/LanguageGate";
+import { LanguageSwitcher } from "@/components/portal/LanguageSwitcher";
 import { LoginDropdown } from "@/components/portal/LoginDropdown";
 
 import { PublicFooter } from "@/components/portal/PublicFooter";
@@ -246,6 +247,8 @@ function LandingGatewayPage() {
           <Brand className="h-10 sm:h-12 md:h-14 shrink-0" />
 
           <div className="flex items-center gap-2 sm:gap-3">
+            <LanguageSwitcher />
+
             {currentUser ? (
               <div className="flex items-center gap-2">
                 <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#EBF1F8] border border-[#B8D3F2] text-xs font-black text-[#063B78]">
@@ -268,48 +271,7 @@ function LandingGatewayPage() {
                 </Button>
               </div>
             ) : (
-              <div className="flex items-center gap-2">
-                {/* Desktop view 3 inline buttons */}
-                <div className="hidden lg:flex items-center gap-2">
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="bg-white border-[#063B78] text-[#063B78] font-extrabold hover:bg-[#063B78] hover:text-white text-xs px-3 h-9 rounded-lg shadow-xs whitespace-nowrap"
-                  >
-                    <Link to="/auth" search={{ mode: "login", role: "worker" }}>
-                      <UserCheck className="size-4 mr-1.5" />
-                      {t("seekerLogin")}
-                    </Link>
-                  </Button>
-
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="bg-white border-emerald-600 text-emerald-700 font-extrabold hover:bg-emerald-600 hover:text-white text-xs px-3 h-9 rounded-lg shadow-xs whitespace-nowrap"
-                  >
-                    <Link to="/auth" search={{ mode: "login", role: "employee" }}>
-                      <Briefcase className="size-4 mr-1.5" />
-                      {t("employeeLogin")}
-                    </Link>
-                  </Button>
-
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="bg-white border-[#063B78] text-[#063B78] font-extrabold hover:bg-[#063B78] hover:text-white text-xs px-3 h-9 rounded-lg shadow-xs whitespace-nowrap"
-                  >
-                    <Link to="/auth" search={{ mode: "login", role: "admin" }}>
-                      <ShieldCheck className="size-4 mr-1.5 text-[#FFC400]" />
-                      {t("adminLogin")}
-                    </Link>
-                  </Button>
-                </div>
-
-                {/* Mobile / Compact Single Hoverable Dropdown Menu on Top Right */}
-                <div className="lg:hidden">
-                  <LoginDropdown />
-                </div>
-              </div>
+              <LoginDropdown />
             )}
           </div>
         </div>
