@@ -104,25 +104,6 @@ function UserDashboard() {
             
             {/* Hero Welcome Banner */}
             <div className="relative bg-gradient-to-r from-[#EFF6FF] via-[#F4F8FF] to-[#EBEFFA] rounded-3xl p-6 sm:p-8 border border-blue-100 overflow-hidden shadow-sm">
-              
-              {/* Floating Banner Illustration / Girl with laptop & bubble */}
-              <div className="absolute right-6 top-1/2 -translate-y-1/2 hidden xl:flex items-center gap-4 z-10 pointer-events-none">
-                <div className="relative">
-                  {/* Floating Speech Bubble */}
-                  <div className="absolute -top-3 -left-12 bg-white px-3.5 py-1.5 rounded-2xl shadow-lg border border-blue-50 text-[11px] font-black text-[#10233F] whitespace-nowrap z-20 flex items-center gap-1.5 animate-bounce">
-                    <span>Find Your Dream Job !</span>
-                  </div>
-                  <img 
-                    src="/dashboard-hero.png" 
-                    alt="Hero Illustration" 
-                    className="h-44 object-contain drop-shadow-md"
-                    onError={(e) => {
-                      (e.target as HTMLElement).style.display = 'none';
-                    }}
-                  />
-                </div>
-              </div>
-
               <div className="relative z-20 max-w-xl">
                 <h1 className="text-2xl sm:text-3xl font-black text-[#10233F] tracking-tight">
                   Welcome back, {user.fullName?.split(" ")[0] || user.email?.split("@")[0] || "User"}! 👋
