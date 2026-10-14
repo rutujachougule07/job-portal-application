@@ -44,13 +44,13 @@ import careerTeam from "@/assets/career-team.jpg";
 import { Brand } from "@/components/portal/Brand";
 import { LanguageGate } from "@/components/portal/LanguageGate";
 import { LoginDropdown } from "@/components/portal/LoginDropdown";
-import { LanguageSwitcher } from "@/components/portal/LanguageSwitcher";
 
 import { PublicFooter } from "@/components/portal/PublicFooter";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 import { dataStore } from "@/lib/data-store";
+import { isVideoMedia, getYouTubeEmbedUrl } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -246,7 +246,6 @@ function LandingGatewayPage() {
           <Brand className="h-10 sm:h-12 md:h-14 shrink-0" />
 
           <div className="flex items-center gap-2 sm:gap-3">
-            <LanguageSwitcher />
             {currentUser ? (
               <div className="flex items-center gap-2">
                 <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#EBF1F8] border border-[#B8D3F2] text-xs font-black text-[#063B78]">
@@ -269,7 +268,48 @@ function LandingGatewayPage() {
                 </Button>
               </div>
             ) : (
-              <LoginDropdown />
+              <div className="flex items-center gap-2">
+                {/* Desktop view 3 inline buttons */}
+                <div className="hidden lg:flex items-center gap-2">
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="bg-white border-[#063B78] text-[#063B78] font-extrabold hover:bg-[#063B78] hover:text-white text-xs px-3 h-9 rounded-lg shadow-xs whitespace-nowrap"
+                  >
+                    <Link to="/auth" search={{ mode: "login", role: "worker" }}>
+                      <UserCheck className="size-4 mr-1.5" />
+                      {t("seekerLogin")}
+                    </Link>
+                  </Button>
+
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="bg-white border-emerald-600 text-emerald-700 font-extrabold hover:bg-emerald-600 hover:text-white text-xs px-3 h-9 rounded-lg shadow-xs whitespace-nowrap"
+                  >
+                    <Link to="/auth" search={{ mode: "login", role: "employee" }}>
+                      <Briefcase className="size-4 mr-1.5" />
+                      {t("employeeLogin")}
+                    </Link>
+                  </Button>
+
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="bg-white border-[#063B78] text-[#063B78] font-extrabold hover:bg-[#063B78] hover:text-white text-xs px-3 h-9 rounded-lg shadow-xs whitespace-nowrap"
+                  >
+                    <Link to="/auth" search={{ mode: "login", role: "admin" }}>
+                      <ShieldCheck className="size-4 mr-1.5 text-[#FFC400]" />
+                      {t("adminLogin")}
+                    </Link>
+                  </Button>
+                </div>
+
+                {/* Mobile / Compact Single Hoverable Dropdown Menu on Top Right */}
+                <div className="lg:hidden">
+                  <LoginDropdown />
+                </div>
+              </div>
             )}
           </div>
         </div>
@@ -279,19 +319,59 @@ function LandingGatewayPage() {
         {/* HERO SECTION */}
         {/* HERO SECTION */}
         <section className="relative isolate overflow-hidden h-[50vh] min-h-[350px] md:h-screen md:min-h-[600px] flex items-center justify-center pt-20 pb-16 md:pb-24">
-          {/* Background Image Slider */}
+          {/* Background Media Slider (Image / Video) */}
           <div className="absolute inset-0 z-0 bg-transparent">
-            {images.map((img, index) => (
-              <img
-                key={img}
-                src={img}
-                alt="REAL JOB India Portal Background"
-                className={`absolute inset-0 h-full w-full object-cover object-[70%_20%] transition-opacity duration-1000 ease-in-out ${index === currentImageIndex ? "opacity-100" : "opacity-0"
+            {images.map((mediaUrl, index) => {
+              const isVideo = isVideoMedia(mediaUrl);
+              const ytEmbed = isVideo ? getYouTubeEmbedUrl(mediaUrl) : null;
+              const isActive = index === currentImageIndex;
+
+              if (isVideo) {
+                if (ytEmbed) {
+                  return (
+                    <div
+                      key={mediaUrl + index}
+                      className={`absolute inset-0 h-full w-full pointer-events-none transition-opacity duration-1000 ease-in-out ${
+                        isActive ? "opacity-100 z-1" : "opacity-0"
+                      }`}
+                    >
+                      <iframe
+                        src={ytEmbed}
+                        title="Hero Video Background"
+                        className="w-full h-full object-cover border-0 pointer-events-none"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      />
+                    </div>
+                  );
+                }
+
+                return (
+                  <video
+                    key={mediaUrl + index}
+                    src={mediaUrl}
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    preload="auto"
+                    className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ease-in-out ${
+                      isActive ? "opacity-100 z-1" : "opacity-0 pointer-events-none"
+                    }`}
+                  />
+                );
+              }
+
+              return (
+                <img
+                  key={mediaUrl + index}
+                  src={mediaUrl}
+                  alt="REAL JOB India Portal Background"
+                  className={`absolute inset-0 h-full w-full object-cover object-[70%_20%] transition-opacity duration-1000 ease-in-out ${
+                    isActive ? "opacity-100 z-1" : "opacity-0 pointer-events-none"
                   }`}
-              />
-            ))}
-            {/* Overlay removed as requested by user to show original image */}
-            {/* <div className="absolute inset-0 bg-hero-overlay"></div> */}
+                />
+              );
+            })}
           </div>
 
           <div className="relative z-10 text-center px-4 max-w-4xl mx-auto flex flex-col items-center">
@@ -300,7 +380,7 @@ function LandingGatewayPage() {
         </section>
 
         {/* METRICS & ADVANTAGES */}
-        <section className="relative z-20 pt-4 sm:pt-8 lg:pt-12 pb-2 sm:pb-3 lg:pb-6 bg-[#f8f9fa]">
+        <section className="relative z-20 pt-8 lg:pt-12 pb-4 lg:pb-8 bg-[#f8f9fa]">
           <div className="w-full px-4 sm:px-8 lg:px-12">
             <div className="grid grid-cols-2 md:grid-cols-4 lg:flex lg:flex-wrap lg:justify-between items-start sm:items-center gap-y-8 gap-x-2 sm:gap-4 bg-white rounded-[2rem] md:rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-gray-100 p-6 md:p-8 mx-auto w-full max-w-[1400px]">
 
@@ -349,7 +429,7 @@ function LandingGatewayPage() {
         </section>
 
         {/* ABOUT COMPANY */}
-        <section className="relative bg-[#f8f9fa] pt-3 sm:pt-6 lg:pt-12 pb-10 lg:pb-12 overflow-hidden">
+        <section className="relative bg-[#f8f9fa] pt-20 pb-10 lg:pt-28 lg:pb-12 overflow-hidden">
           <div className="relative z-10 mx-auto max-w-[1500px] px-4">
             <div className="bg-white rounded-[30px] border border-gray-100 shadow-[0_10px_40px_rgb(0,0,0,0.05)] overflow-hidden">
               <div className="grid grid-cols-1 lg:grid-cols-12">
