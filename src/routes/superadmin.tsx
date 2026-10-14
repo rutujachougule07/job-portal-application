@@ -159,8 +159,11 @@ function SuperAdminPage() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     if (typeof window !== "undefined") {
-      const saved = sessionStorage.getItem("realjob_admin_auth") || localStorage.getItem("realjob_admin_auth");
-      return !!saved;
+      try {
+        localStorage.removeItem("realjob_admin_auth");
+        const saved = sessionStorage.getItem("realjob_admin_auth");
+        return !!saved;
+      } catch {}
     }
     return false;
   });
@@ -270,12 +273,41 @@ function SuperAdminPage() {
   const [currentAdminRole, setCurrentAdminRole] = useState<{ isSuperAdmin: boolean; subAdmin?: SubAdmin }>(() => {
     if (typeof window !== "undefined") {
       try {
-        const saved = sessionStorage.getItem("realjob_admin_auth") || localStorage.getItem("realjob_admin_auth");
+        const saved = sessionStorage.getItem("realjob_admin_auth");
         if (saved) return JSON.parse(saved);
       } catch {}
     }
     return { isSuperAdmin: true };
   });
+
+  // Revoke session when navigating away or clicking back button without logging out
+  useEffect(() => {
+    const handlePopState = () => {
+      const saved = sessionStorage.getItem("realjob_admin_auth");
+      if (!saved) {
+        setIsAuthenticated(false);
+      }
+    };
+    const handlePageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) {
+        const saved = sessionStorage.getItem("realjob_admin_auth");
+        if (!saved) {
+          setIsAuthenticated(false);
+        }
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+    window.addEventListener("pageshow", handlePageShow);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("pageshow", handlePageShow);
+      try {
+        sessionStorage.removeItem("realjob_admin_auth");
+        localStorage.removeItem("realjob_admin_auth");
+      } catch {}
+    };
+  }, []);
 
   // Sub-Admin Form State
   const [formData, setFormData] = useState<{
@@ -443,7 +475,7 @@ function SuperAdminPage() {
     setIsAuthenticated(true);
     if (typeof window !== "undefined") {
       sessionStorage.setItem("realjob_admin_auth", JSON.stringify(roleObj));
-      localStorage.setItem("realjob_admin_auth", JSON.stringify(roleObj));
+      localStorage.removeItem("realjob_admin_auth");
     }
     const firstPerm = sub.permissions[0] || "dashboard";
     setActiveTab(firstPerm);
@@ -805,7 +837,7 @@ function SuperAdminPage() {
         setCurrentAdminRole(roleObj);
         if (typeof window !== "undefined") {
           sessionStorage.setItem("realjob_admin_auth", JSON.stringify(roleObj));
-          localStorage.setItem("realjob_admin_auth", JSON.stringify(roleObj));
+          localStorage.removeItem("realjob_admin_auth");
         }
         const firstPerm = matchingSubAdmin.permissions[0] || "dashboard";
         setActiveTab(firstPerm);
@@ -849,7 +881,7 @@ function SuperAdminPage() {
       setCurrentAdminRole(superRole);
       if (typeof window !== "undefined") {
         sessionStorage.setItem("realjob_admin_auth", JSON.stringify(superRole));
-        localStorage.setItem("realjob_admin_auth", JSON.stringify(superRole));
+        localStorage.removeItem("realjob_admin_auth");
       }
       toast.success("✅ Welcome, Super Administrator!");
     } catch (err: any) {
@@ -859,7 +891,7 @@ function SuperAdminPage() {
         setCurrentAdminRole(superRole);
         if (typeof window !== "undefined") {
           sessionStorage.setItem("realjob_admin_auth", JSON.stringify(superRole));
-          localStorage.setItem("realjob_admin_auth", JSON.stringify(superRole));
+          localStorage.removeItem("realjob_admin_auth");
         }
         toast.success("✅ Welcome, Super Administrator!");
       } else {
