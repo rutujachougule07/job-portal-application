@@ -2829,17 +2829,6 @@ function SuperAdminPage() {
                             </div>
                           </div>
 
-                          {/* Working Access Badge */}
-                          <div className="mt-4 flex items-center justify-between p-2.5 rounded-xl bg-[#F0F7FF] border border-[#CFE2FE]">
-                            <div className="flex items-center gap-2">
-                              <ShieldCheck className="size-4 text-[#0A4F9E]" />
-                              <span className="text-xs font-black text-[#063B78]">Superadmin Panel Access</span>
-                            </div>
-                            <span className="text-[10px] font-bold text-[#0A4F9E] bg-white px-2 py-0.5 rounded-md border border-[#CFE2FE]">
-                              Full Staff Access
-                            </span>
-                          </div>
-
                           {/* Created date */}
                           <div className="mt-4 text-[10px] text-[#9DAEC5] flex items-center justify-between">
                             <span>Added: {new Date(sub.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</span>
@@ -2848,31 +2837,14 @@ function SuperAdminPage() {
                         </div>
 
                         {/* Card Actions Footer */}
-                        <div className="p-3 bg-[#F8FAFF] border-t border-[#E0E8F5] flex items-center justify-between gap-1.5">
-                          <button
-                            onClick={() => handleQuickLoginAsSubAdmin(sub)}
-                            disabled={sub.status !== "active"}
-                            className="flex-1 py-2 px-2.5 rounded-xl bg-gradient-to-r from-[#063B78] to-[#0A4F9E] hover:from-[#0A4F9E] hover:to-[#063B78] text-white font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-                            title={sub.status === "active" ? "Login as this Sub-Admin to test view" : "Account suspended"}
-                          >
-                            <LogIn className="size-3.5" />
-                            <span>Login As</span>
-                          </button>
-
-                          <button
-                            onClick={() => handleCopyCredentials(sub)}
-                            className="p-2 rounded-xl bg-white border border-[#DCE5F0] hover:bg-[#F0F4FA] text-[#063B78] font-bold transition-all shadow-2xs cursor-pointer"
-                            title="Copy credentials to share"
-                          >
-                            <Copy className="size-3.5" />
-                          </button>
-
+                        <div className="p-3 bg-[#F8FAFF] border-t border-[#E0E8F5] flex items-center justify-end gap-2">
                           <button
                             onClick={() => handleOpenEditSubAdmin(sub)}
-                            className="p-2 rounded-xl bg-white border border-[#DCE5F0] hover:bg-[#F0F4FA] text-[#063B78] font-bold transition-all shadow-2xs cursor-pointer"
+                            className="flex-1 py-2 px-3 rounded-xl bg-white border border-[#DCE5F0] hover:bg-[#F0F4FA] text-[#063B78] font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
                             title="Edit Sub-Admin"
                           >
                             <Edit3 className="size-3.5" />
+                            <span>Edit Sub-Admin</span>
                           </button>
 
                           <button
