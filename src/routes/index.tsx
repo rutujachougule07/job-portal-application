@@ -298,7 +298,13 @@ function LandingGatewayPage() {
 
   useEffect(() => {
     const syncUser = () => {
-      setCurrentUser(dataStore.getCurrentUser());
+      const u = dataStore.getCurrentUser();
+      setCurrentUser(u);
+      if (u?.role === "employer" || u?.role === "admin") {
+        navigate({ to: "/admin", replace: true });
+      } else if (u?.role === "employee") {
+        navigate({ to: "/employee-dashboard" as any, replace: true });
+      }
     };
     syncUser();
     window.addEventListener("realjob-auth-change", syncUser);
@@ -307,7 +313,7 @@ function LandingGatewayPage() {
       window.removeEventListener("realjob-auth-change", syncUser);
       window.removeEventListener("storage", syncUser);
     };
-  }, []);
+  }, [navigate]);
 
   const handleLogout = () => {
     dataStore.logout();
@@ -345,6 +351,10 @@ function LandingGatewayPage() {
     toast.success("Admin Portal Ready! Opening Admin Control Dashboard...");
     navigate({ to: "/admin" });
   };
+
+  if (currentUser?.role === "employer" || currentUser?.role === "admin" || currentUser?.role === "employee") {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-white flex flex-col font-sans">

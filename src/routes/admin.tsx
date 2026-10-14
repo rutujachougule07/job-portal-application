@@ -1063,6 +1063,40 @@ function AdminDashboardPage() {
     }
   }, [currentUser]);
 
+  // Authentication Guard - Redirect unauthenticated or non-employer users to Employer Login
+  useEffect(() => {
+    if (!currentUser || (currentUser.role !== "employer" && currentUser.role !== "admin")) {
+      navigate({ to: "/auth", search: { mode: "login", role: "admin" }, replace: true });
+    }
+  }, [currentUser, navigate]);
+
+  // Session revocation when navigating away or clicking back button without logging out
+  useEffect(() => {
+    const handlePopState = () => {
+      dataStore.logout("employer");
+      localStorage.removeItem("realjob-employer-profile");
+      localStorage.removeItem("realjob-user-admin");
+      localStorage.removeItem("realjob-user-employer");
+      localStorage.removeItem("realjob-user");
+      localStorage.removeItem("realjob-role");
+      sessionStorage.removeItem("realjob_tab_user");
+      window.location.replace("/auth?mode=login&role=admin");
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      dataStore.logout("employer");
+      localStorage.removeItem("realjob-employer-profile");
+      localStorage.removeItem("realjob-user-admin");
+      localStorage.removeItem("realjob-user-employer");
+      localStorage.removeItem("realjob-user");
+      localStorage.removeItem("realjob-role");
+      sessionStorage.removeItem("realjob_tab_user");
+    };
+  }, []);
+
   const isSuperAdmin = currentUser?.email?.toLowerCase() === "supera@gmail.com" || currentUser?.email?.toLowerCase() === "superadmin";
   const empIdentifier = currentUser?.fullName || currentUser?.email || "admin-001";
 
@@ -1683,6 +1717,10 @@ function AdminDashboardPage() {
 
   const activeSelectedPlan = activeJobPackages.find((p) => p.id === selectedPlanId) || activeJobPackages[0]!;
 
+  if (!currentUser || (currentUser.role !== "employer" && currentUser.role !== "admin")) {
+    return null;
+  }
+
   // ── FULL PAGE: Add / Edit Job Form ──
   if (showJobForm) {
     return (
@@ -2044,8 +2082,14 @@ function AdminDashboardPage() {
                 onClick={() => {
                   setIsMobileMenuOpen(false);
                   dataStore.logout("employer");
+                  localStorage.removeItem("realjob-employer-profile");
+                  localStorage.removeItem("realjob-user-admin");
+                  localStorage.removeItem("realjob-user-employer");
+                  localStorage.removeItem("realjob-user");
+                  localStorage.removeItem("realjob-role");
+                  sessionStorage.removeItem("realjob_tab_user");
                   toast.info("Logged out successfully");
-                  navigate({ to: "/", hash: "main", replace: true });
+                  navigate({ to: "/auth", search: { mode: "login", role: "admin" }, replace: true });
                   if (typeof window !== "undefined") window.scrollTo(0, 0);
                 }}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold text-rose-400 hover:bg-rose-500/10 transition-colors"
@@ -2117,8 +2161,14 @@ function AdminDashboardPage() {
           <button
             onClick={() => {
               dataStore.logout("employer");
+              localStorage.removeItem("realjob-employer-profile");
+              localStorage.removeItem("realjob-user-admin");
+              localStorage.removeItem("realjob-user-employer");
+              localStorage.removeItem("realjob-user");
+              localStorage.removeItem("realjob-role");
+              sessionStorage.removeItem("realjob_tab_user");
               toast.info("Logged out successfully");
-              navigate({ to: "/", hash: "main", replace: true });
+              navigate({ to: "/auth", search: { mode: "login", role: "admin" }, replace: true });
               if (typeof window !== "undefined") window.scrollTo(0, 0);
             }}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-rose-400 hover:bg-rose-500/10 transition-all"

@@ -54,16 +54,25 @@ function UserDashboard() {
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    const currentUser = dataStore.getCurrentUser("worker");
-    if (!currentUser || currentUser.role === "employer" || currentUser.role === "admin") {
-      const workerUser = dataStore.getCurrentUser("worker");
-      if (workerUser && workerUser.role === "worker") {
-        setUser(workerUser);
-      } else {
-        navigate({ to: "/auth", search: { mode: "login", role: "worker" } });
-      }
+    const raw = typeof window !== "undefined" ? (localStorage.getItem("realjob-user") || localStorage.getItem("realjob_db_user")) : null;
+    if (raw) {
+      try {
+        const u = JSON.parse(raw);
+        if (u.role === "employer" || u.role === "admin") {
+          navigate({ to: "/admin", replace: true });
+          return;
+        }
+        if (u.role === "employee") {
+          navigate({ to: "/employee-dashboard" as any, replace: true });
+          return;
+        }
+      } catch {}
+    }
+    const workerUser = dataStore.getCurrentUser("worker");
+    if (workerUser && (workerUser.role === "worker" || (workerUser as any).role === "seeker")) {
+      setUser(workerUser);
     } else {
-      setUser(currentUser);
+      navigate({ to: "/auth", search: { mode: "login", role: "worker" }, replace: true });
     }
   }, [navigate]);
 
