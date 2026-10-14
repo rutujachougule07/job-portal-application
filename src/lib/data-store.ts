@@ -1939,8 +1939,23 @@ export class DataStoreManager {
     overtimeHoursOrExtra?: number | { overtimeHours?: number; overtimePay?: number },
     extraDataParam?: { overtimeHours?: number; overtimePay?: number }
   ): DailyAttendanceRecord {
-    const raw = typeof window !== "undefined" ? localStorage.getItem(this.STORAGE_KEYS.ATTENDANCE) : null;
-    const all: DailyAttendanceRecord[] = raw ? JSON.parse(raw) : [];
+    const todayStr = new Date().toISOString().split("T")[0];
+    if (date > todayStr) {
+      console.warn(`[dataStore] Attendance cannot be marked for future date: ${date}`);
+      return all.find((a) => a.id === `att-${workerId}-${date}`) || {
+        id: `att-${workerId}-${date}`,
+        employerId,
+        workerId,
+        workerName,
+        date,
+        status,
+        punchInTime: undefined,
+        punchOutTime: undefined,
+        workDurationMinutes: 0,
+        overtimeMinutes: 0,
+      };
+    }
+
     const recordId = `att-${workerId}-${date}`;
     const index = all.findIndex((a) => a.id === recordId || (a.workerId === workerId && a.date === date));
 
@@ -2043,7 +2058,10 @@ export class DataStoreManager {
       ? overtimeHours
       : (status === "Overtime" ? 2 : 0);
 
-    dates.forEach((date) => {
+    const todayStr = new Date().toISOString().split("T")[0];
+    const validDates = dates.filter((d) => d <= todayStr);
+
+    validDates.forEach((date) => {
       const recordId = `att-${workerId}-${date}`;
       const index = all.findIndex((a) => a.id === recordId || (a.workerId === workerId && a.date === date));
       let record: DailyAttendanceRecord;

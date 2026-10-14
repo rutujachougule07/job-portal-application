@@ -1244,6 +1244,11 @@ function AdminDashboardPage() {
   ) => {
     const activeEmpId = currentUser?.id || currentUser?.fullName || currentUser?.email || empIdentifier;
     const dateToUse = targetDate || selectedAttendanceDate;
+    const todayStr = new Date().toISOString().split("T")[0]!;
+    if (dateToUse > todayStr) {
+      toast.error("⚠️ आजनंतरच्या (भविष्यातील) तारखेची हजेरी नोंदवता येत नाही! (Cannot mark attendance for future dates)");
+      return;
+    }
     dataStore.saveAttendanceStatus(
       activeEmpId,
       worker.id,
@@ -1269,17 +1274,23 @@ function AdminDashboardPage() {
       toast.error("कोणतीही तारीख निवडलेली नाही! (No dates selected)");
       return;
     }
+    const todayStr = new Date().toISOString().split("T")[0]!;
+    const validDates = dates.filter((d) => d <= todayStr);
+    if (validDates.length === 0) {
+      toast.error("⚠️ आजनंतरच्या (भविष्यातील) तारखेची हजेरी नोंदवता येत नाही! (Cannot mark attendance for future dates)");
+      return;
+    }
     const activeEmpId = currentUser?.id || currentUser?.fullName || currentUser?.email || empIdentifier;
     dataStore.saveBulkAttendance(
       activeEmpId,
       worker.id,
       worker.name,
-      dates,
+      validDates,
       status,
       overtimeHours
     );
     loadAttendanceData();
-    toast.success(`✅ ${dates.length} दिवसांची हजेरी यशस्वीरीत्या नोंदवली! (${status})`);
+    toast.success(`✅ ${validDates.length} दिवसांची हजेरी यशस्वीरीत्या नोंदवली! (${status})`);
   };
 
   const handleExportAttendanceCSV = () => {
@@ -3129,8 +3140,17 @@ function AdminDashboardPage() {
                               <span className="text-xs font-extrabold text-[#10233F] whitespace-nowrap">Select Date:</span>
                               <input
                                 type="date"
+                                max={new Date().toISOString().split("T")[0]}
                                 value={selectedAttendanceDate}
-                                onChange={(e) => setSelectedAttendanceDate(e.target.value)}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  const todayStr = new Date().toISOString().split("T")[0]!;
+                                  if (val > todayStr) {
+                                    toast.error("⚠️ आजनंतरच्या (भविष्यातील) तारखेची हजेरी निवडता येत नाही! (Cannot select future date)");
+                                    return;
+                                  }
+                                  setSelectedAttendanceDate(val);
+                                }}
                                 className="bg-transparent font-bold text-xs text-[#063B78] focus:outline-none cursor-pointer"
                               />
                             </div>
@@ -5807,23 +5827,33 @@ function AdminDashboardPage() {
                     const rec = recordsMap.get(dateStr);
                     const isSelected = activeCalendarDate === dateStr;
                     const isSunday = (firstDayOfWeek + i) % 7 === 0;
+                    const todayStr = new Date().toISOString().split("T")[0]!;
+                    const isFuture = dateStr > todayStr;
 
                     return (
                       <div
                         key={dateStr}
-                        className={`relative min-h-[72px] sm:min-h-[82px] p-2 rounded-2xl border flex flex-col justify-between transition-all bg-white hover:border-slate-300 ${
-                          isSunday ? "border-slate-100" : "border-slate-200"
-                        } ${isSelected ? "ring-2 ring-[#7C3AED] shadow-lg z-30" : "shadow-2xs"}`}
+                        className={`relative min-h-[72px] sm:min-h-[82px] p-2 rounded-2xl border flex flex-col justify-between transition-all ${
+                          isFuture
+                            ? "bg-slate-50/70 border-slate-100 opacity-40 cursor-not-allowed select-none"
+                            : isSunday
+                            ? "border-slate-100 bg-white hover:border-slate-300"
+                            : "border-slate-200 bg-white hover:border-slate-300"
+                        } ${isSelected && !isFuture ? "ring-2 ring-[#7C3AED] shadow-lg z-30" : "shadow-2xs"}`}
                       >
                         <div className="flex items-center justify-between">
-                          <span className={`text-xs font-black ${isSunday ? "text-rose-500 font-black" : "text-slate-800 font-extrabold"}`}>
+                          <span className={`text-xs font-black ${isFuture ? "text-slate-400 font-semibold" : isSunday ? "text-rose-500 font-black" : "text-slate-800 font-extrabold"}`}>
                             {dayNum}
                           </span>
                         </div>
 
                         {/* Cell Attendance Status / Action Button */}
                         <div className="mt-auto relative">
-                          {rec?.status === "Present" ? (
+                          {isFuture ? (
+                            <div className="w-full flex items-center justify-center py-1 text-[11px] font-bold text-slate-300 select-none cursor-not-allowed" title="भविष्यातील तारीख (Future date)">
+                              --
+                            </div>
+                          ) : rec?.status === "Present" ? (
                             <button
                               type="button"
                               onClick={(e) => {
@@ -5896,7 +5926,7 @@ function AdminDashboardPage() {
                           )}
 
                           {/* ── DROPDOWN POPOVER FOR MARKING ATTENDANCE (Matches Image 1) ── */}
-                          {isSelected && (
+                          {isSelected && !isFuture && (
                             <div
                               className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-44 bg-white rounded-2xl p-1.5 shadow-2xl border border-slate-200 z-50 animate-in fade-in zoom-in-95"
                               onClick={(e) => e.stopPropagation()}
