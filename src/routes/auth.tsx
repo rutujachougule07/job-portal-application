@@ -416,20 +416,7 @@ function AuthPage() {
             return;
          }
 
-         // Block field/moving workers from logging in, as their attendance is manual.
-         const text = `${existingAccount.trade || ""} ${existingAccount.category || ""}`.toLowerCase();
-         const isField = [
-           "farming", "farm", "agro", "agriculture", "nursery", "शेती", "शेत", "फार्मिंग", "कृषी", "शेतकूप",
-           "construction", "site", "baukam", "बांधकाम", "साइट", "मजूर", "लेबर", "labour", "labor",
-           "field", "driver", "moving", "delivery", "security", "guard", "हमाल", "sales", "marketing", "logistics"
-         ].some(kw => text.includes(kw));
-
-         if (isField) {
-            toast.error("⚠️ तुमचे काम 'Field Work' (फिरतीचे) आहे. तुम्हाला Login करण्याची गरज नाही, तुमची हजेरी तुमचे मालक स्वतः लावतील.", { duration: 6000 });
-            setBusy(false);
-            return;
-         }
-      } else {
+         } else {
          const { getAuth, signInWithEmailAndPassword } = await import("firebase/auth");
          const { getFirestore, doc, getDoc } = await import("firebase/firestore");
          const auth = getAuth();
@@ -471,9 +458,26 @@ function AuthPage() {
       }
 
       if (existingAccount) {
+        let resolvedEmpName = (existingAccount as any)?.employerName || "";
+        if (!resolvedEmpName && existingAccount.employerId) {
+          const accounts = (dataStore as any).getRegisteredUserAccounts ? (dataStore as any).getRegisteredUserAccounts() : [];
+          const emp = accounts.find((a: any) =>
+            a.id === existingAccount.employerId ||
+            a.email === existingAccount.employerId ||
+            a.fullName === existingAccount.employerId
+          );
+          if (emp) {
+            resolvedEmpName = emp.companyName || emp.fullName || "";
+          }
+        }
+        if (!resolvedEmpName && role === "employee") {
+          resolvedEmpName = "Alpha Byte";
+        }
+
         const userObj: any = {
           id: existingAccount.id,
           employerId: existingAccount.employerId || "",
+          employerName: resolvedEmpName,
           email: existingAccount.email || `${existingAccount.mobile}@employee.local`,
           role: role === "employee" ? "employee" : (role === "admin" ? "employer" : role) as any,
           fullName: existingAccount.fullName || existingAccount.name || "User",

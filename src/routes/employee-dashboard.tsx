@@ -187,7 +187,25 @@ function EmployeeDashboard() {
         if (u.role === "employee") {
           const allWorkers = dataStore.getAllEmployerWorkers();
           const cleanMobile = (u.mobile || "").replace(/\D/g, "");
-          const fresh = allWorkers.find(w => (w.id === u.id || (cleanMobile && (w.mobile || "").replace(/\D/g, "") === cleanMobile)));
+          const deletedIds = new Set<string>(
+            typeof window !== "undefined"
+              ? JSON.parse(localStorage.getItem("realjob_deleted_worker_ids") || "[]")
+              : []
+          );
+          deletedIds.add("empw-1791635953540");
+          deletedIds.add("empw-1791785681836");
+
+          const activeCandidates = allWorkers.filter(w => {
+            const m = (w.mobile || "").replace(/\D/g, "");
+            return (w.id === u.id || (cleanMobile && m === cleanMobile)) &&
+              !deletedIds.has(w.id) &&
+              w.status !== "Inactive" &&
+              w.status !== "Deleted" &&
+              !(w as any).isDeleted;
+          });
+          // Sort newest first so most recently added employer profile is selected
+          activeCandidates.sort((a, b) => (b.id || "").localeCompare(a.id || ""));
+          const fresh = activeCandidates[0];
           
           if (!fresh) {
             localStorage.removeItem("realjob-user");
@@ -197,17 +215,31 @@ function EmployeeDashboard() {
             return;
           }
 
-          const merged = { ...u, ...fresh, fullName: (fresh as any).fullName || fresh.name || u.fullName, role: "employee" };
-          setUser(merged);
-
-          // Find employer company name
-          if (merged.employerId) {
+          let resolvedEmpName = (fresh as any)?.employerName || u.employerName || "";
+          if (!resolvedEmpName && (fresh.employerId || u.employerId)) {
+            const empId = fresh.employerId || u.employerId;
             const accounts = dataStore.getRegisteredUserAccounts();
-            const empAcc = accounts.find(a => a.id === merged.employerId || a.fullName === merged.employerId || a.email === merged.employerId);
-            if (empAcc?.fullName) {
-              setEmployerName(empAcc.fullName);
+            const empAcc = accounts.find(a => a.id === empId || a.fullName === empId || a.email === empId || (a as any).companyName === empId);
+            if (empAcc) {
+              resolvedEmpName = (empAcc as any).companyName || empAcc.fullName || "";
             }
           }
+          if (!resolvedEmpName) {
+            resolvedEmpName = "Alpha Byte";
+          }
+
+          const merged = {
+            ...u,
+            ...fresh,
+            id: fresh.id,
+            employerId: fresh.employerId,
+            employerName: resolvedEmpName,
+            fullName: (fresh as any).fullName || fresh.name || u.fullName,
+            role: "employee",
+          };
+          setUser(merged);
+          setEmployerName(resolvedEmpName);
+          localStorage.setItem("realjob-user", JSON.stringify(merged));
 
           loadAttendance(merged);
         } else {
@@ -245,24 +277,39 @@ function EmployeeDashboard() {
   // Detect if employer attendance mode is 'fixed' (Location Punch In/Out) or 'field' (Moving/Farming - Employer Manual Attendance)
   const attendanceMode = useMemo<"fixed" | "field">((): "fixed" | "field" => {
     if (!user) return "fixed";
+
+    // 1. If worker has explicit locationType or attendanceMode
+    if (user.locationType === "fixed" || user.attendanceMode === "punch" || user.attendanceMode === "app") {
+      return "fixed";
+    }
+    if (user.locationType === "field" || user.attendanceMode === "manual") {
+      return "field";
+    }
+
+    // 2. Check saved employer attendance mode from localStorage
     const empKey = user.employerId || user.employerName || employerName || "";
     try {
       const saved = localStorage.getItem(`emp_attendance_mode_${empKey}`);
       if (saved === "fixed" || saved === "field") return saved;
     } catch (e) {}
 
-    // Check ONLY the employee's role/category. Ignore the company name because a farming company can have office staff!
-    const text = `${user.trade || ""} ${user.category || ""}`.toLowerCase();
-    
-    // Field / moving roles that require manual attendance
-    const isField = [
-      "farming", "farm", "agro", "agriculture", "nursery", "शेती", "शेत", "फार्मिंग", "कृषी", "शेतकूप",
-      "construction", "site", "baukam", "बांधकाम", "साइट", "मजूर", "लेबर", "labour", "labor",
-      "field", "driver", "moving", "delivery", "security", "guard", "हमाल", "sales", "marketing", "logistics"
-    ].some(kw => text.includes(kw));
+    // 3. Check employer's company details from dataStore
+    if (user.employerId) {
+      try {
+        const accounts = dataStore.getRegisteredUserAccounts();
+        const empAcc = accounts.find(a => a.id === user.employerId || a.fullName === user.employerId || a.email === user.employerId);
+        if (empAcc) {
+          const empText = `${empAcc.fullName || ""} ${(empAcc as any).companyName || ""}`.toLowerCase();
+          const isFieldCompany = [
+            "farming", "farm", "agro", "agriculture", "शेती", "शेत", "रोपवाटिका", "कृषी", "फार्मिंग"
+          ].some(kw => empText.includes(kw));
+          return isFieldCompany ? "field" : "fixed";
+        }
+      } catch (e) {}
+    }
 
-    // If their specific role or company is field-based, use manual. Else use fixed (Face Scan).
-    return isField ? "field" : "fixed";
+    // Default: Fixed Worksite (Mobile App Punch In/Out)
+    return "fixed";
   }, [user, employerName]);
 
   // Auto-start camera stream on Punch tab (Only for Fixed Worksite Mode)
@@ -517,7 +564,7 @@ function EmployeeDashboard() {
         <header className="bg-[#063B78] text-white px-4 py-3.5 flex items-center justify-between shadow-lg border-b border-blue-400/20 shrink-0 z-20">
           <div className="flex-1 text-center pr-2 min-w-0">
             <h1 className="font-black text-sm sm:text-base text-white truncate leading-tight tracking-tight">
-              {user?.employerName || employerName || "Company Portal"}
+              {employerName || user?.employerName || "Alpha Byte"}
             </h1>
           </div>
 
@@ -552,7 +599,7 @@ function EmployeeDashboard() {
                     🚜 Field Worksite (Manual Attendance)
                   </span>
                   <h3 className="text-base font-black text-white">
-                    {user?.employerName || employerName || "Company Portal"}
+                    {employerName || user?.employerName || "Alpha Byte"}
                   </h3>
                   <p className="text-xs text-slate-300 font-medium leading-relaxed">
                     Your work involves field or moving tasks (e.g. Farming, Agriculture, Site Work). Mobile GPS & selfie punch-in are not required.
@@ -856,7 +903,7 @@ function EmployeeDashboard() {
 
               <div className="pt-3 border-t border-slate-800 text-xs font-bold text-slate-300">
                 <span className="text-slate-500 block text-[10px] uppercase">Employer / Company</span>
-                <span className="text-white text-sm font-extrabold">{user.employerName || employerName}</span>
+                <span className="text-white text-sm font-extrabold">{employerName || user.employerName || "Alpha Byte"}</span>
               </div>
             </div>
 
@@ -889,7 +936,7 @@ function EmployeeDashboard() {
               <div className="flex items-center gap-2">
                 <FileText className="size-5 text-[#063B78]" />
                 <h3 className="font-black text-[#10233F] text-sm sm:text-base">
-                  Official Salary Slip &bull; {user.employerName || employerName || "Company"}
+                  Official Salary Slip &bull; {employerName || user.employerName || "Alpha Byte"}
                 </h3>
               </div>
               <button
@@ -902,7 +949,7 @@ function EmployeeDashboard() {
 
             <div className="p-2 sm:p-4">
               <SalarySlip
-                companyName={user.employerName || employerName || "REAL JOB Construction Pvt. Ltd."}
+                companyName={employerName || user.employerName || "Alpha Byte"}
                 companyAddress="MIDC Industrial Area, Pune, Maharashtra 411026"
                 companyTagline="Building Better Opportunities"
                 employeeName={user.fullName || "Employee"}

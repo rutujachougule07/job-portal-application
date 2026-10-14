@@ -230,6 +230,7 @@ export const DEFAULT_JOB_PACKAGES: JobPackagePlan[] = [
 export type EmployerWorker = {
   id: string;
   employerId: string;
+  employerName?: string;
   name: string;
   mobile: string;
   trade: string;

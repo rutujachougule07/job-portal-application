@@ -240,6 +240,7 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
     const payload: Partial<EmployerWorker> = {
       ...(initialData ? { id: initialData.id } : {}),
       employerId: empIdentifier,
+      employerName: (initialData as any)?.employerName || "Alpha Byte",
       name: workerForm.name.trim(),
       mobile: workerForm.mobile.trim(),
       trade: workerForm.trade.trim() || "General Worker",

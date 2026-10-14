@@ -1384,9 +1384,11 @@ function AdminDashboardPage() {
     const otRateNum = Number(workerForm.overtimeRate) || autoOtRate;
 
     const activeEmpId = currentUser?.id || currentUser?.fullName || currentUser?.email || empIdentifier;
+    const empCompanyName = (currentUser as any)?.companyName || currentUser?.fullName || (currentUser as any)?.name || empIdentifier || "Alpha Byte";
     dataStore.saveEmployerWorker({
       ...(editingWorkerId ? { id: editingWorkerId } : {}),
       employerId: activeEmpId,
+      employerName: empCompanyName,
       name: workerForm.name.trim(),
       mobile: workerForm.mobile.trim(),
       trade: workerForm.trade.trim() || "General Worker",
