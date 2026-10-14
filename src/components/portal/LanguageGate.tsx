@@ -94,20 +94,6 @@ export function LanguageGate() {
   const handleLanguageSelect = (code: LanguageCode) => {
     setSelectedLang(code);
     setLang(code);
-    if (typeof window !== "undefined") {
-      // Set the Google Translate cookie
-      document.cookie = `googtrans=/en/${code}; path=/`;
-      document.cookie = `googtrans=/en/${code}; path=/; domain=${window.location.hostname}`;
-      
-      // Defer the heavy Google Translate DOM manipulation so React can render the selection first
-      setTimeout(() => {
-        const select = document.querySelector(".goog-te-combo") as HTMLSelectElement;
-        if (select) {
-          select.value = code;
-          select.dispatchEvent(new Event("change"));
-        }
-      }, 50);
-    }
   };
 
   const proceedToRole = () => {

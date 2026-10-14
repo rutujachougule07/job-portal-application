@@ -368,7 +368,7 @@ function LandingGatewayPage() {
                   size="sm"
                   className="bg-[#063B78] hover:bg-[#082F63] text-white font-extrabold text-xs px-3 h-9.5 rounded-lg shadow-xs"
                 >
-                  {lang === "mr" ? "डॅशबोर्ड" : "Dashboard"}
+                  {t("viewDashboard")}
                 </Button>
                 <Button
                   onClick={handleLogout}
@@ -376,7 +376,7 @@ function LandingGatewayPage() {
                   variant="outline"
                   className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 font-extrabold text-xs px-3 h-9.5 rounded-lg shadow-xs"
                 >
-                  {lang === "mr" ? "लॉग आउट" : "Logout"}
+                  {t("logout")}
                 </Button>
               </div>
             ) : (

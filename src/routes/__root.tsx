@@ -129,30 +129,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="mr" translate="no" className="notranslate">
       <head>
         <HeadContent />
-        <style dangerouslySetInnerHTML={{ __html: `
-          .goog-te-banner-frame.skiptranslate, .goog-te-gadget-icon, .goog-logo-link, .goog-te-gadget img { display: none !important; }
-          body { top: 0px !important; }
-          #google_translate_element { opacity: 0; position: absolute; top: 0; left: 0; z-index: -999; pointer-events: none; }
-          .goog-text-highlight { background: transparent !important; box-shadow: none !important; }
-          #goog-gt-tt, .goog-te-balloon-frame { display: none !important; }
-          body > iframe.skiptranslate, body > div.skiptranslate { display: none !important; }
-          .goog-te-gadget { color: transparent !important; }
-          
-          /* Aggressive rules for the new circular floating Google Translate bubble */
-          div[id^="goog-gt-"] { display: none !important; }
-          iframe[src*="translate.google.com"], iframe[src*="translate.googleapis.com"] { display: none !important; }
-          .skiptranslate > iframe { display: none !important; }
-          
-          /* Catch all dynamic Google Translate UI components */
-          [class*="VIpgJd-"] { display: none !important; }
-          .VIpgJd-Zvi9od-aZ2wEe-wOHMyf-ti6hGc { display: none !important; }
-        `}} />
       </head>
-      <body className="overscroll-y-none">
-        <div id="google_translate_element"></div>
+      <body className="overscroll-y-none notranslate" translate="no">
         {children}
         <Scripts />
       </body>
@@ -164,28 +145,12 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && !document.getElementById('google-translate-script')) {
-      (window as any).googleTranslateElementInit = () => {
-        new (window as any).google.translate.TranslateElement(
-          { pageLanguage: 'en', autoDisplay: false },
-          'google_translate_element'
-        );
-      };
-
-      const script = document.createElement('script');
-      script.id = 'google-translate-script';
-      script.src = '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
-      script.async = true;
-      document.body.appendChild(script);
-
-      // Prevent Google Translate from translating the page title
-      const observer = new MutationObserver(() => {
-        const titleEl = document.querySelector('title');
-        if (titleEl && !titleEl.classList.contains('notranslate')) {
-          titleEl.classList.add('notranslate');
-        }
-      });
-      observer.observe(document.head, { childList: true, subtree: true });
+    // Clear any obsolete googtrans cookies to prevent external translate interference
+    if (typeof window !== 'undefined') {
+      try {
+        document.cookie = "googtrans=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        document.cookie = `googtrans=; path=/; domain=${window.location.hostname}; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+      } catch {}
     }
 
     const handleWheel = (e: WheelEvent) => {

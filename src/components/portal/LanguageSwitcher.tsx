@@ -57,18 +57,6 @@ export function LanguageSwitcher({
                 key={item.code}
                 onClick={() => {
                   setLang(item.code);
-                  if (typeof window !== "undefined") {
-                    document.cookie = `googtrans=/en/${item.code}; path=/`;
-                    document.cookie = `googtrans=/en/${item.code}; path=/; domain=${window.location.hostname}`;
-                    
-                    setTimeout(() => {
-                      const select = document.querySelector(".goog-te-combo") as HTMLSelectElement;
-                      if (select) {
-                        select.value = item.code;
-                        select.dispatchEvent(new Event("change"));
-                      }
-                    }, 50);
-                  }
                 }}
                 className={`flex items-center justify-between cursor-pointer px-3 py-2 text-xs sm:text-sm rounded-lg transition-colors ${isSelected
                     ? "bg-[#063B78] text-white font-bold"

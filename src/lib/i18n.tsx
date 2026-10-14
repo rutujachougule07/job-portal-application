@@ -2398,18 +2398,42 @@ type I18nValue = {
 
 const I18nContext = createContext<I18nValue | null>(null);
 
+const getInitialLanguage = (): LanguageCode => {
+  if (typeof window !== "undefined") {
+    try {
+      const stored = window.localStorage.getItem("realjob-language") as LanguageCode;
+      if (stored && languages.some((l) => l.code === stored)) {
+        return stored;
+      }
+    } catch {}
+  }
+  return "mr";
+};
+
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<LanguageCode>("mr");
+  const [lang, setLangState] = useState<LanguageCode>(getInitialLanguage);
 
   useEffect(() => {
-    const stored = window.localStorage.getItem("realjob-language") as LanguageCode;
-    if (stored) setLangState(stored);
+    try {
+      const stored = window.localStorage.getItem("realjob-language") as LanguageCode;
+      if (stored && stored !== lang && languages.some((l) => l.code === stored)) {
+        setLangState(stored);
+      }
+      // Clean up any stale googtrans cookie to prevent Google Translate interference
+      document.cookie = "googtrans=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      document.cookie = `googtrans=; path=/; domain=${window.location.hostname}; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+    } catch {}
   }, []);
 
   const setLang = (value: LanguageCode) => {
     setLangState(value);
     if (typeof window !== "undefined") {
-      window.localStorage.setItem("realjob-language", value);
+      try {
+        window.localStorage.setItem("realjob-language", value);
+        // Clear old googtrans cookie
+        document.cookie = "googtrans=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        document.cookie = `googtrans=; path=/; domain=${window.location.hostname}; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+      } catch {}
     }
   };
 
@@ -2417,9 +2441,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     () => ({
       lang,
       setLang,
-      // ALWAYS return English so Google Translate can cleanly translate it to the target language
-      // This prevents the "double translation" corruption bug (e.g., Marathi -> Google Translate -> Garbage)
-      t: (key: TranslationKeys) => en[key] ?? key,
+      t: (key: TranslationKeys) => partial[lang]?.[key] ?? en[key] ?? key,
       n: (val: string | number | undefined | null) => formatNum(val, lang),
     }),
     [lang]
