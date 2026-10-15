@@ -21,8 +21,10 @@ function SelectLanguagePage() {
   const [selectedLang, setSelectedLang] = useState<LanguageCode>(currentLang || "mr");
 
   const handleContinue = () => {
+    console.log("Language selected:", selectedLang);
+    console.log("Navigating to select-role with redirectTo:", redirectTo || "/");
     setLang(selectedLang);
-    navigate({ to: redirectTo || "/" });
+    navigate({ to: "/select-role", search: { redirectTo: redirectTo || "/" } });
   };
 
   return (

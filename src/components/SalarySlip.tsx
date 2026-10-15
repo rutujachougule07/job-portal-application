@@ -25,7 +25,7 @@ export interface SalarySlipProps {
   // Period
   month?: string;
   year?: string;
-  payPeriod?: string;
+  payPeriod?: string | undefined;
 
   // Attendance Metrics
   totalDaysInMonth?: number;

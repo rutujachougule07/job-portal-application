@@ -6,6 +6,7 @@ export interface CustomField {
 export interface EmployerWorker {
   id: string;
   employerId: string;
+  employerName?: string;
   name: string;
   mobile: string;
   trade: string;
@@ -13,7 +14,8 @@ export interface EmployerWorker {
   education?: string;
   dailyRate: number;
   joiningDate: string;
-  status: "Active" | "Inactive";
+  status: "Active" | "Inactive" | "Deleted";
+  isDeleted?: boolean;
   workShiftStart?: string;
   workShiftEnd?: string;
   dailyWorkingHours?: number;

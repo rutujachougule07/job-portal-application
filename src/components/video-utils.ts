@@ -5,7 +5,7 @@
 
 export function isVideoMedia(url?: string | null): boolean {
   if (!url || typeof url !== "string") return false;
-  const clean = url.split("?")[0].split("#")[0].toLowerCase().trim();
+  const clean = (url.split("?")[0] || "").split("#")[0]?.toLowerCase().trim() || "";
   return (
     clean.endsWith(".mp4") ||
     clean.endsWith(".webm") ||

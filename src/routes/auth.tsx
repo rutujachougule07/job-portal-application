@@ -53,6 +53,23 @@ function AuthPage() {
   const [role, setRole] = useState<"worker" | "employer" | "admin" | "employee">((search.role as any) || "worker");
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  // SYNC_SEARCH_PARAMS_EFFECT
+  useEffect(() => {
+    if (search.mode && (search.mode === "login" || search.mode === "register" || search.mode === "forgot")) {
+      setMode(search.mode as any);
+    }
+    if (search.role) {
+      const r = search.role.toLowerCase();
+      if (r === "admin" || r === "employer" || r === "poster") {
+        setRole("admin");
+      } else if (r === "employee") {
+        setRole("employee");
+      } else {
+        setRole("worker");
+      }
+    }
+  }, [search.mode, search.role]);
   const [rememberMe, setRememberMe] = useState(true);
 
   // Common credentials

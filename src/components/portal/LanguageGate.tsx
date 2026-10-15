@@ -1,57 +1,47 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, Building2, Check, Globe2, ShieldCheck, UserRound, Sparkles, X } from "lucide-react";
+import { useNavigate, useLocation, useRouter } from "@tanstack/react-router";
+import { ArrowLeft, ArrowRight, Building2, Check, UserRound, Loader2 } from "lucide-react";
 import { languages, useI18n, type LanguageCode } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { LogoIcon } from "@/components/portal/Brand";
 import { toast } from "sonner";
 
-function isPageReload(): boolean {
-  if (typeof window === "undefined") return false;
-  try {
-    const navEntries = window.performance?.getEntriesByType?.("navigation");
-    if (navEntries && navEntries.length > 0) {
-      return (navEntries[0] as PerformanceNavigationTiming).type === "reload";
-    }
-    return (window.performance as any)?.navigation?.type === 1;
-  } catch {
-    return false;
-  }
-}
-
 export function LanguageGate() {
   const { lang, setLang, t } = useI18n();
   const navigate = useNavigate();
+  const location = useLocation();
+  const router = useRouter();
+
+  // Always open on initial load so user can choose language & profile
   const [open, setOpen] = useState(() => {
     if (typeof window !== "undefined") {
       const hash = window.location.hash;
-      if (hash === "#role" || hash === "#language") {
-        return true;
-      }
-      if (hash === "#main") {
-        return false;
-      }
-      // If the user refreshed the page (F5 / reload), keep them on the landing page
-      if (isPageReload()) {
-        return false;
-      }
-      // If user already dismissed or finished the gate in this session, keep closed
-      if (window.sessionStorage.getItem("karyam-gate-dismissed") === "true") {
-        return false;
-      }
-      // On initial link open / first visit: open language gate
+      if (hash === "#main") return false;
       return true;
     }
-    return false;
+    return true;
   });
-  const location = useLocation();
+
   const [step, setStep] = useState<"language" | "role">(() => {
     if (typeof window !== "undefined" && window.location.hash === "#role") {
       return "role";
     }
     return "language";
   });
+
   const [selectedLang, setSelectedLang] = useState<LanguageCode>(lang || "mr");
+  const [navigatingRole, setNavigatingRole] = useState<"user" | "admin" | null>(null);
+
+  // Preload auth route and code bundles immediately for zero-lag instant transition
+  useEffect(() => {
+    try {
+      import("@/routes/auth");
+      if (router && typeof router.preloadRoute === 'function') {
+        router.preloadRoute({ to: "/auth", search: { mode: "login", role: "worker" } });
+        router.preloadRoute({ to: "/auth", search: { mode: "login", role: "admin" } });
+      }
+    } catch {}
+  }, [router]);
 
   useEffect(() => {
     if (lang) {
@@ -61,7 +51,7 @@ export function LanguageGate() {
 
   useEffect(() => {
     if (location.pathname === "/") {
-      const hash = location.hash; // TanStack Router hash (without #)
+      const hash = location.hash;
       if (hash === "role") {
         setOpen(true);
         setStep("role");
@@ -83,7 +73,6 @@ export function LanguageGate() {
     };
 
     window.addEventListener("karyam-open-gate", handleOpen as EventListener);
-
     return () => {
       window.removeEventListener("karyam-open-gate", handleOpen as EventListener);
     };
@@ -99,230 +88,227 @@ export function LanguageGate() {
   const proceedToRole = () => {
     setLang(selectedLang);
     if (typeof window !== "undefined") {
-      window.sessionStorage.setItem("karyam-gate-dismissed", "true");
       window.localStorage.setItem("realjob-language", selectedLang);
-      window.localStorage.setItem("realjob-gate-done", "true");
-      window.localStorage.setItem("karyam-onboarding-done", "true");
       window.dispatchEvent(new Event("realjob-auth-change"));
-      window.scrollTo({ top: 0, behavior: "instant" });
     }
-    setOpen(false);
-    navigate({ to: "/", hash: "main" });
+    // Smoothly transition inside the same modal to Step 2: Select Your Profile
+    setStep("role");
   };
 
   const handleSelectRole = (role: "user" | "admin") => {
+    // Show spinner on the clicked card immediately
+    setNavigatingRole(role);
+
     if (typeof window !== "undefined") {
       window.sessionStorage.setItem("karyam-gate-dismissed", "true");
-      window.localStorage.setItem("realjob-role", role);
+      window.localStorage.setItem("realjob-role", role === "admin" ? "employer" : "worker");
       window.localStorage.setItem("realjob-gate-done", "true");
       window.localStorage.setItem("karyam-onboarding-done", "true");
-      window.dispatchEvent(new Event("realjob-auth-change"));
-    }
-    setOpen(false);
-    if (typeof window !== "undefined") {
-      window.scrollTo({ top: 0, behavior: 'instant' });
+      window.scrollTo({ top: 0, behavior: "instant" });
     }
 
-    if (role === "admin") {
-      toast.success(
-        selectedLang === "mr"
-          ? "जॉब पोस्टर पोर्टलमध्ये आपले स्वागत आहे!"
-          : "Welcome to Job Poster Portal!"
-      );
-      navigate({ to: "/", hash: "main" });
-    } else {
-      toast.success(
-        selectedLang === "mr"
-          ? "नोकरी शोधक पोर्टलमध्ये आपले स्वागत आहे!"
-          : "Welcome to Job Seeker Portal!"
-      );
-      navigate({ to: "/", hash: "main" });
-    }
+    // CRITICAL: Do NOT call setOpen(false)!
+    // Keeping open = true ensures the modal remains completely on top of the landing page
+    // until TanStack Router switches the route to /auth.
+    // This permanently prevents the landing page from flashing/blinking for 2 seconds!
+    const targetRole = role === "admin" ? "admin" : "worker";
+    navigate({
+      to: "/auth",
+      search: { mode: "login", role: targetRole },
+      replace: true,
+    });
   };
 
   return (
     <div className="fixed inset-0 z-[200] overflow-y-auto animate-fade-in">
-      {/* Blurred Poster Background */}
+      {/* Blurred Office / City Background */}
       <div
         className="fixed inset-0 z-[-2] bg-cover bg-center bg-no-repeat blur-sm scale-105"
-        style={{ backgroundImage: `url('/portal-bg.png')` }}
+        style={{ backgroundImage: "url('/portal-bg.png')" }}
       />
       {/* Color Overlay for Readability */}
-      <div className="fixed inset-0 z-[-1] bg-black/40" />
+      <div className="fixed inset-0 z-[-1] bg-black/40 backdrop-blur-xs" />
 
-      <div className="flex min-h-full items-center justify-center p-3 sm:p-6">
-        <div className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl border border-white/40 overflow-hidden p-6 sm:p-10 transition-all duration-300">
+      <div className="flex min-h-full items-center justify-center p-4 sm:p-6">
+        <div className="relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl border border-white/60 overflow-hidden p-6 sm:p-10 transition-all duration-300">
 
-        {/* Close Button on Top Right */}
-        <button
-          type="button"
-          onClick={() => {
-            setOpen(false);
-            if (typeof window !== "undefined") {
-              window.sessionStorage.setItem("karyam-gate-dismissed", "true");
-              window.localStorage.setItem("realjob-gate-done", "true");
-            }
-          }}
-          className="absolute top-4 sm:top-6 right-4 sm:right-6 z-20 text-gray-400 hover:text-[#063B78] hover:bg-gray-100 rounded-full h-10 w-10 flex items-center justify-center transition-colors cursor-pointer"
-          title="Close"
-        >
-          <X className="size-5" />
-        </button>
+          {/* STEP 1: LANGUAGE SELECTION */}
+          {step === "language" ? (
+            <div className="space-y-6">
+              {/* Header Branding */}
+              <div className="flex flex-col items-center text-center mb-2">
+                <LogoIcon className="h-14 sm:h-16 object-contain" />
+              </div>
 
-        {/* Header Branding & Progress Bar */}
-        <div className="flex flex-col items-center text-center mb-3 sm:mb-4">
-          <LogoIcon className="h-14 sm:h-16 object-contain" />
-        </div>
+              <div className="text-center space-y-1">
+                <h1 className="text-2xl sm:text-3xl font-black text-[#0A3B7B] tracking-tight">
+                  {t("chooseLanguage")}
+                </h1>
+                <p className="text-xs sm:text-sm font-semibold text-gray-500">
+                  {t("languageSubtitle")}
+                </p>
+              </div>
 
-        {step === "language" ? (
-          <div className="space-y-6">
-            <div className="text-center space-y-1">
-              <h1 className="text-2xl sm:text-3xl font-black text-[#082F63] tracking-tight">
-                {t("chooseLanguage")}
-              </h1>
-              <p className="text-xs sm:text-sm font-semibold text-gray-600">
-                {t("languageSubtitle")}
-              </p>
-            </div>
-
-            {/* Language Selection Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 notranslate">
-              {languages.map((item) => {
-                const active = selectedLang === item.code;
-                return (
-                  <button
-                    key={item.code}
-                    type="button"
-                    onClick={() => handleLanguageSelect(item.code)}
-                    className={`relative flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all duration-200 text-center cursor-pointer ${active
-                        ? "border-[#063B78] bg-[#EBF1F8] shadow-md scale-[1.02] ring-2 ring-[#063B78]/20"
-                        : "border-gray-200 bg-gray-50/70 hover:bg-white hover:border-[#063B78]/40 hover:shadow-xs"
+              {/* Language Selection Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 notranslate">
+                {languages.map((item) => {
+                  const active = selectedLang === item.code;
+                  return (
+                    <button
+                      key={item.code}
+                      type="button"
+                      onClick={() => handleLanguageSelect(item.code)}
+                      className={`relative flex flex-col items-center justify-center p-3.5 sm:p-4 rounded-2xl border-2 transition-all duration-200 text-center cursor-pointer ${
+                        active
+                          ? "border-[#0A3B7B] bg-[#EBF1F8] shadow-md scale-[1.02] ring-2 ring-[#0A3B7B]/20"
+                          : "border-gray-200 bg-gray-50/70 hover:bg-white hover:border-[#0A3B7B]/40 hover:shadow-xs"
                       }`}
-                  >
-                    {active && (
-                      <div className="absolute top-2.5 right-2.5 size-5 rounded-full bg-[#063B78] text-white flex items-center justify-center">
-                        <Check className="size-3 stroke-[3]" />
-                      </div>
-                    )}
-                    <span className={`text-lg sm:text-xl font-black ${active ? "text-[#063B78]" : "text-gray-900"}`}>
-                      {item.native}
-                    </span>
-                    <span className="text-xs font-bold text-gray-500 mt-0.5">
-                      {item.name}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+                    >
+                      {active && (
+                        <div className="absolute top-2.5 right-2.5 size-5 rounded-full bg-[#0A3B7B] text-white flex items-center justify-center">
+                          <Check className="size-3 stroke-[3]" />
+                        </div>
+                      )}
+                      <span className={`text-lg sm:text-xl font-black ${active ? "text-[#0A3B7B]" : "text-gray-900"}`}>
+                        {item.native}
+                      </span>
+                      <span className="text-xs font-bold text-gray-500 mt-0.5">
+                        {item.name}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
 
-            {/* Action Button */}
-            <div className="pt-2">
-              <Button
-                onClick={proceedToRole}
-                className="w-full h-12 bg-[#063B78] hover:bg-[#082F63] text-white font-black text-sm sm:text-base rounded-2xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
-              >
-                <span>{t("continue")}</span>
-                <ArrowRight className="size-5" />
-              </Button>
+              {/* Continue Button */}
+              <div className="pt-2">
+                <Button
+                  onClick={proceedToRole}
+                  className="w-full h-12 bg-[#0A3B7B] hover:bg-[#082F63] text-white font-black text-sm sm:text-base rounded-2xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                >
+                  <span>{t("continue")}</span>
+                  <ArrowRight className="size-5" />
+                </Button>
+              </div>
             </div>
-          </div>
-        ) : (
-          /* STEP 2: ROLE / PROFILE SELECTION */
-          <div className="flex flex-col">
-            {/* Back to Language Button (Moved to Top Left of Modal) */}
-            <div className="absolute top-4 sm:top-6 left-4 sm:left-6 z-10">
-              <Button
+          ) : (
+            /* STEP 2: PROFILE / ROLE SELECTION - EXACT MATCH FOR USER SCREENSHOT */
+            <div className="flex flex-col relative">
+              {/* Back to Language Arrow Button (Top Left of Card) */}
+              <button
                 type="button"
-                onClick={() => {
-                  setStep("language");
-                  navigate({ to: "/", hash: "language" });
-                }}
-                variant="ghost"
-                size="icon"
-                className="text-gray-400 hover:text-[#063B78] hover:bg-gray-100 rounded-full h-10 w-10 flex items-center justify-center transition-colors shadow-sm border border-transparent hover:border-gray-200"
+                onClick={() => setStep("language")}
+                className="absolute -top-1 -left-1 sm:-top-3 sm:-left-3 text-gray-500 hover:text-[#0A3B7B] hover:bg-gray-100 rounded-full h-10 w-10 flex items-center justify-center transition-colors border border-gray-200 shadow-2xs cursor-pointer"
                 title={t("backToLanguage")}
               >
                 <ArrowLeft className="size-5" />
-              </Button>
-            </div>
+              </button>
 
-            <div className="text-center space-y-1 mb-6">
-              <h1 className="text-2xl sm:text-3xl font-black text-[#082F63] tracking-tight">
-                {t("selectRole")}
-              </h1>
-              <p className="text-xs sm:text-sm font-semibold text-gray-600">
-                {t("roleSubtitle")}
-              </p>
-            </div>
-
-            {/* 2 Profile Option Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-              {/* Option 1: Job Seeker (Worker) */}
-              <div
-                onClick={() => handleSelectRole("user")}
-                className="group relative cursor-pointer rounded-2xl border-2 border-[#DCE5F0] bg-white p-6 transition-all duration-300 hover:border-[#063B78] hover:shadow-xl hover:-translate-y-1 flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="size-12 rounded-xl bg-[#EBF1F8] text-[#063B78] flex items-center justify-center group-hover:bg-[#063B78] group-hover:text-white transition-colors shadow-xs">
-                      <UserRound className="size-6" />
-                    </div>
-                    <span className="px-3 py-1 rounded-full bg-[#EBF1F8] border border-[#B8D3F2] text-[10px] font-black text-[#063B78] uppercase">
-                      Worker / Job Seeker
-                    </span>
-                  </div>
-
-                  <h3 className="text-xl font-black text-[#10233F] group-hover:text-[#063B78] transition-colors mb-2">
-                    {t("jobSeeker")}
-                  </h3>
-
-                  <p className="text-xs font-semibold text-gray-600 leading-relaxed mb-6">
-                    {t("jobSeekerDesc")}
-                  </p>
-                </div>
-
-                <div className="flex items-center font-extrabold text-xs text-[#063B78] group-hover:underline gap-1.5 pt-2 border-t border-gray-100">
-                  <span>Enter Portal as Job Seeker</span>
-                  <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
-                </div>
+              {/* Logo in Center */}
+              <div className="flex flex-col items-center text-center mb-3 sm:mb-4">
+                <LogoIcon className="h-14 sm:h-16 object-contain" />
               </div>
 
-              {/* Option 2: Job Poster (Employer) */}
-              <div
-                onClick={() => handleSelectRole("admin")}
-                className="group relative cursor-pointer rounded-2xl border-2 border-[#DCE5F0] bg-white p-6 transition-all duration-300 hover:border-[#063B78] hover:shadow-xl hover:-translate-y-1 flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="size-12 rounded-xl bg-[#FEF9E7] text-[#B45309] flex items-center justify-center group-hover:bg-[#063B78] group-hover:text-white transition-colors shadow-xs">
-                      <Building2 className="size-6" />
-                    </div>
-                    <span className="px-3 py-1 rounded-full bg-[#FEF9E7] border border-[#FDE68A] text-[10px] font-black text-[#B45309] uppercase">
-                      Employer / Job Poster
-                    </span>
-                  </div>
-
-                  <h3 className="text-xl font-black text-[#10233F] group-hover:text-[#063B78] transition-colors mb-2">
-                    {t("jobProvider")}
-                  </h3>
-
-                  <p className="text-xs font-semibold text-gray-600 leading-relaxed mb-6">
-                    {t("jobProviderDesc")}
-                  </p>
-                </div>
-
-                <div className="flex items-center font-extrabold text-xs text-[#063B78] group-hover:underline gap-1.5 pt-2 border-t border-gray-100">
-                  <span>Enter Portal as Job Poster</span>
-                  <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
-                </div>
+              {/* Title & Subtitle */}
+              <div className="text-center space-y-1 mb-6 sm:mb-8">
+                <h1 className="text-2xl sm:text-3xl font-black text-[#0A3B7B] tracking-tight">
+                  {t("selectRole")}
+                </h1>
+                <p className="text-xs sm:text-sm font-semibold text-gray-500">
+                  {t("roleSubtitle")}
+                </p>
               </div>
 
-            </div>
-          </div>
-        )}
+              {/* 2 Profile Option Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
 
-      </div>
+                {/* Card 1: Worker (Job Seeker) */}
+                <div
+                  onClick={() => !navigatingRole && handleSelectRole("user")}
+                  className={`group relative cursor-pointer rounded-2xl border-2 border-slate-200/90 bg-white p-6 transition-all duration-300 hover:border-[#0A3B7B] hover:shadow-xl hover:-translate-y-1 flex flex-col justify-between ${
+                    navigatingRole === "user" ? "border-[#0A3B7B] ring-2 ring-[#0A3B7B]/20 bg-blue-50/20" : ""
+                  }`}
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="size-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-[#0A3B7B] group-hover:text-white transition-colors">
+                        <UserRound className="size-5" />
+                      </div>
+                      <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-600 border border-blue-200/70 text-[10px] font-black uppercase tracking-wider">
+                        WORKER / JOB SEEKER
+                      </span>
+                    </div>
+
+                    <h3 className="text-xl font-black text-slate-900 group-hover:text-[#0A3B7B] transition-colors mb-2">
+                      {t("jobSeeker")}
+                    </h3>
+
+                    <p className="text-xs font-semibold text-slate-500 leading-relaxed mb-6">
+                      {t("jobSeekerDesc")}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center font-bold text-xs text-[#0A3B7B] group-hover:underline gap-1.5 pt-3.5 border-t border-slate-100">
+                    {navigatingRole === "user" ? (
+                      <>
+                        <Loader2 className="size-4 animate-spin text-[#0A3B7B]" />
+                        <span>Opening Seeker Login...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Enter Portal as Job Seeker</span>
+                        <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Card 2: Employer (Hirer) */}
+                <div
+                  onClick={() => !navigatingRole && handleSelectRole("admin")}
+                  className={`group relative cursor-pointer rounded-2xl border-2 border-slate-200/90 bg-white p-6 transition-all duration-300 hover:border-[#0A3B7B] hover:shadow-xl hover:-translate-y-1 flex flex-col justify-between ${
+                    navigatingRole === "admin" ? "border-[#0A3B7B] ring-2 ring-[#0A3B7B]/20 bg-amber-50/20" : ""
+                  }`}
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="size-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:bg-[#0A3B7B] group-hover:text-white transition-colors">
+                        <Building2 className="size-5" />
+                      </div>
+                      <span className="px-3 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200/70 text-[10px] font-black uppercase tracking-wider">
+                        EMPLOYER / JOB POSTER
+                      </span>
+                    </div>
+
+                    <h3 className="text-xl font-black text-slate-900 group-hover:text-[#0A3B7B] transition-colors mb-2">
+                      {t("jobProvider")}
+                    </h3>
+
+                    <p className="text-xs font-semibold text-slate-500 leading-relaxed mb-6">
+                      {t("jobProviderDesc")}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center font-bold text-xs text-[#0A3B7B] group-hover:underline gap-1.5 pt-3.5 border-t border-slate-100">
+                    {navigatingRole === "admin" ? (
+                      <>
+                        <Loader2 className="size-4 animate-spin text-[#0A3B7B]" />
+                        <span>Opening Job Poster Login...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Enter Portal as Job Poster</span>
+                        <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+                      </>
+                    )}
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          )}
+
+        </div>
       </div>
     </div>
   );

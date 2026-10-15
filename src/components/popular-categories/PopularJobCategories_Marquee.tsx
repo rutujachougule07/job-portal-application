@@ -74,7 +74,7 @@ export const PopularJobCategoriesMarquee: React.FC<PopularJobCategoriesMarqueePr
           <div className="animate-marquee-slow flex items-center gap-6 sm:gap-8 px-4">
             {displayItems.map((catData, i) => {
               const IconComponent = CATEGORY_ICONS[catData.iconName] || Briefcase;
-              const palette = CATEGORY_PALETTES[i % CATEGORY_PALETTES.length];
+              const palette = CATEGORY_PALETTES[i % CATEGORY_PALETTES.length] ?? { gradient: "from-blue-600 to-indigo-600", iconBg: "bg-blue-50 text-blue-600" };
               const gradient = catData.gradient || palette.gradient;
               const iconBg = catData.iconBg || palette.iconBg;
 

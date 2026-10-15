@@ -2202,7 +2202,7 @@ function AdminDashboardPage() {
               {activeTab === "attendance" && t("attendancePayroll")}
               {activeTab === "packages" && t("myPackagesBilling")}
               {activeTab === "profile" && t("myProfile")}
-              {activeTab === "salary-slips" && t("employeeSalarySlipsTitle")}
+              {activeTab === "salary" && t("employeeSalarySlipsTitle")}
             </h2>
           </div>
 
@@ -6071,7 +6071,7 @@ function AdminDashboardPage() {
                       onClick={() => {
                         const mName = monthNames[calendarMonth];
                         const yStr = String(calendarYear);
-                        setSelectedSalaryMonth(mName);
+                        if (mName) setSelectedSalaryMonth(mName);
                         setSelectedSalaryYear(yStr);
                         setViewSlipPeriod("month");
                         setViewSlipWorker(activeWorker);

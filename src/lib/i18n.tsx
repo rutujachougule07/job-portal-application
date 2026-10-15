@@ -728,12 +728,66 @@ const en = {
   futureDateTitle: "Future date",
   noJobCategories: "No Job Categories Available",
   noJobsInCategory: "No Jobs Found in this Category",
+  jobType: "Job Type",
+  workMode: "Work Mode",
+  vacancies: "Vacancies",
+  availableLabel: "available",
+  addedLabel: "added",
+  applied: "Applied",
+  rejected: "Rejected",
+  halfDayToday: "Half Day Today",
+  absentToday: "Absent Today",
+  payableWages: "Payable Wages",
+  employeeName: "Employee Name",
+  department: "Department",
+  dailyWageRate: "Daily Wage Rate",
+  jobCredits: "Job Credits",
+  status: "Status",
+  present: "Present",
+  halfDay: "Half Day",
+  absent: "Absent",
+  overtime: "Overtime",
+  saved: "Saved",
+  searchJobsPlaceholder: "Search jobs...",
+  searchJobs: "Search Jobs",
+  viewAllApplications: "View All Applications",
+  jobTitle: "Job Title",
+  company: "Company",
+  appliedDate: "Applied Date",
+  findJobs: "Find Jobs",
 };
 
 export type TranslationKeys = keyof typeof en;
 
 const partial: Record<string, Partial<Record<TranslationKeys, string>>> = {
   mr: {
+    jobType: "कामाचा प्रकार",
+    workMode: "कामाचे स्वरूप",
+    vacancies: "रिक्त पदे",
+    availableLabel: "उपलब्ध",
+    addedLabel: "जोडले",
+    applied: "अर्ज केला",
+    rejected: "नाकारले",
+    halfDayToday: "आज अर्धा दिवस",
+    absentToday: "आज गैरहजर",
+    payableWages: "देय वेतन",
+    employeeName: "कर्मचाऱ्याचे नाव",
+    department: "विभाग",
+    dailyWageRate: "दैनिक वेतन दर",
+    jobCredits: "जॉब क्रेडिट्स",
+    status: "स्थिती",
+    present: "हजर",
+    halfDay: "अर्धा दिवस",
+    absent: "गैरहजर",
+    overtime: "ओव्हरटाईम",
+    saved: "जतन केले",
+    searchJobsPlaceholder: "नोकऱ्या शोधा...",
+    searchJobs: "नोकऱ्या शोधा",
+    viewAllApplications: "सर्व अर्ज पहा",
+    jobTitle: "पदाचे नाव",
+    company: "कंपनी",
+    appliedDate: "अर्जाची तारीख",
+    findJobs: "नोकऱ्या शोधा",
     removeField: "फील्ड काढा",
     typeNewCategoryPlaceholder: "नवीन श्रेणी टाईप करा...",
     workerNamePlaceholder: "उदा. रमेश पवार / विजय पाटील",
@@ -5725,7 +5779,7 @@ export function formatNum(val: string | number | undefined | null, lang: string)
 type I18nValue = {
   lang: LanguageCode;
   setLang: (lang: LanguageCode) => void;
-  t: (key: TranslationKeys) => string;
+  t: (key: TranslationKeys | (string & {})) => string;
   n: (val: string | number | undefined | null) => string;
 };
 
@@ -5774,7 +5828,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     () => ({
       lang,
       setLang,
-      t: (key: TranslationKeys) => partial[lang]?.[key] ?? en[key] ?? key,
+      t: (key: TranslationKeys | (string & {})) => (partial[lang] as any)?.[key] ?? (en as any)[key] ?? key,
       n: (val: string | number | undefined | null) => formatNum(val, lang),
     }),
     [lang]

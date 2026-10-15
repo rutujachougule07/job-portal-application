@@ -22,6 +22,7 @@ import { Route as FaqRouteImport } from './routes/faq'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SelectLanguageRouteImport } from './routes/select-language'
+import { Route as SelectRoleRouteImport } from './routes/select-role'
 import { Route as SuperadminRouteImport } from './routes/superadmin'
 import { Route as AuthenticatedApplicationsRouteImport } from './routes/_authenticated/applications'
 import { Route as AuthenticatedControlRouteImport } from './routes/_authenticated/control'
@@ -111,6 +112,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const SelectLanguageRoute = SelectLanguageRouteImport.update({
   id: '/select-language',
   path: '/select-language',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SelectRoleRoute = SelectRoleRouteImport.update({
+  id: '/select-role',
+  path: '/select-role',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SuperadminRoute = SuperadminRouteImport.update({
@@ -271,6 +277,7 @@ export interface FileRoutesByFullPath {
   '/home': typeof HomeRoute
   '/reset-password': typeof ResetPasswordRoute
   '/select-language': typeof SelectLanguageRoute
+  '/select-role': typeof SelectRoleRoute
   '/superadmin': typeof SuperadminRoute
   '/applications': typeof AuthenticatedApplicationsRoute
   '/control': typeof AuthenticatedControlRouteWithChildren
@@ -311,6 +318,7 @@ export interface FileRoutesByTo {
   '/home': typeof HomeRoute
   '/reset-password': typeof ResetPasswordRoute
   '/select-language': typeof SelectLanguageRoute
+  '/select-role': typeof SelectRoleRoute
   '/superadmin': typeof SuperadminRoute
   '/applications': typeof AuthenticatedApplicationsRoute
   '/control': typeof AuthenticatedControlRouteWithChildren
@@ -353,6 +361,7 @@ export interface FileRoutesById {
   '/home': typeof HomeRoute
   '/reset-password': typeof ResetPasswordRoute
   '/select-language': typeof SelectLanguageRoute
+  '/select-role': typeof SelectRoleRoute
   '/superadmin': typeof SuperadminRoute
   '/_authenticated/applications': typeof AuthenticatedApplicationsRoute
   '/_authenticated/control': typeof AuthenticatedControlRouteWithChildren
@@ -395,6 +404,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/reset-password'
     | '/select-language'
+    | '/select-role'
     | '/superadmin'
     | '/applications'
     | '/control'
@@ -435,6 +445,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/reset-password'
     | '/select-language'
+    | '/select-role'
     | '/superadmin'
     | '/applications'
     | '/control'
@@ -476,6 +487,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/reset-password'
     | '/select-language'
+    | '/select-role'
     | '/superadmin'
     | '/_authenticated/applications'
     | '/_authenticated/control'
@@ -518,6 +530,7 @@ export interface RootRouteChildren {
   HomeRoute: typeof HomeRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SelectLanguageRoute: typeof SelectLanguageRoute
+  SelectRoleRoute: typeof SelectRoleRoute
   SuperadminRoute: typeof SuperadminRoute
   CompanyCompanyIdRoute: typeof CompanyCompanyIdRoute
   JobsJobIdRoute: typeof JobsJobIdRoute
@@ -617,6 +630,13 @@ declare module '@tanstack/react-router' {
       path: '/select-language'
       fullPath: '/select-language'
       preLoaderRoute: typeof SelectLanguageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/select-role': {
+      id: '/select-role'
+      path: '/select-role'
+      fullPath: '/select-role'
+      preLoaderRoute: typeof SelectRoleRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/superadmin': {
@@ -887,6 +907,7 @@ const rootRouteChildren: RootRouteChildren = {
   HomeRoute: HomeRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SelectLanguageRoute: SelectLanguageRoute,
+  SelectRoleRoute: SelectRoleRoute,
   SuperadminRoute: SuperadminRoute,
   CompanyCompanyIdRoute: CompanyCompanyIdRoute,
   JobsJobIdRoute: JobsJobIdRoute,
