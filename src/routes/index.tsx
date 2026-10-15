@@ -65,6 +65,7 @@ import careerTeam from "@/assets/career-team.jpg";
 import { Brand } from "@/components/portal/Brand";
 import { LanguageGate } from "@/components/portal/LanguageGate";
 import { LanguageSwitcher } from "@/components/portal/LanguageSwitcher";
+import { LandingCategoryFilterModal, CATEGORY_TRANSLATIONS } from "@/components/portal/LandingCategoryFilterModal";
 import { LoginDropdown } from "@/components/portal/LoginDropdown";
 
 import { PublicFooter } from "@/components/portal/PublicFooter";
@@ -366,6 +367,7 @@ function LandingGatewayPage() {
           <Brand className="h-10 sm:h-12 md:h-14 shrink-0" />
 
           <div className="flex items-center gap-2 sm:gap-3">
+            <LandingCategoryFilterModal />
             <LanguageSwitcher />
 
             {currentUser ? (
@@ -683,7 +685,7 @@ function LandingGatewayPage() {
                       {/* Category Title */}
                       <div className="flex-1 text-left flex flex-col justify-center overflow-hidden z-10">
                         <h3 className="font-black text-sm sm:text-base text-[#082F63] group-hover:text-[#125BB5] transition-colors truncate leading-tight">
-                          {catData.label}
+                          {CATEGORY_TRANSLATIONS[catData.id]?.[lang] || catData.label}
                         </h3>
                       </div>
                     </div>

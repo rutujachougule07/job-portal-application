@@ -58,7 +58,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { StatCard } from "@/components/portal/Stats";
-import { LanguageSwitcher } from "@/components/portal/LanguageSwitcher";
 import {
   dataStore,
   DataStoreManager,
@@ -2221,7 +2220,6 @@ function AdminDashboardPage() {
               </div>
             )}
 
-            <LanguageSwitcher />
 
             {/* Employer Profile Pill */}
             <div className="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-4 border-l border-[#E0E8F5] shrink-0">

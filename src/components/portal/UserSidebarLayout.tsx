@@ -2,7 +2,6 @@ import { ReactNode, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { dataStore } from "@/lib/data-store";
 import { useI18n } from "@/lib/i18n";
-import { LanguageSwitcher } from "@/components/portal/LanguageSwitcher";
 import {
   Bookmark,
   User,
@@ -58,7 +57,6 @@ export function UserSidebarLayout({ children, activeTab }: { children: ReactNode
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0 ml-1">
-          <LanguageSwitcher />
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className="p-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-all cursor-pointer"
@@ -173,9 +171,7 @@ export function UserSidebarLayout({ children, activeTab }: { children: ReactNode
               <BadgeCheck className="size-3.5" /> {t("verifiedUser")}
             </div>
 
-            <div className="mt-3 flex justify-center">
-              <LanguageSwitcher />
-            </div>
+
           </div>
 
           {/* Navigation Links */}

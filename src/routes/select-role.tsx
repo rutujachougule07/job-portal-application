@@ -48,7 +48,7 @@ function SelectRolePage() {
     >
       <div className="absolute inset-0 bg-black/40 backdrop-blur-xs pointer-events-none" />
 
-      <div className="relative z-10 w-full max-w-4xl bg-white rounded-3xl border border-white/60 shadow-2xl p-6 sm:p-10 transition-all duration-300">
+      <div className="relative z-10 w-full max-w-2xl bg-white rounded-3xl border border-white/60 shadow-2xl p-6 sm:p-8 transition-all duration-300">
         {/* Back Button (Top Left) */}
         <button
           type="button"
@@ -117,12 +117,12 @@ function SelectRolePage() {
                   <Building2 className="size-5" />
                 </div>
                 <span className="px-3 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200/70 text-[10px] font-black uppercase tracking-wider">
-                  EMPLOYER / JOB POSTER
+                  JOB POSTER
                 </span>
               </div>
 
               <h3 className="text-xl font-black text-slate-900 group-hover:text-[#0A3B7B] transition-colors mb-2">
-                {t("jobProvider")}
+                {lang === "en" ? "Job Poster" : (t("jobProvider") || "Job Poster")}
               </h3>
 
               <p className="text-xs font-semibold text-slate-500 leading-relaxed mb-6">

@@ -36,7 +36,7 @@ function SelectLanguagePage() {
     >
       <div className="absolute inset-0 bg-black/15 backdrop-blur-[2px] pointer-events-none" />
 
-      <div className="relative z-10 w-full max-w-3xl bg-white/80 backdrop-blur-xl rounded-2xl border border-white/80 shadow-2xl px-6 py-6 sm:py-8 sm:px-10 transition-all duration-300">
+      <div className="relative z-10 w-full max-w-2xl bg-white/80 backdrop-blur-xl rounded-2xl border border-white/80 shadow-2xl px-6 py-6 sm:py-8 sm:px-10 transition-all duration-300">
         <div className="flex justify-center mb-4">
           <LogoIcon className="h-12 sm:h-14 object-contain" />
         </div>

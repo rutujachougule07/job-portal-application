@@ -26,7 +26,7 @@ const en = {
   roleSubtitle: "Choose how you would like to use REAL JOB",
   jobSeeker: "Worker (Job Seeker)",
   jobSeekerDesc: "Find verified jobs, connect directly with employers and track applications.",
-  jobProvider: "Employer (Hirer)",
+  jobProvider: "Job Poster",
   jobProviderDesc: "Search skilled workers, post jobs and hire instantly.",
   backToLanguage: "Change Language",
   viewWebsite: "View Website",
