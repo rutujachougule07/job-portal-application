@@ -7,6 +7,9 @@ import { LogoIcon } from "@/components/portal/Brand";
 import { toast } from "sonner";
 
 export function LanguageGate() {
+  // Gate disabled — app opens directly on landing page
+  return null;
+
   const { lang, setLang, t } = useI18n();
   const navigate = useNavigate();
   const location = useLocation();
