@@ -1069,6 +1069,33 @@ function AdminDashboardPage() {
     }
   }, [currentUser, navigate]);
 
+  // Session revocation when navigating away or clicking back button without logging out
+  useEffect(() => {
+    const handlePopState = () => {
+      dataStore.logout("employer");
+      localStorage.removeItem("realjob-employer-profile");
+      localStorage.removeItem("realjob-user-admin");
+      localStorage.removeItem("realjob-user-employer");
+      localStorage.removeItem("realjob-user");
+      localStorage.removeItem("realjob-role");
+      sessionStorage.removeItem("realjob_tab_user");
+      window.location.replace("/auth?mode=login&role=admin");
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      dataStore.logout("employer");
+      localStorage.removeItem("realjob-employer-profile");
+      localStorage.removeItem("realjob-user-admin");
+      localStorage.removeItem("realjob-user-employer");
+      localStorage.removeItem("realjob-user");
+      localStorage.removeItem("realjob-role");
+      sessionStorage.removeItem("realjob_tab_user");
+    };
+  }, []);
+
   const isSuperAdmin = currentUser?.email?.toLowerCase() === "supera@gmail.com" || currentUser?.email?.toLowerCase() === "superadmin";
   const empIdentifier = currentUser?.fullName || currentUser?.email || "admin-001";
 
@@ -5639,6 +5666,7 @@ function AdminDashboardPage() {
         let overtimeCount = 0;
         let totalOvertimeHours = 0;
         let totalEarned = 0;
+        const overtimeDetails: Array<{ date: string; hours: number }> = [];
 
         for (let d = 1; d <= daysInMonth; d++) {
           const dateStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
@@ -5657,6 +5685,7 @@ function AdminDashboardPage() {
               const otH = rec.overtimeHours !== undefined ? Number(rec.overtimeHours) : 1;
               totalOvertimeHours += otH;
               totalEarned += activeWorker.dailyRate + (otH * effectiveOtRate);
+              overtimeDetails.push({ date: dateStr, hours: otH });
             }
           }
         }
@@ -5800,14 +5829,15 @@ function AdminDashboardPage() {
                     const dateStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, "0")}-${String(dayNum).padStart(2, "0")}`;
                     const rec = recordsMap.get(dateStr);
                     const isSelected = activeCalendarDate === dateStr;
-                    const isSunday = (firstDayOfWeek + i) % 7 === 0;
+                    const colIdx = (firstDayOfWeek + i) % 7;
+                    const isSunday = colIdx === 0;
                     const todayStr = new Date().toISOString().split("T")[0]!;
                     const isFuture = dateStr > todayStr;
 
                     return (
                       <div
                         key={dateStr}
-                        className={`relative min-h-[72px] sm:min-h-[82px] p-2 rounded-2xl border flex flex-col justify-between transition-all ${
+                        className={`relative min-h-[72px] sm:min-h-[82px] p-1.5 sm:p-2 rounded-2xl border flex flex-col justify-between transition-all ${
                           isFuture
                             ? "bg-slate-50/70 border-slate-100 opacity-40 cursor-not-allowed select-none"
                             : isSunday
@@ -5876,14 +5906,14 @@ function AdminDashboardPage() {
                                 e.stopPropagation();
                                 setActiveCalendarDate(isSelected ? null : dateStr);
                               }}
-                              className="w-full flex items-center justify-center gap-1.5 py-1 px-2 rounded-xl bg-purple-50 hover:bg-purple-100 border border-purple-200 transition-all cursor-pointer"
-                              title={`Overtime: ${rec.overtimeHours || 2} hours - Click to edit`}
+                              className="w-full flex flex-col items-center justify-center py-1 px-0.5 sm:px-1 rounded-xl bg-purple-50 hover:bg-purple-100 border border-purple-200 transition-all cursor-pointer gap-0.5 overflow-hidden"
+                              title={`Present + Overtime: ${rec.overtimeHours || 2} hours - Click to edit`}
                             >
-                              <div className="size-5 rounded-full bg-[#7C3AED] text-white flex items-center justify-center shadow-xs shrink-0">
-                                <Clock className="size-3" />
+                              <div className="size-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-xs shrink-0 font-black text-[10px]">
+                                P
                               </div>
-                              <span className="text-xs font-black text-[#7C3AED]">
-                                {rec.overtimeHours || 2}h
+                              <span className="text-[9px] sm:text-[10px] font-black text-[#7C3AED] bg-purple-100/90 px-1 py-0.2 rounded truncate max-w-full">
+                                +{rec.overtimeHours || 2}h OT
                               </span>
                             </button>
                           ) : (
@@ -5902,7 +5932,13 @@ function AdminDashboardPage() {
                           {/* ── DROPDOWN POPOVER FOR MARKING ATTENDANCE (Matches Image 1) ── */}
                           {isSelected && !isFuture && (
                             <div
-                              className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-44 bg-white rounded-2xl p-1.5 shadow-2xl border border-slate-200 z-50 animate-in fade-in zoom-in-95"
+                              className={`absolute bottom-full mb-2 w-44 bg-white rounded-2xl p-1.5 shadow-2xl border border-slate-200 z-50 animate-in fade-in zoom-in-95 ${
+                                colIdx === 0
+                                  ? "left-0"
+                                  : colIdx === 6
+                                  ? "right-0"
+                                  : "left-1/2 -translate-x-1/2"
+                              }`}
                               onClick={(e) => e.stopPropagation()}
                             >
                               <button
@@ -5986,7 +6022,7 @@ function AdminDashboardPage() {
                 </div>
 
                 {/* ── 3. BOTTOM LEGEND (Matches Image 1) ── */}
-                <div className="bg-[#FAF8FF] border border-purple-100 rounded-2xl p-3.5 flex flex-wrap items-center justify-around gap-3 text-xs font-bold text-slate-700 mt-2">
+                <div className="bg-[#FAF8FF] border border-purple-100 rounded-2xl p-3 sm:p-3.5 grid grid-cols-2 sm:flex sm:flex-wrap items-center justify-around gap-2.5 text-xs font-bold text-slate-700 mt-2">
                   <div className="flex items-center gap-2">
                     <div className="size-6 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-2xs">
                       <Check className="size-3.5 stroke-[3]" />
@@ -6028,6 +6064,18 @@ function AdminDashboardPage() {
                       <span className="text-rose-400">🔴 Absent: {absentCount} days</span>
                       <span className="text-purple-300">🟣 Overtime: {overtimeCount} days ({totalOvertimeHours} hrs)</span>
                     </div>
+                    {overtimeDetails.length > 0 && (
+                      <div className="mt-2.5 pt-2 border-t border-white/15 text-xs">
+                        <span className="text-purple-300 font-extrabold block mb-1">📅 Overtime Work Log (Date & Hours):</span>
+                        <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+                          {overtimeDetails.map((ot) => (
+                            <span key={ot.date} className="px-2 py-0.5 rounded-md bg-purple-500/25 border border-purple-400/40 text-purple-200 text-[11px] font-bold">
+                              {ot.date}: {ot.hours}h OT
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-4 border-t sm:border-t-0 sm:border-l border-white/20 pt-3 sm:pt-0 sm:pl-4">

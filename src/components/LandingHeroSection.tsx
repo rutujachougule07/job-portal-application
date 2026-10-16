@@ -16,18 +16,21 @@ interface LandingHeroSectionProps {
  */
 export const LandingHeroSection: React.FC<LandingHeroSectionProps> = ({
   mediaList = [],
-  intervalMs = 6000,
+  intervalMs = 3000,
 }) => {
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
 
-  // Auto-slide through media items
+  // Auto-slide only for images / static posters (3 seconds)
   useEffect(() => {
-    if (mediaList.length <= 1) return;
-    const interval = setInterval(() => {
+    if (mediaList.length <= 1 || isVideoMedia(mediaList[currentMediaIndex])) {
+      return undefined;
+    }
+
+    const timer = setTimeout(() => {
       setCurrentMediaIndex((prev) => (prev + 1) % mediaList.length);
     }, intervalMs);
-    return () => clearInterval(interval);
-  }, [mediaList.length, intervalMs]);
+    return () => clearTimeout(timer);
+  }, [mediaList, currentMediaIndex, intervalMs]);
 
   if (mediaList.length === 0) {
     return null;
@@ -67,9 +70,27 @@ export const LandingHeroSection: React.FC<LandingHeroSectionProps> = ({
                 src={mediaUrl}
                 autoPlay
                 muted
-                loop
+                loop={mediaList.length <= 1}
                 playsInline
                 preload="auto"
+                ref={(el) => {
+                  if (el && isActive) {
+                    el.currentTime = 0;
+                    el.play().catch(() => {});
+                  }
+                }}
+                onEnded={() => {
+                  if (mediaList.length > 1) {
+                    setCurrentMediaIndex((prev) => (prev + 1) % mediaList.length);
+                  }
+                }}
+                onError={() => {
+                  if (mediaList.length > 1) {
+                    setTimeout(() => {
+                      setCurrentMediaIndex((prev) => (prev + 1) % mediaList.length);
+                    }, 3000);
+                  }
+                }}
                 className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ease-in-out ${
                   isActive ? "opacity-100 z-1" : "opacity-0 pointer-events-none"
                 }`}

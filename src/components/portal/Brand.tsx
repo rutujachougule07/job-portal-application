@@ -12,7 +12,7 @@ export function LogoIcon({ className = "h-14" }: { className?: string }) {
 
 export function Brand({
   className = "h-14 sm:h-16",
-  to = "/",
+  to = "/superadmin",
 }: {
   className?: string;
   compact?: boolean;
@@ -25,7 +25,7 @@ export function Brand({
       to={to as any}
       className="inline-flex items-center gap-2 group select-none shrink-0 cursor-pointer"
       aria-label="REAL JOB Logo"
-      title="REAL JOB"
+      title="REAL JOB — Super Admin Login"
     >
       <img
         src="/logo.png"

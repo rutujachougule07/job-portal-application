@@ -7,7 +7,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
-import { isVideoMedia, getYouTubeEmbedUrl } from "./video-utils";
+import { isVideoMedia, getYouTubeEmbedUrl, getVideoDurationFromFile } from "./video-utils";
 
 interface SuperadminHeroMediaSectionProps {
   heroImages: string[];
@@ -82,10 +82,31 @@ export const SuperadminHeroMediaSection: React.FC<SuperadminHeroMediaSectionProp
       return;
     }
 
+    const duration = await getVideoDurationFromFile(file);
+    if (duration > 61) {
+      toast.error(`❌ व्हिडिओ खूप मोठा आहे (${Math.round(duration)} सेकंद)! व्हिडिओ कमाल १ मिनिट (६० सेकंद) चाच असावा.`);
+      if (e.target) e.target.value = "";
+      return;
+    }
+
     setVideoUploading(true);
-    const toastId = toast.loading("Uploading hero banner video... Please wait.");
+    const toastId = toast.loading("Uploading hero banner video to cloud... Please wait.");
 
     try {
+      // 1. Upload to Firebase Storage so all devices/Vercel get it
+      try {
+        const { uploadFileToFirebaseStorage } = await import("@/lib/storage-service");
+        const uploadRes = await uploadFileToFirebaseStorage(file, "hero_media");
+        if (uploadRes?.downloadUrl && uploadRes.isFirebaseStorage) {
+          setHeroImages((prev) => [...prev, uploadRes.downloadUrl]);
+          toast.success("✅ Video uploaded to cloud! Click 'Save Landing Page Settings'.", { id: toastId });
+          setVideoUploading(false);
+          return;
+        }
+      } catch (cloudErr) {
+        console.warn("Direct Firebase Storage upload error, falling back:", cloudErr);
+      }
+
       const reader = new FileReader();
       reader.onloadend = async () => {
         try {
@@ -137,7 +158,31 @@ export const SuperadminHeroMediaSection: React.FC<SuperadminHeroMediaSectionProp
     if (!file) return;
 
     if (isVideo) {
-      const toastId = toast.loading("Updating video...");
+      const duration = await getVideoDurationFromFile(file);
+      if (duration > 61) {
+        toast.error(`❌ व्हिडिओ खूप मोठा आहे (${Math.round(duration)} सेकंद)! व्हिडिओ कमाल १ मिनिट (६० सेकंद) चाच असावा.`);
+        if (e.target) e.target.value = "";
+        return;
+      }
+      const toastId = toast.loading("Updating video in cloud...");
+
+      // 1. Upload to Firebase Storage
+      try {
+        const { uploadFileToFirebaseStorage } = await import("@/lib/storage-service");
+        const uploadRes = await uploadFileToFirebaseStorage(file, "hero_media");
+        if (uploadRes?.downloadUrl && uploadRes.isFirebaseStorage) {
+          setHeroImages((prev) => {
+            const copy = [...prev];
+            copy[index] = uploadRes.downloadUrl;
+            return copy;
+          });
+          toast.success("✅ Video updated in cloud! Click 'Save Landing Page Settings'.", { id: toastId });
+          return;
+        }
+      } catch (cloudErr) {
+        console.warn("Direct Firebase Storage upload error:", cloudErr);
+      }
+
       const reader = new FileReader();
       reader.onloadend = async () => {
         try {

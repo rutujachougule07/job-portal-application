@@ -20,7 +20,10 @@ export function PublicFooter() {
   };
 
   const handleHeartClick = () => {
-    navigate({ to: "/superadmin" });
+    navigate({ to: "/superadmin" as any });
+    if (typeof window !== "undefined") {
+      window.location.href = "/superadmin";
+    }
   };
 
   return (
@@ -85,9 +88,9 @@ export function PublicFooter() {
             <span className="inline-flex items-center gap-1.5">
               Made with{" "}
               <span
-                className="text-[#FFC400] cursor-pointer select-none"
                 onClick={handleHeartClick}
-                title=""
+                className="text-[#FFC400] cursor-pointer select-none hover:scale-125 transition-transform inline-block"
+                title="Superadmin Portal"
               >
                 💛
               </span>{" "}

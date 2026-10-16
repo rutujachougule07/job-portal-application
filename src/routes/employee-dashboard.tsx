@@ -253,10 +253,24 @@ function EmployeeDashboard() {
     }
   }, [navigate]);
 
-  // Clean up camera on unmount
+  // Session revocation when navigating away or clicking back button without logging out
   useEffect(() => {
-    return () => {
+    const handlePopState = () => {
       stopCamera();
+      localStorage.removeItem("realjob-user");
+      localStorage.removeItem("realjob_db_user");
+      sessionStorage.removeItem("realjob_tab_user");
+      dataStore.setCurrentUser(null as any);
+      window.location.replace("/auth?mode=login&role=employee");
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      localStorage.removeItem("realjob-user");
+      localStorage.removeItem("realjob_db_user");
+      sessionStorage.removeItem("realjob_tab_user");
+      dataStore.setCurrentUser(null as any);
     };
   }, []);
 

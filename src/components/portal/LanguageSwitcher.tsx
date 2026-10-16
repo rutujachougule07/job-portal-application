@@ -1,91 +1,130 @@
-import { Check, UserCheck } from "lucide-react";
-import { languages, useI18n } from "@/lib/i18n";
+import { useState } from "react";
+import { Check, ChevronDown, ChevronUp, Globe } from "lucide-react";
+import { languages, useI18n, type LanguageCode } from "@/lib/i18n";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
+
+// Ordered languages list including English at the top:
+// 1. English
+// 2. मराठी (Marathi)
+// 3. हिंदी (Hindi)
+// 4. ગુજરાતી (Gujarati)
+// 5. ಕನ್ನಡ (Kannada)
+// 6. తెలుగు (Telugu)
+// 7. தமிழ் (Tamil)
+// 8. বাংলা (Bengali)
+const orderedLanguageCodes: LanguageCode[] = [
+  "en",
+  "mr",
+  "hi",
+  "gu",
+  "kn",
+  "te",
+  "ta",
+  "bn",
+];
 
 export function LanguageSwitcher({
-  label = "Language",
-  showCurrent = true,
+  variant = "pill",
+  className = "",
 }: {
   label?: string;
   showCurrent?: boolean;
+  variant?: "pill" | "icon";
+  className?: string;
 }) {
-  const { lang, setLang, t } = useI18n();
-  const currentItem = languages.find((item) => item.code === lang) || languages[0];
+  const { lang, setLang } = useI18n();
+  const [open, setOpen] = useState(false);
 
-  const openGate = () => {
-    window.dispatchEvent(new Event("karyam-open-gate"));
+  // Starts as null so on every page refresh it always defaults to showing "Language"
+  const [selectedCode, setSelectedCode] = useState<string | null>(null);
+
+  const handleSelect = (code: LanguageCode) => {
+    setLang(code);
+    setSelectedCode(code);
   };
 
+  const currentLangObj = languages.find((l) => l.code === selectedCode);
+  const displayText = selectedCode && currentLangObj?.native ? currentLangObj.native : "Language";
+
+  const allLanguages = orderedLanguageCodes
+    .map((code) => languages.find((l) => l.code === code))
+    .filter(Boolean) as (typeof languages)[number][];
+
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-9 w-9 p-1 rounded-xl bg-white border-[#DCE5F0] hover:bg-[#F5F8FC] hover:border-[#063B78]/40 transition-all shadow-2xs cursor-pointer shrink-0"
-          title="Change Language • भाषा बदला"
-          aria-label="Change Language"
-        >
-          <img
-            src="/language-icon.png"
-            alt="Language"
-            className="size-7 rounded-lg object-contain"
-          />
-        </Button>
+        {variant === "icon" ? (
+          <button
+            type="button"
+            className={`h-9 w-9 p-1 rounded-xl bg-white border border-[#DCE5F0] hover:bg-[#F5F8FC] hover:border-[#063B78]/40 transition-all shadow-2xs cursor-pointer shrink-0 flex items-center justify-center ${className}`}
+            title="Change Language • भाषा बदला"
+            aria-label="Change Language"
+          >
+            <img
+              src="/language-icon.png"
+              alt="Language"
+              className="size-7 rounded-lg object-contain"
+            />
+          </button>
+        ) : (
+          <button
+            type="button"
+            className={`flex items-center gap-2 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl transition-all cursor-pointer font-semibold text-xs sm:text-sm shrink-0 select-none ${
+              open
+                ? "bg-[#EDF5FE] border-2 border-[#3B82F6] text-[#0F172A] shadow-xs"
+                : "bg-[#EDF5FE] border border-[#3B82F6] text-[#0F172A] hover:bg-[#E3EFFD]"
+            } ${className}`}
+            title="Change Language • भाषा बदला"
+            aria-label="Change Language"
+          >
+            <Globe className="size-4.5 sm:size-5 text-[#1D4ED8] stroke-[2.2] shrink-0" />
+            <span className="font-semibold text-[#10233F]">{displayText}</span>
+            {open ? (
+              <ChevronUp className="size-4 text-[#1D4ED8] stroke-[2.5] shrink-0" />
+            ) : (
+              <ChevronDown className="size-4 text-[#1D4ED8] stroke-[2.5] shrink-0" />
+            )}
+          </button>
+        )}
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" className="w-56 p-2 shadow-2xl border-[#DCE5F0] bg-white text-[#10233F] z-[60] rounded-xl notranslate">
-        <DropdownMenuLabel className="text-[11px] font-black uppercase tracking-wider text-[#5B6B7F] px-2 py-1 flex items-center gap-1.5">
-          <img src="/language-icon.png" alt="Language" className="size-4 rounded-full object-contain" />
-          <span>{t("chooseLanguage")} • भाषा निवडा</span>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator className="my-1.5 bg-[#DCE5F0]" />
-
-        <div className="max-h-72 overflow-y-auto space-y-1 pr-0.5">
-          {languages.map((item) => {
+      <DropdownMenuContent
+        align="end"
+        sideOffset={6}
+        className="w-[180px] p-1.5 shadow-2xl border border-slate-200/90 bg-white text-[#10233F] z-[100] rounded-2xl notranslate overflow-hidden animate-in fade-in-50 zoom-in-95 duration-150"
+      >
+        <div className="space-y-0.5">
+          {allLanguages.map((item) => {
             const isSelected = item.code === lang;
             return (
               <DropdownMenuItem
                 key={item.code}
-                onClick={() => {
-                  setLang(item.code);
-                }}
-                className={`flex items-center justify-between cursor-pointer px-3 py-2 text-xs sm:text-sm rounded-lg transition-colors ${isSelected
-                    ? "bg-[#063B78] text-white font-bold"
-                    : "hover:bg-[#F5F8FC] hover:text-[#063B78]"
-                  }`}
+                onClick={() => handleSelect(item.code)}
+                className="flex items-center justify-between cursor-pointer px-2.5 py-2 rounded-xl transition-colors hover:bg-[#F0F6FF] text-[#0F172A] outline-none"
               >
-                <div className="flex items-baseline gap-2">
-                  <span className="font-bold">{item.native}</span>
-                  <span className={`text-[11px] ${isSelected ? "text-slate-200" : "text-slate-500"}`}>
-                    ({item.name})
-                  </span>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="font-bold text-sm text-[#0F172A]">{item.native}</span>
+                  {item.code !== "en" && (
+                    <span className="text-xs font-medium text-slate-500">
+                      ({item.name})
+                    </span>
+                  )}
                 </div>
-                {isSelected && <Check className="size-4 text-[#FFC400] stroke-[3]" />}
+                {isSelected && (
+                  <div className="size-5 rounded-full bg-[#1D4ED8] text-white flex items-center justify-center shrink-0 shadow-xs">
+                    <Check className="size-3.5 stroke-[3]" />
+                  </div>
+                )}
               </DropdownMenuItem>
             );
           })}
         </div>
-
-        <DropdownMenuSeparator className="my-1.5 bg-[#DCE5F0]" />
-        <DropdownMenuItem
-          onClick={openGate}
-          className="cursor-pointer px-3 py-2 text-xs font-bold text-[#063B78] hover:bg-[#F5F8FC] rounded-lg flex items-center gap-2"
-        >
-          <UserCheck className="size-4 text-[#063B78]" />
-          {t("selectRole")} / Profile
-        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
 }
-
-

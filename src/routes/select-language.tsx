@@ -51,26 +51,26 @@ function SelectLanguagePage() {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-6">
-          {languages.map((lang) => (
+          {languages.map((item) => (
             <button
-              key={lang.code}
-              onClick={() => setSelectedLang(lang.code)}
-              className={`relative flex items-center justify-between p-2.5 sm:p-3 rounded-xl border-2 transition-all duration-200 ${selectedLang === lang.code
-                  ? "border-[#0A3B7B] bg-[#EBF1F8] shadow-md"
-                  : "border-white/60 bg-white/50 hover:bg-white hover:border-[#DCE5F0]"
+              key={item.code}
+              onClick={() => setSelectedLang(item.code)}
+              className={`relative flex items-center justify-between p-3 sm:p-3.5 rounded-xl border-2 transition-all duration-200 cursor-pointer ${selectedLang === item.code
+                  ? "border-[#0A3B7B] bg-[#EBF1F8] shadow-md ring-2 ring-[#0A3B7B]/20"
+                  : "border-white/60 bg-white/70 hover:bg-white hover:border-[#DCE5F0]"
                 }`}
             >
               <div className="flex flex-col text-left">
-                <span className={`text-base sm:text-lg font-bold ${selectedLang === lang.code ? "text-[#0A3B7B]" : "text-gray-900"}`}>
-                  {lang.native}
+                <span className={`text-sm sm:text-base font-bold ${selectedLang === item.code ? "text-[#0A3B7B]" : "text-gray-900"}`}>
+                  {item.native}
                 </span>
-                <span className="text-xs sm:text-sm font-semibold text-gray-500">
-                  {lang.name}
+                <span className="text-xs font-semibold text-gray-500">
+                  {item.name}
                 </span>
               </div>
-              {selectedLang === lang.code && (
-                <div className="bg-[#0A3B7B] rounded-full p-1 sm:p-1.5 text-white">
-                  <Check className="size-3 sm:size-4" />
+              {selectedLang === item.code && (
+                <div className="bg-[#1D4ED8] rounded-full p-1 text-white shrink-0 shadow-xs">
+                  <Check className="size-3 stroke-[3]" />
                 </div>
               )}
             </button>

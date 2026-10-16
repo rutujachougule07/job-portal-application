@@ -6049,11 +6049,175 @@ export const categoryTranslations: Record<
   },
 };
 
+const categoryAliases: Record<string, string> = {
+  it: "it-software",
+  software: "it-software",
+  "it & software": "it-software",
+  "it-software": "it-software",
+  "information technology": "it-software",
+  farming: "agriculture-farming",
+  farmer: "agriculture-farming",
+  farm: "agriculture-farming",
+  agriculture: "agriculture-farming",
+  "agriculture-farming": "agriculture-farming",
+  "agriculture & farming": "agriculture-farming",
+  construction: "construction",
+  builder: "construction",
+  civil: "construction",
+  engineering: "engineering",
+  engineer: "engineering",
+  medical: "healthcare-medical",
+  health: "healthcare-medical",
+  healthcare: "healthcare-medical",
+  "healthcare-medical": "healthcare-medical",
+  finance: "finance-accounting",
+  accounting: "finance-accounting",
+  sales: "sales-marketing",
+  marketing: "sales-marketing",
+  "sales-marketing": "sales-marketing",
+  education: "education",
+  teacher: "education",
+  hotel: "hospitality-tourism",
+  hospitality: "hospitality-tourism",
+  factory: "manufacturing-production",
+  manufacturing: "manufacturing-production",
+  driver: "logistics-transport",
+  transport: "logistics-transport",
+  logistics: "logistics-transport",
+  security: "security-services",
+  guard: "security-services",
+  bpo: "customer-service-bpo",
+  design: "design-creative",
+  legal: "legal",
+  government: "government-public",
+};
+
+const categoryLocalizedTitles: Record<string, Record<string, string>> = {
+  "it-software": {
+    mr: "आयटी आणि सॉफ्टवेअर (IT)",
+    gu: "આઈટી અને સોફ્ટવેર (IT)",
+    hi: "आईटी और सॉफ्टवेयर (IT)",
+    kn: "ಐಟಿ ಮತ್ತು ಸಾಫ್ಟ್‌ವೇರ್ (IT)",
+    te: "ఐటీ మరియు సాఫ్ట్‌వేర్ (IT)",
+    ta: "ஐடி மற்றும் மென்பொருள் (IT)",
+    bn: "আইটি ও সফটওয়্যার (IT)",
+    en: "IT & Software",
+  },
+  "agriculture-farming": {
+    mr: "शेती आणि कृषी (Farming)",
+    gu: "કૃષિ અને ખેતી (Farming)",
+    hi: "कृषि और खेती (Farming)",
+    kn: "ಕೃಷಿ ಮತ್ತು ಕೃಷಿ (Farming)",
+    te: "వ్యవసాయం (Farming)",
+    ta: "விவசாயம் (Farming)",
+    bn: "কৃষি ও চাষাবাদ (Farming)",
+    en: "Agriculture & Farming",
+  },
+  construction: {
+    mr: "बांधकाम (Construction)",
+    gu: "બાંધકામ (Construction)",
+    hi: "निर्माण (Construction)",
+    kn: "ನಿರ್ಮಾಣ (Construction)",
+    te: "నిర్మాణం (Construction)",
+    ta: "கட்டுமானம் (Construction)",
+    bn: "নির্মাণ (Construction)",
+    en: "Construction",
+  },
+  engineering: {
+    mr: "अभियांत्रिकी (Engineering)",
+    gu: "એન્જિનિયરિંગ (Engineering)",
+    hi: "इंजीनियरिंग (Engineering)",
+    kn: "ಎಂಜಿನಿಯರಿಂಗ್ (Engineering)",
+    te: "ఇంజనీరింగ్ (Engineering)",
+    ta: "பொறியியல் (Engineering)",
+    bn: "প্রকৌশল (Engineering)",
+    en: "Engineering",
+  },
+  "healthcare-medical": {
+    mr: "आरोग्य आणि वैद्यकीय (Healthcare)",
+    gu: "આરોગ્ય અને તબીબી (Healthcare)",
+    hi: "स्वास्थ्य और चिकित्सा (Healthcare)",
+    kn: "ಆರೋಗ್ಯ ರಕ್ಷಣೆ (Healthcare)",
+    te: "ఆరోగ్య సంరక్షణ (Healthcare)",
+    ta: "சுகாதாரம் (Healthcare)",
+    bn: "স্বাস্থ্যসেবা (Healthcare)",
+    en: "Healthcare & Medical",
+  },
+  "finance-accounting": {
+    mr: "वित्त आणि लेखा (Finance)",
+    gu: "નાણાં અને એકાઉન્ટિંગ (Finance)",
+    hi: "वित्त और लेखा (Finance)",
+    kn: "ಹಣಕಾಸು ಮತ್ತು ಲೆಕ್ಕಪತ್ರ (Finance)",
+    te: "ఫైనాన్స్ & అకౌంటింగ్ (Finance)",
+    ta: "நிதி மற்றும் கணக்கியல் (Finance)",
+    bn: "অর্থ ও হিসাববিজ্ঞান (Finance)",
+    en: "Finance & Accounting",
+  },
+  "sales-marketing": {
+    mr: "विक्री आणि विपणन (Sales)",
+    gu: "વેચાણ અને માર્કેટિંગ (Sales)",
+    hi: "बिक्री और विपणन (Sales)",
+    kn: "ಮಾರಾಟ ಮತ್ತು ಮಾರ್ಕೆಟಿಂಗ್ (Sales)",
+    te: "సేల్స్ & మార్కెటింగ్ (Sales)",
+    ta: "விற்பனை மற்றும் சந்தைப்படுத்தல் (Sales)",
+    bn: "বিক্রয় ও বিপণন (Sales)",
+    en: "Sales & Marketing",
+  },
+  education: {
+    mr: "शिक्षण (Education)",
+    gu: "શિક્ષણ (Education)",
+    hi: "शिक्षा (Education)",
+    kn: "ಶಿಕ್ಷಣ (Education)",
+    te: "విద్య (Education)",
+    ta: "கல்வி (Education)",
+    bn: "শিক্ষা (Education)",
+    en: "Education",
+  },
+  "hospitality-tourism": {
+    mr: "हॉटेल आणि पर्यटन (Hospitality)",
+    gu: "હોટેલ અને પ્રવાસન (Hospitality)",
+    hi: "होटल और पर्यटन (Hospitality)",
+    kn: "ಆತಿಥ್ಯ ಮತ್ತು ಪ್ರವಾಸೋದ್ಯಮ (Hospitality)",
+    te: "ఆతిథ్యం & పర్యాటకం (Hospitality)",
+    ta: "விருந்தோம்பல் மற்றும் சுற்றுலா (Hospitality)",
+    bn: "আতিথেয়তা ও পর্যটন (Hospitality)",
+    en: "Hospitality & Tourism",
+  },
+  "manufacturing-production": {
+    mr: "उत्पादन आणि फॅक्टरी (Manufacturing)",
+    gu: "ઉત્પાદન અને ફેક્ટરી (Manufacturing)",
+    hi: "उत्पादन और फैक्ट्री (Manufacturing)",
+    kn: "ಉತ್ಪಾದನೆ (Manufacturing)",
+    te: "తయారీ (Manufacturing)",
+    ta: "உற்பத்தி (Manufacturing)",
+    bn: "উৎপাদন (Manufacturing)",
+    en: "Manufacturing & Production",
+  },
+  "logistics-transport": {
+    mr: "वाहतूक आणि लॉजिस्टिक्स (Transport)",
+    gu: "પરિવહન અને લોજિસ્ટિક્સ (Transport)",
+    hi: "परिवहन और लॉजिस्टिक्स (Transport)",
+    kn: "ಸಾರಿಗೆ ಮತ್ತು ಲಾಜಿಸ್ಟಿಕ್ಸ್ (Transport)",
+    te: "రవాణా మరియు లాజిస్టిక్స్ (Transport)",
+    ta: "போக்குவரத்து (Transport)",
+    bn: "পরিবহন ও লজিস্টিকস (Transport)",
+    en: "Logistics & Transport",
+  },
+};
 
 export function getCategoryTitle(id: string, lang: string): string {
-  return categoryTranslations[id]?.[lang]?.title || categoryTranslations[id]?.["en"]?.title || id;
+  if (!id) return "";
+  const key = id.toLowerCase().trim();
+  const canonical = categoryAliases[key] || key;
+  if (categoryLocalizedTitles[canonical]?.[lang]) {
+    return categoryLocalizedTitles[canonical][lang];
+  }
+  return categoryTranslations[canonical]?.[lang]?.title || categoryTranslations[id]?.[lang]?.title || categoryTranslations[canonical]?.["en"]?.title || categoryTranslations[id]?.["en"]?.title || id;
 }
 
 export function getCategoryDesc(id: string, lang: string): string {
-  return categoryTranslations[id]?.[lang]?.desc || categoryTranslations[id]?.["en"]?.desc || "";
+  if (!id) return "";
+  const key = id.toLowerCase().trim();
+  const canonical = categoryAliases[key] || key;
+  return categoryTranslations[canonical]?.[lang]?.desc || categoryTranslations[id]?.[lang]?.desc || categoryTranslations[canonical]?.["en"]?.desc || "";
 }

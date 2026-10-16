@@ -65,7 +65,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { dataStore, JobRecord, ApplicationRecord, JobPackagePlan, PackageTransaction, SubAdmin, SubAdminPermission } from "@/lib/data-store";
-import { isVideoMedia, getYouTubeEmbedUrl } from "@/lib/utils";
+import { isVideoMedia, getYouTubeEmbedUrl, getVideoDurationFromFile } from "@/lib/utils";
 
 export const Route = createFileRoute("/superadmin")({
   head: () => ({
@@ -159,7 +159,8 @@ function SuperAdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     if (typeof window !== "undefined") {
       try {
-        const saved = localStorage.getItem("realjob_admin_auth") || sessionStorage.getItem("realjob_admin_auth");
+        localStorage.removeItem("realjob_admin_auth");
+        const saved = sessionStorage.getItem("realjob_admin_auth");
         return !!saved;
       } catch {}
     }
@@ -230,6 +231,31 @@ function SuperAdminPage() {
       } catch (e) {}
     }
     if (savedCategories) setCategories(JSON.parse(savedCategories));
+
+    // Also load cloud settings from Firestore
+    const syncFromCloud = async () => {
+      try {
+        const { db } = await import("@/firebase");
+        const { doc, getDoc } = await import("firebase/firestore");
+        const snap = await getDoc(doc(db, "cms_settings", "landing_page"));
+        if (snap.exists()) {
+          const data: any = snap.data();
+          if (Array.isArray(data.heroImages) && data.heroImages.length > 0) {
+            setHeroImages(data.heroImages);
+            localStorage.setItem("cms_heroImages", JSON.stringify(data.heroImages));
+          }
+          if (data.heroTitle) setHeroTitle(data.heroTitle);
+          if (data.heroSubtitle) setHeroSubtitle(data.heroSubtitle);
+          if (data.metrics) setMetrics(data.metrics);
+          if (data.aboutData) setAboutData(data.aboutData);
+          if (data.companyPillars) setCompanyPillars(data.companyPillars);
+          if (data.categories) setCategories(data.categories);
+        }
+      } catch (err) {
+        console.warn("Could not sync CMS settings from cloud in superadmin:", err);
+      }
+    };
+    syncFromCloud();
   }, []);
 
   const [allJobs, setAllJobs] = useState<JobRecord[]>([]);
@@ -278,8 +304,33 @@ function SuperAdminPage() {
     return { isSuperAdmin: true };
   });
 
+  // Revoke session when navigating away or clicking back button without logging out
   useEffect(() => {
-    // Keep superadmin state active across tab/page sessions
+    const handlePopState = () => {
+      const saved = sessionStorage.getItem("realjob_admin_auth");
+      if (!saved) {
+        setIsAuthenticated(false);
+      }
+    };
+    const handlePageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) {
+        const saved = sessionStorage.getItem("realjob_admin_auth");
+        if (!saved) {
+          setIsAuthenticated(false);
+        }
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+    window.addEventListener("pageshow", handlePageShow);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("pageshow", handlePageShow);
+      try {
+        sessionStorage.removeItem("realjob_admin_auth");
+        localStorage.removeItem("realjob_admin_auth");
+      } catch {}
+    };
   }, []);
 
   // Sub-Admin Form State
@@ -592,10 +643,31 @@ function SuperAdminPage() {
       return;
     }
 
+    const duration = await getVideoDurationFromFile(file);
+    if (duration > 61) {
+      toast.error(`❌ व्हिडिओ खूप मोठा आहे (${Math.round(duration)} सेकंद)! व्हिडिओ कमाल १ मिनिट (६० सेकंद) चाच असावा.`);
+      if (e.target) e.target.value = "";
+      return;
+    }
+
     setVideoUploading(true);
-    const toastId = toast.loading("Uploading hero banner video... Please wait.");
+    const toastId = toast.loading("Uploading hero banner video to cloud... Please wait.");
 
     try {
+      // 1. Upload directly to Firebase Cloud Storage so Vercel and all devices see it
+      try {
+        const { uploadFileToFirebaseStorage } = await import("@/lib/storage-service");
+        const uploadRes = await uploadFileToFirebaseStorage(file, "hero_media");
+        if (uploadRes?.downloadUrl && uploadRes.isFirebaseStorage) {
+          setHeroImages((prev) => [...prev, uploadRes.downloadUrl]);
+          toast.success("✅ Video uploaded to cloud! Click 'Save Landing Page Settings'.", { id: toastId });
+          setVideoUploading(false);
+          return;
+        }
+      } catch (cloudErr) {
+        console.warn("Direct Firebase Storage upload failed, trying local save:", cloudErr);
+      }
+
       const reader = new FileReader();
       reader.onloadend = async () => {
         try {
@@ -641,7 +713,31 @@ function SuperAdminPage() {
     if (!file) return;
 
     if (isVideo) {
-      const toastId = toast.loading("Updating video...");
+      const duration = await getVideoDurationFromFile(file);
+      if (duration > 61) {
+        toast.error(`❌ व्हिडिओ खूप मोठा आहे (${Math.round(duration)} सेकंद)! व्हिडिओ कमाल १ मिनिट (६० सेकंद) चाच असावा.`);
+        if (e.target) e.target.value = "";
+        return;
+      }
+      const toastId = toast.loading("Updating video in cloud...");
+
+      // 1. Upload to Firebase Storage
+      try {
+        const { uploadFileToFirebaseStorage } = await import("@/lib/storage-service");
+        const uploadRes = await uploadFileToFirebaseStorage(file, "hero_media");
+        if (uploadRes?.downloadUrl && uploadRes.isFirebaseStorage) {
+          setHeroImages((prev) => {
+            const copy = [...prev];
+            copy[index] = uploadRes.downloadUrl;
+            return copy;
+          });
+          toast.success("✅ Video updated in cloud! Click 'Save Landing Page Settings'.", { id: toastId });
+          return;
+        }
+      } catch (cloudErr) {
+        console.warn("Direct Firebase upload error:", cloudErr);
+      }
+
       const reader = new FileReader();
       reader.onloadend = async () => {
         try {
@@ -761,7 +857,7 @@ function SuperAdminPage() {
     }
   };
 
-  const handleSaveCMS = () => {
+  const handleSaveCMS = async () => {
     try {
       localStorage.setItem("cms_heroTitle", heroTitle);
       localStorage.setItem("cms_heroSubtitle", heroSubtitle);
@@ -770,8 +866,26 @@ function SuperAdminPage() {
       localStorage.setItem("cms_companyPillars", JSON.stringify(companyPillars));
       localStorage.setItem("cms_categories", JSON.stringify(categories));
       localStorage.setItem("cms_heroImages", JSON.stringify(heroImages));
+
+      // Sync to Firebase Firestore cloud so Vercel and all devices get the update immediately
+      try {
+        const { db } = await import("@/firebase");
+        const { doc, setDoc } = await import("firebase/firestore");
+        await setDoc(doc(db, "cms_settings", "landing_page"), {
+          heroTitle,
+          heroSubtitle,
+          heroImages,
+          metrics,
+          aboutData,
+          companyPillars,
+          categories,
+          updatedAt: new Date().toISOString(),
+        }, { merge: true });
+      } catch (cloudErr) {
+        console.warn("Could not sync to Firestore cloud:", cloudErr);
+      }
       
-      toast.success("Landing page content updated successfully!");
+      toast.success("✅ Landing page content updated and synced to cloud successfully!");
     } catch (e) {
       console.error("Failed to save CMS data:", e);
       toast.error("Failed to save! If you uploaded new images, they might be too large (Browser limit is 5MB). Please try uploading smaller images.");
@@ -854,7 +968,7 @@ function SuperAdminPage() {
       setCurrentAdminRole(superRole);
       if (typeof window !== "undefined") {
         sessionStorage.setItem("realjob_admin_auth", JSON.stringify(superRole));
-        localStorage.setItem("realjob_admin_auth", JSON.stringify(superRole));
+        localStorage.removeItem("realjob_admin_auth");
       }
       toast.success("✅ Welcome, Super Administrator!");
     } catch (err: any) {
@@ -864,7 +978,7 @@ function SuperAdminPage() {
         setCurrentAdminRole(superRole);
         if (typeof window !== "undefined") {
           sessionStorage.setItem("realjob_admin_auth", JSON.stringify(superRole));
-          localStorage.setItem("realjob_admin_auth", JSON.stringify(superRole));
+          localStorage.removeItem("realjob_admin_auth");
         }
         toast.success("✅ Welcome, Super Administrator!");
       } else {
@@ -926,12 +1040,13 @@ function SuperAdminPage() {
               <ShieldAlert className="size-8 text-[#021D3D]" />
             </div>
             <h1 className="text-2xl font-black text-[#063B78] tracking-tight">REAL JOB Admin Portal</h1>
-            <p className="text-xs sm:text-[13px] font-bold text-[#5B6B7F] mt-1">Superadmin Control &amp; Sub-Admin Work Access</p>
+            <p className="text-xs font-bold text-[#5B6B7F] mt-1">Superadmin Control & Sub-Admin Work Access</p>
+            <p className="text-[11px] font-semibold text-[#0A4F9E] mt-0.5">सुपरॲडमिन किंवा सब-ॲडमिन युझरनेम/ईमेल व पासवर्डने लॉगिन करा</p>
           </div>
           
           <form onSubmit={handleLogin} className="p-8 space-y-4">
             <div>
-              <label className="block text-xs sm:text-[13px] font-black text-[#5B6B7F] uppercase tracking-wider mb-2">
+              <label className="block text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider mb-2">
                 Username or Email Address *
               </label>
               <div className="relative group">
@@ -948,7 +1063,7 @@ function SuperAdminPage() {
             </div>
 
             <div>
-              <label className="block text-xs sm:text-[13px] font-black text-[#5B6B7F] uppercase tracking-wider mb-2">
+              <label className="block text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider mb-2">
                 Secure Password *
               </label>
               <div className="relative group">
@@ -965,13 +1080,13 @@ function SuperAdminPage() {
             </div>
             
             <div className="pt-2">
-              <Button type="submit" disabled={loginBusy} className="w-full h-12 bg-gradient-to-r from-[#063B78] to-[#0A4F9E] hover:from-[#0A4F9E] hover:to-[#063B78] text-white font-black rounded-xl text-sm sm:text-base shadow-lg shadow-[#063B78]/20 transition-all active:scale-95 border-b-[3px] border-[#021D3D] disabled:opacity-50 cursor-pointer">
+              <Button type="submit" disabled={loginBusy} className="w-full h-12 bg-gradient-to-r from-[#063B78] to-[#0A4F9E] hover:from-[#0A4F9E] hover:to-[#063B78] text-white font-black rounded-xl text-sm shadow-lg shadow-[#063B78]/20 transition-all active:scale-95 border-b-[3px] border-[#021D3D] disabled:opacity-50 cursor-pointer">
                 {loginBusy ? "Authenticating..." : "Sign In to Admin Panel"}
               </Button>
             </div>
           </form>
           
-          <div className="p-4 text-center bg-[#F8FAFF] text-[11px] sm:text-xs uppercase font-black text-[#9DAEC5] tracking-widest border-t border-[#E0E8F5]">
+          <div className="p-4 text-center bg-[#F8FAFF] text-[10px] uppercase font-black text-[#9DAEC5] tracking-widest border-t border-[#E0E8F5]">
             Protected by REAL JOB Multi-Tier Role Security
           </div>
         </div>

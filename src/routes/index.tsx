@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, redirect } from "@tanstack/react-router";
 import {
   ShieldCheck,
   UserCheck,
@@ -65,7 +65,7 @@ import careerTeam from "@/assets/career-team.jpg";
 import { Brand } from "@/components/portal/Brand";
 import { LanguageGate } from "@/components/portal/LanguageGate";
 import { LanguageSwitcher } from "@/components/portal/LanguageSwitcher";
-import { LandingCategoryFilterModal, CATEGORY_TRANSLATIONS } from "@/components/portal/LandingCategoryFilterModal";
+import { CATEGORY_TRANSLATIONS } from "@/components/portal/LandingCategoryFilterModal";
 import { LoginDropdown } from "@/components/portal/LoginDropdown";
 
 import { PublicFooter } from "@/components/portal/PublicFooter";
@@ -76,6 +76,33 @@ import { dataStore } from "@/lib/data-store";
 import { isVideoMedia, getYouTubeEmbedUrl } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
+  beforeLoad: () => {
+    if (typeof window !== "undefined") {
+      if (window.location.search.includes("view=website")) {
+        return;
+      }
+      try {
+        let u: any = null;
+        const raw = localStorage.getItem("realjob-user") || localStorage.getItem("realjob_db_user");
+        if (raw) u = JSON.parse(raw);
+        if (!u) {
+          u = dataStore.getCurrentUser();
+        }
+        if (u && (u.id || u.email)) {
+          const r = (u.role || "").toLowerCase();
+          if (r === "employer" || r === "admin" || r === "poster") {
+            throw redirect({ to: "/admin" });
+          } else if (r === "employee") {
+            throw redirect({ to: "/employee-dashboard" as any });
+          } else if (r === "worker" || r === "seeker" || r === "user") {
+            throw redirect({ to: "/dashboard", search: { tab: "overview" } });
+          }
+        }
+      } catch (e) {
+        if ((e as any)?.to) throw e;
+      }
+    }
+  },
   head: () => ({
     meta: [
       { title: "REAL JOB — Portal Entrance | User Login & Admin Login" },
@@ -89,6 +116,7 @@ export const Route = createFileRoute("/")({
 });
 
 const heroImages = [
+  "https://firebasestorage.googleapis.com/v0/b/job-portal-729b6.firebasestorage.app/o/hero_media%2F1792129049561_hero_video.mp4?alt=media&token=9b136576-8f2e-4144-8f75-532783dec98b",
   careerTeam,
   "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80",
   "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&q=80",
@@ -285,21 +313,58 @@ function LandingGatewayPage() {
         console.error("Failed to load saved categories:", e);
       }
     }
+
+    // Also sync from Firestore Cloud so Vercel, Localhost and all users see the exact same images & video
+    const syncFromCloud = async () => {
+      try {
+        const { db } = await import("@/firebase");
+        const { doc, getDoc } = await import("firebase/firestore");
+        const snap = await getDoc(doc(db, "cms_settings", "landing_page"));
+        if (snap.exists()) {
+          const data: any = snap.data();
+          if (Array.isArray(data.heroImages) && data.heroImages.length > 0) {
+            setImages(data.heroImages);
+            localStorage.setItem("cms_heroImages", JSON.stringify(data.heroImages));
+          }
+          if (data.heroTitle) setHeroTitle(data.heroTitle);
+          if (data.heroSubtitle) setHeroSubtitle(data.heroSubtitle);
+          if (data.metrics) setMetrics(data.metrics);
+          if (data.aboutData) setAboutData(data.aboutData);
+          if (data.companyPillars) setCompanyPillars(data.companyPillars);
+          if (data.categories) setCategories(data.categories);
+        }
+      } catch (err) {
+        console.warn("Could not sync CMS settings from cloud:", err);
+      }
+    };
+    syncFromCloud();
   }, []);
 
   useEffect(() => {
-    if (images.length === 0) return;
-    const interval = setInterval(() => {
-      setCurrentImageIndex((prev) => (prev + 1) % images.length);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [images.length]);
+    if (images.length <= 1 || isVideoMedia(images[currentImageIndex])) {
+      return undefined;
+    }
 
-  const [currentUser, setCurrentUser] = useState<any>(() => dataStore.getCurrentUser());
+    // Only static posters / images advance on the 3-second timer.
+    // Videos stay on screen until they finish playing (handled by onEnded on <video>).
+    const timer = setTimeout(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % images.length);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [currentImageIndex, images]);
+
+  const [currentUser, setCurrentUser] = useState<any>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem("realjob-user") || localStorage.getItem("realjob_db_user");
+        if (raw) return JSON.parse(raw);
+      } catch {}
+    }
+    return dataStore.getCurrentUser();
+  });
 
   useEffect(() => {
     const syncUser = () => {
-      // If user explicitly navigated to preview public website, do not auto-redirect
       if (typeof window !== "undefined" && window.location.search.includes("view=website")) {
         return;
       }
@@ -368,7 +433,7 @@ function LandingGatewayPage() {
     navigate({ to: "/admin" });
   };
 
-  if (currentUser?.role === "employer" || currentUser?.role === "admin" || currentUser?.role === "employee") {
+  if (currentUser && typeof window !== "undefined" && !window.location.search.includes("view=website")) {
     return null;
   }
 
@@ -382,7 +447,6 @@ function LandingGatewayPage() {
           <Brand className="h-10 sm:h-12 md:h-14 shrink-0" />
 
           <div className="flex items-center gap-2 sm:gap-3">
-            <LandingCategoryFilterModal />
             <LanguageSwitcher />
 
             {currentUser ? (
@@ -449,9 +513,27 @@ function LandingGatewayPage() {
                     src={mediaUrl}
                     autoPlay
                     muted
-                    loop
+                    loop={images.length <= 1}
                     playsInline
                     preload="auto"
+                    ref={(el) => {
+                      if (el && isActive) {
+                        el.currentTime = 0;
+                        el.play().catch(() => {});
+                      }
+                    }}
+                    onEnded={() => {
+                      if (images.length > 1) {
+                        setCurrentImageIndex((prev) => (prev + 1) % images.length);
+                      }
+                    }}
+                    onError={() => {
+                      if (images.length > 1) {
+                        setTimeout(() => {
+                          setCurrentImageIndex((prev) => (prev + 1) % images.length);
+                        }, 3000);
+                      }
+                    }}
                     className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ease-in-out ${
                       isActive ? "opacity-100 z-1" : "opacity-0 pointer-events-none"
                     }`}

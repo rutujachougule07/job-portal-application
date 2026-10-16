@@ -412,6 +412,7 @@ export class DataStoreManager {
     }
     
     // Bidirectional sync with Firebase
+    // Firestore is the authoritative source of truth
     fbSync(async () => {
       const jobsSnap = await getDocs(collection(db, "jobs"));
       const appsSnap = await getDocs(collection(db, "applications"));
@@ -419,42 +420,32 @@ export class DataStoreManager {
       const workersSnap = await getDocs(collection(db, "workers"));
       const attendanceSnap = await getDocs(collection(db, "attendance"));
 
+      // 1. Sync Jobs strictly from Firebase Firestore
       if (!jobsSnap.empty) {
-        // Firebase has jobs → use Firebase as source of truth while purging removed categories
-        const fbJobs = jobsSnap.docs.map(d => d.data() as JobRecord);
         const validJobs: JobRecord[] = [];
         for (const docItem of jobsSnap.docs) {
           const jData = docItem.data() as JobRecord;
           if (isRemovedTestCategory(jData.category)) {
-            // Delete removed test jobs from Firestore
             await deleteDoc(doc(db, "jobs", docItem.id)).catch(() => {});
           } else {
-            validJobs.push(jData);
+            validJobs.push({ ...jData, id: jData.id || docItem.id });
           }
         }
         localStorage.setItem(this.STORAGE_KEYS.JOBS, JSON.stringify(validJobs));
       } else {
-        // Firebase empty → push local jobs to Firebase
-        const localJobs: JobRecord[] = JSON.parse(localStorage.getItem(this.STORAGE_KEYS.JOBS) || "[]");
-        for (const job of localJobs) {
-          if (!isRemovedTestCategory(job.category)) {
-            await setDoc(doc(db, "jobs", job.id), job);
-          }
-        }
+        localStorage.setItem(this.STORAGE_KEYS.JOBS, JSON.stringify([]));
       }
 
+      // 2. Sync Applications strictly from Firebase Firestore
       if (!appsSnap.empty) {
-        const fbApps = appsSnap.docs.map(d => d.data());
+        const fbApps = appsSnap.docs.map(d => ({ ...(d.data() as ApplicationRecord), id: d.id }));
         localStorage.setItem(this.STORAGE_KEYS.APPLICATIONS, JSON.stringify(fbApps));
       } else {
-        const localApps: ApplicationRecord[] = JSON.parse(localStorage.getItem(this.STORAGE_KEYS.APPLICATIONS) || "[]");
-        for (const app of localApps) {
-          await setDoc(doc(db, "applications", app.id), app);
-        }
+        localStorage.setItem(this.STORAGE_KEYS.APPLICATIONS, JSON.stringify([]));
       }
 
+      // 3. Sync Registered Users strictly from Firebase Firestore
       if (!usersSnap.empty) {
-        // Group docs by lowercase email (or mobile if email is absent)
         const emailToDocs = new Map<string, Array<{ id: string; data: RegisteredUser }>>();
         
         for (const docItem of usersSnap.docs) {
@@ -471,23 +462,19 @@ export class DataStoreManager {
 
         const validUsers: RegisteredUser[] = [];
 
-        for (const [key, docList] of emailToDocs.entries()) {
+        for (const [, docList] of emailToDocs.entries()) {
           if (docList.length === 1 && docList[0]) {
             validUsers.push(docList[0].data);
             continue;
           }
 
-          // Multiple docs found for the same user -> Deduplicate!
-          // Priority 1: Auth UID document (document id does NOT start with 'usr-')
           let primary = docList.find(d => !d.id.startsWith("usr-"));
           if (!primary && docList.length > 0) {
-            // If all documents are usr- IDs, pick the latest one
             primary = docList[docList.length - 1];
           }
 
           if (!primary) continue;
 
-          // Merge fields so no profile/mobile info is lost from duplicate entries
           let mergedData = { ...primary.data };
           for (const d of docList) {
             if (d.id !== primary.id) {
@@ -501,10 +488,9 @@ export class DataStoreManager {
 
           validUsers.push(mergedData);
 
-          // Purge all duplicate documents from Firestore!
+          // Purge duplicate documents from Firestore
           for (const d of docList) {
             if (d.id !== primary.id) {
-              console.log(`[Deduplicate] Purging duplicate Firestore user document: '${d.id}' for '${key}'`);
               deleteDoc(doc(db, "users", d.id)).catch(() => {});
             }
           }
@@ -512,12 +498,11 @@ export class DataStoreManager {
 
         localStorage.setItem("realjob_db_registered_users", JSON.stringify(validUsers));
       } else {
-        const localUsers: RegisteredUser[] = JSON.parse(localStorage.getItem("realjob_db_registered_users") || "[]");
-        for (const user of localUsers) {
-          await setDoc(doc(db, "users", user.id), user).catch(() => {});
-        }
+        // Empty in Firestore -> Empty in local store
+        localStorage.setItem("realjob_db_registered_users", JSON.stringify([]));
       }
 
+      // 4. Sync Workers strictly from Firebase Firestore
       if (!workersSnap.empty) {
         const deletedIds = new Set<string>(
           JSON.parse(localStorage.getItem("realjob_deleted_worker_ids") || "[]")
@@ -525,7 +510,6 @@ export class DataStoreManager {
         deletedIds.add("empw-1791635953540");
         deletedIds.add("empw-1791785681836");
 
-        // Purge any deleted/inactive workers from Firestore
         for (const docItem of workersSnap.docs) {
           const dData = docItem.data() as EmployerWorker;
           if (deletedIds.has(docItem.id) || dData.status === "Deleted" || (dData as any).isDeleted || dData.status === "Inactive") {
@@ -536,65 +520,20 @@ export class DataStoreManager {
         localStorage.setItem("realjob_deleted_worker_ids", JSON.stringify(Array.from(deletedIds)));
 
         const fbWorkers = workersSnap.docs
-          .map(d => d.data() as EmployerWorker)
+          .map(d => ({ ...(d.data() as EmployerWorker), id: d.id }))
           .filter(w => !deletedIds.has(w.id) && w.status !== "Inactive" && w.status !== "Deleted" && !(w as any).isDeleted);
 
-        const localWorkers: EmployerWorker[] = (
-          JSON.parse(localStorage.getItem(this.STORAGE_KEYS.EMP_WORKERS) || "[]") as EmployerWorker[]
-        ).filter(w => !deletedIds.has(w.id) && w.status !== "Inactive" && w.status !== "Deleted" && !(w as any).isDeleted);
-
-        const map = new Map<string, EmployerWorker>();
-        fbWorkers.forEach(w => { if (w.id) map.set(w.id, w); });
-        localWorkers.forEach(w => { if (w.id) map.set(w.id, w); });
-        const merged = Array.from(map.values()).filter(
-          w => !deletedIds.has(w.id) && w.status !== "Inactive" && w.status !== "Deleted" && !(w as any).isDeleted
-        );
-        localStorage.setItem(this.STORAGE_KEYS.EMP_WORKERS, JSON.stringify(merged));
-
-        const fbIds = new Set(fbWorkers.map(w => w.id));
-        for (const w of localWorkers) {
-          if (!fbIds.has(w.id) && !deletedIds.has(w.id)) {
-            setDoc(doc(db, "workers", w.id), w, { merge: true }).catch(() => {});
-          }
-        }
+        localStorage.setItem(this.STORAGE_KEYS.EMP_WORKERS, JSON.stringify(fbWorkers));
       } else {
-        const deletedIds = new Set<string>(
-          JSON.parse(localStorage.getItem("realjob_deleted_worker_ids") || "[]")
-        );
-        deletedIds.add("empw-1791635953540");
-        deletedIds.add("empw-1791785681836");
-        const localWorkers: EmployerWorker[] = (
-          JSON.parse(localStorage.getItem(this.STORAGE_KEYS.EMP_WORKERS) || "[]") as EmployerWorker[]
-        ).filter(w => !deletedIds.has(w.id) && w.status !== "Inactive" && w.status !== "Deleted" && !(w as any).isDeleted);
-        localStorage.setItem(this.STORAGE_KEYS.EMP_WORKERS, JSON.stringify(localWorkers));
-
-        for (const w of localWorkers) {
-          if (!deletedIds.has(w.id)) {
-            await setDoc(doc(db, "workers", w.id), w, { merge: true }).catch(() => {});
-          }
-        }
+        localStorage.setItem(this.STORAGE_KEYS.EMP_WORKERS, JSON.stringify([]));
       }
 
+      // 5. Sync Attendance strictly from Firebase Firestore
       if (!attendanceSnap.empty) {
-        const fbAtt = attendanceSnap.docs.map(d => d.data() as DailyAttendanceRecord);
-        const localAtt: DailyAttendanceRecord[] = JSON.parse(localStorage.getItem(this.STORAGE_KEYS.ATTENDANCE) || "[]");
-        const map = new Map<string, DailyAttendanceRecord>();
-        fbAtt.forEach(a => { if (a.id) map.set(a.id, a); });
-        localAtt.forEach(a => { if (a.id) map.set(a.id, a); });
-        const merged = Array.from(map.values());
-        localStorage.setItem(this.STORAGE_KEYS.ATTENDANCE, JSON.stringify(merged));
-
-        const fbAttIds = new Set(fbAtt.map(a => a.id));
-        for (const a of localAtt) {
-          if (!fbAttIds.has(a.id)) {
-            setDoc(doc(db, "attendance", a.id), a, { merge: true }).catch(() => {});
-          }
-        }
+        const fbAtt = attendanceSnap.docs.map(d => ({ ...(d.data() as DailyAttendanceRecord), id: d.id }));
+        localStorage.setItem(this.STORAGE_KEYS.ATTENDANCE, JSON.stringify(fbAtt));
       } else {
-        const localAtt: DailyAttendanceRecord[] = JSON.parse(localStorage.getItem(this.STORAGE_KEYS.ATTENDANCE) || "[]");
-        for (const a of localAtt) {
-          await setDoc(doc(db, "attendance", a.id), a, { merge: true }).catch(() => {});
-        }
+        localStorage.setItem(this.STORAGE_KEYS.ATTENDANCE, JSON.stringify([]));
       }
 
       try {
@@ -855,8 +794,16 @@ export class DataStoreManager {
     let list = this.getRegisteredUserAccounts();
     list = list.filter((u) => u.id !== userId);
     localStorage.setItem("realjob_db_registered_users", JSON.stringify(list));
+    const current = this.getCurrentUser();
+    if (current && (current.id === userId || current.email === userId)) {
+      this.setCurrentUser(null);
+    }
     fbSync(() => deleteDoc(doc(db, "users", userId)));
     return true;
+  }
+
+  public clearCurrentUser(): void {
+    this.setCurrentUser(null);
   }
 
   public deleteAllRegisteredUsers(): boolean {

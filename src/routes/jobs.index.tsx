@@ -68,8 +68,288 @@ export const Route = createFileRoute("/jobs/")({
   component: JobsListingPage,
 });
 
+const getJobsPageText = (lang: string) => {
+  const dict: Record<string, any> = {
+    gu: {
+      mainCategoriesTitle: "મુખ્ય નોકરી શ્રેણીઓ (Main Job Categories)",
+      selectCategorySub: "તે વિભાગમાં નોકરીઓ જોવા માટે કોઈપણ શ્રેણી કાર્ડ પર ક્લિક કરો",
+      jobs: "નોકરીઓ",
+      activeListings: "સક્રિય લિસ્ટિંગ્સ",
+      activeJobs: "સક્રિય નોકરીઓ",
+      searchPlaceholder: "શ્રેણીમાં નોકરી શોધો...",
+      selectedCategory: "પસંદ કરેલ શ્રેણી",
+      jobsAvailable: "નોકરીઓ ઉપલબ્ધ",
+      backToAll: "બધી શ્રેણીઓ પર પાછા જાઓ",
+      filter: "ફિલ્ટર",
+      expAll: "અનુભવ: બધા",
+      fresher: "ફ્રેશર (Fresher)",
+      years: "વર્ષ",
+      salaryAll: "પગાર: બધા",
+      typeAll: "પ્રકાર: બધા",
+      fullTime: "ફુલ ટાઈમ (Full Time)",
+      partTime: "પાર્ટ ટાઈમ (Part Time)",
+      contract: "કરાર (Contract)",
+      modeAll: "મોડ: બધા",
+      wfh: "વર્ક ફ્રોમ હોમ (WFH)",
+      onSite: "ઑન-સાઇટ (On-site)",
+      hybrid: "હાઇબ્રિડ (Hybrid)",
+      locationAll: "સ્થળ: બધા",
+      reset: "રીસેટ",
+      totalJobs: "કુલ નોકરીઓ:",
+      sortBy: "ક્રમ:",
+      newest: "નવીનતમ પ્રથમ",
+      byTitle: "નામ મુજબ",
+      noJobsDesc: "આ શ્રેણીમાં હજી સુધી કોઈ નવી નોકરી પોસ્ટ કરવામાં આવી નથી.",
+      backBtn: "શ્રેણીઓ પર પાછા જાઓ",
+      salaryLabel: "લઘુત્તમ પગાર",
+      perMonth: "મહિનો",
+    },
+    hi: {
+      mainCategoriesTitle: "मुख्य नौकरी श्रेणियां (Main Job Categories)",
+      selectCategorySub: "उस अनुभाग में नौकरियां देखने के लिए किसी भी श्रेणी कार्ड पर क्लिक करें",
+      jobs: "नौकरियां",
+      activeListings: "सक्रिय लिस्टिंग",
+      activeJobs: "सक्रिय नौकरियां",
+      searchPlaceholder: "श्रेणी में नौकरी खोजें...",
+      selectedCategory: "चयनित श्रेणी",
+      jobsAvailable: "नौकरियां उपलब्ध",
+      backToAll: "सभी श्रेणियों पर वापस जाएं",
+      filter: "फ़िल्टर",
+      expAll: "अनुभव: सभी",
+      fresher: "फ्रेशर (Fresher)",
+      years: "वर्ष",
+      salaryAll: "वेतन: सभी",
+      typeAll: "प्रकार: सभी",
+      fullTime: "फुल टाइम (Full Time)",
+      partTime: "पार्ट टाइम (Part Time)",
+      contract: "अनुबंध (Contract)",
+      modeAll: "मोड: सभी",
+      wfh: "वर्क फ्रॉम होम (WFH)",
+      onSite: "ऑन-साइट (On-site)",
+      hybrid: "हाइब्रिड (Hybrid)",
+      locationAll: "स्थान: सभी",
+      reset: "रीसेट",
+      totalJobs: "कुल नौकरियां:",
+      sortBy: "क्रमबद्ध करें:",
+      newest: "नवीनतम पहले",
+      byTitle: "शीर्षक अनुसार",
+      noJobsDesc: "इस श्रेणी में अभी तक कोई नई नौकरी पोस्ट नहीं की गई है।",
+      backBtn: "श्रेणियों पर वापस जाएं",
+      salaryLabel: "न्यूनतम वेतन",
+      perMonth: "माह",
+    },
+    mr: {
+      mainCategoriesTitle: "मुख्य नोकरी श्रेणी (Main Job Categories)",
+      selectCategorySub: "नोकऱ्या पाहण्यासाठी खालील कोणत्याही श्रेणी कार्डवर क्लिक करा",
+      jobs: "नोकऱ्या",
+      activeListings: "सक्रिय नोकरी जाहिराती",
+      activeJobs: "सक्रिय नोकऱ्या",
+      searchPlaceholder: "नोकरी शोधा...",
+      selectedCategory: "निवडलेली श्रेणी",
+      jobsAvailable: "नोकऱ्या उपलब्ध",
+      backToAll: "सर्व श्रेणींकडे जा",
+      filter: "फिल्टर",
+      expAll: "अनुभव: सर्व",
+      fresher: "फ्रेशर (Fresher)",
+      years: "वर्षे",
+      salaryAll: "पगार: सर्व",
+      typeAll: "प्रकार: सर्व",
+      fullTime: "फुल टाईम (Full Time)",
+      partTime: "पार्ट टाईम (Part Time)",
+      contract: "कंत्राटी (Contract)",
+      modeAll: "मोड: सर्व",
+      wfh: "वर्क फ्रॉम होम (WFH)",
+      onSite: "ऑन-साईट (On-site)",
+      hybrid: "हायब्रिड (Hybrid)",
+      locationAll: "ठिकाण: सर्व",
+      reset: "रीसेट",
+      totalJobs: "एकूण नोकऱ्या:",
+      sortBy: "क्रमवारी:",
+      newest: "नवीनतम प्रथम",
+      byTitle: "नावानुसार",
+      noJobsDesc: "या श्रेणीमध्ये अद्याप कोणतीही नवीन नोकरी पोस्ट केलेली नाही.",
+      backBtn: "श्रेणींकडे परत जा",
+      salaryLabel: "किमान पगार",
+      perMonth: "महिना",
+    },
+    kn: {
+      mainCategoriesTitle: "ಮುಖ್ಯ ಉದ್ಯೋಗ ವಿಭಾಗಗಳು (Main Job Categories)",
+      selectCategorySub: "ಉದ್ಯೋಗಗಳನ್ನು ನೋಡಲು ಯಾವುದೇ ವರ್ಗದ ಕಾರ್ಡ್ ಅನ್ನು ಕ್ಲಿಕ್ ಮಾಡಿ",
+      jobs: "ಉದ್ಯೋಗಗಳು",
+      activeListings: "ಸಕ್ರಿಯ ಪಟ್ಟಿಗಳು",
+      activeJobs: "ಸಕ್ರಿಯ ಉದ್ಯೋಗಗಳು",
+      searchPlaceholder: "ವರ್ಗದಲ್ಲಿ ಉದ್ಯೋಗ ಹುಡುಕಿ...",
+      selectedCategory: "ಆಯ್ಕೆಮಾಡಿದ ವರ್ಗ",
+      jobsAvailable: "ಉದ್ಯೋಗಗಳು ಲಭ್ಯವಿದೆ",
+      backToAll: "ಎಲ್ಲಾ ವರ್ಗಗಳಿಗೆ ಹಿಂತಿರುಗಿ",
+      filter: "ಫಿಲ್ಟರ್",
+      expAll: "ಅನುಭವ: ಎಲ್ಲವೂ",
+      fresher: "ಫ್ರೆಶರ್ (Fresher)",
+      years: "ವರ್ಷಗಳು",
+      salaryAll: "ವೇತನ: ಎಲ್ಲವೂ",
+      typeAll: "ವಿಧ: ಎಲ್ಲವೂ",
+      fullTime: "ಪೂರ್ಣ ಸಮಯ (Full Time)",
+      partTime: "ಅರೆಕಾಲಿಕ (Part Time)",
+      contract: "ಒಪ್ಪಂದ (Contract)",
+      modeAll: "ಮೋಡ್: ಎಲ್ಲವೂ",
+      wfh: "ಮನೆಯಿಂದ ಕೆಲಸ (WFH)",
+      onSite: "ಆನ್-ಸೈಟ್ (On-site)",
+      hybrid: "ಹೈಬ್ರಿಡ್ (Hybrid)",
+      locationAll: "ಸ್ಥಳ: ಎಲ್ಲವೂ",
+      reset: "ಮರುಹೊಂದಿಸಿ",
+      totalJobs: "ಒಟ್ಟು ಉದ್ಯೋಗಗಳು:",
+      sortBy: "ವಿಂಗಡಿಸಿ:",
+      newest: "ಹೊಸತು ಮೊದಲು",
+      byTitle: "ಶೀರ್ಷಿಕೆಯಂತೆ",
+      noJobsDesc: "ಈ ವರ್ಗದಲ್ಲಿ ಇನ್ನೂ ಯಾವುದೇ ಉದ್ಯೋಗಗಳನ್ನು ಪೋಸ್ಟ್ ಮಾಡಲಾಗಿಲ್ಲ.",
+      backBtn: "ವರ್ಗಗಳಿಗೆ ಹಿಂತಿರುಗಿ",
+      salaryLabel: "ಕನಿಷ್ಠ ವೇತನ",
+      perMonth: "ತಿಂಗಳು",
+    },
+    te: {
+      mainCategoriesTitle: "ప్రధాన ఉద్యోగ వర్గాలు (Main Job Categories)",
+      selectCategorySub: "ఉద్యోగాలను చూడటానికి ఏదైనా వర్గం కార్డుపై క్లిక్ చేయండి",
+      jobs: "ఉద్యోగాలు",
+      activeListings: "యాక్టివ్ లిస్టింగ్‌లు",
+      activeJobs: "యాక్టివ్ ఉద్యోగాలు",
+      searchPlaceholder: "వర్గంలో ఉద్యోగం వెతకండి...",
+      selectedCategory: "ఎంచుకున్న వర్గం",
+      jobsAvailable: "ఉద్యోగాలు అందుబాటులో ఉన్నాయి",
+      backToAll: "అన్ని వర్గాలకు తిరిగి వెళ్ళండి",
+      filter: "ఫిల్టర్",
+      expAll: "అనుభవం: అన్నీ",
+      fresher: "ఫ్రెషర్ (Fresher)",
+      years: "సంవత్సరాలు",
+      salaryAll: "జీతం: అన్నీ",
+      typeAll: "రకం: అన్నీ",
+      fullTime: "పూర్తి సమయం (Full Time)",
+      partTime: "పార్ట్ టైమ్ (Part Time)",
+      contract: "కాంట్రాక్ట్ (Contract)",
+      modeAll: "మోడ్: అన్నీ",
+      wfh: "వర్క్ ఫ్రమ్ హోమ్ (WFH)",
+      onSite: "ఆన్-సైట్ (On-site)",
+      hybrid: "హైబ్రిడ్ (Hybrid)",
+      locationAll: "ప్రాంతం: అన్నీ",
+      reset: "రీసెట్",
+      totalJobs: "మొత్తం ఉద్యోగాలు:",
+      sortBy: "క్రమబద్ధీకరించు:",
+      newest: "సరికొత్తది మొదట",
+      byTitle: "పేరు ప్రకారం",
+      noJobsDesc: "ఈ వర్గంలో ఇంకా ఎలాంటి ఉద్యోగాలు పోస్ట్ చేయలేదు.",
+      backBtn: "వర్గాలకు తిరిగి వెళ్ళండి",
+      salaryLabel: "కనీస వేతనం",
+      perMonth: "నెల",
+    },
+    ta: {
+      mainCategoriesTitle: "முக்கிய வேலை வகைகள் (Main Job Categories)",
+      selectCategorySub: "வேலைகளைப் பார்க்க ஏதேனும் வகை அட்டை மீது கிளிக் செய்யவும்",
+      jobs: "வேலைகள்",
+      activeListings: "செயலில் உள்ள பட்டியல்கள்",
+      activeJobs: "செயலில் உள்ள வேலைகள்",
+      searchPlaceholder: "வகையில் வேலை தேடுங்கள்...",
+      selectedCategory: "தேர்ந்தெடுக்கப்பட்ட வகை",
+      jobsAvailable: "வேலைகள் உள்ளன",
+      backToAll: "அனைத்து பிரிவுகளுக்கும் திரும்பு",
+      filter: "வடிகட்டி",
+      expAll: "அனுபவம்: அனைத்தும்",
+      fresher: "புதியவர் (Fresher)",
+      years: "ஆண்டுகள்",
+      salaryAll: "சம்பளம்: அனைத்தும்",
+      typeAll: "வகை: அனைத்தும்",
+      fullTime: "முழு நேரம் (Full Time)",
+      partTime: "பகுதி நேரம் (Part Time)",
+      contract: "ஒப்பந்தம் (Contract)",
+      modeAll: "முறை: அனைத்தும்",
+      wfh: "வீட்டிலிருந்து வேலை (WFH)",
+      onSite: "ஆன்-சைட் (On-site)",
+      hybrid: "ஹைப்ரிட் (Hybrid)",
+      locationAll: "இடம்: அனைத்தும்",
+      reset: "மீட்டமை",
+      totalJobs: "மொத்த வேலைகள்:",
+      sortBy: "வரிசைப்படுத்து:",
+      newest: "புதியது முதலில்",
+      byTitle: "பெயர் அடிப்படையில்",
+      noJobsDesc: "இந்த பிரிவில் இன்னும் எந்த வேலைகளும் இடுகையிடப்படவில்லை.",
+      backBtn: "பிரிவுகளுக்கு திரும்பு",
+      salaryLabel: "குறைந்தபட்ச சம்பளம்",
+      perMonth: "மாதம்",
+    },
+    bn: {
+      mainCategoriesTitle: "প্রধান চাকরির বিভাগসমূহ (Main Job Categories)",
+      selectCategorySub: "চাকরি দেখতে যেকোনো ক্যাটাগরি কার্ডে ক্লিক করুন",
+      jobs: "চাকরি",
+      activeListings: "সক্রিয় তালিকা",
+      activeJobs: "সক্রিয় চাকরি",
+      searchPlaceholder: "ক্যাটাগরিতে চাকরি খুঁজুন...",
+      selectedCategory: "নির্বাচিত বিভাগ",
+      jobsAvailable: "চাকরি উপলব্ধ",
+      backToAll: "সকল বিভাগে ফিরে যান",
+      filter: "ফিল্টার",
+      expAll: "অভিজ্ঞতা: সব",
+      fresher: "ফ্রেশার (Fresher)",
+      years: "বছর",
+      salaryAll: "বেতন: সব",
+      typeAll: "ধরন: সব",
+      fullTime: "ফুল টাইম (Full Time)",
+      partTime: "পার্ট টাইম (Part Time)",
+      contract: "চুক্তিভিত্তিক (Contract)",
+      modeAll: "মোড: সব",
+      wfh: "ওয়ার্ক ফ্রম হোম (WFH)",
+      onSite: "অন-সাইট (On-site)",
+      hybrid: "হাইব্রিড (Hybrid)",
+      locationAll: "অবস্থান: সব",
+      reset: "রিসেট",
+      totalJobs: "মোট চাকরি:",
+      sortBy: "সাজান:",
+      newest: "নতুনতম আগে",
+      byTitle: "শিরোনাম অনুসারে",
+      noJobsDesc: "এই বিভাগে এখনও কোনো নতুন চাকরি পোস্ট করা হয়নি।",
+      backBtn: "বিভাগে ফিরে যান",
+      salaryLabel: "সর্বনিম্ন বেতন",
+      perMonth: "মাস",
+    },
+    en: {
+      mainCategoriesTitle: "Main Job Categories",
+      selectCategorySub: "Select any category card to view jobs in that section",
+      jobs: "Jobs",
+      activeListings: "Active Listings",
+      activeJobs: "Active Jobs",
+      searchPlaceholder: "Search in category...",
+      selectedCategory: "Selected Category",
+      jobsAvailable: "Jobs Available",
+      backToAll: "Back to All Categories",
+      filter: "Filter",
+      expAll: "Experience: All",
+      fresher: "Fresher",
+      years: "Years",
+      salaryAll: "Salary: All",
+      typeAll: "Job Type: All",
+      fullTime: "Full Time",
+      partTime: "Part Time",
+      contract: "Contract",
+      modeAll: "Mode: All",
+      wfh: "Work From Home",
+      onSite: "On-site",
+      hybrid: "Hybrid",
+      locationAll: "Location: All",
+      reset: "Reset",
+      totalJobs: "Total Jobs:",
+      sortBy: "Sort By:",
+      newest: "Newest First",
+      byTitle: "By Title",
+      noJobsDesc: "No new jobs have been posted in this category yet.",
+      backBtn: "Back to Categories",
+      salaryLabel: "Minimum Salary",
+      perMonth: "mo",
+    },
+  };
+  const fallback = dict["en"]!;
+  return dict[lang] || fallback;
+};
+
 function JobsListingPage() {
   const { t, n, lang } = useI18n();
+  const jt = getJobsPageText(lang);
   const searchParams = Route.useSearch();
   const currentUser = dataStore.getCurrentUser();
   const [searchTerm, setSearchTerm] = useState("");
@@ -309,7 +589,7 @@ function JobsListingPage() {
                 onClick={() => { setCategoryFilter("all"); setSubCategoryFilter("all"); }}
                 className="px-4 py-2 rounded-full bg-[#F5F8FC] border border-[#DCE5F0] text-xs font-bold text-[#5B6B7F] flex items-center gap-2 hover:bg-[#10233F] hover:text-white transition-all shadow-sm group"
               >
-                <ArrowLeft className="size-3.5 group-hover:-translate-x-1 transition-transform" /> {lang === "mr" ? "सर्व नोकऱ्या पहा" : "All Jobs"}
+                <ArrowLeft className="size-3.5 group-hover:-translate-x-1 transition-transform" /> {jt.backToAll}
               </button>
               <div className="flex items-center gap-5">
                 <div className="size-16 rounded-2xl bg-gradient-to-br from-[#063B78] to-[#125BB5] flex items-center justify-center text-white shadow-lg shadow-[#063B78]/20">
@@ -321,7 +601,7 @@ function JobsListingPage() {
                   </h1>
                   <p className="text-sm font-bold text-[#125BB5] mt-1.5 flex items-center gap-1.5">
                     <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    {filteredJobs.length} {lang === "mr" ? "सक्रिय नोकऱ्या" : "Active Jobs"}
+                    {filteredJobs.length} {jt.activeJobs}
                   </p>
                 </div>
               </div>
@@ -332,7 +612,7 @@ function JobsListingPage() {
               <div className="relative flex items-center w-full md:w-[320px] group">
                 <Search className="absolute left-4 size-5 text-[#5B6B7F] group-focus-within:text-[#125BB5] transition-colors" />
                 <Input
-                  placeholder={lang === "mr" ? "नोकरी शोधा..." : "Search in category..."}
+                  placeholder={jt.searchPlaceholder}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-12 h-14 border-2 border-[#DCE5F0] bg-[#F5F8FC] rounded-xl text-sm text-[#10233F] font-bold focus-visible:ring-0 focus-visible:border-[#125BB5] shadow-sm transition-all"
@@ -350,10 +630,10 @@ function JobsListingPage() {
                 <LayoutGrid className="size-7" />
               </div>
               <h2 className="text-3xl sm:text-4xl font-black text-[#10233F]">
-                {lang === "mr" ? "मुख्य नोकरी श्रेणी (Main Job Categories)" : "Main Job Categories"}
+                {jt.mainCategoriesTitle}
               </h2>
               <p className="mt-2 text-sm font-bold text-[#5B6B7F]">
-                {lang === "mr" ? "नोकऱ्या पाहण्यासाठी खालील कोणत्याही श्रेणी कार्डवर क्लिक करा" : "Select any category card to view jobs in that section"}
+                {jt.selectCategorySub}
               </p>
             </div>
 
@@ -389,7 +669,7 @@ function JobsListingPage() {
                           <CategoryIcon className="size-7" />
                         </div>
                         <span className="text-xs font-black px-3.5 py-1.5 rounded-full bg-[#EBF1F8] text-[#063B78] group-hover:bg-[#063B78] group-hover:text-white transition-colors">
-                          {count} {lang === "mr" ? "नोकऱ्या" : "Jobs"}
+                          {n(count)} {jt.jobs}
                         </span>
                       </div>
                       <div>
@@ -397,7 +677,7 @@ function JobsListingPage() {
                           {getCategoryTitle(name, lang) || name}
                         </h3>
                         <p className="text-xs font-bold text-[#5B6B7F] mt-2">
-                          {lang === "mr" ? `${count} नोकरी जाहिराती उपलब्ध` : `${count} Active Listings`}
+                          {n(count)} {jt.activeListings}
                         </p>
                       </div>
                     </button>
@@ -422,10 +702,10 @@ function JobsListingPage() {
               <div>
                 <div className="flex items-center gap-3 flex-wrap">
                   <span className="text-xs font-black uppercase tracking-wider text-[#063B78] bg-[#EBF1F8] px-3 py-1 rounded-full border border-[#063B78]/10">
-                    {lang === "mr" ? "निवडलेली श्रेणी" : "Selected Category"}
+                    {jt.selectedCategory}
                   </span>
                   <span className="text-xs font-extrabold text-[#5B6B7F]">
-                    • {filteredJobs.length} {lang === "mr" ? "नोकऱ्या उपलब्ध" : "Jobs Available"}
+                    • {n(filteredJobs.length)} {jt.jobsAvailable}
                   </span>
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-black text-[#10233F] mt-1.5 capitalize tracking-tight">
@@ -439,7 +719,7 @@ function JobsListingPage() {
                   className="px-5 py-2.5 rounded-xl bg-[#063B78] text-white text-xs font-black hover:bg-[#082F63] transition-all shadow-md flex items-center gap-2 cursor-pointer"
                 >
                   <ArrowLeft className="size-4" />
-                  {lang === "mr" ? "सर्व श्रेणी कडे जा (All Categories)" : "Back to All Categories"}
+                  {jt.backToAll}
                 </button>
               </div>
             </div>
@@ -449,7 +729,7 @@ function JobsListingPage() {
               <div className="flex items-center gap-2 flex-wrap">
                 <div className="flex items-center gap-2 px-3.5 py-2 bg-[#063B78]/10 text-[#063B78] rounded-xl text-xs font-black mr-1">
                   <SlidersHorizontal className="size-3.5" />
-                  <span>{lang === "mr" ? "फिल्टर" : "Filter"}</span>
+                  <span>{jt.filter}</span>
                 </div>
 
                 {/* Experience Filter */}
@@ -459,11 +739,11 @@ function JobsListingPage() {
                     onChange={(e) => setExperienceFilter(e.target.value)}
                     className="h-10 rounded-xl border border-[#DCE5F0] bg-[#F5F8FC] pl-3 pr-8 text-xs font-bold text-[#10233F] focus:border-[#063B78] appearance-none cursor-pointer"
                   >
-                    <option value="all">🎓 {lang === "mr" ? "अनुभव: सर्व" : "Experience: All"}</option>
-                    <option value="Fresher">{lang === "mr" ? "फ्रेसर (Fresher)" : "Fresher"}</option>
-                    <option value="1-3">1-3 {lang === "mr" ? "वर्षे" : "Years"}</option>
-                    <option value="3-5">3-5 {lang === "mr" ? "वर्षे" : "Years"}</option>
-                    <option value="5+">5+ {lang === "mr" ? "वर्षे" : "Years"}</option>
+                    <option value="all">🎓 {jt.expAll}</option>
+                    <option value="Fresher">{jt.fresher}</option>
+                    <option value="1-3">1-3 {jt.years}</option>
+                    <option value="3-5">3-5 {jt.years}</option>
+                    <option value="5+">5+ {jt.years}</option>
                   </select>
                   <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 text-[#5B6B7F] pointer-events-none" />
                 </div>
@@ -475,11 +755,11 @@ function JobsListingPage() {
                     onChange={(e) => setSalaryFilter(e.target.value)}
                     className="h-10 rounded-xl border border-[#DCE5F0] bg-[#F5F8FC] pl-3 pr-8 text-xs font-bold text-[#10233F] focus:border-[#063B78] appearance-none cursor-pointer"
                   >
-                    <option value="all">💰 {lang === "mr" ? "पगार: सर्व" : "Salary: All"}</option>
-                    <option value="10000">₹10,000+ / mo</option>
-                    <option value="15000">₹15,000+ / mo</option>
-                    <option value="20000">₹20,000+ / mo</option>
-                    <option value="25000">₹25,000+ / mo</option>
+                    <option value="all">💰 {jt.salaryAll}</option>
+                    <option value="10000">₹10,000+ / {jt.perMonth}</option>
+                    <option value="15000">₹15,000+ / {jt.perMonth}</option>
+                    <option value="20000">₹20,000+ / {jt.perMonth}</option>
+                    <option value="25000">₹25,000+ / {jt.perMonth}</option>
                   </select>
                   <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 text-[#5B6B7F] pointer-events-none" />
                 </div>
@@ -491,10 +771,10 @@ function JobsListingPage() {
                     onChange={(e) => setTypeFilter(e.target.value)}
                     className="h-10 rounded-xl border border-[#DCE5F0] bg-[#F5F8FC] pl-3 pr-8 text-xs font-bold text-[#10233F] focus:border-[#063B78] appearance-none cursor-pointer"
                   >
-                    <option value="all">💼 {lang === "mr" ? "प्रकार: सर्व" : "Job Type: All"}</option>
-                    <option value="Full Time">{lang === "mr" ? "फुल टाईम (Full Time)" : "Full Time"}</option>
-                    <option value="Part Time">{lang === "mr" ? "पार्ट टाईम (Part Time)" : "Part Time"}</option>
-                    <option value="Contract">{lang === "mr" ? "कंत्राटी (Contract)" : "Contract"}</option>
+                    <option value="all">💼 {jt.typeAll}</option>
+                    <option value="Full Time">{jt.fullTime}</option>
+                    <option value="Part Time">{jt.partTime}</option>
+                    <option value="Contract">{jt.contract}</option>
                   </select>
                   <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 text-[#5B6B7F] pointer-events-none" />
                 </div>
@@ -506,10 +786,10 @@ function JobsListingPage() {
                     onChange={(e) => setWorkModeFilter(e.target.value)}
                     className="h-10 rounded-xl border border-[#DCE5F0] bg-[#F5F8FC] pl-3 pr-8 text-xs font-bold text-[#10233F] focus:border-[#063B78] appearance-none cursor-pointer"
                   >
-                    <option value="all">🏢 {lang === "mr" ? "मोड: सर्व" : "Mode: All"}</option>
-                    <option value="Work From Home">🏠 {lang === "mr" ? "वर्क फ्रॉम होम (WFH)" : "Work From Home"}</option>
-                    <option value="On-site">🏢 {lang === "mr" ? "ऑन-साईट (On-site)" : "On-site"}</option>
-                    <option value="Hybrid">🔄 {lang === "mr" ? "हायब्रिड (Hybrid)" : "Hybrid"}</option>
+                    <option value="all">🏢 {jt.modeAll}</option>
+                    <option value="Work From Home">🏠 {jt.wfh}</option>
+                    <option value="On-site">🏢 {jt.onSite}</option>
+                    <option value="Hybrid">🔄 {jt.hybrid}</option>
                   </select>
                   <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 text-[#5B6B7F] pointer-events-none" />
                 </div>
@@ -521,7 +801,7 @@ function JobsListingPage() {
                     onChange={(e) => setLocationFilter(e.target.value)}
                     className="h-10 rounded-xl border border-[#DCE5F0] bg-[#F5F8FC] pl-3 pr-8 text-xs font-bold text-[#10233F] focus:border-[#063B78] appearance-none cursor-pointer"
                   >
-                    <option value="all">📍 {lang === "mr" ? "ठिकाण: सर्व" : "Location: All"}</option>
+                    <option value="all">📍 {jt.locationAll}</option>
                     {dynamicLocations.map((loc) => (
                       <option key={loc} value={loc.toLowerCase()}>
                         {loc}
@@ -538,7 +818,7 @@ function JobsListingPage() {
                     className="h-10 px-3.5 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 text-xs font-extrabold hover:bg-amber-100 transition-colors flex items-center gap-1.5 cursor-pointer"
                   >
                     <RotateCcw className="size-3.5" />
-                    {lang === "mr" ? "रीसेट" : "Reset"}
+                    {jt.reset}
                   </button>
                 )}
               </div>
@@ -547,18 +827,18 @@ function JobsListingPage() {
               <div className="flex items-center gap-4 flex-wrap">
                 <span className="text-xs font-extrabold text-[#10233F] flex items-center gap-1.5">
                   <List className="size-3.5 text-[#063B78]" />
-                  {lang === "mr" ? "एकूण नोकऱ्या:" : "Total Jobs:"} <span className="text-[#063B78] font-black text-sm">{n(filteredJobs.length)}</span>
+                  {jt.totalJobs} <span className="text-[#063B78] font-black text-sm">{n(filteredJobs.length)}</span>
                 </span>
 
                 <div className="flex items-center gap-1.5 bg-[#F5F8FC] rounded-xl p-1 border border-[#DCE5F0]/50">
-                  <span className="text-xs font-bold text-[#5B6B7F] pl-2">{lang === "mr" ? "क्रमवारी:" : "Sort By:"}</span>
+                  <span className="text-xs font-bold text-[#5B6B7F] pl-2">{jt.sortBy}</span>
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as any)}
                     className="h-8 rounded-lg border-none bg-white shadow-xs px-2.5 text-xs font-bold text-[#10233F] focus:ring-0 appearance-none cursor-pointer"
                   >
-                    <option value="newest">{lang === "mr" ? "नवीनतम प्रथम" : "Newest First"}</option>
-                    <option value="title">{lang === "mr" ? "नावानुसार" : "By Title"}</option>
+                    <option value="newest">{jt.newest}</option>
+                    <option value="title">{jt.byTitle}</option>
                   </select>
                 </div>
               </div>
@@ -576,10 +856,10 @@ function JobsListingPage() {
                 <Briefcase className="mx-auto size-14 text-[#5B6B7F] mb-4" />
                 <h3 className="text-xl font-black text-[#10233F]">{t("noJobsInCategory")}</h3>
                 <p className="text-xs font-semibold text-[#5B6B7F] mt-2">
-                  No new jobs have been posted in this category yet. They will appear here once the admin posts them.
+                  {jt.noJobsDesc}
                 </p>
                 <Button onClick={() => { setCategoryFilter("all"); setSubCategoryFilter("all"); }} className="mt-5 btn-yellow text-xs font-bold px-6">
-                  Back to Categories
+                  {jt.backBtn}
                 </Button>
               </div>
             )}
@@ -601,31 +881,31 @@ function JobsListingPage() {
 
               <div className="space-y-6">
                 <div>
-                  <label className="block text-xs font-extrabold text-[#10233F] mb-2 uppercase">{lang === "mr" ? "अनुभव" : "Experience"}</label>
+                  <label className="block text-xs font-extrabold text-[#10233F] mb-2 uppercase">{jt.expAll.replace(/.*:\s*/, '')}</label>
                   <select
                     value={experienceFilter}
                     onChange={(e) => setExperienceFilter(e.target.value)}
                     className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold"
                   >
-                    <option value="all">{lang === "mr" ? "सर्व अनुभव" : "Any Experience"}</option>
-                    <option value="Fresher">{lang === "mr" ? "फ्रेसर" : "Fresher"}</option>
-                    <option value="1-3">1-3 {lang === "mr" ? "वर्षे" : "Years"}</option>
-                    <option value="3-5">3-5 {lang === "mr" ? "वर्षे" : "Years"}</option>
-                    <option value="5+">5+ {lang === "mr" ? "वर्षे" : "Years"}</option>
+                    <option value="all">{jt.expAll}</option>
+                    <option value="Fresher">{jt.fresher}</option>
+                    <option value="1-3">1-3 {jt.years}</option>
+                    <option value="3-5">3-5 {jt.years}</option>
+                    <option value="5+">5+ {jt.years}</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-extrabold text-[#10233F] mb-2 uppercase">{lang === "mr" ? "किमान पगार" : "Minimum Salary"}</label>
+                  <label className="block text-xs font-extrabold text-[#10233F] mb-2 uppercase">{jt.salaryLabel}</label>
                   <select
                     value={salaryFilter}
                     onChange={(e) => setSalaryFilter(e.target.value)}
                     className="w-full h-10 rounded-lg border border-[#DCE5F0] bg-[#F5F8FC] px-3 text-xs font-bold"
                   >
-                    <option value="all">{lang === "mr" ? "कोणताही पगार" : "Any Salary"}</option>
-                    <option value="10000">₹10,000+ / {lang === "mr" ? "महिना" : "mo"}</option>
-                    <option value="15000">₹15,000+ / {lang === "mr" ? "महिना" : "mo"}</option>
-                    <option value="20000">₹20,000+ / {lang === "mr" ? "महिना" : "mo"}</option>
-                    <option value="25000">₹25,000+ / {lang === "mr" ? "महिना" : "mo"}</option>
+                    <option value="all">{jt.salaryAll}</option>
+                    <option value="10000">₹10,000+ / {jt.perMonth}</option>
+                    <option value="15000">₹15,000+ / {jt.perMonth}</option>
+                    <option value="20000">₹20,000+ / {jt.perMonth}</option>
+                    <option value="25000">₹25,000+ / {jt.perMonth}</option>
                   </select>
                 </div>
                 {/* Job Type Filter */}

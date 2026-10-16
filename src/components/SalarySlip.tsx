@@ -368,63 +368,48 @@ const SalarySlip: React.FC<SalarySlipProps> = ({
         style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}
       >
 
-        {/* ── 1. TOP HERO BANNER (REAL JOB Brand & Construction Motif) ── */}
-        <div className="relative rounded-2xl overflow-hidden border border-slate-300 bg-gradient-to-r from-[#FFFFFF] via-[#F4F8FD] to-[#0A264D] p-3 sm:p-4 flex items-center justify-between min-h-[92px]">
-          {/* Left: REAL JOB Branding */}
-          <div className="flex items-center gap-3 z-10">
-            <div className="size-14 rounded-2xl bg-[#063B78] flex items-center justify-center p-1.5 shadow-md border-2 border-[#FFC400] shrink-0">
-              <img
-                src="/logo_icon.png"
-                alt="REAL JOB Emblem"
-                className="w-full h-full object-contain"
-                onError={(e) => {
-                  (e.target as HTMLElement).style.display = 'none';
-                }}
-              />
+        {/* ── 1. TOP HERO BANNER (Company Name Primary Header & REAL JOB Brand) ── */}
+        <div className="relative rounded-2xl overflow-hidden border border-slate-300 bg-gradient-to-r from-[#FFFFFF] via-[#F4F8FD] to-[#EBF3FC] p-3.5 sm:p-4 flex items-center justify-between min-h-[96px] gap-3">
+          {/* Left: Employer Company Name & Identity */}
+          <div className="flex items-center gap-3 z-10 flex-1 min-w-0">
+            <div className="size-14 sm:size-16 rounded-2xl bg-[#063B78] flex items-center justify-center p-1.5 shadow-md border-2 border-[#FFC400] shrink-0">
+              {companyLogo ? (
+                <img
+                  src={companyLogo}
+                  alt={companyName}
+                  className="w-full h-full object-contain"
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = 'none';
+                  }}
+                />
+              ) : (
+                <Building2 className="size-8 text-[#FFC400]" />
+              )}
             </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-xl sm:text-2xl font-black text-[#063B78] tracking-tight">REAL</span>
-                <span className="text-xl sm:text-2xl font-black text-[#FFC400] tracking-tight">JOB</span>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-2xl sm:text-3xl font-black text-[#063B78] tracking-tight uppercase leading-tight truncate">
+                {companyName || "COMPANY NAME"}
+              </h1>
+              <div className="text-[11px] sm:text-xs font-black uppercase text-slate-600 tracking-wider leading-tight mt-0.5">
+                {companyTagline || "EMPLOYMENT & CONTRACTOR SERVICES"}
               </div>
-              <div className="text-[10px] sm:text-[11px] font-black uppercase text-[#063B78] tracking-wider leading-none mt-0.5">
-                FIND WORK | FIND WORKERS
-              </div>
-              <p className="text-[9px] sm:text-[10px] text-slate-500 font-bold italic mt-1 leading-none">
-                Safe Work &bull; Secure Future &bull; Better Tomorrow
+              <p className="text-[9px] sm:text-[10px] text-slate-500 font-bold truncate mt-0.5 leading-tight">
+                {companyAddress || "Safe Work • Secure Future • Better Tomorrow"}
               </p>
             </div>
           </div>
 
-          {/* Right: Construction Banner Motif & Slogan */}
-          <div className="relative z-10 flex items-center gap-3">
-            <div className="hidden sm:block text-right text-white">
-              <div className="text-sm font-black tracking-wide leading-tight text-white drop-shadow-md">
-                Your Work
-              </div>
-              <div className="text-sm font-black tracking-wide leading-tight text-white drop-shadow-md">
-                Our Support
-              </div>
-              <div className="text-base font-black tracking-wider leading-tight text-[#FFC400] drop-shadow-md">
-                Your Future
-              </div>
+          {/* Right: Powered by REAL JOB */}
+          <div className="relative z-10 flex flex-col items-end shrink-0 pl-3 border-l border-slate-200">
+            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">
+              Powered by
+            </span>
+            <div className="flex items-center gap-1 mt-0.5">
+              <span className="text-base sm:text-lg font-black text-[#063B78] tracking-tight">REAL</span>
+              <span className="text-base sm:text-lg font-black text-[#FFC400] tracking-tight">JOB</span>
             </div>
-
-            {/* Construction Worker Silhouette / Photo */}
-            <div className="size-16 sm:size-20 rounded-xl overflow-hidden shadow-md border border-white/40 shrink-0 bg-slate-900">
-              <img
-                src="/payslip_construction_bg.png"
-                alt="Construction Banner"
-                className="w-full h-full object-cover object-right"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/worker_avatar.png';
-                }}
-              />
-            </div>
+            <span className="text-[8px] font-bold text-slate-400">India</span>
           </div>
-
-          {/* Subtle Background Accent Pattern */}
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#0A264D]/60 pointer-events-none"></div>
         </div>
 
         {/* ── 2. TITLE BAR RIBBON (EMPLOYEE PAYSLIP + MONTH & PAY PERIOD) ── */}

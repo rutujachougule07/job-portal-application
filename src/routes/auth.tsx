@@ -70,28 +70,6 @@ function AuthPage() {
       }
     }
   }, [search.mode, search.role]);
-
-  // Auto-redirect if already logged in
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      let u = dataStore.getCurrentUser();
-      if (!u) {
-        const raw = localStorage.getItem("realjob-user") || localStorage.getItem("realjob_db_user");
-        if (raw) u = JSON.parse(raw);
-      }
-      if (u && (u.id || u.email)) {
-        const r = (u.role || "").toLowerCase();
-        if (r === "employer" || r === "admin" || r === "poster") {
-          navigate({ to: "/admin", replace: true });
-        } else if (r === "employee") {
-          navigate({ to: "/employee-dashboard" as any, replace: true });
-        } else if (r === "worker" || r === "seeker" || r === "user") {
-          navigate({ to: "/dashboard", search: { tab: "overview" }, replace: true });
-        }
-      }
-    } catch {}
-  }, [navigate]);
   const [rememberMe, setRememberMe] = useState(true);
 
   // Common credentials
@@ -456,47 +434,60 @@ function AuthPage() {
          }
 
          } else {
-         const { getAuth, signInWithEmailAndPassword } = await import("firebase/auth");
-         const { getFirestore, doc, getDoc } = await import("firebase/firestore");
-         const auth = getAuth();
-         const db = getFirestore();
-         
-         try {
-           const credential = await signInWithEmailAndPassword(auth, enteredEmail, password);
-           const uid = credential.user.uid;
-           const userDoc = await getDoc(doc(db, "users", uid));
-           
-           if (userDoc.exists()) {
-             existingAccount = userDoc.data();
-             // Keep local store in sync
-             if (!dataStore.findRegisteredAccount(enteredEmail)) {
-                dataStore.registerAccount(existingAccount as any);
-             }
-           } else {
-             // Fallback to local store if they somehow exist locally but not in Firestore 
-             // (e.g. legacy localhost accounts)
-             existingAccount = dataStore.findRegisteredAccount(enteredEmail);
-             if (existingAccount && existingAccount.password !== password) {
-               toast.error("❌ चुकीचा पासवर्ड! (Wrong password. Please enter correct password.)");
-               setBusy(false);
-               return;
-             }
-           }
-         } catch (firebaseErr: any) {
-           // Fallback to local store for backward compatibility
-           existingAccount = dataStore.findRegisteredAccount(enteredEmail);
-           if (!existingAccount) {
-              throw firebaseErr; // Throw back to outer catch block if not found locally
-           }
-           if (existingAccount.password !== password) {
-             toast.error("❌ चुकीचा पासवर्ड! (Wrong password. Please enter correct password.)");
-             setBusy(false);
-             return;
-           }
-         }
-      }
+          const { getAuth, signInWithEmailAndPassword } = await import("firebase/auth");
+          const { getFirestore, doc, getDoc } = await import("firebase/firestore");
+          const auth = getAuth();
+          const db = getFirestore();
+          
+          try {
+            const credential = await signInWithEmailAndPassword(auth, enteredEmail, password);
+            const uid = credential.user.uid;
+            const userDoc = await getDoc(doc(db, "users", uid));
+            
+            if (userDoc.exists()) {
+              existingAccount = userDoc.data();
+              // Keep local store cache in sync with actual Firebase record
+              dataStore.registerAccount({ ...(existingAccount as any), id: uid });
+            } else {
+              // User exists in Firebase Auth but was deleted from Firestore
+              await auth.signOut().catch(() => {});
+              toast.error("❌ तुमचे खाते काढण्यात आले आहे! (Account has been deleted or not found.)");
+              setBusy(false);
+              return;
+            }
+          } catch (firebaseErr: any) {
+            console.error("Firebase Login Error:", firebaseErr);
+            const code = firebaseErr?.code || "";
+            if (code === "auth/user-not-found" || code === "auth/invalid-credential" || code === "auth/wrong-password") {
+              toast.error("❌ चुकीचा ईमेल किंवा पासवर्ड! किंवा खाते अस्तित्वात नाही.");
+            } else if (code === "auth/too-many-requests") {
+              toast.error("⚠️ अनेक अयशस्वी प्रयत्नांमुळे खाते तात्पुरते ब्लॉक झाले आहे. कृपया थोड्या वेळाने प्रयत्न करा.");
+            } else {
+              toast.error(firebaseErr?.message || "❌ लॉगिन अयशस्वी झाले. खाते अस्तित्वात नाही.");
+            }
+            setBusy(false);
+            return;
+          }
+       }
 
       if (existingAccount) {
+        const accRole = (existingAccount.role || "").toLowerCase();
+
+        // Role isolation: prevent employer logging in on seeker tab, and vice versa
+        if (role === "worker") {
+          if (accRole === "employer" || accRole === "admin" || accRole === "poster") {
+            toast.error("❌ हे Job Poster (Employer) चे खाते आहे! कृपया 'Job Poster Login' मधून लॉगिन करा.");
+            setBusy(false);
+            return;
+          }
+        } else if (role === "admin" || role === "employer") {
+          if (accRole === "worker" || accRole === "seeker") {
+            toast.error("❌ हे Job Seeker (उमेदवार) चे खाते आहे! कृपया 'Seeker Login' मधून लॉगिन करा.");
+            setBusy(false);
+            return;
+          }
+        }
+
         let resolvedEmpName = (existingAccount as any)?.employerName || "";
         if (!resolvedEmpName && existingAccount.employerId) {
           const accounts = (dataStore as any).getRegisteredUserAccounts ? (dataStore as any).getRegisteredUserAccounts() : [];
@@ -595,8 +586,8 @@ function AuthPage() {
         </div>
 
         {/* Title Header (Strictly English) */}
-        <div className="text-center space-y-1 mb-2.5">
-          <h1 className="text-xl sm:text-2xl font-black text-[#0A3B7B] tracking-tight leading-tight">
+        <div className="text-center space-y-0.5 mb-2">
+          <h1 className="text-lg sm:text-xl font-black text-[#0A3B7B] tracking-tight leading-tight">
             {role === "admin"
               ? mode === "register"
                 ? "Job Poster Registration"
@@ -612,7 +603,7 @@ function AuthPage() {
                   : "Worker / User Login"}
           </h1>
 
-          <p className="text-xs sm:text-[13px] font-semibold text-gray-600 px-1 leading-snug">
+          <p className="text-[10px] sm:text-[11px] font-semibold text-gray-600 px-1 leading-tight">
             {role === "admin"
               ? mode === "register"
                 ? "For employers & companies: Register an account to find workers."
@@ -627,40 +618,40 @@ function AuthPage() {
 
         {/* Mode Pill Toggle (Login / Register) */}
         {mode !== "forgot" && role !== "employee" && (
-          <div className="bg-gray-200/80 backdrop-blur-md p-1 sm:p-1.5 rounded-full border border-white/70 flex items-center shadow-inner mb-3">
+          <div className="bg-gray-200/80 backdrop-blur-md p-1 rounded-full border border-white/70 flex items-center shadow-inner mb-2.5">
             <button
               type="button"
               onClick={() => setMode("login")}
-              className={`flex-1 py-1.5 sm:py-2 rounded-full text-sm sm:text-[15px] font-black transition-all duration-200 flex items-center justify-center gap-2 ${mode === "login"
+              className={`flex-1 py-1 rounded-full text-[11px] font-black transition-all duration-200 flex items-center justify-center gap-1.5 ${mode === "login"
                 ? "bg-[#0A3B7B] text-white shadow-md shadow-[#0A3B7B]/30"
-                : "text-gray-700 hover:text-black font-extrabold"
+                : "text-gray-700 hover:text-black font-bold"
                 }`}
             >
-              <User className="size-4 sm:size-4.5" /> Login
+              <User className="size-3.5" /> Login
             </button>
             <button
               type="button"
               onClick={() => setMode("register")}
-              className={`flex-1 py-1.5 sm:py-2 rounded-full text-sm sm:text-[15px] font-black transition-all duration-200 flex items-center justify-center gap-2 ${mode === "register"
+              className={`flex-1 py-1 rounded-full text-[11px] font-black transition-all duration-200 flex items-center justify-center gap-1.5 ${mode === "register"
                 ? "bg-[#0A3B7B] text-white shadow-md shadow-[#0A3B7B]/30"
-                : "text-gray-700 hover:text-black font-extrabold"
+                : "text-gray-700 hover:text-black font-bold"
                 }`}
             >
-              <UserPlus className="size-4 sm:size-4.5" /> Register
+              <UserPlus className="size-3.5" /> Register
             </button>
           </div>
         )}
 
         {/* Form Container */}
-        <form onSubmit={handleSubmit} autoComplete="off" className="space-y-3">
+        <form onSubmit={handleSubmit} autoComplete="off" className="space-y-2.5">
 
           {/* WORKER REGISTRATION FIELDS */}
           {mode === "register" && role === "worker" && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
-                <Label className="text-xs sm:text-[13px] font-extrabold text-gray-800 mb-1 block">Full Name *</Label>
+                <Label className="text-[10px] sm:text-[11px] font-extrabold text-gray-800 mb-0.5 block">Full Name *</Label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-gray-400" />
                   <input
                     required
                     type="text"
@@ -668,15 +659,15 @@ function AuthPage() {
                     placeholder="e.g. Rahul Sharma"
                     value={workerName}
                     onChange={(e) => setWorkerName(e.target.value)}
-                    className="w-full h-10 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs sm:text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B]"
+                    className="w-full h-8.5 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B]"
                   />
                 </div>
               </div>
 
               <div>
-                <Label className="text-xs sm:text-[13px] font-extrabold text-gray-800 mb-1 block">Mobile Number *</Label>
+                <Label className="text-[10px] sm:text-[11px] font-extrabold text-gray-800 mb-0.5 block">Mobile Number *</Label>
                 <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-gray-400" />
                   <input
                     required
                     type="tel"
@@ -684,7 +675,7 @@ function AuthPage() {
                     placeholder="+91 98220 00000"
                     value={workerPhone}
                     onChange={(e) => setWorkerPhone(e.target.value)}
-                    className="w-full h-10 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs sm:text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B]"
+                    className="w-full h-8.5 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B]"
                   />
                 </div>
               </div>
@@ -693,11 +684,11 @@ function AuthPage() {
 
           {/* EMPLOYER REGISTRATION FIELDS */}
           {mode === "register" && (role === "employer" || role === "admin") && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
-                <Label className="text-xs sm:text-[13px] font-extrabold text-gray-800 mb-1 block">Company Name *</Label>
+                <Label className="text-[10px] sm:text-[11px] font-extrabold text-gray-800 mb-0.5 block">Company Name *</Label>
                 <div className="relative">
-                  <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+                  <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-gray-400" />
                   <input
                     required
                     type="text"
@@ -705,15 +696,15 @@ function AuthPage() {
                     placeholder="e.g. Tata Motors / L&T"
                     value={companyName}
                     onChange={(e) => setCompanyName(e.target.value)}
-                    className="w-full h-10 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs sm:text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B]"
+                    className="w-full h-8.5 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B]"
                   />
                 </div>
               </div>
 
               <div>
-                <Label className="text-xs sm:text-[13px] font-extrabold text-gray-800 mb-1 block">Mobile Number *</Label>
+                <Label className="text-[10px] sm:text-[11px] font-extrabold text-gray-800 mb-0.5 block">Mobile Number *</Label>
                 <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-gray-400" />
                   <input
                     required
                     type="tel"
@@ -721,7 +712,7 @@ function AuthPage() {
                     placeholder="+91 98220 00000"
                     value={employerPhone}
                     onChange={(e) => setEmployerPhone(e.target.value)}
-                    className="w-full h-10 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs sm:text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B]"
+                    className="w-full h-8.5 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B]"
                   />
                 </div>
               </div>
@@ -730,8 +721,8 @@ function AuthPage() {
 
           {/* PROFILE / COMPANY PHOTO UPLOAD & LIVE CAMERA FIELD */}
           {mode === "register" && (
-            <div className="bg-blue-50/80 p-2.5 rounded-xl border border-blue-100 space-y-1.5">
-              <div className="flex items-center gap-2.5">
+            <div className="bg-blue-50/80 p-2 sm:p-2.5 rounded-xl border border-blue-100 space-y-1.5">
+              <div className="flex items-center gap-2">
                 {profilePhoto ? (
                   <img src={profilePhoto} alt="Profile Preview" className="size-9 rounded-full object-cover ring-2 ring-[#0A3B7B] shadow-xs" />
                 ) : (
@@ -740,10 +731,10 @@ function AuthPage() {
                   </div>
                 )}
                 <div>
-                  <p className="text-xs sm:text-[13px] font-extrabold text-[#0A3B7B]">
+                  <p className="text-[11px] font-extrabold text-[#0A3B7B]">
                     {role === "employer" || role === "admin" ? "Company Logo / Photo" : "Profile Photo (प्रोफाईल फोटो)"}
                   </p>
-                  <p className="text-[11px] sm:text-xs text-gray-500 font-bold">
+                  <p className="text-[10px] text-gray-500 font-bold">
                     {profilePhoto ? "✓ Photo Attached" : "Choose file or take live camera photo"}
                   </p>
                 </div>
@@ -751,8 +742,8 @@ function AuthPage() {
 
               {/* Action Buttons: 1. Upload File 2. Live Camera */}
               <div className="flex items-center gap-2 pt-0.5">
-                <label className="flex-1 py-1.5 px-2 rounded-lg bg-[#0A3B7B] text-white text-xs sm:text-[13px] font-black cursor-pointer hover:bg-[#072B5B] transition-colors shadow-xs flex items-center justify-center gap-1.5">
-                  <Upload className="size-3.5" /> {profilePhoto ? "Change" : "Upload File"}
+                <label className="flex-1 py-1 px-2 rounded-lg bg-[#0A3B7B] text-white text-[10px] sm:text-[11px] font-black cursor-pointer hover:bg-[#072B5B] transition-colors shadow-xs flex items-center justify-center gap-1">
+                  <Upload className="size-3" /> {profilePhoto ? "Change" : "Upload File"}
                   <input
                     type="file"
                     accept="image/*"
@@ -764,9 +755,9 @@ function AuthPage() {
                 <button
                   type="button"
                   onClick={startCamera}
-                  className="flex-1 py-1.5 px-2 rounded-lg bg-emerald-700 text-white text-xs sm:text-[13px] font-black hover:bg-emerald-800 transition-colors shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="flex-1 py-1 px-2 rounded-lg bg-emerald-700 text-white text-[10px] sm:text-[11px] font-black hover:bg-emerald-800 transition-colors shadow-xs flex items-center justify-center gap-1 cursor-pointer"
                 >
-                  <Camera className="size-3.5" /> {lang === "mr" ? "कॅमेरा उघडा" : "Take Photo"}
+                  <Camera className="size-3" /> {lang === "mr" ? "कॅमेरा उघडा" : "Take Photo"}
                 </button>
               </div>
             </div>
@@ -774,7 +765,7 @@ function AuthPage() {
 
           {/* EMAIL OR MOBILE FIELD */}
           <div>
-            <Label htmlFor="email" className="text-xs sm:text-[13px] font-extrabold text-gray-800 mb-1 block">
+            <Label htmlFor="email" className="text-[10px] sm:text-[11px] font-extrabold text-gray-800 mb-0.5 block">
               {role === "employee" 
                 ? "Mobile Number (मोबाईल नंबर) *"
                 : mode === "login" 
@@ -783,9 +774,9 @@ function AuthPage() {
             </Label>
             <div className="relative">
               {mode === "login" && /^\d+$/.test(email.replace(/\D/g, "")) && email.length >= 5 ? (
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#0A3B7B]" />
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-[#0A3B7B]" />
               ) : (
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-gray-400" />
               )}
               <input
                 id="email"
@@ -795,7 +786,7 @@ function AuthPage() {
                 placeholder={role === "employee" ? "e.g. 98220 00000" : mode === "login" ? "Email or Mobile (e.g. 98220 00000 / user@gmail.com)" : "name@example.com (Optional)"}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full h-10 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs sm:text-sm font-bold text-gray-900 placeholder:text-xs sm:placeholder:text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B] shadow-xs"
+                className="w-full h-8.5 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B] shadow-xs"
               />
             </div>
           </div>
@@ -803,15 +794,15 @@ function AuthPage() {
           {/* PASSWORD FIELD */}
           {mode !== "forgot" && (
             <div>
-              <div className="flex justify-between items-center mb-1">
-                <Label htmlFor="password" className="text-xs sm:text-[13px] font-extrabold text-gray-800">
+              <div className="flex justify-between items-center mb-0.5">
+                <Label htmlFor="password" className="text-[11px] font-extrabold text-gray-800">
                   {role === "employee" ? "4-Digit PIN (पासकोड) *" : "Password *"}
                 </Label>
                 {mode === "login" && role !== "employee" && (
                   <button
                     type="button"
                     onClick={() => setMode("forgot")}
-                    className="text-xs sm:text-[13px] font-bold text-[#0A3B7B] hover:underline"
+                    className="text-[11px] font-bold text-[#0A3B7B] hover:underline"
                   >
                     Forgot Password?
                   </button>
@@ -819,7 +810,7 @@ function AuthPage() {
               </div>
 
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-gray-400" />
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
@@ -830,14 +821,14 @@ function AuthPage() {
                   maxLength={role === "employee" ? 4 : undefined}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full h-10 pl-9 pr-9 bg-white rounded-lg border border-gray-200 text-xs sm:text-sm font-bold text-gray-900 placeholder:text-xs sm:placeholder:text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B] shadow-xs"
+                  className="w-full h-9.5 pl-9 pr-9 bg-white rounded-lg border border-gray-200 text-xs font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B] shadow-xs"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
-                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  {showPassword ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
                 </button>
               </div>
             </div>
@@ -846,7 +837,7 @@ function AuthPage() {
           {/* OTP FIELD FOR REGISTRATION */}
           {mode === "register" && showOtpField && (
             <div className="mt-2 p-3 bg-emerald-50 rounded-lg border border-emerald-200 animate-in fade-in zoom-in-95 duration-300">
-              <Label htmlFor="otp" className="text-xs sm:text-[13px] font-extrabold text-emerald-800 mb-1 block">
+              <Label htmlFor="otp" className="text-[11px] font-extrabold text-emerald-800 mb-1 block">
                 Enter 6-Digit OTP *
               </Label>
               <div className="relative">
@@ -858,10 +849,10 @@ function AuthPage() {
                   maxLength={6}
                   value={inputOtp}
                   onChange={(e) => setInputOtp(e.target.value.replace(/\D/g, ""))}
-                  className="w-full h-10 px-3 bg-white rounded-lg border border-emerald-300 text-sm font-bold text-center tracking-widest text-emerald-900 placeholder:text-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm"
+                  className="w-full h-9.5 px-3 bg-white rounded-lg border border-emerald-300 text-sm font-bold text-center tracking-widest text-emerald-900 placeholder:text-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm"
                 />
               </div>
-              <p className="text-[11px] sm:text-xs text-emerald-600 font-semibold mt-1 text-center">
+              <p className="text-[10px] text-emerald-600 font-semibold mt-1 text-center">
                 OTP sent successfully. Please check your SMS.
               </p>
             </div>
@@ -875,9 +866,9 @@ function AuthPage() {
                 id="remember"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="size-4 rounded border-gray-300 text-[#0A3B7B] focus:ring-[#0A3B7B] accent-[#0A3B7B] cursor-pointer"
+                className="size-3.5 rounded border-gray-300 text-[#0A3B7B] focus:ring-[#0A3B7B] accent-[#0A3B7B] cursor-pointer"
               />
-              <label htmlFor="remember" className="text-xs sm:text-[13px] font-bold text-gray-700 cursor-pointer select-none">
+              <label htmlFor="remember" className="text-[11px] font-bold text-gray-700 cursor-pointer select-none">
                 Remember me
               </label>
             </div>
@@ -887,25 +878,25 @@ function AuthPage() {
           <Button
             disabled={busy}
             type="submit"
-            className="w-full h-10.5 sm:h-11 bg-[#0A3B7B] hover:bg-[#072B5B] text-white font-black text-xs sm:text-sm rounded-lg shadow-md shadow-[#0A3B7B]/20 hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 mt-1"
+            className="w-full h-10 bg-[#0A3B7B] hover:bg-[#072B5B] text-white font-black text-xs rounded-lg shadow-md shadow-[#0A3B7B]/20 hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 mt-1"
           >
             {busy ? (
               <Loader2 className="animate-spin size-4" />
             ) : mode === "register" ? (
               showOtpField ? (
                 <>
-                  <Check className="size-4" /> Verify OTP & Register
+                  <Check className="size-3.5" /> Verify OTP & Register
                 </>
               ) : (
                 <>
-                  <UserPlus className="size-4" /> Send OTP to Register
+                  <UserPlus className="size-3.5" /> Send OTP to Register
                 </>
               )
             ) : mode === "forgot" ? (
               "Send Reset Link"
             ) : (
               <>
-                <LogIn className="size-4" /> Sign In
+                <LogIn className="size-3.5" /> Sign In
               </>
             )}
           </Button>
@@ -913,7 +904,7 @@ function AuthPage() {
 
         {/* BOTTOM REGISTER LINK */}
         {role !== "employee" && (
-          <div className="mt-3.5 text-center text-xs sm:text-[13px] font-bold text-gray-600">
+          <div className="mt-3 text-center text-[11px] font-bold text-gray-600">
             {mode === "register" ? "Already have an account?" : "Don't have an account?"}{" "}
             <button
               type="button"
