@@ -128,22 +128,7 @@ export function LoginDropdown({ className = "" }: { className?: string }) {
               </span>
             </Link>
 
-            {/* 2. Employee Login */}
-            <Link
-              to="/auth"
-              search={{ mode: "login", role: "employee" }}
-              onClick={() => setIsOpen(false)}
-              className="flex items-center gap-3.5 p-2.5 sm:p-3 rounded-2xl bg-[#EDF9F2] hover:bg-[#DDF4E6] active:scale-[0.98] transition-all group cursor-pointer"
-            >
-              <div className="size-11 rounded-full bg-[#D1F3E0] flex items-center justify-center text-[#059669] shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
-                <Briefcase className="size-5 stroke-[2.2]" />
-              </div>
-              <span className="text-sm font-black text-[#10233F] group-hover:text-[#059669]">
-                Employee Login
-              </span>
-            </Link>
-
-            {/* 3. Job Poster Login */}
+            {/* 2. Job Poster Login */}
             <Link
               to="/auth"
               search={{ mode: "login", role: "admin" }}
@@ -155,6 +140,21 @@ export function LoginDropdown({ className = "" }: { className?: string }) {
               </div>
               <span className="text-sm font-black text-[#10233F] group-hover:text-[#D97706]">
                 Job Poster Login
+              </span>
+            </Link>
+
+            {/* 3. Employee Login */}
+            <Link
+              to="/auth"
+              search={{ mode: "login", role: "employee" }}
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-3.5 p-2.5 sm:p-3 rounded-2xl bg-[#EDF9F2] hover:bg-[#DDF4E6] active:scale-[0.98] transition-all group cursor-pointer"
+            >
+              <div className="size-11 rounded-full bg-[#D1F3E0] flex items-center justify-center text-[#059669] shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
+                <Briefcase className="size-5 stroke-[2.2]" />
+              </div>
+              <span className="text-sm font-black text-[#10233F] group-hover:text-[#059669]">
+                Employee Login
               </span>
             </Link>
           </div>

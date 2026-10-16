@@ -167,7 +167,7 @@ export function AppShell({ role, title, eyebrow, children }: { role: Role; title
 
           <div className="flex items-center gap-2">
             <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex text-xs font-semibold">
-              <Link to="/">{t("viewWebsite")}</Link>
+              <a href="/?view=website">{t("viewWebsite")}</a>
             </Button>
 
             <div className="flex items-center">

@@ -299,12 +299,27 @@ function LandingGatewayPage() {
 
   useEffect(() => {
     const syncUser = () => {
-      const u = dataStore.getCurrentUser();
+      // If user explicitly navigated to preview public website, do not auto-redirect
+      if (typeof window !== "undefined" && window.location.search.includes("view=website")) {
+        return;
+      }
+      let u = dataStore.getCurrentUser();
+      if (!u && typeof window !== "undefined") {
+        try {
+          const raw = localStorage.getItem("realjob-user") || localStorage.getItem("realjob_db_user");
+          if (raw) u = JSON.parse(raw);
+        } catch {}
+      }
       setCurrentUser(u);
-      if (u?.role === "employer" || u?.role === "admin") {
-        navigate({ to: "/admin", replace: true });
-      } else if (u?.role === "employee") {
-        navigate({ to: "/employee-dashboard" as any, replace: true });
+      if (u && (u.id || u.email)) {
+        const r = (u.role || "").toLowerCase();
+        if (r === "employer" || r === "admin" || r === "poster") {
+          navigate({ to: "/admin", replace: true });
+        } else if (r === "employee") {
+          navigate({ to: "/employee-dashboard" as any, replace: true });
+        } else if (r === "worker" || r === "seeker" || r === "user") {
+          navigate({ to: "/dashboard", search: { tab: "overview" }, replace: true });
+        }
       }
     };
     syncUser();

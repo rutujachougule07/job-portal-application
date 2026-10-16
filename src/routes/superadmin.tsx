@@ -159,8 +159,7 @@ function SuperAdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     if (typeof window !== "undefined") {
       try {
-        localStorage.removeItem("realjob_admin_auth");
-        const saved = sessionStorage.getItem("realjob_admin_auth");
+        const saved = localStorage.getItem("realjob_admin_auth") || sessionStorage.getItem("realjob_admin_auth");
         return !!saved;
       } catch {}
     }
@@ -279,33 +278,8 @@ function SuperAdminPage() {
     return { isSuperAdmin: true };
   });
 
-  // Revoke session when navigating away or clicking back button without logging out
   useEffect(() => {
-    const handlePopState = () => {
-      const saved = sessionStorage.getItem("realjob_admin_auth");
-      if (!saved) {
-        setIsAuthenticated(false);
-      }
-    };
-    const handlePageShow = (e: PageTransitionEvent) => {
-      if (e.persisted) {
-        const saved = sessionStorage.getItem("realjob_admin_auth");
-        if (!saved) {
-          setIsAuthenticated(false);
-        }
-      }
-    };
-    window.addEventListener("popstate", handlePopState);
-    window.addEventListener("pageshow", handlePageShow);
-
-    return () => {
-      window.removeEventListener("popstate", handlePopState);
-      window.removeEventListener("pageshow", handlePageShow);
-      try {
-        sessionStorage.removeItem("realjob_admin_auth");
-        localStorage.removeItem("realjob_admin_auth");
-      } catch {}
-    };
+    // Keep superadmin state active across tab/page sessions
   }, []);
 
   // Sub-Admin Form State
@@ -880,7 +854,7 @@ function SuperAdminPage() {
       setCurrentAdminRole(superRole);
       if (typeof window !== "undefined") {
         sessionStorage.setItem("realjob_admin_auth", JSON.stringify(superRole));
-        localStorage.removeItem("realjob_admin_auth");
+        localStorage.setItem("realjob_admin_auth", JSON.stringify(superRole));
       }
       toast.success("✅ Welcome, Super Administrator!");
     } catch (err: any) {
@@ -890,7 +864,7 @@ function SuperAdminPage() {
         setCurrentAdminRole(superRole);
         if (typeof window !== "undefined") {
           sessionStorage.setItem("realjob_admin_auth", JSON.stringify(superRole));
-          localStorage.removeItem("realjob_admin_auth");
+          localStorage.setItem("realjob_admin_auth", JSON.stringify(superRole));
         }
         toast.success("✅ Welcome, Super Administrator!");
       } else {
@@ -952,13 +926,12 @@ function SuperAdminPage() {
               <ShieldAlert className="size-8 text-[#021D3D]" />
             </div>
             <h1 className="text-2xl font-black text-[#063B78] tracking-tight">REAL JOB Admin Portal</h1>
-            <p className="text-xs font-bold text-[#5B6B7F] mt-1">Superadmin Control & Sub-Admin Work Access</p>
-            <p className="text-[11px] font-semibold text-[#0A4F9E] mt-0.5">सुपरॲडमिन किंवा सब-ॲडमिन युझरनेम/ईमेल व पासवर्डने लॉगिन करा</p>
+            <p className="text-xs sm:text-[13px] font-bold text-[#5B6B7F] mt-1">Superadmin Control &amp; Sub-Admin Work Access</p>
           </div>
           
           <form onSubmit={handleLogin} className="p-8 space-y-4">
             <div>
-              <label className="block text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider mb-2">
+              <label className="block text-xs sm:text-[13px] font-black text-[#5B6B7F] uppercase tracking-wider mb-2">
                 Username or Email Address *
               </label>
               <div className="relative group">
@@ -975,7 +948,7 @@ function SuperAdminPage() {
             </div>
 
             <div>
-              <label className="block text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider mb-2">
+              <label className="block text-xs sm:text-[13px] font-black text-[#5B6B7F] uppercase tracking-wider mb-2">
                 Secure Password *
               </label>
               <div className="relative group">
@@ -992,13 +965,13 @@ function SuperAdminPage() {
             </div>
             
             <div className="pt-2">
-              <Button type="submit" disabled={loginBusy} className="w-full h-12 bg-gradient-to-r from-[#063B78] to-[#0A4F9E] hover:from-[#0A4F9E] hover:to-[#063B78] text-white font-black rounded-xl text-sm shadow-lg shadow-[#063B78]/20 transition-all active:scale-95 border-b-[3px] border-[#021D3D] disabled:opacity-50 cursor-pointer">
+              <Button type="submit" disabled={loginBusy} className="w-full h-12 bg-gradient-to-r from-[#063B78] to-[#0A4F9E] hover:from-[#0A4F9E] hover:to-[#063B78] text-white font-black rounded-xl text-sm sm:text-base shadow-lg shadow-[#063B78]/20 transition-all active:scale-95 border-b-[3px] border-[#021D3D] disabled:opacity-50 cursor-pointer">
                 {loginBusy ? "Authenticating..." : "Sign In to Admin Panel"}
               </Button>
             </div>
           </form>
           
-          <div className="p-4 text-center bg-[#F8FAFF] text-[10px] uppercase font-black text-[#9DAEC5] tracking-widest border-t border-[#E0E8F5]">
+          <div className="p-4 text-center bg-[#F8FAFF] text-[11px] sm:text-xs uppercase font-black text-[#9DAEC5] tracking-widest border-t border-[#E0E8F5]">
             Protected by REAL JOB Multi-Tier Role Security
           </div>
         </div>

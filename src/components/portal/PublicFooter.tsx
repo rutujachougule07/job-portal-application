@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import {
   ChevronRight,
   ChevronUp,
@@ -13,8 +13,14 @@ import {
 import { useI18n, getCategoryTitle } from "@/lib/i18n";
 
 export function PublicFooter() {
+  const navigate = useNavigate();
+
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleHeartClick = () => {
+    navigate({ to: "/superadmin" });
   };
 
   return (
@@ -77,7 +83,15 @@ export function PublicFooter() {
 
           <div className="flex items-center gap-4">
             <span className="inline-flex items-center gap-1.5">
-              Made with <span className="text-[#FFC400]">💛</span> in India.
+              Made with{" "}
+              <span
+                className="text-[#FFC400] cursor-pointer select-none"
+                onClick={handleHeartClick}
+                title=""
+              >
+                💛
+              </span>{" "}
+              in India.
             </span>
             <button
               onClick={scrollToTop}

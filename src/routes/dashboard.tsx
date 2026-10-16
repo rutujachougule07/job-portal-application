@@ -73,6 +73,16 @@ function UserDashboard() {
     const workerUser = dataStore.getCurrentUser("worker");
     if (workerUser && (workerUser.role === "worker" || (workerUser as any).role === "seeker")) {
       setUser(workerUser);
+    } else if (raw) {
+      try {
+        const u = JSON.parse(raw);
+        if (u && (u.id || u.email)) {
+          setUser(u);
+          dataStore.setCurrentUser(u);
+          return;
+        }
+      } catch {}
+      navigate({ to: "/auth", search: { mode: "login", role: "worker" }, replace: true });
     } else {
       navigate({ to: "/auth", search: { mode: "login", role: "worker" }, replace: true });
     }
