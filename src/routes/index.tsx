@@ -442,11 +442,11 @@ function LandingGatewayPage() {
       <LanguageGate />
       
       {/* LANDING HEADER */}
-      <header className="absolute top-0 w-full z-50 bg-transparent p-3 sm:p-4">
-        <div className="mx-auto flex max-w-[1400px] items-center justify-between">
-          <Brand className="h-10 sm:h-12 md:h-14 shrink-0" />
+      <header className="absolute top-0 w-full z-50 bg-transparent p-2.5 sm:p-4">
+        <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-2">
+          <Brand className="h-7 xs:h-8 sm:h-11 md:h-13 max-w-[150px] xs:max-w-[185px] sm:max-w-none w-auto shrink object-contain" />
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             <LanguageSwitcher />
 
             {currentUser ? (

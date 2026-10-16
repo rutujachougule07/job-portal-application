@@ -74,7 +74,7 @@ export function LanguageSwitcher({
         ) : (
           <button
             type="button"
-            className={`flex items-center gap-2 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl transition-all cursor-pointer font-semibold text-xs sm:text-sm shrink-0 select-none ${
+            className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1 sm:py-2 rounded-xl transition-all cursor-pointer font-semibold text-xs sm:text-sm shrink-0 select-none ${
               open
                 ? "bg-[#EDF5FE] border-2 border-[#3B82F6] text-[#0F172A] shadow-xs"
                 : "bg-[#EDF5FE] border border-[#3B82F6] text-[#0F172A] hover:bg-[#E3EFFD]"
@@ -82,12 +82,12 @@ export function LanguageSwitcher({
             title="Change Language • भाषा बदला"
             aria-label="Change Language"
           >
-            <Globe className="size-4.5 sm:size-5 text-[#1D4ED8] stroke-[2.2] shrink-0" />
-            <span className="font-semibold text-[#10233F]">{displayText}</span>
+            <Globe className="size-4 sm:size-5 text-[#1D4ED8] stroke-[2.2] shrink-0" />
+            <span className="font-semibold text-[#10233F] text-xs sm:text-sm">{displayText}</span>
             {open ? (
-              <ChevronUp className="size-4 text-[#1D4ED8] stroke-[2.5] shrink-0" />
+              <ChevronUp className="size-3.5 sm:size-4 text-[#1D4ED8] stroke-[2.5] shrink-0" />
             ) : (
-              <ChevronDown className="size-4 text-[#1D4ED8] stroke-[2.5] shrink-0" />
+              <ChevronDown className="size-3.5 sm:size-4 text-[#1D4ED8] stroke-[2.5] shrink-0" />
             )}
           </button>
         )}

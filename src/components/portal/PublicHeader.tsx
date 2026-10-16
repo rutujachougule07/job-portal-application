@@ -53,8 +53,8 @@ export function PublicHeader() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-[#DCE5F0] bg-white/95 backdrop-blur-md shadow-xs">
-      <div className="mx-auto flex h-18 max-w-7xl items-center justify-between px-4 sm:px-6">
-        <Brand className="h-10 sm:h-12 md:h-14 shrink-0" />
+      <div className="mx-auto flex h-16 sm:h-18 max-w-7xl items-center justify-between px-3 sm:px-6 gap-2">
+        <Brand className="h-7 xs:h-8 sm:h-11 md:h-13 max-w-[150px] xs:max-w-[185px] sm:max-w-none w-auto shrink object-contain" />
 
         {/* Desktop Navigation */}
         {!user && (

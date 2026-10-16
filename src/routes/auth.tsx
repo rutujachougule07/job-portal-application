@@ -586,8 +586,8 @@ function AuthPage() {
         </div>
 
         {/* Title Header (Strictly English) */}
-        <div className="text-center space-y-0.5 mb-2">
-          <h1 className="text-lg sm:text-xl font-black text-[#0A3B7B] tracking-tight leading-tight">
+        <div className="text-center space-y-1 mb-2.5">
+          <h1 className="text-xl sm:text-2xl font-black text-[#0A3B7B] tracking-tight leading-tight">
             {role === "admin"
               ? mode === "register"
                 ? "Job Poster Registration"
@@ -603,7 +603,7 @@ function AuthPage() {
                   : "Worker / User Login"}
           </h1>
 
-          <p className="text-[10px] sm:text-[11px] font-semibold text-gray-600 px-1 leading-tight">
+          <p className="text-xs sm:text-[13px] font-semibold text-gray-600 px-1 leading-snug">
             {role === "admin"
               ? mode === "register"
                 ? "For employers & companies: Register an account to find workers."
@@ -618,40 +618,40 @@ function AuthPage() {
 
         {/* Mode Pill Toggle (Login / Register) */}
         {mode !== "forgot" && role !== "employee" && (
-          <div className="bg-gray-200/80 backdrop-blur-md p-1 rounded-full border border-white/70 flex items-center shadow-inner mb-2.5">
+          <div className="bg-gray-200/80 backdrop-blur-md p-1 sm:p-1.5 rounded-full border border-white/70 flex items-center shadow-inner mb-3">
             <button
               type="button"
               onClick={() => setMode("login")}
-              className={`flex-1 py-1 rounded-full text-[11px] font-black transition-all duration-200 flex items-center justify-center gap-1.5 ${mode === "login"
+              className={`flex-1 py-1.5 sm:py-2 rounded-full text-sm sm:text-[15px] font-black transition-all duration-200 flex items-center justify-center gap-2 ${mode === "login"
                 ? "bg-[#0A3B7B] text-white shadow-md shadow-[#0A3B7B]/30"
-                : "text-gray-700 hover:text-black font-bold"
+                : "text-gray-700 hover:text-black font-extrabold"
                 }`}
             >
-              <User className="size-3.5" /> Login
+              <User className="size-4 sm:size-4.5" /> Login
             </button>
             <button
               type="button"
               onClick={() => setMode("register")}
-              className={`flex-1 py-1 rounded-full text-[11px] font-black transition-all duration-200 flex items-center justify-center gap-1.5 ${mode === "register"
+              className={`flex-1 py-1.5 sm:py-2 rounded-full text-sm sm:text-[15px] font-black transition-all duration-200 flex items-center justify-center gap-2 ${mode === "register"
                 ? "bg-[#0A3B7B] text-white shadow-md shadow-[#0A3B7B]/30"
-                : "text-gray-700 hover:text-black font-bold"
+                : "text-gray-700 hover:text-black font-extrabold"
                 }`}
             >
-              <UserPlus className="size-3.5" /> Register
+              <UserPlus className="size-4 sm:size-4.5" /> Register
             </button>
           </div>
         )}
 
         {/* Form Container */}
-        <form onSubmit={handleSubmit} autoComplete="off" className="space-y-2.5">
+        <form onSubmit={handleSubmit} autoComplete="off" className="space-y-3">
 
           {/* WORKER REGISTRATION FIELDS */}
           {mode === "register" && role === "worker" && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               <div>
-                <Label className="text-[10px] sm:text-[11px] font-extrabold text-gray-800 mb-0.5 block">Full Name *</Label>
+                <Label className="text-xs sm:text-[13px] font-extrabold text-gray-800 mb-1 block">Full Name *</Label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-gray-400" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
                   <input
                     required
                     type="text"
@@ -659,15 +659,15 @@ function AuthPage() {
                     placeholder="e.g. Rahul Sharma"
                     value={workerName}
                     onChange={(e) => setWorkerName(e.target.value)}
-                    className="w-full h-8.5 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B]"
+                    className="w-full h-9.5 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs sm:text-[13px] font-bold text-gray-900 placeholder:text-xs sm:placeholder:text-[13px] focus:outline-none focus:ring-2 focus:ring-[#0A3B7B]"
                   />
                 </div>
               </div>
 
               <div>
-                <Label className="text-[10px] sm:text-[11px] font-extrabold text-gray-800 mb-0.5 block">Mobile Number *</Label>
+                <Label className="text-xs sm:text-[13px] font-extrabold text-gray-800 mb-1 block">Mobile Number *</Label>
                 <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-gray-400" />
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
                   <input
                     required
                     type="tel"
@@ -675,7 +675,7 @@ function AuthPage() {
                     placeholder="+91 98220 00000"
                     value={workerPhone}
                     onChange={(e) => setWorkerPhone(e.target.value)}
-                    className="w-full h-8.5 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B]"
+                    className="w-full h-9.5 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs sm:text-[13px] font-bold text-gray-900 placeholder:text-xs sm:placeholder:text-[13px] focus:outline-none focus:ring-2 focus:ring-[#0A3B7B]"
                   />
                 </div>
               </div>
@@ -684,11 +684,11 @@ function AuthPage() {
 
           {/* EMPLOYER REGISTRATION FIELDS */}
           {mode === "register" && (role === "employer" || role === "admin") && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               <div>
-                <Label className="text-[10px] sm:text-[11px] font-extrabold text-gray-800 mb-0.5 block">Company Name *</Label>
+                <Label className="text-xs sm:text-[13px] font-extrabold text-gray-800 mb-1 block">Company Name *</Label>
                 <div className="relative">
-                  <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-gray-400" />
+                  <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
                   <input
                     required
                     type="text"
@@ -696,15 +696,15 @@ function AuthPage() {
                     placeholder="e.g. Tata Motors / L&T"
                     value={companyName}
                     onChange={(e) => setCompanyName(e.target.value)}
-                    className="w-full h-8.5 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B]"
+                    className="w-full h-9.5 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs sm:text-[13px] font-bold text-gray-900 placeholder:text-xs sm:placeholder:text-[13px] focus:outline-none focus:ring-2 focus:ring-[#0A3B7B]"
                   />
                 </div>
               </div>
 
               <div>
-                <Label className="text-[10px] sm:text-[11px] font-extrabold text-gray-800 mb-0.5 block">Mobile Number *</Label>
+                <Label className="text-xs sm:text-[13px] font-extrabold text-gray-800 mb-1 block">Mobile Number *</Label>
                 <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-gray-400" />
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
                   <input
                     required
                     type="tel"
@@ -712,7 +712,7 @@ function AuthPage() {
                     placeholder="+91 98220 00000"
                     value={employerPhone}
                     onChange={(e) => setEmployerPhone(e.target.value)}
-                    className="w-full h-8.5 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B]"
+                    className="w-full h-9.5 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs sm:text-[13px] font-bold text-gray-900 placeholder:text-xs sm:placeholder:text-[13px] focus:outline-none focus:ring-2 focus:ring-[#0A3B7B]"
                   />
                 </div>
               </div>
@@ -731,10 +731,10 @@ function AuthPage() {
                   </div>
                 )}
                 <div>
-                  <p className="text-[11px] font-extrabold text-[#0A3B7B]">
+                  <p className="text-xs sm:text-[13px] font-extrabold text-[#0A3B7B]">
                     {role === "employer" || role === "admin" ? "Company Logo / Photo" : "Profile Photo (प्रोफाईल फोटो)"}
                   </p>
-                  <p className="text-[10px] text-gray-500 font-bold">
+                  <p className="text-xs text-gray-500 font-bold">
                     {profilePhoto ? "✓ Photo Attached" : "Choose file or take live camera photo"}
                   </p>
                 </div>
@@ -742,8 +742,8 @@ function AuthPage() {
 
               {/* Action Buttons: 1. Upload File 2. Live Camera */}
               <div className="flex items-center gap-2 pt-0.5">
-                <label className="flex-1 py-1 px-2 rounded-lg bg-[#0A3B7B] text-white text-[10px] sm:text-[11px] font-black cursor-pointer hover:bg-[#072B5B] transition-colors shadow-xs flex items-center justify-center gap-1">
-                  <Upload className="size-3" /> {profilePhoto ? "Change" : "Upload File"}
+                <label className="flex-1 py-1.5 px-2.5 rounded-lg bg-[#0A3B7B] text-white text-xs sm:text-[13px] font-black cursor-pointer hover:bg-[#072B5B] transition-colors shadow-xs flex items-center justify-center gap-1.5">
+                  <Upload className="size-3.5" /> {profilePhoto ? "Change" : "Upload File"}
                   <input
                     type="file"
                     accept="image/*"
@@ -755,9 +755,9 @@ function AuthPage() {
                 <button
                   type="button"
                   onClick={startCamera}
-                  className="flex-1 py-1 px-2 rounded-lg bg-emerald-700 text-white text-[10px] sm:text-[11px] font-black hover:bg-emerald-800 transition-colors shadow-xs flex items-center justify-center gap-1 cursor-pointer"
+                  className="flex-1 py-1.5 px-2.5 rounded-lg bg-emerald-700 text-white text-xs sm:text-[13px] font-black hover:bg-emerald-800 transition-colors shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
                 >
-                  <Camera className="size-3" /> {lang === "mr" ? "कॅमेरा उघडा" : "Take Photo"}
+                  <Camera className="size-3.5" /> {lang === "mr" ? "कॅमेरा उघडा" : "Take Photo"}
                 </button>
               </div>
             </div>
@@ -765,7 +765,7 @@ function AuthPage() {
 
           {/* EMAIL OR MOBILE FIELD */}
           <div>
-            <Label htmlFor="email" className="text-[10px] sm:text-[11px] font-extrabold text-gray-800 mb-0.5 block">
+            <Label htmlFor="email" className="text-xs sm:text-[13px] font-extrabold text-gray-800 mb-1 block">
               {role === "employee" 
                 ? "Mobile Number (मोबाईल नंबर) *"
                 : mode === "login" 
@@ -774,9 +774,9 @@ function AuthPage() {
             </Label>
             <div className="relative">
               {mode === "login" && /^\d+$/.test(email.replace(/\D/g, "")) && email.length >= 5 ? (
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-[#0A3B7B]" />
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#0A3B7B]" />
               ) : (
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-gray-400" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
               )}
               <input
                 id="email"
@@ -786,7 +786,7 @@ function AuthPage() {
                 placeholder={role === "employee" ? "e.g. 98220 00000" : mode === "login" ? "Email or Mobile (e.g. 98220 00000 / user@gmail.com)" : "name@example.com (Optional)"}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full h-8.5 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B] shadow-xs"
+                className="w-full h-9.5 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs sm:text-[13px] font-bold text-gray-900 placeholder:text-gray-400 placeholder:text-xs sm:placeholder:text-[13px] focus:outline-none focus:ring-2 focus:ring-[#0A3B7B] shadow-xs"
               />
             </div>
           </div>
@@ -794,15 +794,15 @@ function AuthPage() {
           {/* PASSWORD FIELD */}
           {mode !== "forgot" && (
             <div>
-              <div className="flex justify-between items-center mb-0.5">
-                <Label htmlFor="password" className="text-[11px] font-extrabold text-gray-800">
+              <div className="flex justify-between items-center mb-1">
+                <Label htmlFor="password" className="text-xs sm:text-[13px] font-extrabold text-gray-800">
                   {role === "employee" ? "4-Digit PIN (पासकोड) *" : "Password *"}
                 </Label>
                 {mode === "login" && role !== "employee" && (
                   <button
                     type="button"
                     onClick={() => setMode("forgot")}
-                    className="text-[11px] font-bold text-[#0A3B7B] hover:underline"
+                    className="text-xs sm:text-[13px] font-bold text-[#0A3B7B] hover:underline"
                   >
                     Forgot Password?
                   </button>
@@ -810,7 +810,7 @@ function AuthPage() {
               </div>
 
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-gray-400" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
@@ -821,14 +821,14 @@ function AuthPage() {
                   maxLength={role === "employee" ? 4 : undefined}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full h-9.5 pl-9 pr-9 bg-white rounded-lg border border-gray-200 text-xs font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B] shadow-xs"
+                  className="w-full h-9.5 pl-9 pr-9 bg-white rounded-lg border border-gray-200 text-xs sm:text-[13px] font-bold text-gray-900 placeholder:text-gray-400 placeholder:text-xs sm:placeholder:text-[13px] focus:outline-none focus:ring-2 focus:ring-[#0A3B7B] shadow-xs"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
-                  {showPassword ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                 </button>
               </div>
             </div>
@@ -837,7 +837,7 @@ function AuthPage() {
           {/* OTP FIELD FOR REGISTRATION */}
           {mode === "register" && showOtpField && (
             <div className="mt-2 p-3 bg-emerald-50 rounded-lg border border-emerald-200 animate-in fade-in zoom-in-95 duration-300">
-              <Label htmlFor="otp" className="text-[11px] font-extrabold text-emerald-800 mb-1 block">
+              <Label htmlFor="otp" className="text-xs sm:text-[13px] font-extrabold text-emerald-800 mb-1 block">
                 Enter 6-Digit OTP *
               </Label>
               <div className="relative">
@@ -849,10 +849,10 @@ function AuthPage() {
                   maxLength={6}
                   value={inputOtp}
                   onChange={(e) => setInputOtp(e.target.value.replace(/\D/g, ""))}
-                  className="w-full h-9.5 px-3 bg-white rounded-lg border border-emerald-300 text-sm font-bold text-center tracking-widest text-emerald-900 placeholder:text-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm"
+                  className="w-full h-9.5 px-3 bg-white rounded-lg border border-emerald-300 text-sm sm:text-base font-bold text-center tracking-widest text-emerald-900 placeholder:text-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm"
                 />
               </div>
-              <p className="text-[10px] text-emerald-600 font-semibold mt-1 text-center">
+              <p className="text-xs text-emerald-600 font-semibold mt-1 text-center">
                 OTP sent successfully. Please check your SMS.
               </p>
             </div>
@@ -866,9 +866,9 @@ function AuthPage() {
                 id="remember"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="size-3.5 rounded border-gray-300 text-[#0A3B7B] focus:ring-[#0A3B7B] accent-[#0A3B7B] cursor-pointer"
+                className="size-4 rounded border-gray-300 text-[#0A3B7B] focus:ring-[#0A3B7B] accent-[#0A3B7B] cursor-pointer"
               />
-              <label htmlFor="remember" className="text-[11px] font-bold text-gray-700 cursor-pointer select-none">
+              <label htmlFor="remember" className="text-xs sm:text-[13px] font-bold text-gray-700 cursor-pointer select-none">
                 Remember me
               </label>
             </div>
@@ -878,25 +878,25 @@ function AuthPage() {
           <Button
             disabled={busy}
             type="submit"
-            className="w-full h-10 bg-[#0A3B7B] hover:bg-[#072B5B] text-white font-black text-xs rounded-lg shadow-md shadow-[#0A3B7B]/20 hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 mt-1"
+            className="w-full h-11 bg-[#0A3B7B] hover:bg-[#072B5B] text-white font-black text-sm sm:text-[15px] rounded-xl shadow-md shadow-[#0A3B7B]/20 hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 mt-1"
           >
             {busy ? (
               <Loader2 className="animate-spin size-4" />
             ) : mode === "register" ? (
               showOtpField ? (
                 <>
-                  <Check className="size-3.5" /> Verify OTP & Register
+                  <Check className="size-4" /> Verify OTP & Register
                 </>
               ) : (
                 <>
-                  <UserPlus className="size-3.5" /> Send OTP to Register
+                  <UserPlus className="size-4" /> Send OTP to Register
                 </>
               )
             ) : mode === "forgot" ? (
               "Send Reset Link"
             ) : (
               <>
-                <LogIn className="size-3.5" /> Sign In
+                <LogIn className="size-4" /> Sign In
               </>
             )}
           </Button>
@@ -904,7 +904,7 @@ function AuthPage() {
 
         {/* BOTTOM REGISTER LINK */}
         {role !== "employee" && (
-          <div className="mt-3 text-center text-[11px] font-bold text-gray-600">
+          <div className="mt-3 text-center text-xs sm:text-[13px] font-bold text-gray-600">
             {mode === "register" ? "Already have an account?" : "Don't have an account?"}{" "}
             <button
               type="button"

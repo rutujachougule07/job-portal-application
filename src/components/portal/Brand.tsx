@@ -11,8 +11,8 @@ export function LogoIcon({ className = "h-14" }: { className?: string }) {
 }
 
 export function Brand({
-  className = "h-14 sm:h-16",
-  to = "/superadmin",
+  className = "h-7.5 xs:h-8.5 sm:h-11 md:h-13",
+  to = "/",
 }: {
   className?: string;
   compact?: boolean;
@@ -22,15 +22,15 @@ export function Brand({
 }) {
   return (
     <Link
-      to={to as any}
-      className="inline-flex items-center gap-2 group select-none shrink-0 cursor-pointer"
+      to={(to || "/") as any}
+      className="inline-flex items-center gap-2 group select-none shrink min-w-0 cursor-pointer"
       aria-label="REAL JOB Logo"
-      title="REAL JOB — Super Admin Login"
+      title="REAL JOB"
     >
       <img
         src="/logo.png"
         alt="REAL JOB Logo"
-        className={`${className} object-contain transition-transform duration-200 group-hover:scale-105`}
+        className={`${className} max-w-full w-auto object-contain transition-transform duration-200 group-hover:scale-105`}
       />
     </Link>
   );

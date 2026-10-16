@@ -741,6 +741,7 @@ function AdminDashboardPage() {
     let overtime = 0;
     let totalOvertimeHours = 0;
     let netPay = 0;
+    const overtimeEntries: Array<{ date: string; day: number; overtimeHours: number }> = [];
 
     workerRecords.forEach((r) => {
       if (r.status === "Present") {
@@ -752,9 +753,12 @@ function AdminDashboardPage() {
       } else if (r.status === "Absent") {
         absent++;
       } else if (r.status === "Overtime") {
+        present++; // Working overtime counts as Present on that day!
         overtime++;
-        const otH = r.overtimeHours || 2;
+        const otH = r.overtimeHours !== undefined ? Number(r.overtimeHours) : 2;
         totalOvertimeHours += otH;
+        const dayNum = parseInt(r.date.split("-")[2] || "1", 10);
+        overtimeEntries.push({ date: r.date, day: dayNum, overtimeHours: otH });
         const shiftH = computeHoursFromTimes(worker.workShiftStart, worker.workShiftEnd) || 9;
         const otHourlyRate = worker.overtimeRate !== undefined && worker.overtimeRate !== null && Number(worker.overtimeRate) > 0
           ? Number(worker.overtimeRate)
@@ -762,6 +766,8 @@ function AdminDashboardPage() {
         netPay += Math.round(worker.dailyRate + (otH * otHourlyRate));
       }
     });
+
+    overtimeEntries.sort((a, b) => a.day - b.day);
 
     return {
       startDate,
@@ -771,6 +777,7 @@ function AdminDashboardPage() {
       halfDay,
       absent,
       overtime,
+      overtimeEntries,
       totalOvertimeHours,
       totalDays: workerRecords.length,
       daysInMonth: daysInTargetMonth,
@@ -5412,31 +5419,66 @@ function AdminDashboardPage() {
       {viewSlipWorker && (() => {
         const v = viewSlipWorker!;
         return (
-          <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in print:bg-white print:p-0">
-            <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl border border-slate-100 relative max-h-[90vh] overflow-y-auto print:max-h-none print:shadow-none print:border-none print:rounded-none">
-              <div className="print:hidden sticky top-0 bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between z-10 rounded-t-3xl">
-                <div className="flex flex-wrap items-center gap-3">
-                  <h3 className="font-black text-[#10233F] text-lg">{t("employeeSalarySlipsTitle")}</h3>
-                  <div className="flex bg-slate-100 rounded-lg p-1">
-                    <button onClick={() => setViewSlipPeriod("week")} className={`text-xs px-3 py-1 font-bold rounded-md ${viewSlipPeriod === "week" ? "bg-white shadow-sm text-[#063B78]" : "text-slate-500"}`}>{t("salarySlipPeriodWeek")}</button>
-                    <button onClick={() => setViewSlipPeriod("month")} className={`text-xs px-3 py-1 font-bold rounded-md ${viewSlipPeriod === "month" ? "bg-white shadow-sm text-[#063B78]" : "text-slate-500"}`}>{t("salarySlipPeriodMonth")}</button>
+          <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 animate-fade-in print:bg-white print:p-0">
+            <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl border border-slate-100 relative max-h-[92vh] overflow-y-auto print:max-h-none print:shadow-none print:border-none print:rounded-none">
+              <div className="print:hidden sticky top-0 bg-white border-b border-slate-200 px-4 sm:px-6 py-3 sm:py-4 z-10 rounded-t-3xl space-y-2.5">
+                {/* Row 1: Modal Title + Close Button */}
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="size-7 sm:size-8 rounded-lg bg-[#063B78]/10 text-[#063B78] flex items-center justify-center shrink-0">
+                      <FileText className="size-4" />
+                    </div>
+                    <h3 className="font-black text-[#10233F] text-base sm:text-lg truncate">
+                      {t("employeeSalarySlipsTitle")}
+                    </h3>
                   </div>
+
+                  <button
+                    onClick={() => setViewSlipWorker(null)}
+                    className="size-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center font-bold text-sm cursor-pointer shrink-0 transition-colors"
+                    title={t("closeBtn")}
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* Row 2: Filter Period, Month, Year & Date Range Controls */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex bg-slate-100 rounded-lg p-0.5 shrink-0">
+                    <button
+                      onClick={() => setViewSlipPeriod("week")}
+                      className={`text-xs px-2.5 py-1 font-bold rounded-md transition-all cursor-pointer ${
+                        viewSlipPeriod === "week" ? "bg-white shadow-xs text-[#063B78] font-black" : "text-slate-500 hover:text-slate-900"
+                      }`}
+                    >
+                      {t("salarySlipPeriodWeek")}
+                    </button>
+                    <button
+                      onClick={() => setViewSlipPeriod("month")}
+                      className={`text-xs px-2.5 py-1 font-bold rounded-md transition-all cursor-pointer ${
+                        viewSlipPeriod === "month" ? "bg-white shadow-xs text-[#063B78] font-black" : "text-slate-500 hover:text-slate-900"
+                      }`}
+                    >
+                      {t("salarySlipPeriodMonth")}
+                    </button>
+                  </div>
+
                   {/* Month Selector */}
                   <select
                     value={selectedSalaryMonth}
                     onChange={(e) => setSelectedSalaryMonth(e.target.value)}
-                    className="h-8 px-2.5 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 text-xs font-black text-[#063B78] focus:outline-none cursor-pointer"
+                    className="h-8 px-2.5 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 text-xs font-black text-[#063B78] focus:outline-none cursor-pointer shrink-0"
                   >
                     {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map((m) => (
                       <option key={m} value={m}>{m}</option>
                     ))}
                   </select>
 
-                  {/* Year Selector (2024, 2025, 2026, etc.) */}
+                  {/* Year Selector */}
                   <select
                     value={selectedSalaryYear}
                     onChange={(e) => setSelectedSalaryYear(e.target.value)}
-                    className="h-8 px-2.5 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 text-xs font-black text-[#063B78] focus:outline-none cursor-pointer"
+                    className="h-8 px-2.5 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 text-xs font-black text-[#063B78] focus:outline-none cursor-pointer shrink-0"
                   >
                     {["2023", "2024", "2025", "2026", "2027", "2028"].map((y) => (
                       <option key={y} value={y}>{y}</option>
@@ -5445,8 +5487,8 @@ function AdminDashboardPage() {
 
                   {/* If Week is selected, show Date Range picker e.g. 10 to 20 */}
                   {viewSlipPeriod === "week" && (
-                    <div className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200 text-xs">
-                      <span className="font-black text-slate-600 text-[11px]">{t("datesLabel")}</span>
+                    <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200 text-xs shrink-0">
+                      <span className="font-black text-slate-600 text-[10.5px]">{t("datesLabel")}</span>
                       <select
                         value={slipRangeStartDay}
                         onChange={(e) => {
@@ -5454,13 +5496,13 @@ function AdminDashboardPage() {
                           setSlipRangeStartDay(v);
                           if (v > slipRangeEndDay) setSlipRangeEndDay(v);
                         }}
-                        className="h-7 px-1.5 bg-white rounded border border-slate-200 text-xs font-black text-[#063B78] cursor-pointer"
+                        className="h-6 px-1 bg-white rounded border border-slate-200 text-xs font-black text-[#063B78] cursor-pointer"
                       >
                         {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
                           <option key={d} value={d}>Day {d}</option>
                         ))}
                       </select>
-                      <span className="font-bold text-slate-400">{t("toWord")}</span>
+                      <span className="font-bold text-slate-400 text-[10px]">{t("toWord")}</span>
                       <select
                         value={slipRangeEndDay}
                         onChange={(e) => {
@@ -5468,7 +5510,7 @@ function AdminDashboardPage() {
                           setSlipRangeEndDay(v);
                           if (v < slipRangeStartDay) setSlipRangeStartDay(v);
                         }}
-                        className="h-7 px-1.5 bg-white rounded border border-slate-200 text-xs font-black text-[#063B78] cursor-pointer"
+                        className="h-6 px-1 bg-white rounded border border-slate-200 text-xs font-black text-[#063B78] cursor-pointer"
                       >
                         {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
                           <option key={d} value={d}>Day {d}</option>
@@ -5477,7 +5519,7 @@ function AdminDashboardPage() {
                       <button
                         type="button"
                         onClick={() => { setSlipRangeStartDay(10); setSlipRangeEndDay(20); }}
-                        className={`ml-1 px-2 py-0.5 rounded text-[10px] font-black cursor-pointer border ${
+                        className={`px-1.5 py-0.5 rounded text-[10px] font-black cursor-pointer border ${
                           slipRangeStartDay === 10 && slipRangeEndDay === 20
                             ? "bg-[#063B78] text-white border-[#063B78]"
                             : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
@@ -5488,15 +5530,6 @@ function AdminDashboardPage() {
                       </button>
                     </div>
                   )}
-                </div>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => setViewSlipWorker(null)}
-                    className="text-slate-400 hover:text-slate-700 font-extrabold text-xl p-1 rounded-full hover:bg-slate-100 cursor-pointer"
-                    title={t("closeBtn")}
-                  >
-                    ✕
-                  </button>
                 </div>
               </div>
 
@@ -5586,7 +5619,11 @@ function AdminDashboardPage() {
 
                   const totalDaysInSelection = endDay - startDay + 1;
                   const totalWorkHours = (pDays * 8) + (hdDays * 4) + otHours;
-                  const totalEarningsDays = pDays + weeklyOffCount + (hdDays * 0.5) + otDays;
+                  const totalEarningsDays = pDays + weeklyOffCount + (hdDays * 0.5);
+
+                  const otDatesText = otDays > 0 && metrics.overtimeEntries && metrics.overtimeEntries.length > 0
+                    ? metrics.overtimeEntries.map(e => `${String(e.day).padStart(2, "0")} ${effectiveMonthName.slice(0, 3)} (${e.overtimeHours}h OT)`).join(", ")
+                    : undefined;
 
                   return (
                     <SalarySlip
@@ -5621,6 +5658,8 @@ function AdminDashboardPage() {
                       attendanceGrid={attendanceGrid}
                       absentDatesText={aDays > 0 ? `(${aDays} days absent)` : "No absent days recorded"}
                       halfDayDatesText={hdDays > 0 ? `(${hdDays} half days)` : "No half days recorded"}
+                      overtimeDatesText={otDatesText}
+                      overtimeEntries={metrics.overtimeEntries}
                       totalWorkHours={totalWorkHours}
                       totalEarningsDays={totalEarningsDays}
                     />
@@ -5681,6 +5720,7 @@ function AdminDashboardPage() {
             } else if (rec.status === "Absent") {
               absentCount++;
             } else if (rec.status === "Overtime") {
+              presentCount++; // Working overtime counts as Present on that day!
               overtimeCount++;
               const otH = rec.overtimeHours !== undefined ? Number(rec.overtimeHours) : 1;
               totalOvertimeHours += otH;
@@ -5995,7 +6035,7 @@ function AdminDashboardPage() {
                                 <div className="size-5 rounded-full bg-[#7C3AED] text-white flex items-center justify-center shrink-0 shadow-2xs">
                                   <Clock className="size-3" />
                                 </div>
-                                <span>{t("overtime")}</span>
+                                <span>{t("overtime")} (हजर + OT)</span>
                               </button>
 
                               {rec && (
@@ -6045,10 +6085,15 @@ function AdminDashboardPage() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <div className="size-6 rounded-full bg-[#7C3AED] text-white flex items-center justify-center shadow-2xs">
-                      <Clock className="size-3.5" />
+                    <div className="flex items-center gap-1 bg-emerald-50 border border-emerald-300 rounded-xl px-1.5 py-0.5 shadow-2xs">
+                      <div className="size-4 rounded-full bg-emerald-500 text-white flex items-center justify-center font-black text-[9px]">
+                        P
+                      </div>
+                      <span className="text-[10px] font-black text-[#7C3AED] bg-purple-100 px-1 rounded">
+                        +OT
+                      </span>
                     </div>
-                    <span className="font-extrabold text-slate-800">{t("overtime")} ({t("hoursWord")})</span>
+                    <span className="font-extrabold text-slate-800">{t("overtime")} (हजर + OT)</span>
                   </div>
                 </div>
 

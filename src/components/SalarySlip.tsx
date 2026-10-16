@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Download, Loader2, Building2, User, Calendar, ShieldCheck, Wallet, CheckCircle, Clock, Umbrella, XCircle, AlertCircle } from 'lucide-react';
+import { Download, Loader2, Building2, User, Calendar, ShieldCheck, Wallet, CheckCircle, Clock, Umbrella, XCircle, AlertCircle, Phone, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 
 export interface SalarySlipProps {
@@ -63,8 +63,15 @@ export interface SalarySlipProps {
   leaveEntitlement?: number;
   leaveAvailed?: number;
   leaveBalance?: number;
-  absentDatesText?: string;
-  halfDayDatesText?: string;
+  absentDatesText?: string | undefined;
+  halfDayDatesText?: string | undefined;
+  overtimeDatesText?: string | undefined;
+  overtimeEntries?: Array<{
+    date: string;
+    day: number;
+    overtimeHours: number;
+    workHours?: number;
+  }> | undefined;
   totalWorkHours?: number;
   totalEarningsDays?: number;
 
@@ -160,6 +167,8 @@ const SalarySlip: React.FC<SalarySlipProps> = ({
   leaveBalance,
   absentDatesText,
   halfDayDatesText,
+  overtimeDatesText,
+  overtimeEntries,
   totalWorkHours,
   totalEarningsDays,
   attendanceGrid,
@@ -218,6 +227,12 @@ const SalarySlip: React.FC<SalarySlipProps> = ({
   const resolvedHalfDayText = halfDayDatesText !== undefined
     ? halfDayDatesText
     : (computedHalfDays > 0 ? `(${computedHalfDays} half days)` : 'No half days recorded');
+
+  const resolvedOvertimeText = overtimeDatesText !== undefined
+    ? overtimeDatesText
+    : (overtimeEntries && overtimeEntries.length > 0
+        ? overtimeEntries.map(e => `${String(e.day).padStart(2, '0')} ${month.slice(0, 3)} (${e.overtimeHours}h OT)`).join(', ')
+        : (overtimeHours > 0 ? `${overtimeHours} hrs total` : ''));
 
   // Generate realistic attendance calendar based on active month
   const resolvedAttendanceGrid = attendanceGrid || (() => {
@@ -369,68 +384,117 @@ const SalarySlip: React.FC<SalarySlipProps> = ({
       >
 
         {/* ── 1. TOP HERO BANNER (Company Name Primary Header & REAL JOB Brand) ── */}
-        <div className="relative rounded-2xl overflow-hidden border border-slate-300 bg-gradient-to-r from-[#FFFFFF] via-[#F4F8FD] to-[#EBF3FC] p-3.5 sm:p-4 flex items-center justify-between min-h-[96px] gap-3">
-          {/* Left: Employer Company Name & Identity */}
-          <div className="flex items-center gap-3 z-10 flex-1 min-w-0">
-            <div className="size-14 sm:size-16 rounded-2xl bg-[#063B78] flex items-center justify-center p-1.5 shadow-md border-2 border-[#FFC400] shrink-0">
-              {companyLogo ? (
-                <img
-                  src={companyLogo}
-                  alt={companyName}
-                  className="w-full h-full object-contain"
-                  onError={(e) => {
-                    (e.target as HTMLElement).style.display = 'none';
-                  }}
-                />
-              ) : (
-                <Building2 className="size-8 text-[#FFC400]" />
-              )}
-            </div>
-            <div className="min-w-0 flex-1">
-              <h1 className="text-2xl sm:text-3xl font-black text-[#063B78] tracking-tight uppercase leading-tight truncate">
-                {companyName || "COMPANY NAME"}
-              </h1>
-              <div className="text-[11px] sm:text-xs font-black uppercase text-slate-600 tracking-wider leading-tight mt-0.5">
-                {companyTagline || "EMPLOYMENT & CONTRACTOR SERVICES"}
+        <div className="relative rounded-2xl overflow-hidden border border-slate-300 bg-gradient-to-r from-[#FFFFFF] via-[#F4F8FD] to-[#EBF3FC] p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
+          {/* Top Row / Left: Employer Company Name & Identity */}
+          <div className="flex items-center justify-between sm:justify-start gap-2.5 sm:gap-3 z-10 flex-1 min-w-0">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+              <div className="size-12 sm:size-16 rounded-xl sm:rounded-2xl bg-[#063B78] flex items-center justify-center p-1.5 shadow-md border-2 border-[#FFC400] shrink-0">
+                {companyLogo ? (
+                  <img
+                    src={companyLogo}
+                    alt={companyName}
+                    className="w-full h-full object-contain"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <Building2 className="size-6 sm:size-8 text-[#FFC400]" />
+                )}
               </div>
-              <p className="text-[9px] sm:text-[10px] text-slate-500 font-bold truncate mt-0.5 leading-tight">
-                {companyAddress || "Safe Work • Secure Future • Better Tomorrow"}
-              </p>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-lg sm:text-3xl font-black text-[#063B78] tracking-tight uppercase leading-tight truncate">
+                  {companyName || "COMPANY NAME"}
+                </h1>
+                <div className="text-[10px] sm:text-xs font-black uppercase text-slate-600 tracking-wider leading-tight mt-0.5 truncate">
+                  {companyTagline || "EMPLOYMENT & CONTRACTOR SERVICES"}
+                </div>
+                <p className="text-[9px] sm:text-[10px] text-slate-500 font-bold truncate mt-0.5 leading-tight">
+                  {companyAddress || "Safe Work • Secure Future • Better Tomorrow"}
+                </p>
+              </div>
+            </div>
+
+            {/* Mobile Only: Powered by REAL JOB tag on top right */}
+            <div className="sm:hidden flex flex-col items-end shrink-0 pl-2">
+              <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 leading-none">
+                Powered by
+              </span>
+              <div className="flex items-center gap-0.5 mt-0.5">
+                <span className="text-xs font-black text-[#063B78] tracking-tight">REAL</span>
+                <span className="text-xs font-black text-[#FFC400] tracking-tight">JOB</span>
+              </div>
+              <span className="text-[7.5px] font-bold text-slate-400 leading-none">India</span>
             </div>
           </div>
 
-          {/* Right: Powered by REAL JOB */}
-          <div className="relative z-10 flex flex-col items-end shrink-0 pl-3 border-l border-slate-200">
-            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">
-              Powered by
-            </span>
-            <div className="flex items-center gap-1 mt-0.5">
-              <span className="text-base sm:text-lg font-black text-[#063B78] tracking-tight">REAL</span>
-              <span className="text-base sm:text-lg font-black text-[#FFC400] tracking-tight">JOB</span>
+          {/* Desktop Right (sm+): Powered by REAL JOB & Official Contact Badge */}
+          <div className="hidden sm:flex relative z-10 flex-col items-end shrink-0 pl-3 sm:pl-4 border-l border-slate-200 justify-center">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">
+                Powered by
+              </span>
+              <div className="flex items-center gap-0.5">
+                <span className="text-base font-black text-[#063B78] tracking-tight">REAL</span>
+                <span className="text-base font-black text-[#FFC400] tracking-tight">JOB</span>
+                <span className="text-[8px] font-bold text-slate-400 ml-0.5">India</span>
+              </div>
             </div>
-            <span className="text-[8px] font-bold text-slate-400">India</span>
+
+            {/* Official Contact & Email Info Card */}
+            <div className="mt-1 flex flex-col items-end gap-1">
+              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white border border-blue-100 shadow-2xs">
+                <Mail className="size-3 text-[#1877F2] shrink-0" />
+                <span className="text-[9.5px] sm:text-[10px] font-bold text-slate-700 select-all">
+                  realjobandhiring@realjob.online
+                </span>
+              </div>
+              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white border border-emerald-100 shadow-2xs">
+                <Phone className="size-3 text-emerald-600 shrink-0" />
+                <span className="text-[10px] sm:text-[10.5px] font-black text-[#063B78] tracking-wider select-all">
+                  +91 99642 16090
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile Only (sm:hidden): Attractive Full-Width Contact Bar below company details */}
+          <div className="sm:hidden pt-2 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-1.5">
+            <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/95 border border-blue-100 shadow-2xs flex-1 min-w-0 justify-center">
+              <Mail className="size-3 text-[#1877F2] shrink-0" />
+              <span className="text-[9.5px] font-bold text-slate-700 truncate">
+                realjobandhiring@realjob.online
+              </span>
+            </div>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/95 border border-emerald-100 shadow-2xs shrink-0">
+              <Phone className="size-3 text-emerald-600 shrink-0" />
+              <span className="text-[10px] font-black text-[#063B78] tracking-wider">
+                +91 99642 16090
+              </span>
+            </div>
           </div>
         </div>
 
         {/* ── 2. TITLE BAR RIBBON (EMPLOYEE PAYSLIP + MONTH & PAY PERIOD) ── */}
-        <div className="bg-[#063B78] text-white rounded-xl px-4 py-2.5 flex flex-col sm:flex-row items-center justify-between gap-2 shadow-sm border border-blue-900">
-          <div className="flex items-center gap-2">
+        <div className="bg-[#063B78] text-white rounded-xl p-2.5 sm:px-4 sm:py-2.5 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 shadow-sm border border-blue-900">
+          <div className="flex items-center justify-center sm:justify-start gap-2">
             <div className="size-6 rounded-md bg-white/15 flex items-center justify-center text-white shrink-0">
               <Wallet size={14} className="text-[#FFC400]" />
             </div>
-            <h1 className="text-sm sm:text-base font-black tracking-wider uppercase text-white">
+            <h1 className="text-xs sm:text-base font-black tracking-wider uppercase text-white">
               EMPLOYEE PAYSLIP
             </h1>
           </div>
 
-          <div className="flex items-center gap-4 text-xs font-bold text-white/90">
+          <div className="flex flex-col xs:flex-row items-center justify-between sm:justify-end gap-1.5 sm:gap-4 text-[10px] sm:text-xs font-bold text-white/95 border-t sm:border-t-0 border-white/15 pt-1.5 sm:pt-0">
             <div className="flex items-center gap-1.5">
-              <Calendar size={13} className="text-[#FFC400]" />
-              <span>Month : <strong className="text-white font-black">{month} {year}</strong></span>
+              <Calendar size={12} className="text-[#FFC400] shrink-0" />
+              <span>Month : <strong className="text-white font-black whitespace-nowrap">{month} {year}</strong></span>
             </div>
             <span className="hidden sm:inline text-white/40">|</span>
-            <div className="text-[11px] sm:text-xs">
-              <span>Pay Period : <strong className="text-white font-black">{resolvedPayPeriod}</strong></span>
+            <div className="flex items-center gap-1 text-[9.5px] sm:text-xs">
+              <span className="text-white/80 whitespace-nowrap">Pay Period :</span>
+              <strong className="text-white font-black whitespace-nowrap">{resolvedPayPeriod}</strong>
             </div>
           </div>
         </div>
@@ -584,23 +648,28 @@ const SalarySlip: React.FC<SalarySlipProps> = ({
                       <div key={item.day} className="flex flex-col items-center">
                         <span className="text-[10px] font-black text-slate-700">{item.day}</span>
                         <span className="text-[9px] font-bold text-slate-500 leading-none mb-1">{item.weekday}</span>
-                        <span
-                          className={`size-6 rounded-md flex items-center justify-center text-[10px] font-black shadow-2xs ${
-                            item.status === 'P'
-                              ? 'bg-[#8CE0A7] text-[#0A5726] border border-[#64CF87]'
-                              : item.status === 'WO'
-                              ? 'bg-[#A2D4F8] text-[#064A7E] border border-[#78BFF4]'
-                              : item.status === 'A'
-                              ? 'bg-[#FCA5A5] text-[#991B1B] border border-[#F87171]'
-                              : item.status === 'HD'
-                              ? 'bg-[#C084FC] text-[#581C87] border border-[#A855F7]'
-                              : item.status === 'OT'
-                              ? 'bg-[#DDD6FE] text-[#6D28D9] border border-[#A78BFA]'
-                              : 'bg-slate-100 text-slate-400 border border-slate-300'
-                          }`}
-                        >
-                          {item.status}
-                        </span>
+                        {item.status === 'OT' ? (
+                          <span className="size-6 rounded-md flex flex-col items-center justify-center bg-[#8CE0A7] text-[#0A5726] border border-[#64CF87] shadow-2xs relative">
+                            <span className="text-[9px] font-black leading-none">P</span>
+                            <span className="text-[6px] font-black text-white bg-[#7C3AED] px-1 rounded-xs -mt-0.5 leading-tight">OT</span>
+                          </span>
+                        ) : (
+                          <span
+                            className={`size-6 rounded-md flex items-center justify-center text-[10px] font-black shadow-2xs ${
+                              item.status === 'P'
+                                ? 'bg-[#8CE0A7] text-[#0A5726] border border-[#64CF87]'
+                                : item.status === 'WO'
+                                ? 'bg-[#A2D4F8] text-[#064A7E] border border-[#78BFF4]'
+                                : item.status === 'A'
+                                ? 'bg-[#FCA5A5] text-[#991B1B] border border-[#F87171]'
+                                : item.status === 'HD'
+                                ? 'bg-[#C084FC] text-[#581C87] border border-[#A855F7]'
+                                : 'bg-slate-100 text-slate-400 border border-slate-300'
+                            }`}
+                          >
+                            {item.status}
+                          </span>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -611,23 +680,28 @@ const SalarySlip: React.FC<SalarySlipProps> = ({
                       <div key={item.day} className="flex flex-col items-center">
                         <span className="text-[10px] font-black text-slate-700">{item.day}</span>
                         <span className="text-[9px] font-bold text-slate-500 leading-none mb-1">{item.weekday}</span>
-                        <span
-                          className={`size-6 rounded-md flex items-center justify-center text-[10px] font-black shadow-2xs ${
-                            item.status === 'P'
-                              ? 'bg-[#8CE0A7] text-[#0A5726] border border-[#64CF87]'
-                              : item.status === 'WO'
-                              ? 'bg-[#A2D4F8] text-[#064A7E] border border-[#78BFF4]'
-                              : item.status === 'A'
-                              ? 'bg-[#FCA5A5] text-[#991B1B] border border-[#F87171]'
-                              : item.status === 'HD'
-                              ? 'bg-[#C084FC] text-[#581C87] border border-[#A855F7]'
-                              : item.status === 'OT'
-                              ? 'bg-[#DDD6FE] text-[#6D28D9] border border-[#A78BFA]'
-                              : 'bg-slate-100 text-slate-400 border border-slate-300'
-                          }`}
-                        >
-                          {item.status}
-                        </span>
+                        {item.status === 'OT' ? (
+                          <span className="size-6 rounded-md flex flex-col items-center justify-center bg-[#8CE0A7] text-[#0A5726] border border-[#64CF87] shadow-2xs relative">
+                            <span className="text-[9px] font-black leading-none">P</span>
+                            <span className="text-[6px] font-black text-white bg-[#7C3AED] px-1 rounded-xs -mt-0.5 leading-tight">OT</span>
+                          </span>
+                        ) : (
+                          <span
+                            className={`size-6 rounded-md flex items-center justify-center text-[10px] font-black shadow-2xs ${
+                              item.status === 'P'
+                                ? 'bg-[#8CE0A7] text-[#0A5726] border border-[#64CF87]'
+                                : item.status === 'WO'
+                                ? 'bg-[#A2D4F8] text-[#064A7E] border border-[#78BFF4]'
+                                : item.status === 'A'
+                                ? 'bg-[#FCA5A5] text-[#991B1B] border border-[#F87171]'
+                                : item.status === 'HD'
+                                ? 'bg-[#C084FC] text-[#581C87] border border-[#A855F7]'
+                                : 'bg-slate-100 text-slate-400 border border-slate-300'
+                            }`}
+                          >
+                            {item.status}
+                          </span>
+                        )}
                       </div>
                     ))}
                     {resolvedAttendanceGrid.length < 32 && (
@@ -656,8 +730,11 @@ const SalarySlip: React.FC<SalarySlipProps> = ({
                 <span className="text-slate-700 font-black">HD - Half Day</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="size-3.5 rounded-sm bg-[#DDD6FE] border border-[#A78BFA] flex items-center justify-center text-[8px] font-black text-[#6D28D9]">OT</span>
-                <span className="text-slate-700 font-black">OT - Overtime</span>
+                <span className="size-3.5 rounded-sm bg-[#8CE0A7] border border-[#64CF87] flex flex-col items-center justify-center text-[6px] font-black text-[#0A5726] leading-none">
+                  <span>P</span>
+                  <span className="text-[5px] text-white bg-[#7C3AED] px-0.5 rounded-2xs leading-none">OT</span>
+                </span>
+                <span className="text-slate-700 font-black">P (OT) - Present + Overtime</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="size-3.5 rounded-sm bg-[#A2D4F8] border border-[#78BFF4] flex items-center justify-center text-[8px] font-black text-[#064A7E]">WO</span>
@@ -713,9 +790,16 @@ const SalarySlip: React.FC<SalarySlipProps> = ({
                 <span>Total Work Hours</span>
                 <strong className="text-slate-900">: {computedWorkHours} Hrs</strong>
               </div>
-              <div className="flex justify-between">
-                <span>Overtime Hours</span>
-                <strong className="text-purple-700">: {overtimeHours} Hrs</strong>
+              <div>
+                <div className="flex justify-between">
+                  <span>Overtime Hours</span>
+                  <strong className="text-purple-700">: {overtimeHours} Hrs</strong>
+                </div>
+                {resolvedOvertimeText && (
+                  <div className="text-[10px] text-purple-700 font-medium pl-1 leading-tight pt-0.5">
+                    Dates & Work Time: {resolvedOvertimeText}
+                  </div>
+                )}
               </div>
               <div className="flex justify-between">
                 <span>Overtime Rate</span>
@@ -738,9 +822,13 @@ const SalarySlip: React.FC<SalarySlipProps> = ({
 
         </div>
 
-
-
-
+        {/* ── 6. OFFICIAL FOOTER NOTE ── */}
+        <div className="pt-2 border-t border-slate-200/90 flex flex-col sm:flex-row items-center justify-between gap-1 text-[9px] text-slate-500 font-semibold">
+          <span>This is a computer-generated salary slip and does not require a physical signature.</span>
+          <span className="text-[#063B78] font-bold">
+            Support: realjobandhiring@realjob.online &bull; +91 99642 16090
+          </span>
+        </div>
 
       </div>
 

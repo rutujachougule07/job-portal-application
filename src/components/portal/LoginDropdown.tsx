@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 import { Link } from "@tanstack/react-router";
 import { User, Briefcase, ShieldCheck, ChevronDown } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 
 export function LoginDropdown({ className = "" }: { className?: string }) {
+  const { t, lang } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -88,7 +90,7 @@ export function LoginDropdown({ className = "" }: { className?: string }) {
 
         {/* Text: hidden on mobile (< sm), shown on tablet & desktop (sm+) */}
         <span className="hidden sm:inline font-extrabold text-[#10233F] text-sm sm:text-[15px] whitespace-nowrap">
-          Login as
+          {lang === "en" ? "Login as" : t("signIn")}
         </span>
 
         {/* Chevron Icon: hidden on mobile (< sm), shown on tablet & desktop (sm+) */}
@@ -102,7 +104,7 @@ export function LoginDropdown({ className = "" }: { className?: string }) {
       {/* ── Floating Popover Menu (Matching User Mockup Image) ── */}
       {isOpen && (
         <div
-          className="absolute right-0 top-full pt-2 w-64 sm:w-72 max-w-[calc(100vw-1.5rem)] z-[9999] animate-in fade-in-50 zoom-in-95 origin-top-right"
+          className="absolute right-0 top-full pt-2 w-52 xs:w-56 sm:w-68 max-w-[calc(100vw-1.5rem)] z-[9999] animate-in fade-in-50 zoom-in-95 origin-top-right"
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         >
@@ -111,50 +113,50 @@ export function LoginDropdown({ className = "" }: { className?: string }) {
             <div className="w-3.5 h-3.5 bg-white rotate-45 border-t border-l border-slate-200 shadow-2xs"></div>
           </div>
 
-          {/* Card Container */}
-          <div className="relative z-10 rounded-3xl bg-white border border-slate-200/90 p-3 sm:p-3.5 shadow-2xl space-y-2.5">
+          {/* Card Container (Compact on mobile) */}
+          <div className="relative z-10 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/90 p-2 sm:p-3 shadow-2xl space-y-1.5 sm:space-y-2.5">
             {/* 1. Seeker Login */}
             <Link
               to="/auth"
               search={{ mode: "login", role: "worker" }}
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-3.5 p-2.5 sm:p-3 rounded-2xl bg-[#EEF5FF] hover:bg-[#E0EEFF] active:scale-[0.98] transition-all group cursor-pointer"
+              className="flex items-center gap-2.5 sm:gap-3.5 p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-[#EEF5FF] hover:bg-[#E0EEFF] active:scale-[0.98] transition-all group cursor-pointer"
             >
-              <div className="size-11 rounded-full bg-[#D6E8FF] flex items-center justify-center text-[#1877F2] shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
-                <User className="size-5 stroke-[2.2]" />
+              <div className="size-9 sm:size-10 rounded-full bg-[#D6E8FF] flex items-center justify-center text-[#1877F2] shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
+                <User className="size-4 sm:size-4.5 stroke-[2.2]" />
               </div>
-              <span className="text-sm font-black text-[#10233F] group-hover:text-[#1877F2]">
-                Seeker Login
+              <span className="text-xs sm:text-sm font-black text-[#10233F] group-hover:text-[#1877F2]">
+                {t("seekerLogin")}
               </span>
             </Link>
 
-            {/* 2. Employee Login */}
-            <Link
-              to="/auth"
-              search={{ mode: "login", role: "employee" }}
-              onClick={() => setIsOpen(false)}
-              className="flex items-center gap-3.5 p-2.5 sm:p-3 rounded-2xl bg-[#EDF9F2] hover:bg-[#DDF4E6] active:scale-[0.98] transition-all group cursor-pointer"
-            >
-              <div className="size-11 rounded-full bg-[#D1F3E0] flex items-center justify-center text-[#059669] shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
-                <Briefcase className="size-5 stroke-[2.2]" />
-              </div>
-              <span className="text-sm font-black text-[#10233F] group-hover:text-[#059669]">
-                Employee Login
-              </span>
-            </Link>
-
-            {/* 3. Job Poster Login */}
+            {/* 2. Job Poster Login */}
             <Link
               to="/auth"
               search={{ mode: "login", role: "admin" }}
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-3.5 p-2.5 sm:p-3 rounded-2xl bg-[#FFF6EA] hover:bg-[#FFEED8] active:scale-[0.98] transition-all group cursor-pointer"
+              className="flex items-center gap-2.5 sm:gap-3.5 p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-[#FFF6EA] hover:bg-[#FFEED8] active:scale-[0.98] transition-all group cursor-pointer"
             >
-              <div className="size-11 rounded-full bg-[#FFE8CC] flex items-center justify-center text-[#D97706] shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
-                <ShieldCheck className="size-5 stroke-[2.2]" />
+              <div className="size-9 sm:size-10 rounded-full bg-[#FFE8CC] flex items-center justify-center text-[#D97706] shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
+                <ShieldCheck className="size-4 sm:size-4.5 stroke-[2.2]" />
               </div>
-              <span className="text-sm font-black text-[#10233F] group-hover:text-[#D97706]">
-                Job Poster Login
+              <span className="text-xs sm:text-sm font-black text-[#10233F] group-hover:text-[#D97706]">
+                {t("adminLogin")}
+              </span>
+            </Link>
+
+            {/* 3. Employee Login */}
+            <Link
+              to="/auth"
+              search={{ mode: "login", role: "employee" }}
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-2.5 sm:gap-3.5 p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-[#EDF9F2] hover:bg-[#DDF4E6] active:scale-[0.98] transition-all group cursor-pointer"
+            >
+              <div className="size-9 sm:size-10 rounded-full bg-[#D1F3E0] flex items-center justify-center text-[#059669] shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
+                <Briefcase className="size-4 sm:size-4.5 stroke-[2.2]" />
+              </div>
+              <span className="text-xs sm:text-sm font-black text-[#10233F] group-hover:text-[#059669]">
+                {t("employeeLogin")}
               </span>
             </Link>
           </div>
