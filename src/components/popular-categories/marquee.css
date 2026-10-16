@@ -14,9 +14,9 @@
   animation: marquee 30s linear infinite;
 }
 
-/* Pause animation on hover */
+/* Keep animation running continuously on hover */
 .animate-marquee-slow:hover {
-  animation-play-state: paused;
+  animation-play-state: running;
 }
 
 @media (prefers-reduced-motion: reduce) {

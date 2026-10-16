@@ -162,7 +162,7 @@ function SuperAdminPage() {
         localStorage.removeItem("realjob_admin_auth");
         const saved = sessionStorage.getItem("realjob_admin_auth");
         return !!saved;
-      } catch {}
+      } catch { }
     }
     return false;
   });
@@ -219,7 +219,7 @@ function SuperAdminPage() {
     const savedAbout = localStorage.getItem("cms_aboutData");
     const savedPillars = localStorage.getItem("cms_companyPillars");
     const savedCategories = localStorage.getItem("cms_categories");
-    
+
     if (savedTitle) setHeroTitle(savedTitle);
     if (savedSubtitle) setHeroSubtitle(savedSubtitle);
     if (savedImages) setHeroImages(JSON.parse(savedImages));
@@ -228,7 +228,7 @@ function SuperAdminPage() {
     if (savedPillars) {
       try {
         setCompanyPillars(JSON.parse(savedPillars));
-      } catch (e) {}
+      } catch (e) { }
     }
     if (savedCategories) setCategories(JSON.parse(savedCategories));
 
@@ -299,7 +299,7 @@ function SuperAdminPage() {
       try {
         const saved = sessionStorage.getItem("realjob_admin_auth");
         if (saved) return JSON.parse(saved);
-      } catch {}
+      } catch { }
     }
     return { isSuperAdmin: true };
   });
@@ -329,7 +329,7 @@ function SuperAdminPage() {
       try {
         sessionStorage.removeItem("realjob_admin_auth");
         localStorage.removeItem("realjob_admin_auth");
-      } catch {}
+      } catch { }
     };
   }, []);
 
@@ -436,7 +436,7 @@ function SuperAdminPage() {
     } else {
       const exists = subAdmins.some(
         s => s.email.toLowerCase() === cleanEmail ||
-             (s.username && s.username.toLowerCase() === cleanUsername)
+          (s.username && s.username.toLowerCase() === cleanUsername)
       );
       if (exists) {
         toast.error("An admin with this email or username already exists!");
@@ -607,7 +607,7 @@ function SuperAdminPage() {
           const MAX_HEIGHT = 600; // reduced max height
           let width = img.width;
           let height = img.height;
-          
+
           if (width > height) {
             if (width > MAX_WIDTH) {
               height *= MAX_WIDTH / width;
@@ -619,12 +619,12 @@ function SuperAdminPage() {
               height = MAX_HEIGHT;
             }
           }
-          
+
           canvas.width = width;
           canvas.height = height;
           const ctx = canvas.getContext("2d");
           ctx?.drawImage(img, 0, 0, width, height);
-          
+
           const compressedBase64 = canvas.toDataURL("image/webp", 0.5); // WebP format for much better compression
           setHeroImages(prev => [...prev, compressedBase64]);
         };
@@ -830,7 +830,7 @@ function SuperAdminPage() {
           const MAX_HEIGHT = 800;
           let width = img.width;
           let height = img.height;
-          
+
           if (width > height) {
             if (width > MAX_WIDTH) {
               height *= MAX_WIDTH / width;
@@ -842,12 +842,12 @@ function SuperAdminPage() {
               height = MAX_HEIGHT;
             }
           }
-          
+
           canvas.width = width;
           canvas.height = height;
           const ctx = canvas.getContext("2d");
           ctx?.drawImage(img, 0, 0, width, height);
-          
+
           const compressedBase64 = canvas.toDataURL("image/jpeg", 0.7);
           setAboutData(prev => ({ ...prev, image: compressedBase64 }));
         };
@@ -859,15 +859,8 @@ function SuperAdminPage() {
 
   const handleSaveCMS = async () => {
     try {
-      localStorage.setItem("cms_heroTitle", heroTitle);
-      localStorage.setItem("cms_heroSubtitle", heroSubtitle);
-      localStorage.setItem("cms_metrics", JSON.stringify(metrics));
-      localStorage.setItem("cms_aboutData", JSON.stringify(aboutData));
-      localStorage.setItem("cms_companyPillars", JSON.stringify(companyPillars));
-      localStorage.setItem("cms_categories", JSON.stringify(categories));
-      localStorage.setItem("cms_heroImages", JSON.stringify(heroImages));
-
-      // Sync to Firebase Firestore cloud so Vercel and all devices get the update immediately
+      // 1. Sync to Firebase Firestore cloud FIRST so mobile app and all domain users get updates immediately
+      let cloudSynced = false;
       try {
         const { db } = await import("@/firebase");
         const { doc, setDoc } = await import("firebase/firestore");
@@ -881,14 +874,32 @@ function SuperAdminPage() {
           categories,
           updatedAt: new Date().toISOString(),
         }, { merge: true });
+        cloudSynced = true;
       } catch (cloudErr) {
         console.warn("Could not sync to Firestore cloud:", cloudErr);
       }
-      
-      toast.success("✅ Landing page content updated and synced to cloud successfully!");
+
+      // 2. Also save to browser localStorage for instant local preview
+      try {
+        localStorage.setItem("cms_heroTitle", heroTitle);
+        localStorage.setItem("cms_heroSubtitle", heroSubtitle);
+        localStorage.setItem("cms_metrics", JSON.stringify(metrics));
+        localStorage.setItem("cms_aboutData", JSON.stringify(aboutData));
+        localStorage.setItem("cms_companyPillars", JSON.stringify(companyPillars));
+        localStorage.setItem("cms_categories", JSON.stringify(categories));
+        localStorage.setItem("cms_heroImages", JSON.stringify(heroImages));
+      } catch (storageErr) {
+        console.warn("localStorage quota exceeded, but cloud sync completed:", storageErr);
+      }
+
+      if (cloudSynced) {
+        toast.success("✅ लँडिंग पेजचे बदल यशस्वीरीत्या सेव्ह झाले व ॲप/क्लाउडवर सिंक झाले!");
+      } else {
+        toast.success("✅ Landing page content updated locally!");
+      }
     } catch (e) {
       console.error("Failed to save CMS data:", e);
-      toast.error("Failed to save! If you uploaded new images, they might be too large (Browser limit is 5MB). Please try uploading smaller images.");
+      toast.error("सेव्ह करताना त्रुटी आली. कृपया फोटो साईज 2MB पेक्षा कमी ठेवा.");
     }
   };
 
@@ -906,7 +917,7 @@ function SuperAdminPage() {
       dataStore.findSubAdminByLogin(enteredCredential) ||
       dataStore.getSubAdmins().find(
         s => s.email.trim().toLowerCase() === enteredCredential ||
-             (s.username && s.username.trim().toLowerCase() === enteredCredential)
+          (s.username && s.username.trim().toLowerCase() === enteredCredential)
       );
 
     if (matchingSubAdmin) {
@@ -1012,12 +1023,12 @@ function SuperAdminPage() {
   };
 
   const totalUsersCount = allUsers.length;
-  
+
   const totalRevenueNumber = packagePurchases.reduce((acc, tx) => acc + (tx.price || 0), 0);
-  const formattedRevenue = totalRevenueNumber >= 1000000 
-    ? `₹${(totalRevenueNumber / 1000000).toFixed(1)}M` 
-    : totalRevenueNumber >= 1000 
-      ? `₹${(totalRevenueNumber / 1000).toFixed(1)}K` 
+  const formattedRevenue = totalRevenueNumber >= 1000000
+    ? `₹${(totalRevenueNumber / 1000000).toFixed(1)}M`
+    : totalRevenueNumber >= 1000
+      ? `₹${(totalRevenueNumber / 1000).toFixed(1)}K`
       : `₹${totalRevenueNumber}`;
 
   const stats = [
@@ -1043,7 +1054,7 @@ function SuperAdminPage() {
             <p className="text-xs sm:text-[13px] font-bold text-[#5B6B7F] mt-1">Superadmin Control & Sub-Admin Work Access</p>
             <p className="text-xs sm:text-[13px] font-semibold text-[#0A4F9E] mt-0.5">सुपरॲडमिन किंवा सब-ॲडमिन युझरनेम/ईमेल व पासवर्डने लॉगिन करा</p>
           </div>
-          
+
           <form onSubmit={handleLogin} className="p-8 space-y-4">
             <div>
               <label className="block text-xs sm:text-[13px] font-black text-[#5B6B7F] uppercase tracking-wider mb-2">
@@ -1051,8 +1062,8 @@ function SuperAdminPage() {
               </label>
               <div className="relative group">
                 <Users className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-[#9DAEC5] group-focus-within:text-[#063B78] transition-colors" />
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
@@ -1068,8 +1079,8 @@ function SuperAdminPage() {
               </label>
               <div className="relative group">
                 <Key className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-[#9DAEC5] group-focus-within:text-[#063B78] transition-colors" />
-                <input 
-                  type="password" 
+                <input
+                  type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -1078,14 +1089,14 @@ function SuperAdminPage() {
                 />
               </div>
             </div>
-            
+
             <div className="pt-2">
               <Button type="submit" disabled={loginBusy} className="w-full h-12 bg-gradient-to-r from-[#063B78] to-[#0A4F9E] hover:from-[#0A4F9E] hover:to-[#063B78] text-white font-black rounded-xl text-sm sm:text-base shadow-lg shadow-[#063B78]/20 transition-all active:scale-95 border-b-[3px] border-[#021D3D] disabled:opacity-50 cursor-pointer">
                 {loginBusy ? "Authenticating..." : "Sign In to Admin Panel"}
               </Button>
             </div>
           </form>
-          
+
           <div className="p-4 text-center bg-[#F8FAFF] text-[11px] sm:text-xs uppercase font-black text-[#9DAEC5] tracking-widest border-t border-[#E0E8F5]">
             Protected by REAL JOB Multi-Tier Role Security
           </div>
@@ -1098,7 +1109,7 @@ function SuperAdminPage() {
     <div className="h-screen bg-[#F0F4FA] flex font-sans w-full overflow-hidden">
       {/* Mobile Sidebar Backdrop */}
       {mobileSidebarOpen && (
-        <div 
+        <div
           onClick={() => setMobileSidebarOpen(false)}
           className="fixed inset-0 bg-[#021D3D]/60 backdrop-blur-xs z-40 md:hidden"
         />
@@ -1121,7 +1132,7 @@ function SuperAdminPage() {
             </div>
           </div>
           {mobileSidebarOpen && (
-            <button 
+            <button
               onClick={() => setMobileSidebarOpen(false)}
               className="md:hidden text-white/70 hover:text-white p-1"
             >
@@ -1147,33 +1158,32 @@ function SuperAdminPage() {
               return currentAdminRole.subAdmin?.permissions.includes(item.permission as SubAdminPermission);
             })
             .map((item) => (
-            <button
-              key={item.id}
-              onClick={() => {
-                setActiveTab(item.id);
-                setMobileSidebarOpen(false);
-              }}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200 ${
-                activeTab === item.id
-                  ? "bg-[#D4AF37] text-[#021D3D] shadow-md shadow-[#D4AF37]/20"
-                  : "text-[#9DAEC5] hover:bg-white/5 hover:text-white"
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <item.icon className="size-4" />
-                {item.label}
-              </div>
-              {item.count ? (
-                <span className="px-2 py-0.5 text-[11px] font-black rounded-full bg-amber-500 text-white animate-pulse">
-                  {item.count}
-                </span>
-              ) : null}
-            </button>
-          ))}
+              <button
+                key={item.id}
+                onClick={() => {
+                  setActiveTab(item.id);
+                  setMobileSidebarOpen(false);
+                }}
+                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200 ${activeTab === item.id
+                    ? "bg-[#D4AF37] text-[#021D3D] shadow-md shadow-[#D4AF37]/20"
+                    : "text-[#9DAEC5] hover:bg-white/5 hover:text-white"
+                  }`}
+              >
+                <div className="flex items-center gap-3">
+                  <item.icon className="size-4" />
+                  {item.label}
+                </div>
+                {item.count ? (
+                  <span className="px-2 py-0.5 text-[11px] font-black rounded-full bg-amber-500 text-white animate-pulse">
+                    {item.count}
+                  </span>
+                ) : null}
+              </button>
+            ))}
         </div>
 
         <div className="p-4 border-t border-white/10 shrink-0 mt-auto">
-          <button 
+          <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-[#9DAEC5] hover:bg-red-500/10 hover:text-red-400 transition-all"
           >
@@ -1200,9 +1210,9 @@ function SuperAdminPage() {
           <div className="flex items-center gap-4">
             <div className="relative hidden md:block">
               <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#9DAEC5]" />
-              <input 
-                type="text" 
-                placeholder="Global search..." 
+              <input
+                type="text"
+                placeholder="Global search..."
                 className="w-64 h-10 pl-10 pr-4 rounded-full bg-[#F8FAFF] border border-[#DCE5F0] text-sm font-semibold focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-[#D4AF37] outline-none transition-all text-[#063B78]"
               />
             </div>
@@ -1298,7 +1308,7 @@ function SuperAdminPage() {
                   </div>
 
                   <div className="pt-6 border-t border-[#E0E8F5] mt-4 space-y-2">
-                    <Button 
+                    <Button
                       onClick={handleClearAllData}
                       variant="outline"
                       className="w-full text-xs font-bold text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
@@ -1317,11 +1327,10 @@ function SuperAdminPage() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <button
                   onClick={() => setApprovalFilter("pending")}
-                  className={`p-5 rounded-2xl border text-left transition-all ${
-                    approvalFilter === "pending"
+                  className={`p-5 rounded-2xl border text-left transition-all ${approvalFilter === "pending"
                       ? "bg-amber-500 text-white border-amber-600 shadow-lg shadow-amber-500/20"
                       : "bg-white border-[#E0E8F5] text-[#063B78] hover:bg-[#F8FAFF]"
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-black uppercase tracking-wider opacity-90">⏳ Pending Approval</span>
@@ -1333,11 +1342,10 @@ function SuperAdminPage() {
 
                 <button
                   onClick={() => setApprovalFilter("approved")}
-                  className={`p-5 rounded-2xl border text-left transition-all ${
-                    approvalFilter === "approved"
+                  className={`p-5 rounded-2xl border text-left transition-all ${approvalFilter === "approved"
                       ? "bg-emerald-600 text-white border-emerald-700 shadow-lg shadow-emerald-600/20"
                       : "bg-white border-[#E0E8F5] text-[#063B78] hover:bg-[#F8FAFF]"
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-black uppercase tracking-wider opacity-90">✅ Approved Jobs</span>
@@ -1349,11 +1357,10 @@ function SuperAdminPage() {
 
                 <button
                   onClick={() => setApprovalFilter("rejected")}
-                  className={`p-5 rounded-2xl border text-left transition-all ${
-                    approvalFilter === "rejected"
+                  className={`p-5 rounded-2xl border text-left transition-all ${approvalFilter === "rejected"
                       ? "bg-red-600 text-white border-red-700 shadow-lg shadow-red-600/20"
                       : "bg-white border-[#E0E8F5] text-[#063B78] hover:bg-[#F8FAFF]"
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-black uppercase tracking-wider opacity-90">❌ Rejected Jobs</span>
@@ -1377,11 +1384,10 @@ function SuperAdminPage() {
                     <button
                       key={btn.id}
                       onClick={() => setApprovalFilter(btn.id as any)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                        approvalFilter === btn.id
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${approvalFilter === btn.id
                           ? "bg-[#063B78] text-white shadow-sm"
                           : "bg-[#F8FAFF] text-[#5B6B7F] hover:bg-[#E0E8F5]"
-                      }`}
+                        }`}
                     >
                       {btn.label}
                     </button>
@@ -1631,11 +1637,10 @@ function SuperAdminPage() {
                     <button
                       key={btn.id}
                       onClick={() => setUserRoleFilter(btn.id as any)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                        userRoleFilter === btn.id
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${userRoleFilter === btn.id
                           ? "bg-[#063B78] text-white shadow-sm"
                           : "bg-[#F8FAFF] text-[#5B6B7F] hover:bg-[#E0E8F5]"
-                      }`}
+                        }`}
                     >
                       {btn.label}
                     </button>
@@ -1812,11 +1817,10 @@ function SuperAdminPage() {
                     <button
                       key={st}
                       onClick={() => setAppStatusFilter(st)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                        appStatusFilter === st
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${appStatusFilter === st
                           ? "bg-[#063B78] text-white shadow-sm"
                           : "bg-[#F8FAFF] text-[#5B6B7F] hover:bg-[#E0E8F5]"
-                      }`}
+                        }`}
                     >
                       {st === "all" ? `All (${allApplications.length})` : st}
                     </button>
@@ -1886,15 +1890,14 @@ function SuperAdminPage() {
                               <td className="p-4 font-bold text-[#063B78]">{a.companyName}</td>
                               <td className="p-4">
                                 <span
-                                  className={`px-2.5 py-1 rounded-full text-[11px] font-black inline-flex items-center gap-1 ${
-                                    a.status === "Selected"
+                                  className={`px-2.5 py-1 rounded-full text-[11px] font-black inline-flex items-center gap-1 ${a.status === "Selected"
                                       ? "bg-emerald-100 text-emerald-800"
                                       : a.status === "Shortlisted"
-                                      ? "bg-amber-100 text-amber-800"
-                                      : a.status === "Rejected"
-                                      ? "bg-red-100 text-red-800"
-                                      : "bg-blue-100 text-blue-800"
-                                  }`}
+                                        ? "bg-amber-100 text-amber-800"
+                                        : a.status === "Rejected"
+                                          ? "bg-red-100 text-red-800"
+                                          : "bg-blue-100 text-blue-800"
+                                    }`}
                                 >
                                   {a.status}
                                 </span>
@@ -1923,7 +1926,7 @@ function SuperAdminPage() {
             <div className="space-y-6 animate-in fade-in duration-500">
               <div className="bg-white p-6 rounded-2xl border border-[#E0E8F5] shadow-sm">
                 <h3 className="text-lg font-black text-[#063B78] mb-6">Landing Page Settings</h3>
-                
+
                 <div>
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
                     <div>
@@ -2031,16 +2034,16 @@ function SuperAdminPage() {
                             <label className="cursor-pointer flex-1 flex items-center justify-center bg-[#F8FAFF] hover:bg-[#E0E8F5] text-[#063B78] border border-[#DCE5F0] text-xs font-bold py-1.5 rounded-lg transition-colors gap-1">
                               {isVideo ? <Video className="size-3 text-emerald-600" /> : <ImageIcon className="size-3 text-blue-600" />}
                               <span>{isVideo ? "Edit Video" : "Edit Image"}</span>
-                              <input 
-                                type="file" 
-                                accept={isVideo ? "video/mp4,video/webm,video/ogg,video/quicktime,video/*" : "image/*"} 
-                                className="hidden" 
+                              <input
+                                type="file"
+                                accept={isVideo ? "video/mp4,video/webm,video/ogg,video/quicktime,video/*" : "image/*"}
+                                className="hidden"
                                 onChange={(e) => handleEditMedia(e, i, isVideo)}
                               />
                             </label>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
+                            <Button
+                              variant="outline"
+                              size="sm"
                               className="flex-1 h-8 text-xs border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 font-bold"
                               onClick={() => {
                                 const newImages = [...heroImages];
@@ -2054,7 +2057,7 @@ function SuperAdminPage() {
                         </div>
                       );
                     })}
-                    
+
                     {/* Add Image Card */}
                     <label className="border-2 border-dashed border-[#DCE5F0] hover:border-[#063B78] rounded-xl aspect-video flex flex-col items-center justify-center cursor-pointer transition-colors bg-[#F8FAFF] hover:bg-[#E0E8F5]/50 group">
                       <div className="size-9 rounded-full bg-blue-50 text-[#063B78] flex items-center justify-center mb-1 group-hover:scale-110 transition-transform shadow-2xs">
@@ -2062,10 +2065,10 @@ function SuperAdminPage() {
                       </div>
                       <span className="text-[#063B78] font-bold text-xs sm:text-sm">+ Add Image</span>
                       <span className="text-[10px] text-[#5B6B7F] mt-0.5 px-2 text-center">Click or Drag & Drop</span>
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        className="hidden" 
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
                         onChange={handleImageUpload}
                       />
                     </label>
@@ -2079,10 +2082,10 @@ function SuperAdminPage() {
                         {videoUploading ? "Uploading..." : "+ Add Video"}
                       </span>
                       <span className="text-[10px] text-emerald-600 mt-0.5 px-2 text-center">MP4, WebM, MOV</span>
-                      <input 
-                        type="file" 
-                        accept="video/mp4,video/webm,video/ogg,video/quicktime,video/*" 
-                        className="hidden" 
+                      <input
+                        type="file"
+                        accept="video/mp4,video/webm,video/ogg,video/quicktime,video/*"
+                        className="hidden"
                         disabled={videoUploading}
                         onChange={handleVideoUpload}
                       />
@@ -2097,9 +2100,9 @@ function SuperAdminPage() {
                       <div key={i} className="p-4 bg-[#F8FAFF] border border-[#DCE5F0] rounded-xl space-y-3">
                         <div>
                           <label className="block text-[10px] font-black text-[#5B6B7F] uppercase tracking-wider mb-1">Value (e.g. 10,000+)</label>
-                          <input 
-                            type="text" 
-                            className="w-full h-9 px-3 bg-white border border-[#DCE5F0] rounded-lg text-sm font-bold text-[#063B78]" 
+                          <input
+                            type="text"
+                            className="w-full h-9 px-3 bg-white border border-[#DCE5F0] rounded-lg text-sm font-bold text-[#063B78]"
                             value={metric.value}
                             onChange={(e) => {
                               const newMetrics = [...metrics];
@@ -2112,9 +2115,9 @@ function SuperAdminPage() {
                         </div>
                         <div>
                           <label className="block text-[10px] font-black text-[#5B6B7F] uppercase tracking-wider mb-1">Label (e.g. Verified Workers)</label>
-                          <input 
-                            type="text" 
-                            className="w-full h-9 px-3 bg-white border border-[#DCE5F0] rounded-lg text-sm font-bold text-[#063B78]" 
+                          <input
+                            type="text"
+                            className="w-full h-9 px-3 bg-white border border-[#DCE5F0] rounded-lg text-sm font-bold text-[#063B78]"
                             value={metric.label}
                             onChange={(e) => {
                               const newMetrics = [...metrics];
@@ -2132,7 +2135,7 @@ function SuperAdminPage() {
 
                 <div className="mt-8 border-t border-[#E0E8F5] pt-6">
                   <h4 className="text-sm font-black text-[#063B78] mb-4">About Company Section</h4>
-                  
+
                   <div className="space-y-4">
                     <div>
                       <label className="block text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider mb-2">Company Image</label>
@@ -2142,10 +2145,10 @@ function SuperAdminPage() {
                         </div>
                         <label className="cursor-pointer flex items-center justify-center bg-[#F8FAFF] hover:bg-[#E0E8F5] text-[#063B78] border border-[#DCE5F0] text-xs font-bold py-2 rounded-lg transition-colors">
                           Change Image
-                          <input 
-                            type="file" 
-                            accept="image/*" 
-                            className="hidden" 
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
                             onChange={handleAboutImageUpload}
                           />
                         </label>
@@ -2154,18 +2157,18 @@ function SuperAdminPage() {
 
                     <div>
                       <label className="block text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider mb-2">Title</label>
-                      <input 
-                        type="text" 
-                        className="w-full h-10 px-4 bg-[#F8FAFF] border border-[#DCE5F0] rounded-xl text-sm font-semibold text-[#063B78] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50" 
+                      <input
+                        type="text"
+                        className="w-full h-10 px-4 bg-[#F8FAFF] border border-[#DCE5F0] rounded-xl text-sm font-semibold text-[#063B78] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
                         value={aboutData.title}
                         onChange={(e) => setAboutData({ ...aboutData, title: e.target.value })}
                       />
                     </div>
-                    
+
                     <div>
                       <label className="block text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider mb-2">Description</label>
-                      <textarea 
-                        className="w-full h-24 p-4 bg-[#F8FAFF] border border-[#DCE5F0] rounded-xl text-sm font-semibold text-[#063B78] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 resize-none" 
+                      <textarea
+                        className="w-full h-24 p-4 bg-[#F8FAFF] border border-[#DCE5F0] rounded-xl text-sm font-semibold text-[#063B78] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 resize-none"
                         value={aboutData.description}
                         onChange={(e) => setAboutData({ ...aboutData, description: e.target.value })}
                       />
@@ -2184,8 +2187,8 @@ function SuperAdminPage() {
                         Add, remove or edit Title and Description for cards displayed on the landing page.
                       </p>
                     </div>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       className="border-dashed border-[#063B78]/30 text-[#063B78] font-bold text-xs hover:bg-[#063B78]/5 flex items-center gap-1.5"
                       onClick={() => {
@@ -2247,9 +2250,9 @@ function SuperAdminPage() {
                                 </span>
                               </div>
 
-                              <Button 
-                                variant="destructive" 
-                                size="sm" 
+                              <Button
+                                variant="destructive"
+                                size="sm"
                                 className="h-7 px-2.5 text-[11px] font-bold flex items-center gap-1 rounded-lg"
                                 onClick={() => {
                                   const updated = [...companyPillars];
@@ -2268,9 +2271,9 @@ function SuperAdminPage() {
                               <label className="block text-[10px] font-black text-[#5B6B7F] uppercase tracking-wider mb-1">
                                 Title
                               </label>
-                              <input 
-                                type="text" 
-                                className="w-full h-9 px-3 bg-white border border-[#DCE5F0] rounded-xl text-xs font-bold text-[#063B78] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50" 
+                              <input
+                                type="text"
+                                className="w-full h-9 px-3 bg-white border border-[#DCE5F0] rounded-xl text-xs font-bold text-[#063B78] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
                                 value={pillar.title}
                                 onChange={(e) => {
                                   const updated = [...companyPillars];
@@ -2285,9 +2288,9 @@ function SuperAdminPage() {
                               <label className="block text-[10px] font-black text-[#5B6B7F] uppercase tracking-wider mb-1">
                                 Description
                               </label>
-                              <textarea 
+                              <textarea
                                 rows={3}
-                                className="w-full p-2.5 bg-white border border-[#DCE5F0] rounded-xl text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 resize-none leading-relaxed" 
+                                className="w-full p-2.5 bg-white border border-[#DCE5F0] rounded-xl text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 resize-none leading-relaxed"
                                 value={pillar.description}
                                 onChange={(e) => {
                                   const updated = [...companyPillars];
@@ -2311,8 +2314,8 @@ function SuperAdminPage() {
                         Add, remove, or edit job categories shown in the scrolling marquee on the landing page.
                       </p>
                     </div>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       className="border-dashed border-[#063B78]/30 text-[#063B78] font-bold text-xs hover:bg-[#063B78]/5 flex items-center gap-1.5"
                       onClick={() => {
@@ -2387,9 +2390,9 @@ function SuperAdminPage() {
                               <label className="block text-[9px] font-black text-[#5B6B7F] uppercase tracking-wider mb-1">
                                 Category Name
                               </label>
-                              <input 
-                                type="text" 
-                                className="w-full h-8 px-2.5 bg-white border border-[#DCE5F0] rounded-lg text-xs font-bold text-[#063B78] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50" 
+                              <input
+                                type="text"
+                                className="w-full h-8 px-2.5 bg-white border border-[#DCE5F0] rounded-lg text-xs font-bold text-[#063B78] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
                                 value={cat.label}
                                 onChange={(e) => {
                                   const newCat = [...categories];
@@ -2402,9 +2405,9 @@ function SuperAdminPage() {
 
                             {/* Remove Button */}
                             <div className="shrink-0 self-center pt-3">
-                              <Button 
-                                variant="destructive" 
-                                size="sm" 
+                              <Button
+                                variant="destructive"
+                                size="sm"
                                 className="h-8 px-2 text-[11px] font-bold rounded-lg flex items-center gap-1"
                                 onClick={() => {
                                   const newCat = [...categories];
@@ -2427,7 +2430,7 @@ function SuperAdminPage() {
 
 
                 <div className="mt-8 pt-6 flex justify-end gap-4">
-                  <Button 
+                  <Button
                     onClick={() => {
                       localStorage.removeItem("cms_heroTitle");
                       localStorage.removeItem("cms_heroSubtitle");
@@ -2438,7 +2441,7 @@ function SuperAdminPage() {
                       localStorage.removeItem("cms_categories");
                       toast.success("CMS reset to defaults! Reloading...");
                       setTimeout(() => window.location.reload(), 1000);
-                    }} 
+                    }}
                     className="bg-red-500 hover:bg-red-600 text-white font-bold px-6"
                   >
                     Reset to Defaults
@@ -2696,7 +2699,12 @@ function SuperAdminPage() {
                                 {" • "}
                                 <span className="text-indigo-700 font-extrabold">{tx.workerCount ? (Number(tx.workerCount) >= 9999 ? "Unlimited CRM" : `${tx.workerCount} CRM Limit`) : "3 CRM Limit"}</span>
                               </td>
-                              <td className="p-3 font-bold uppercase text-slate-600 whitespace-nowrap">{tx.paymentMethod}</td>
+                              <td className="p-3 whitespace-nowrap">
+                                <span className="font-bold uppercase text-slate-700 text-xs block">{tx.paymentMethod}</span>
+                                {tx.razorpayPaymentId && (
+                                  <span className="font-mono text-[10px] text-emerald-700 font-extrabold block">ID: {tx.razorpayPaymentId}</span>
+                                )}
+                              </td>
                               <td className="p-3 text-[#5B6B7F] font-medium whitespace-nowrap">{tx.purchaseDate}</td>
                               <td className="p-3 text-right whitespace-nowrap">
                                 <button
@@ -2813,11 +2821,10 @@ function SuperAdminPage() {
                     <button
                       key={btn.id}
                       onClick={() => setSubAdminStatusFilter(btn.id as any)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                        subAdminStatusFilter === btn.id
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${subAdminStatusFilter === btn.id
                           ? "bg-[#063B78] text-white shadow-xs"
                           : "bg-[#F8FAFF] text-[#5B6B7F] hover:bg-[#E0E8F5]"
-                      }`}
+                        }`}
                     >
                       {btn.label}
                     </button>
@@ -2881,11 +2888,10 @@ function SuperAdminPage() {
                             <button
                               onClick={() => handleToggleSubAdminStatus(sub.id, sub.fullName)}
                               title="Click to toggle status"
-                              className={`px-2.5 py-1 rounded-full text-[11px] font-black flex items-center gap-1.5 transition-all cursor-pointer ${
-                                sub.status === "active"
+                              className={`px-2.5 py-1 rounded-full text-[11px] font-black flex items-center gap-1.5 transition-all cursor-pointer ${sub.status === "active"
                                   ? "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
                                   : "bg-red-50 text-red-700 border border-red-200 hover:bg-red-100"
-                              }`}
+                                }`}
                             >
                               <span className={`size-2 rounded-full ${sub.status === "active" ? "bg-emerald-500 animate-pulse" : "bg-red-500"}`}></span>
                               {sub.status === "active" ? "Active" : "Suspended"}
@@ -3033,8 +3039,8 @@ function SuperAdminPage() {
                     value={formData.fullName}
                     onChange={(e) => {
                       const val = e.target.value;
-                      const autoUsername = !editingSubAdmin && !formData.username 
-                        ? val.toLowerCase().replace(/[^a-z0-9]/g, '') 
+                      const autoUsername = !editingSubAdmin && !formData.username
+                        ? val.toLowerCase().replace(/[^a-z0-9]/g, '')
                         : formData.username;
                       setFormData({
                         ...formData,

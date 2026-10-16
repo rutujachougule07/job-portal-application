@@ -218,8 +218,9 @@ input[type="number"] {
   animation: marquee 30s linear infinite;
 }
 
+/* Keep scrolling continuously even when mouse cursor hovers */
 .animate-marquee-slow:hover {
-  animation-play-state: paused;
+  animation-play-state: running;
 }
 
 

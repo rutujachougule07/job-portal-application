@@ -170,6 +170,10 @@ export type PackageTransaction = {
   purchaseDate: string;
   paymentMethod: string;
   status: "Completed" | "Pending";
+  razorpayPaymentId?: string | undefined;
+  razorpayOrderId?: string | undefined;
+  razorpaySignature?: string | undefined;
+  receipt?: string | undefined;
 };
 
 export type JobPackagePlan = {
@@ -390,7 +394,7 @@ export class DataStoreManager {
         if (cleaned.length !== parsed.length) {
           localStorage.setItem(this.STORAGE_KEYS.JOBS, JSON.stringify(cleaned));
         }
-      } catch {}
+      } catch { }
     }
     if (!localStorage.getItem(this.STORAGE_KEYS.APPLICATIONS)) {
       localStorage.setItem(this.STORAGE_KEYS.APPLICATIONS, JSON.stringify([]));
@@ -410,7 +414,7 @@ export class DataStoreManager {
     if (!localStorage.getItem(this.STORAGE_KEYS.SUBADMINS)) {
       localStorage.setItem(this.STORAGE_KEYS.SUBADMINS, JSON.stringify(INITIAL_SUBADMINS));
     }
-    
+
     // Bidirectional sync with Firebase
     // Firestore is the authoritative source of truth
     fbSync(async () => {
@@ -426,7 +430,7 @@ export class DataStoreManager {
         for (const docItem of jobsSnap.docs) {
           const jData = docItem.data() as JobRecord;
           if (isRemovedTestCategory(jData.category)) {
-            await deleteDoc(doc(db, "jobs", docItem.id)).catch(() => {});
+            await deleteDoc(doc(db, "jobs", docItem.id)).catch(() => { });
           } else {
             validJobs.push({ ...jData, id: jData.id || docItem.id });
           }
@@ -447,13 +451,13 @@ export class DataStoreManager {
       // 3. Sync Registered Users strictly from Firebase Firestore
       if (!usersSnap.empty) {
         const emailToDocs = new Map<string, Array<{ id: string; data: RegisteredUser }>>();
-        
+
         for (const docItem of usersSnap.docs) {
           const u = docItem.data() as RegisteredUser;
           const email = (u.email || "").trim().toLowerCase();
           const cleanMobile = (u.mobile || "").replace(/\D/g, "");
           const key = email || (cleanMobile ? `${cleanMobile}@realjob.com` : docItem.id);
-          
+
           if (!emailToDocs.has(key)) {
             emailToDocs.set(key, []);
           }
@@ -491,7 +495,7 @@ export class DataStoreManager {
           // Purge duplicate documents from Firestore
           for (const d of docList) {
             if (d.id !== primary.id) {
-              deleteDoc(doc(db, "users", d.id)).catch(() => {});
+              deleteDoc(doc(db, "users", d.id)).catch(() => { });
             }
           }
         }
@@ -514,7 +518,7 @@ export class DataStoreManager {
           const dData = docItem.data() as EmployerWorker;
           if (deletedIds.has(docItem.id) || dData.status === "Deleted" || (dData as any).isDeleted || dData.status === "Inactive") {
             deletedIds.add(docItem.id);
-            deleteDoc(doc(db, "workers", docItem.id)).catch(() => {});
+            deleteDoc(doc(db, "workers", docItem.id)).catch(() => { });
           }
         }
         localStorage.setItem("realjob_deleted_worker_ids", JSON.stringify(Array.from(deletedIds)));
@@ -574,8 +578,8 @@ export class DataStoreManager {
     if (!credential) return null;
     const list = this.getSubAdmins();
     const clean = credential.trim().toLowerCase();
-    return list.find(s => 
-      s.email.toLowerCase() === clean || 
+    return list.find(s =>
+      s.email.toLowerCase() === clean ||
       (s.username && s.username.toLowerCase() === clean)
     ) || null;
   }
@@ -603,8 +607,8 @@ export class DataStoreManager {
       password: data.password || "subadmin123",
       role: "subadmin",
       designation: data.designation?.trim() || "Sub-Admin",
-      permissions: data.permissions && data.permissions.length > 0 
-        ? data.permissions 
+      permissions: data.permissions && data.permissions.length > 0
+        ? data.permissions
         : ["job-approvals", "users-directory", "job-applications"],
       status: data.status || "active",
       createdBy: data.createdBy || "superadmin",
@@ -692,7 +696,7 @@ export class DataStoreManager {
     const cleanEmail = user.email.trim().toLowerCase();
     const existingIndex = list.findIndex(u => (u.email && u.email.toLowerCase() === cleanEmail) || (user.id && u.id === user.id));
     const fallbackName = cleanEmail.split("@")[0] || "User";
-    
+
     const existing = existingIndex >= 0 ? list[existingIndex] : undefined;
     // Canonical ID: prefer given user.id (e.g. Firebase Auth UID) -> existing.id -> generate usr- timestamp
     const finalId = user.id || existing?.id || `usr-${Date.now()}`;
@@ -722,9 +726,9 @@ export class DataStoreManager {
     if (typeof window !== "undefined") {
       localStorage.setItem("realjob_db_registered_users", JSON.stringify(list));
       if (oldIdToDelete) {
-        fbSync(() => deleteDoc(doc(db, "users", oldIdToDelete!)).catch(() => {}));
+        fbSync(() => deleteDoc(doc(db, "users", oldIdToDelete!)).catch(() => { }));
       }
-      fbSync(() => setDoc(doc(db, "users", account.id), account, { merge: true }).catch(() => {}));
+      fbSync(() => setDoc(doc(db, "users", account.id), account, { merge: true }).catch(() => { }));
     }
     return account;
   }
@@ -765,9 +769,9 @@ export class DataStoreManager {
     if (typeof window !== "undefined") {
       localStorage.setItem("realjob_db_registered_users", JSON.stringify(list));
       if (oldIdToDelete) {
-        fbSync(() => deleteDoc(doc(db, "users", oldIdToDelete!)).catch(() => {}));
+        fbSync(() => deleteDoc(doc(db, "users", oldIdToDelete!)).catch(() => { }));
       }
-      fbSync(() => setDoc(doc(db, "users", updated.id), updated, { merge: true }).catch(() => {}));
+      fbSync(() => setDoc(doc(db, "users", updated.id), updated, { merge: true }).catch(() => { }));
       this.setCurrentUser(updated);
     }
     return updated;
@@ -853,7 +857,7 @@ export class DataStoreManager {
         ) {
           return u;
         }
-      } catch {}
+      } catch { }
     }
 
     // 2. Role-specific storage lookup
@@ -871,7 +875,7 @@ export class DataStoreManager {
           ) {
             return u;
           }
-        } catch {}
+        } catch { }
       }
     }
 
@@ -955,7 +959,7 @@ export class DataStoreManager {
             });
           }
         }
-      } catch {}
+      } catch { }
     }
 
     return Array.from(categoriesSet);
@@ -972,7 +976,7 @@ export class DataStoreManager {
           list.push(cleanCat);
           localStorage.setItem("realjob_custom_categories", JSON.stringify(list));
         }
-      } catch {}
+      } catch { }
     }
   }
 
@@ -985,7 +989,7 @@ export class DataStoreManager {
           if (Array.isArray(parsed) && parsed.length > 0) {
             return parsed.filter((c: any) => !isRemovedTestCategory(c.label));
           }
-        } catch {}
+        } catch { }
       }
     }
     return DEFAULT_SUPERADMIN_CATEGORIES;
@@ -1062,7 +1066,7 @@ export class DataStoreManager {
     jobs.unshift(newJob);
     if (typeof window !== "undefined") {
       localStorage.setItem(this.STORAGE_KEYS.JOBS, JSON.stringify(jobs));
-      
+
       fbSync(() => setDoc(doc(db, "jobs", newJob.id), newJob));
     }
     return newJob;
@@ -1083,7 +1087,7 @@ export class DataStoreManager {
 
     if (typeof window !== "undefined") {
       localStorage.setItem(this.STORAGE_KEYS.JOBS, JSON.stringify(jobs));
-      
+
       fbSync(() => setDoc(doc(db, "jobs", updatedJob.id), updatedJob));
     }
     return updatedJob;
@@ -1094,7 +1098,7 @@ export class DataStoreManager {
     jobs = jobs.filter((j) => j.id !== jobId);
     if (typeof window !== "undefined") {
       localStorage.setItem(this.STORAGE_KEYS.JOBS, JSON.stringify(jobs));
-      
+
       fbSync(() => deleteDoc(doc(db, "jobs", jobId)));
     }
     return true;
@@ -1177,7 +1181,7 @@ export class DataStoreManager {
     apps.unshift(newApp);
     if (typeof window !== "undefined") {
       localStorage.setItem(this.STORAGE_KEYS.APPLICATIONS, JSON.stringify(apps));
-      
+
       fbSync(() => setDoc(doc(db, "applications", newApp.id), newApp));
     }
     return newApp;
@@ -1219,7 +1223,7 @@ export class DataStoreManager {
 
     if (typeof window !== "undefined") {
       localStorage.setItem(this.STORAGE_KEYS.APPLICATIONS, JSON.stringify(apps));
-      
+
       fbSync(() => updateDoc(doc(db, "applications", updatedApp.id), updatedApp));
     }
     return updatedApp;
@@ -1240,7 +1244,7 @@ export class DataStoreManager {
 
     if (typeof window !== "undefined") {
       localStorage.setItem(this.STORAGE_KEYS.APPLICATIONS, JSON.stringify(apps));
-      
+
       fbSync(() => updateDoc(doc(db, "applications", updatedApp.id), updatedApp));
     }
     return updatedApp;
@@ -1430,7 +1434,7 @@ export class DataStoreManager {
   public saveJobSeekerProfile(profile: Partial<JobSeekerProfile> & { id: string; email: string }): JobSeekerProfile {
     const raw = typeof window !== "undefined" ? localStorage.getItem(this.STORAGE_KEYS.PROFILES) : null;
     const profiles: JobSeekerProfile[] = raw ? JSON.parse(raw) : [];
-    
+
     const existingIndex = profiles.findIndex((p) => p.id === profile.id || p.email === profile.email);
     const found = existingIndex >= 0 ? profiles[existingIndex] : undefined;
 
@@ -1506,7 +1510,24 @@ export class DataStoreManager {
     if (typeof window !== "undefined") {
       localStorage.setItem(this.STORAGE_KEYS.PACKAGES, JSON.stringify(existing));
     }
+    // Authoritative Sync to Firebase Firestore database
+    fbSync(() => setDoc(doc(db, "package_purchases", newTx.id), newTx));
     return newTx;
+  }
+
+  public async syncPackagesFromFirebase(): Promise<PackageTransaction[]> {
+    if (typeof window === "undefined") return [];
+    try {
+      const snap = await getDocs(collection(db, "package_purchases"));
+      if (!snap.empty) {
+        const list = snap.docs.map(d => ({ ...(d.data() as PackageTransaction), id: d.id }));
+        localStorage.setItem(this.STORAGE_KEYS.PACKAGES, JSON.stringify(list));
+        return list;
+      }
+    } catch (err) {
+      console.warn("Error fetching package_purchases from Firebase:", err);
+    }
+    return this.getAllPackagePurchases();
   }
 
   /**
@@ -1530,8 +1551,8 @@ export class DataStoreManager {
         return parsed.map((pkg: any) => ({
           ...pkg,
           description: pkg.description ? pkg.description.replace(/Employees Included/g, "CRM Included").replace(/Employees/g, "CRM") : pkg.description,
-          features: Array.isArray(pkg.features) 
-            ? pkg.features.map((f: string) => f.replace(/Employees Addition/g, "CRM Users").replace(/Employees/g, "CRM Users")) 
+          features: Array.isArray(pkg.features)
+            ? pkg.features.map((f: string) => f.replace(/Employees Addition/g, "CRM Users").replace(/Employees/g, "CRM Users"))
             : pkg.features
         }));
       }
@@ -1720,7 +1741,7 @@ export class DataStoreManager {
         const deletedIds: string[] = JSON.parse(localStorage.getItem("realjob_deleted_worker_ids") || "[]");
         const filtered = deletedIds.filter((id) => id !== workerId);
         localStorage.setItem("realjob_deleted_worker_ids", JSON.stringify(filtered));
-      } catch {}
+      } catch { }
       localStorage.setItem(this.STORAGE_KEYS.EMP_WORKERS, JSON.stringify(all));
       fbSync(() => setDoc(doc(db, "workers", newWorker.id), newWorker, { merge: true }));
     }
@@ -1739,7 +1760,7 @@ export class DataStoreManager {
           deletedIds.push(workerId);
           localStorage.setItem("realjob_deleted_worker_ids", JSON.stringify(deletedIds));
         }
-      } catch {}
+      } catch { }
 
       const all: EmployerWorker[] = JSON.parse(raw);
       const targetWorker = all.find((w) => w.id === workerId);
@@ -1756,16 +1777,16 @@ export class DataStoreManager {
         ) {
           localStorage.removeItem("realjob-user");
         }
-      } catch {}
+      } catch { }
 
       // Fire sync delete to Firestore
       fbSync(async () => {
         try {
           await setDoc(doc(db, "workers", workerId), { status: "Deleted", isDeleted: true }, { merge: true });
-        } catch {}
+        } catch { }
         try {
           await deleteDoc(doc(db, "workers", workerId));
-        } catch {}
+        } catch { }
       });
       return true;
     } catch {
@@ -1910,23 +1931,23 @@ export class DataStoreManager {
 
     const extraData = typeof overtimeHoursOrExtra === "object" ? overtimeHoursOrExtra : extraDataParam;
     const numericOtHours = typeof overtimeHoursOrExtra === "number" ? overtimeHoursOrExtra : extraData?.overtimeHours;
-    
+
     let newRecord: DailyAttendanceRecord;
-    
+
     // Create new punch log entry if punchData is provided
-    const newPunchLogEntry = punchData?.punchInTime && punchData.punchInLocation 
-      ? { type: "in" as const, time: punchData.punchInTime, location: punchData.punchInLocation } 
-      : punchData?.punchOutTime && punchData.punchOutLocation 
+    const newPunchLogEntry = punchData?.punchInTime && punchData.punchInLocation
+      ? { type: "in" as const, time: punchData.punchInTime, location: punchData.punchInLocation }
+      : punchData?.punchOutTime && punchData.punchOutLocation
         ? { type: "out" as const, time: punchData.punchOutTime, location: punchData.punchOutLocation }
         : null;
-    
+
     if (index >= 0) {
       const existing = all[index] as DailyAttendanceRecord;
       const isRePunchIn = !!punchData?.punchInTime && !punchData?.punchOutTime;
-      
+
       const updatedPunchLog = existing.punchLog ? [...existing.punchLog] : [];
       if (newPunchLogEntry) updatedPunchLog.unshift(newPunchLogEntry); // Keep newest at the top
-      
+
       const finalOtHours = numericOtHours !== undefined
         ? numericOtHours
         : (status === "Overtime" ? (existing.overtimeHours || 2) : 0);
@@ -1981,7 +2002,7 @@ export class DataStoreManager {
       } as DailyAttendanceRecord;
       all.push(newRecord);
     }
-    
+
     if (typeof window !== "undefined") {
       localStorage.setItem(this.STORAGE_KEYS.ATTENDANCE, JSON.stringify(all));
       const cleanRecord = JSON.parse(JSON.stringify(newRecord));
@@ -2061,7 +2082,7 @@ export class DataStoreManager {
       localStorage.setItem(this.STORAGE_KEYS.ATTENDANCE, JSON.stringify(filtered));
       // Also remove from Firestore
       fbSync(async () => {
-        try { await deleteDoc(doc(db, "attendance", recordId)); } catch {}
+        try { await deleteDoc(doc(db, "attendance", recordId)); } catch { }
       });
       return true;
     } catch {
@@ -2104,8 +2125,8 @@ export async function openApplicationDocument(
     rawValue && !rawValue.startsWith("data:")
       ? rawValue.trim()
       : app.resume && !app.resume.startsWith("data:")
-      ? app.resume.trim()
-      : `${(app.candidateName || "Candidate").replace(/\s+/g, "_")}_${fieldKey}.pdf`;
+        ? app.resume.trim()
+        : `${(app.candidateName || "Candidate").replace(/\s+/g, "_")}_${fieldKey}.pdf`;
 
   // Open target tab synchronously on user click so popup blocker never blocks it
   const win = window.open("", "_blank");
@@ -2164,7 +2185,7 @@ export async function openApplicationDocument(
         if (other?.fieldValues?.[`_file_${fieldKey}`]) {
           fileDataUrl = other.fieldValues[`_file_${fieldKey}`] || "";
         }
-      } catch {}
+      } catch { }
     }
   }
 

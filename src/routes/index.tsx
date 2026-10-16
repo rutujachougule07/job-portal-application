@@ -314,30 +314,61 @@ function LandingGatewayPage() {
       }
     }
 
-    // Also sync from Firestore Cloud so Vercel, Localhost and all users see the exact same images & video
+    // Real-time live sync from Firestore Cloud so Mobile App, Vercel, and Domain see updates immediately
+    let unsubscribeSnapshot: (() => void) | undefined;
     const syncFromCloud = async () => {
       try {
         const { db } = await import("@/firebase");
-        const { doc, getDoc } = await import("firebase/firestore");
-        const snap = await getDoc(doc(db, "cms_settings", "landing_page"));
-        if (snap.exists()) {
-          const data: any = snap.data();
-          if (Array.isArray(data.heroImages) && data.heroImages.length > 0) {
-            setImages(data.heroImages);
-            localStorage.setItem("cms_heroImages", JSON.stringify(data.heroImages));
+        const { doc, onSnapshot } = await import("firebase/firestore");
+        unsubscribeSnapshot = onSnapshot(doc(db, "cms_settings", "landing_page"), (snap) => {
+          if (snap.exists()) {
+            const data: any = snap.data();
+            if (Array.isArray(data.heroImages) && data.heroImages.length > 0) {
+              setImages(data.heroImages);
+              try { localStorage.setItem("cms_heroImages", JSON.stringify(data.heroImages)); } catch {}
+            }
+            if (data.heroTitle) setHeroTitle(data.heroTitle);
+            if (data.heroSubtitle) setHeroSubtitle(data.heroSubtitle);
+            if (data.metrics) setMetrics(data.metrics);
+            if (data.aboutData) setAboutData(data.aboutData);
+            if (data.companyPillars) setCompanyPillars(data.companyPillars);
+            if (data.categories && Array.isArray(data.categories)) {
+              const CATEGORY_PALETTES = [
+                { gradient: "from-blue-500/20 to-transparent", iconBg: "bg-blue-600 text-white" },
+                { gradient: "from-amber-500/20 to-transparent", iconBg: "bg-amber-600 text-white" },
+                { gradient: "from-purple-500/20 to-transparent", iconBg: "bg-purple-600 text-white" },
+                { gradient: "from-emerald-500/20 to-transparent", iconBg: "bg-emerald-600 text-white" },
+                { gradient: "from-orange-500/20 to-transparent", iconBg: "bg-orange-600 text-white" },
+                { gradient: "from-rose-500/20 to-transparent", iconBg: "bg-rose-600 text-white" },
+                { gradient: "from-cyan-500/20 to-transparent", iconBg: "bg-cyan-600 text-white" },
+                { gradient: "from-indigo-500/20 to-transparent", iconBg: "bg-indigo-600 text-white" },
+              ];
+              const formatted = data.categories.map((cat: any, idx: number) => {
+                const palette = CATEGORY_PALETTES[idx % CATEGORY_PALETTES.length];
+                return {
+                  id: cat.id || `cat_${idx}`,
+                  label: cat.label || `Category ${idx + 1}`,
+                  iconName: cat.iconName || "Briefcase",
+                  gradient: cat.gradient || palette?.gradient || "from-blue-500/20 to-transparent",
+                  iconBg: cat.iconBg || palette?.iconBg || "bg-[#063B78] text-white",
+                  ...cat,
+                };
+              });
+              setCategories(formatted);
+            }
           }
-          if (data.heroTitle) setHeroTitle(data.heroTitle);
-          if (data.heroSubtitle) setHeroSubtitle(data.heroSubtitle);
-          if (data.metrics) setMetrics(data.metrics);
-          if (data.aboutData) setAboutData(data.aboutData);
-          if (data.companyPillars) setCompanyPillars(data.companyPillars);
-          if (data.categories) setCategories(data.categories);
-        }
+        }, (err) => {
+          console.warn("Could not sync CMS settings from cloud:", err);
+        });
       } catch (err) {
-        console.warn("Could not sync CMS settings from cloud:", err);
+        console.warn("Could not setup Firestore onSnapshot:", err);
       }
     };
     syncFromCloud();
+
+    return () => {
+      if (unsubscribeSnapshot) unsubscribeSnapshot();
+    };
   }, []);
 
   useEffect(() => {
@@ -554,8 +585,17 @@ function LandingGatewayPage() {
             })}
           </div>
 
-          <div className="relative z-10 text-center px-4 max-w-4xl mx-auto flex flex-col items-center">
-            {/* Text removed as user requested since image has baked-in text */}
+          <div className="relative z-10 text-center px-4 max-w-4xl mx-auto flex flex-col items-center pointer-events-none">
+            {heroTitle && heroTitle.trim() !== "" && (
+              <h1 className="text-2xl sm:text-4xl md:text-5xl font-black text-white tracking-tight drop-shadow-[0_4px_16px_rgba(0,0,0,0.85)] mb-3 whitespace-pre-line">
+                {heroTitle}
+              </h1>
+            )}
+            {heroSubtitle && heroSubtitle.trim() !== "" && (
+              <p className="text-sm sm:text-lg md:text-xl font-bold text-amber-300 drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)] max-w-2xl">
+                {heroSubtitle}
+              </p>
+            )}
           </div>
         </section>
 
@@ -692,17 +732,22 @@ function LandingGatewayPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {companyPillars.map((pillar) => {
                       const IconComponent = PILLAR_ICONS[pillar.iconName] || Target;
-                      const title = pillar.id === "mission" ? t("ourMission") :
-                                    pillar.id === "vision" ? t("ourVision") :
-                                    pillar.id === "values" ? t("ourValues") :
-                                    pillar.id === "belief" ? t("ourBelief") :
-                                    (lang === "mr" && pillar.titleMr ? pillar.titleMr : pillar.title);
+                      // Display custom title and description directly if edited in Superadmin CMS
+                      const isDefaultTitle = pillar.title === "Our Mission" || pillar.title === "Our Vision" || pillar.title === "Core Values" || pillar.title === "Our Belief";
+                      const title = (!isDefaultTitle && pillar.title) ? pillar.title :
+                                    (lang === "mr" && pillar.titleMr ? pillar.titleMr :
+                                    (pillar.id === "mission" ? t("ourMission") :
+                                     pillar.id === "vision" ? t("ourVision") :
+                                     pillar.id === "values" ? t("ourValues") :
+                                     pillar.id === "belief" ? t("ourBelief") : pillar.title));
 
-                      const desc = pillar.id === "mission" ? t("missionDesc") :
-                                   pillar.id === "vision" ? t("visionDesc") :
-                                   pillar.id === "values" ? t("valuesDesc") :
-                                   pillar.id === "belief" ? `${t("rightPerson")}\n${t("rightJob")}\n${t("rightOpportunity")}` :
-                                   (lang === "mr" && pillar.descriptionMr ? pillar.descriptionMr : pillar.description);
+                      const isDefaultDesc = !pillar.description || pillar.description.includes("To provide the right employment") || pillar.description.includes("To become India's most trusted") || pillar.description.includes("Transparency, trust") || pillar.description.includes("Right Person, Right Job");
+                      const desc = (!isDefaultDesc && pillar.description) ? pillar.description :
+                                   (lang === "mr" && pillar.descriptionMr ? pillar.descriptionMr :
+                                   (pillar.id === "mission" ? t("missionDesc") :
+                                    pillar.id === "vision" ? t("visionDesc") :
+                                    pillar.id === "values" ? t("valuesDesc") :
+                                    pillar.id === "belief" ? `${t("rightPerson")}\n${t("rightJob")}\n${t("rightOpportunity")}` : pillar.description));
 
                       return (
                         <div
@@ -782,7 +827,7 @@ function LandingGatewayPage() {
                       {/* Category Title */}
                       <div className="flex-1 text-left flex flex-col justify-center overflow-hidden z-10">
                         <h3 className="font-black text-sm sm:text-base text-[#082F63] group-hover:text-[#125BB5] transition-colors truncate leading-tight">
-                          {CATEGORY_TRANSLATIONS[catData.id]?.[lang] || catData.label}
+                          {catData.label || CATEGORY_TRANSLATIONS[catData.id]?.[lang]}
                         </h3>
                       </div>
                     </div>

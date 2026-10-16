@@ -69,6 +69,7 @@ import {
 } from "@/lib/data-store";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
+import { initiateRazorpayCheckout } from "@/lib/razorpay";
 
 import {
   Area,
@@ -256,11 +257,11 @@ function AdminDashboardPage() {
   const navigate = useNavigate();
   const { t, n } = useI18n();
 
-  const [activeTabState, setActiveTabState] = useState<"overview" | "jobs" | "applications" | "attendance" | "salary" | "packages" | "profile">("overview");
+  const [activeTabState, setActiveTabState] = useState<"overview" | "jobs" | "applications" | "attendance" | "salary" | "reports" | "packages" | "profile">("overview");
   const [isPendingTab, startTransitionTab] = useTransition();
 
   const activeTab = activeTabState;
-  const setActiveTab = (tab: "overview" | "jobs" | "applications" | "attendance" | "salary" | "packages" | "profile" | any) => {
+  const setActiveTab = (tab: "overview" | "jobs" | "applications" | "attendance" | "salary" | "reports" | "packages" | "profile" | any) => {
     startTransitionTab(() => {
       setActiveTabState(tab);
     });
@@ -324,6 +325,8 @@ function AdminDashboardPage() {
     new Date().toISOString().split("T")[0]!
   );
   const [reportAttendanceRecords, setReportAttendanceRecords] = useState<DailyAttendanceRecord[]>([]);
+  const [reportFilterType, setReportFilterType] = useState<"all" | "attendance" | "recruitment" | "billing">("all");
+  const [reportSearchTerm, setReportSearchTerm] = useState("");
 
   // Worker Individual Report & Salary Slip states
   const [selectedWorkerReport, setSelectedWorkerReport] = useState<EmployerWorker | null>(null);
@@ -687,7 +690,7 @@ function AdminDashboardPage() {
 
   };
   const getWorkerReportMetrics = (
-    worker: EmployerWorker, 
+    worker: EmployerWorker,
     period: "week" | "month" | "all",
     targetMonthName?: string,
     targetYearStr?: string,
@@ -1049,7 +1052,7 @@ function AdminDashboardPage() {
       try {
         const backup = localStorage.getItem("realjob-employer-profile");
         if (backup) return JSON.parse(backup);
-      } catch {}
+      } catch { }
     }
     return null;
   });
@@ -1203,7 +1206,7 @@ function AdminDashboardPage() {
       localStorage.setItem("realjob-employer-profile", JSON.stringify(updatedUser));
       localStorage.setItem(`emp_profile_${updatedUser.id}`, JSON.stringify(updatedUser));
       if (updatedUser.email) localStorage.setItem(`emp_profile_${updatedUser.email.toLowerCase()}`, JSON.stringify(updatedUser));
-    } catch {}
+    } catch { }
 
     toast.success("🎉 Profile updated successfully!");
   };
@@ -1564,39 +1567,56 @@ function AdminDashboardPage() {
     const userId = currentUser.id || currentUser.email || "admin-001";
 
     setIsProcessingPackage(true);
-    setTimeout(() => {
-      dataStore.addPackagePurchase({
-        userId: userId,
-        userEmail: currentUser.email || "",
-        userName: currentUser.fullName || currentUser.email || "Employer",
-        companyName: currentUser.companyName || currentUser.fullName || "Employer",
-        planId: selectedPlan.id,
-        planName: selectedPlan.name,
-        price: selectedPlan.price,
-        jobCount: selectedPlan.jobCount,
-        workerCount: selectedPlan.workerCount || 3,
-        paymentMethod: paymentMethod.toUpperCase(),
-      });
 
-      setIsProcessingPackage(false);
-      setShowPackageModal(false);
-      refreshCredits();
+    initiateRazorpayCheckout({
+      amount: selectedPlan.price,
+      planName: selectedPlan.name,
+      description: `${selectedPlan.name} - ${selectedPlan.jobCount} Jobs Plan`,
+      user: {
+        name: currentUser.fullName || currentUser.companyName || "Employer",
+        email: currentUser.email || "",
+        mobile: (currentUser as any).mobile || "",
+      },
+      onSuccess: (paymentData) => {
+        dataStore.addPackagePurchase({
+          userId: userId,
+          userEmail: currentUser.email || "",
+          userName: currentUser.fullName || currentUser.email || "Employer",
+          companyName: currentUser.companyName || currentUser.fullName || "Employer",
+          planId: selectedPlan.id,
+          planName: selectedPlan.name,
+          price: selectedPlan.price,
+          jobCount: selectedPlan.jobCount,
+          workerCount: selectedPlan.workerCount || 3,
+          paymentMethod: `RAZORPAY (${paymentData.razorpay_payment_id})`,
+          razorpayPaymentId: paymentData.razorpay_payment_id,
+          razorpayOrderId: paymentData.razorpay_order_id || "",
+          razorpaySignature: paymentData.razorpay_signature || "",
+        });
 
-      toast.success(`🎉 ${selectedPlan.name} activated! You now have ${selectedPlan.jobCount} Job Credits.`);
+        setIsProcessingPackage(false);
+        setShowPackageModal(false);
+        refreshCredits();
 
-      // Open Post New Job form immediately
-      setEditingJobId(null);
-      setJobForm({
-        title: "", company: currentUser?.fullName || "REAL JOB Platform", category: "", subcategory: "", location: "",
-        salary: "",
-        salaryMin: "", salaryMax: "", salaryType: "Monthly",
-        showSalary: true,
-        jobType: "Full Time", workMode: "On-site", vacancies: "5",
-        education: "", experience: "", skills: "", description: "",
-        responsibilities: "", benefits: "", status: "Active",
-      });
-      setShowJobForm(true);
-    }, 1000);
+        toast.success(`🎉 पेमेंट यशस्वी! ${selectedPlan.name} प्लॅन ऍक्टिव्हेट झाला. Payment ID: ${paymentData.razorpay_payment_id}`);
+
+        // Open Post New Job form immediately
+        setEditingJobId(null);
+        setJobForm({
+          title: "", company: currentUser?.fullName || "REAL JOB Platform", category: "", subcategory: "", location: "",
+          salary: "",
+          salaryMin: "", salaryMax: "", salaryType: "Monthly",
+          showSalary: true,
+          jobType: "Full Time", workMode: "On-site", vacancies: "5",
+          education: "", experience: "", skills: "", description: "",
+          responsibilities: "", benefits: "", status: "Active",
+        });
+        setShowJobForm(true);
+      },
+      onFailure: () => {
+        setIsProcessingPackage(false);
+      },
+    });
   };
 
   const handleEditJobClick = (job: JobRecord) => {
@@ -1879,11 +1899,10 @@ function AdminDashboardPage() {
                       <button
                         type="button"
                         onClick={() => setJ("showSalary", true)}
-                        className={`px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
-                          jobForm.showSalary
+                        className={`px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${jobForm.showSalary
                             ? "bg-emerald-600 text-white shadow-sm"
                             : "text-[#5B6B7F] hover:bg-gray-100"
-                        }`}
+                          }`}
                       >
                         <span className="text-sm">✓</span>
                         <span>{t("yesShowSalary")}</span>
@@ -1891,11 +1910,10 @@ function AdminDashboardPage() {
                       <button
                         type="button"
                         onClick={() => setJ("showSalary", false)}
-                        className={`px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
-                          !jobForm.showSalary
+                        className={`px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${!jobForm.showSalary
                             ? "bg-rose-600 text-white shadow-sm"
                             : "text-[#5B6B7F] hover:bg-gray-100"
-                        }`}
+                          }`}
                       >
                         <span className="text-sm">✕</span>
                         <span>{t("noHideSalary")}</span>
@@ -2062,6 +2080,7 @@ function AdminDashboardPage() {
                   { id: "applications", label: t("jobApplications"), icon: FileText, count: applications.length },
                   { id: "attendance", label: t("attendancePayroll"), icon: CalendarCheck, count: workers.length },
                   { id: "salary", label: t("eSalarySlips"), icon: FileText },
+                  { id: "reports", label: t("reports") ? `${t("reports")} / अहवाल (Reports)` : "रिपोर्ट / अहवाल (Reports)", icon: PieChart },
                   { id: "packages", label: t("myPackagesBilling"), icon: IndianRupee },
                   { id: "profile", label: t("myProfile"), icon: User },
                 ].map((item) => {
@@ -2145,6 +2164,7 @@ function AdminDashboardPage() {
             { id: "applications", label: t("jobApplications"), icon: FileText, count: applications.length },
             { id: "attendance", label: t("attendancePayroll"), icon: CalendarCheck, count: workers.length },
             { id: "salary", label: t("eSalarySlips"), icon: FileText },
+            { id: "reports", label: t("reports") ? `${t("reports")} / अहवाल (Reports)` : "रिपोर्ट / अहवाल (Reports)", icon: PieChart },
             { id: "packages", label: t("myPackagesBilling"), icon: IndianRupee },
             { id: "profile", label: t("myProfile"), icon: User },
           ].map((item) => {
@@ -2209,6 +2229,7 @@ function AdminDashboardPage() {
               {activeTab === "packages" && t("myPackagesBilling")}
               {activeTab === "profile" && t("myProfile")}
               {activeTab === "salary" && t("employeeSalarySlipsTitle")}
+              {activeTab === "reports" && (t("reports") || "कंपनी व कर्मचारी अहवाल (Reports)")}
             </h2>
           </div>
 
@@ -2513,6 +2534,15 @@ function AdminDashboardPage() {
                   >
                     <Plus className="size-4" />
                     <span>{t("postNewJob")}</span>
+                  </Button>
+
+                  <Button
+                    onClick={() => setActiveTab("reports")}
+                    variant="outline"
+                    className="border-[#063B78]/30 bg-blue-50/50 hover:bg-blue-100/60 text-[#063B78] font-black text-xs px-3.5 py-2.5 rounded-xl flex items-center gap-2 shadow-xs transition-all w-full sm:w-auto shrink-0 cursor-pointer"
+                  >
+                    <PieChart className="size-4 text-[#063B78]" />
+                    <span>📊 {t("reports") || "रिपोर्ट"} (Reports)</span>
                   </Button>
 
                   <div className="w-full sm:w-72 relative">
@@ -3231,7 +3261,7 @@ function AdminDashboardPage() {
                                   <th className="p-4">{t("jobTitleTh")}</th>
                                   <th className="p-4">{t("dailyWageRateLabel")}</th>
                                   {attendanceMode === "fixed" && <th className="p-4 text-center">{t("punchTimesTh")}</th>}
-                                   {attendanceMode === "fixed" && <th className="p-4 text-center min-w-[200px]">{t("workDurationOvertimeTh")}</th>}
+                                  {attendanceMode === "fixed" && <th className="p-4 text-center min-w-[200px]">{t("workDurationOvertimeTh")}</th>}
                                   <th className="p-4 text-right rounded-r-xl">{t("netSalaryLabel")}</th>
                                 </tr>
                               </thead>
@@ -3318,35 +3348,35 @@ function AdminDashboardPage() {
 
                                     return (
                                       <tr key={worker.id} className="hover:bg-[#F8FAFF] transition-colors">
-                                         <td className="p-4 font-black text-[#10233F] min-w-[200px] whitespace-nowrap">
-                                           <div className="flex items-center gap-3">
-                                             <div className="size-9 rounded-full bg-[#063B78]/10 text-[#063B78] font-black flex items-center justify-center text-sm shrink-0">
-                                               {worker.name.slice(0, 1).toUpperCase()}
-                                             </div>
-                                             <div className="min-w-0">
-                                               <div className="flex items-center gap-2">
-                                                 <span className="text-sm font-black text-[#10233F] whitespace-nowrap">{worker.name}</span>
-                                                 <button
-                                                   type="button"
-                                                   onClick={() => {
-                                                     setCalendarWorker(worker);
-                                                     setCalendarMonth(new Date().getMonth());
-                                                     setCalendarYear(new Date().getFullYear());
-                                                     setActiveCalendarDate(null);
-                                                   }}
-                                                   title={t("openAttendanceCalendar")}
-                                                   className="size-7 rounded-lg bg-blue-50 hover:bg-[#063B78] text-[#063B78] hover:text-white border border-blue-200 flex items-center justify-center transition-all shadow-2xs hover:scale-110 cursor-pointer shrink-0"
-                                                 >
-                                                   <Calendar className="size-3.5 text-[#063B78] hover:text-white" />
-                                                 </button>
-                                               </div>
-                                               <div className="flex items-center gap-1.5 text-xs text-[#5B6B7F] font-bold whitespace-nowrap mt-0.5">
-                                                 <Phone className="size-3 text-slate-400 shrink-0" />
-                                                 <span>{worker.mobile || "N/A"}</span>
-                                               </div>
-                                             </div>
-                                           </div>
-                                         </td>
+                                        <td className="p-4 font-black text-[#10233F] min-w-[200px] whitespace-nowrap">
+                                          <div className="flex items-center gap-3">
+                                            <div className="size-9 rounded-full bg-[#063B78]/10 text-[#063B78] font-black flex items-center justify-center text-sm shrink-0">
+                                              {worker.name.slice(0, 1).toUpperCase()}
+                                            </div>
+                                            <div className="min-w-0">
+                                              <div className="flex items-center gap-2">
+                                                <span className="text-sm font-black text-[#10233F] whitespace-nowrap">{worker.name}</span>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => {
+                                                    setCalendarWorker(worker);
+                                                    setCalendarMonth(new Date().getMonth());
+                                                    setCalendarYear(new Date().getFullYear());
+                                                    setActiveCalendarDate(null);
+                                                  }}
+                                                  title={t("openAttendanceCalendar")}
+                                                  className="size-7 rounded-lg bg-blue-50 hover:bg-[#063B78] text-[#063B78] hover:text-white border border-blue-200 flex items-center justify-center transition-all shadow-2xs hover:scale-110 cursor-pointer shrink-0"
+                                                >
+                                                  <Calendar className="size-3.5 text-[#063B78] hover:text-white" />
+                                                </button>
+                                              </div>
+                                              <div className="flex items-center gap-1.5 text-xs text-[#5B6B7F] font-bold whitespace-nowrap mt-0.5">
+                                                <Phone className="size-3 text-slate-400 shrink-0" />
+                                                <span>{worker.mobile || "N/A"}</span>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </td>
 
                                         <td className="p-4">
                                           <Badge className="bg-emerald-50 text-emerald-800 border border-emerald-200 font-extrabold text-[11px]">
@@ -3385,38 +3415,38 @@ function AdminDashboardPage() {
                                           </td>
                                         )}
 
-                                         {attendanceMode === "fixed" && (
-                                           <td className="p-4 text-center min-w-[200px]">
-                                             <div className="flex flex-col items-center justify-center gap-1.5">
-                                               {record?.punchInTime ? (
-                                                 <div className="flex flex-col items-center gap-1">
-                                                   <div className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-300 text-emerald-900 px-3 py-1 rounded-xl shadow-xs font-black text-xs">
-                                                     <Clock className="size-3.5 text-emerald-600" />
-                                                     <span>
-                                                       {workInfo.isCurrentlyWorking ? `⏳ ${t("liveWorkLabel")} ` : `⏱️ ${t("workedLabel")} `}
-                                                       <strong className="text-emerald-950 font-black">{workInfo.workedText}</strong>
-                                                     </span>
-                                                   </div>
-                                                   {workInfo.overtimeText && (
-                                                     <div className="inline-flex items-center gap-1.5 bg-amber-100 border border-amber-400 text-amber-950 px-3 py-1 rounded-xl shadow-xs font-black text-xs animate-pulse">
-                                                       <Zap className="size-3.5 text-amber-600 fill-amber-500" />
-                                                       <span>
-                                                         {t("overtimeLabel")} <strong className="text-amber-950 font-black">{workInfo.overtimeText}</strong>
-                                                       </span>
-                                                     </div>
-                                                   )}
-                                                 </div>
-                                               ) : (
-                                                 <div className="inline-flex items-center gap-2 bg-slate-100 border border-slate-300 text-slate-600 px-3.5 py-1.5 rounded-2xl">
-                                                   <Clock className="size-4 text-slate-400" />
-                                                   <span className="font-extrabold text-xs">
-                                                     {t("autoAbsentNotPunched")}
-                                                   </span>
-                                                 </div>
-                                               )}
-                                             </div>
-                                           </td>
-                                         )}
+                                        {attendanceMode === "fixed" && (
+                                          <td className="p-4 text-center min-w-[200px]">
+                                            <div className="flex flex-col items-center justify-center gap-1.5">
+                                              {record?.punchInTime ? (
+                                                <div className="flex flex-col items-center gap-1">
+                                                  <div className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-300 text-emerald-900 px-3 py-1 rounded-xl shadow-xs font-black text-xs">
+                                                    <Clock className="size-3.5 text-emerald-600" />
+                                                    <span>
+                                                      {workInfo.isCurrentlyWorking ? `⏳ ${t("liveWorkLabel")} ` : `⏱️ ${t("workedLabel")} `}
+                                                      <strong className="text-emerald-950 font-black">{workInfo.workedText}</strong>
+                                                    </span>
+                                                  </div>
+                                                  {workInfo.overtimeText && (
+                                                    <div className="inline-flex items-center gap-1.5 bg-amber-100 border border-amber-400 text-amber-950 px-3 py-1 rounded-xl shadow-xs font-black text-xs animate-pulse">
+                                                      <Zap className="size-3.5 text-amber-600 fill-amber-500" />
+                                                      <span>
+                                                        {t("overtimeLabel")} <strong className="text-amber-950 font-black">{workInfo.overtimeText}</strong>
+                                                      </span>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              ) : (
+                                                <div className="inline-flex items-center gap-2 bg-slate-100 border border-slate-300 text-slate-600 px-3.5 py-1.5 rounded-2xl">
+                                                  <Clock className="size-4 text-slate-400" />
+                                                  <span className="font-extrabold text-xs">
+                                                    {t("autoAbsentNotPunched")}
+                                                  </span>
+                                                </div>
+                                              )}
+                                            </div>
+                                          </td>
+                                        )}
 
                                         <td className="p-4 text-right font-black text-emerald-700 text-sm">
                                           ₹{earnedAmount.toLocaleString("en-IN")}
@@ -4036,7 +4066,12 @@ function AdminDashboardPage() {
                                   <td className="p-3 font-black text-emerald-700 text-sm whitespace-nowrap">₹{tx.price}</td>
                                   <td className="p-3 font-extrabold text-amber-700 whitespace-nowrap">{tx.jobCount >= 999 ? t("unlimitedLabel") : tx.jobCount}</td>
                                   <td className="p-3 font-extrabold text-indigo-700 whitespace-nowrap">{tx.workerCount ? (Number(tx.workerCount) >= 9999 ? t("unlimitedLabel") : `${tx.workerCount} ${t("employeesSubTab")}`) : `3 ${t("employeesSubTab")}`}</td>
-                                  <td className="p-3 font-bold uppercase text-slate-600 whitespace-nowrap">{tx.paymentMethod}</td>
+                                  <td className="p-3 whitespace-nowrap">
+                                    <span className="font-bold uppercase text-slate-700 text-xs block">{tx.paymentMethod}</span>
+                                    {tx.razorpayPaymentId && (
+                                      <span className="font-mono text-[10px] text-emerald-700 font-extrabold block">ID: {tx.razorpayPaymentId}</span>
+                                    )}
+                                  </td>
                                   <td className="p-3 text-[#5B6B7F] font-medium whitespace-nowrap">{tx.purchaseDate}</td>
                                   <td className="p-3 whitespace-nowrap">
                                     <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black inline-block whitespace-nowrap">
@@ -4152,6 +4187,437 @@ function AdminDashboardPage() {
                   </table>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* TAB: REPORTS & ANALYTICS */}
+          <div className={activeTab === "reports" ? "block" : "hidden"}>
+            <div className="space-y-6 sm:space-y-8 animate-fade-in min-w-0">
+
+              {/* Top Reports Header Banner */}
+              <div className="rounded-2xl border border-[#DCE5F0] bg-white p-4 sm:p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 min-w-0 overflow-hidden flex-wrap">
+                <div className="space-y-1.5 min-w-[280px] flex-1">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-[#063B78]/10 px-3 py-1 text-[11px] sm:text-xs font-black text-[#063B78] max-w-full truncate">
+                    <PieChart className="size-3.5 text-[#063B78] shrink-0" />
+                    <span className="truncate">{t("reports") || "Reports & Analytics"}</span>
+                  </div>
+                  <h2 className="text-xl sm:text-2xl font-black text-[#10233F] tracking-tight leading-snug break-words">
+                    कंपनी व कर्मचारी सर्वसमावेशक अहवाल (Employer Reports)
+                  </h2>
+                  <p className="text-xs sm:text-sm font-semibold text-[#5B6B7F] max-w-2xl leading-relaxed">
+                    हजेरी, पगार खर्च, नोकऱ्यांचे अर्जदार आणि पॅकेज व्यवहारांचा संपूर्ण विश्लेषण अहवाल.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                  <Button
+                    onClick={() => {
+                      if (typeof window !== "undefined") window.print();
+                    }}
+                    variant="outline"
+                    className="h-10 px-4 rounded-xl font-bold border-slate-300 text-[#063B78] hover:bg-slate-50 flex items-center gap-2 shadow-2xs"
+                  >
+                    <Printer className="size-4" />
+                    <span>प्रिंट अहवाल (Print)</span>
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      // Generate and download CSV
+                      const rows = [
+                        ["Employee / Job Report", new Date().toLocaleDateString("en-IN")],
+                        [],
+                        ["STAFF ATTENDANCE & PAYROLL SUMMARY"],
+                        ["Employee Name", "Mobile", "Role / Trade", "Daily Rate", "Present Days", "Half Days", "Absent", "OT Hours", "Total Wages (INR)"],
+                        ...workers.map((w: any) => {
+                          const wAtt = reportAttendanceRecords.filter((a: DailyAttendanceRecord) => a.workerId === w.id);
+                          const pCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "Present" || a.status === "Overtime").length;
+                          const hdCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "HalfDay").length;
+                          const aCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "Absent").length;
+                          const otHours = wAtt.reduce((sum: number, a: DailyAttendanceRecord) => sum + (Number(a.overtimeHours) || 0), 0);
+                          const rate = Number(w.dailyRate) || 0;
+                          const totalWages = Math.round((pCount * rate) + (hdCount * rate * 0.5) + (otHours * (rate / 8)));
+                          return [w.name, w.mobile || "N/A", w.trade || "Staff", String(rate), String(pCount), String(hdCount), String(aCount), String(otHours), String(totalWages)];
+                        }),
+                        [],
+                        ["JOB POSTINGS SUMMARY"],
+                        ["Job Title", "Category", "Location", "Vacancies", "Status"],
+                        ...jobs.map(j => [j.title, j.category, j.location, String(j.vacancies || 1), j.status])
+                      ];
+                      const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
+                      const encodedUri = encodeURI(csvContent);
+                      const link = document.createElement("a");
+                      link.setAttribute("href", encodedUri);
+                      link.setAttribute("download", `realjob_report_${new Date().toISOString().split("T")[0]}.csv`);
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      toast.success("अहवाल CSV फाईल डाउनलोड झाली!");
+                    }}
+                    className="h-10 px-4 rounded-xl font-black bg-[#063B78] hover:bg-[#082F63] text-white flex items-center gap-2 shadow-sm"
+                  >
+                    <Download className="size-4" />
+                    <span>CSV डाउनलोड</span>
+                  </Button>
+                </div>
+              </div>
+
+              {/* KPI Summary Cards */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-2xs">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider">एकूण कर्मचारी</span>
+                    <div className="size-8 rounded-xl bg-blue-50 text-[#063B78] flex items-center justify-center font-bold">
+                      <Users className="size-4" />
+                    </div>
+                  </div>
+                  <div className="text-2xl sm:text-3xl font-black text-[#10233F]">{workers.length}</div>
+                  <div className="text-[11px] font-semibold text-emerald-700 mt-1">नोंदणीकृत कामगार / कर्मचारी</div>
+                </div>
+
+                <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-2xs">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider">हजेरी व ओव्हरटाईम</span>
+                    <div className="size-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+                      <CalendarCheck className="size-4" />
+                    </div>
+                  </div>
+                  <div className="text-2xl sm:text-3xl font-black text-[#10233F]">
+                    {reportAttendanceRecords.filter((a: DailyAttendanceRecord) => a.status === "Present" || a.status === "Overtime").length}
+                    <span className="text-xs font-bold text-slate-500 ml-1.5">दिवस</span>
+                  </div>
+                  <div className="text-[11px] font-semibold text-amber-700 mt-1">
+                    +{reportAttendanceRecords.reduce((sum: number, a: DailyAttendanceRecord) => sum + (Number(a.overtimeHours) || 0), 0)} तास ओव्हरटाईम
+                  </div>
+                </div>
+
+                <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-2xs">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider">पगार खर्च दायित्व</span>
+                    <div className="size-8 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
+                      <IndianRupee className="size-4" />
+                    </div>
+                  </div>
+                  <div className="text-2xl sm:text-3xl font-black text-emerald-700">
+                    ₹{(() => {
+                      let total = 0;
+                      workers.forEach((w: any) => {
+                        const wAtt = reportAttendanceRecords.filter((a: DailyAttendanceRecord) => a.workerId === w.id);
+                        const pCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "Present" || a.status === "Overtime").length;
+                        const hdCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "HalfDay").length;
+                        const otHours = wAtt.reduce((sum: number, a: DailyAttendanceRecord) => sum + (Number(a.overtimeHours) || 0), 0);
+                        const rate = Number(w.dailyRate) || 0;
+                        total += (pCount * rate) + (hdCount * rate * 0.5) + (otHours * (rate / 8));
+                      });
+                      return Math.round(total).toLocaleString("en-IN");
+                    })()}
+                  </div>
+                  <div className="text-[11px] font-semibold text-slate-500 mt-1">मोजलेला एकूण पगार</div>
+                </div>
+
+                <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-2xs">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider">जॉब आणि अर्जदार</span>
+                    <div className="size-8 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold">
+                      <BriefcaseBusiness className="size-4" />
+                    </div>
+                  </div>
+                  <div className="text-2xl sm:text-3xl font-black text-[#10233F]">
+                    {jobs.length}
+                    <span className="text-xs font-bold text-slate-500 ml-1.5">जॉब्स</span>
+                  </div>
+                  <div className="text-[11px] font-semibold text-purple-700 mt-1">
+                    {applications.length} एकूण आलेले अर्ज
+                  </div>
+                </div>
+              </div>
+
+              {/* Filter Tabs & Search Bar */}
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl w-full sm:w-auto overflow-x-auto">
+                  <button
+                    onClick={() => setReportFilterType("all")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${reportFilterType === "all" ? "bg-white text-[#063B78] shadow-xs font-black" : "text-slate-600 hover:text-slate-900"}`}
+                  >
+                    सर्व अहवाल (All)
+                  </button>
+                  <button
+                    onClick={() => setReportFilterType("attendance")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${reportFilterType === "attendance" ? "bg-white text-[#063B78] shadow-xs font-black" : "text-slate-600 hover:text-slate-900"}`}
+                  >
+                    कर्मचारी व पगार (Payroll)
+                  </button>
+                  <button
+                    onClick={() => setReportFilterType("recruitment")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${reportFilterType === "recruitment" ? "bg-white text-[#063B78] shadow-xs font-black" : "text-slate-600 hover:text-slate-900"}`}
+                  >
+                    नोकऱ्या व अर्ज (Jobs)
+                  </button>
+                  <button
+                    onClick={() => setReportFilterType("billing")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${reportFilterType === "billing" ? "bg-white text-[#063B78] shadow-xs font-black" : "text-slate-600 hover:text-slate-900"}`}
+                  >
+                    पॅकेज व व्यवहार (Billing)
+                  </button>
+                </div>
+
+                <div className="relative w-full sm:w-64">
+                  <Search className="size-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <Input
+                    placeholder="नाव किंवा ट्रेड शोधा..."
+                    value={reportSearchTerm}
+                    onChange={(e) => setReportSearchTerm(e.target.value)}
+                    className="pl-9 h-10 text-xs rounded-xl border-slate-300"
+                  />
+                </div>
+              </div>
+
+              {/* REPORT SECTION 1: WORKER ATTENDANCE & PAYROLL */}
+              {(reportFilterType === "all" || reportFilterType === "attendance") && (
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                  <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                    <div>
+                      <h3 className="text-base font-black text-[#10233F] flex items-center gap-2">
+                        <CalendarCheck className="size-5 text-[#063B78]" />
+                        कर्मचारी हजेरी व पगार पत्रक (Staff Attendance & Payroll Statement)
+                      </h3>
+                      <p className="text-xs font-semibold text-[#5B6B7F] mt-0.5">
+                        प्रत्येक कामगाराचे उपस्थित दिवस, ओव्हरटाईम आणि मोजलेला एकूण पगार.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-[#F8FAFF] border-b border-[#E0E8F5] text-[#5B6B7F] font-black uppercase tracking-wider text-[11px]">
+                          <th className="p-3 whitespace-nowrap">कर्मचारी नाव</th>
+                          <th className="p-3 whitespace-nowrap">ट्रेड / पद</th>
+                          <th className="p-3 whitespace-nowrap">दैनिक दर (Rate)</th>
+                          <th className="p-3 whitespace-nowrap text-center">हजर (P)</th>
+                          <th className="p-3 whitespace-nowrap text-center">अर्धा दिवस (HD)</th>
+                          <th className="p-3 whitespace-nowrap text-center">गैरहजर (A)</th>
+                          <th className="p-3 whitespace-nowrap text-center">ओव्हरटाईम (OT)</th>
+                          <th className="p-3 whitespace-nowrap text-right">एकूण पगार</th>
+                          <th className="p-3 whitespace-nowrap text-center">कृती (Action)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#E0E8F5] font-semibold text-[#10233F]">
+                        {workers
+                          .filter((w: any) => !reportSearchTerm || w.name.toLowerCase().includes(reportSearchTerm.toLowerCase()) || (w.trade || "").toLowerCase().includes(reportSearchTerm.toLowerCase()))
+                          .map((w: any) => {
+                            const wAtt = reportAttendanceRecords.filter((a: DailyAttendanceRecord) => a.workerId === w.id);
+                            const pCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "Present" || a.status === "Overtime").length;
+                            const hdCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "HalfDay").length;
+                            const aCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "Absent").length;
+                            const otHours = wAtt.reduce((sum: number, a: DailyAttendanceRecord) => sum + (Number(a.overtimeHours) || 0), 0);
+                            const rate = Number(w.dailyRate) || 0;
+                            const grossWages = Math.round((pCount * rate) + (hdCount * rate * 0.5) + (otHours * (rate / 8)));
+
+                            return (
+                              <tr key={w.id} className="hover:bg-slate-50/70 transition-colors">
+                                <td className="p-3 whitespace-nowrap">
+                                  <div className="font-bold text-[#063B78] text-sm">{w.name}</div>
+                                  <div className="text-[10px] text-slate-500 font-normal">📞 {w.mobile || "N/A"}</div>
+                                </td>
+                                <td className="p-3 whitespace-nowrap">
+                                  <Badge className="bg-blue-50 text-[#063B78] border border-blue-200 text-[10px] font-bold">
+                                    {w.trade || "Staff"}
+                                  </Badge>
+                                </td>
+                                <td className="p-3 whitespace-nowrap font-black text-slate-700">₹{rate} / दिवस</td>
+                                <td className="p-3 whitespace-nowrap text-center">
+                                  <span className="size-6 inline-flex items-center justify-center rounded-md bg-emerald-100 text-emerald-800 font-black text-xs">
+                                    {pCount}
+                                  </span>
+                                </td>
+                                <td className="p-3 whitespace-nowrap text-center">
+                                  <span className="size-6 inline-flex items-center justify-center rounded-md bg-amber-100 text-amber-800 font-black text-xs">
+                                    {hdCount}
+                                  </span>
+                                </td>
+                                <td className="p-3 whitespace-nowrap text-center">
+                                  <span className="size-6 inline-flex items-center justify-center rounded-md bg-rose-100 text-rose-800 font-black text-xs">
+                                    {aCount}
+                                  </span>
+                                </td>
+                                <td className="p-3 whitespace-nowrap text-center">
+                                  {otHours > 0 ? (
+                                    <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 font-black text-xs">
+                                      +{otHours}h
+                                    </span>
+                                  ) : (
+                                    <span className="text-slate-400">-</span>
+                                  )}
+                                </td>
+                                <td className="p-3 whitespace-nowrap text-right font-black text-emerald-700 text-sm">
+                                  ₹{grossWages.toLocaleString("en-IN")}
+                                </td>
+                                <td className="p-3 whitespace-nowrap text-center">
+                                  <Button
+                                    size="sm"
+                                    onClick={() => setSelectedWorkerReport(w)}
+                                    className="bg-[#063B78] hover:bg-[#082F63] text-white text-xs font-bold h-7 px-3 rounded-lg shadow-2xs cursor-pointer"
+                                  >
+                                    पगार स्लिप
+                                  </Button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        {workers.length === 0 && (
+                          <tr>
+                            <td colSpan={9} className="p-6 text-center text-slate-500 font-bold">
+                              कोणताही कर्मचारी नोंदणीकृत नाही.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* REPORT SECTION 2: JOB VACANCIES & RECRUITMENT */}
+              {(reportFilterType === "all" || reportFilterType === "recruitment") && (
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                  <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                    <div>
+                      <h3 className="text-base font-black text-[#10233F] flex items-center gap-2">
+                        <BriefcaseBusiness className="size-5 text-[#063B78]" />
+                        जॉब पोस्टिंग व भरती कामगिरी (Recruitment & Job Performance)
+                      </h3>
+                      <p className="text-xs font-semibold text-[#5B6B7F] mt-0.5">
+                        सक्रिय जॉब्स, उपलब्ध जागा आणि आलेल्या अर्जांची संख्या.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-[#F8FAFF] border-b border-[#E0E8F5] text-[#5B6B7F] font-black uppercase tracking-wider text-[11px]">
+                          <th className="p-3 whitespace-nowrap">जॉबचे नाव (Job Title)</th>
+                          <th className="p-3 whitespace-nowrap">वर्गवारी (Category)</th>
+                          <th className="p-3 whitespace-nowrap">ठिकाण (Location)</th>
+                          <th className="p-3 whitespace-nowrap text-center">उपलब्ध जागा</th>
+                          <th className="p-3 whitespace-nowrap text-center">एकूण अर्जदार</th>
+                          <th className="p-3 whitespace-nowrap text-center">स्थिती (Status)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#E0E8F5] font-semibold text-[#10233F]">
+                        {jobs.map((j) => {
+                          const jobApps = applications.filter(a => a.jobId === j.id);
+                          return (
+                            <tr key={j.id} className="hover:bg-slate-50/70 transition-colors">
+                              <td className="p-3 whitespace-nowrap">
+                                <div className="font-bold text-[#063B78] text-sm">{j.title}</div>
+                                <div className="text-[10px] text-slate-500 font-normal">{j.jobType} • {j.workMode}</div>
+                              </td>
+                              <td className="p-3 whitespace-nowrap">
+                                <Badge className="bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold">
+                                  {j.category}
+                                </Badge>
+                              </td>
+                              <td className="p-3 whitespace-nowrap font-medium text-slate-700">{j.location}</td>
+                              <td className="p-3 whitespace-nowrap text-center font-bold text-slate-800">{j.vacancies || 1}</td>
+                              <td className="p-3 whitespace-nowrap text-center">
+                                <span className="px-2.5 py-0.5 rounded-full bg-blue-100 text-[#063B78] font-black text-xs">
+                                  {jobApps.length}
+                                </span>
+                              </td>
+                              <td className="p-3 whitespace-nowrap text-center">
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${j.status === "Active" ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"}`}>
+                                  {j.status}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        {jobs.length === 0 && (
+                          <tr>
+                            <td colSpan={6} className="p-6 text-center text-slate-500 font-bold">
+                              कोणतीही नोकरी पोस्ट केलेली नाही.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* REPORT SECTION 3: PACKAGE PURCHASES & INVOICES */}
+              {(reportFilterType === "all" || reportFilterType === "billing") && (
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                  <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                    <div>
+                      <h3 className="text-base font-black text-[#10233F] flex items-center gap-2">
+                        <IndianRupee className="size-5 text-[#063B78]" />
+                        पॅकेज खरेदी व व्यवहार इतिहास (Package Purchases & Invoices)
+                      </h3>
+                      <p className="text-xs font-semibold text-[#5B6B7F] mt-0.5">
+                        Razorpay द्वारे भरलेले शुल्क आणि खरेदी केलेल्या जॉब क्रेडिट्सचा तपशील.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    {(() => {
+                      const userId = currentUser?.id || currentUser?.email || empIdentifier;
+                      const userPkgs = dataStore.getUserPackages(userId);
+                      return (
+                        <table className="w-full text-left text-xs border-collapse">
+                          <thead>
+                            <tr className="bg-[#F8FAFF] border-b border-[#E0E8F5] text-[#5B6B7F] font-black uppercase tracking-wider text-[11px]">
+                              <th className="p-3 whitespace-nowrap">व्यवहार आयडी (Tx ID)</th>
+                              <th className="p-3 whitespace-nowrap">प्लॅनचे नाव (Plan)</th>
+                              <th className="p-3 whitespace-nowrap">भरलेली रक्कम</th>
+                              <th className="p-3 whitespace-nowrap">क्रेडिट्स</th>
+                              <th className="p-3 whitespace-nowrap">पेमेंट पद्धत</th>
+                              <th className="p-3 whitespace-nowrap">तारीख</th>
+                              <th className="p-3 whitespace-nowrap text-center">स्थिती</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[#E0E8F5] font-semibold text-[#10233F]">
+                            {userPkgs.map((tx) => (
+                              <tr key={tx.id} className="hover:bg-slate-50/70 transition-colors">
+                                <td className="p-3 font-mono text-[11px] text-[#063B78] whitespace-nowrap">{tx.id}</td>
+                                <td className="p-3 whitespace-nowrap">
+                                  <span className="px-2.5 py-1 rounded-xl bg-blue-50 text-[#063B78] border border-blue-200 font-black text-xs">
+                                    {tx.planName}
+                                  </span>
+                                </td>
+                                <td className="p-3 font-black text-emerald-700 text-sm whitespace-nowrap">₹{tx.price}</td>
+                                <td className="p-3 font-bold text-amber-700 whitespace-nowrap">{tx.jobCount >= 999 ? "अमर्यादित" : `${tx.jobCount} जॉब्स`}</td>
+                                <td className="p-3 whitespace-nowrap">
+                                  <span className="font-bold uppercase text-slate-700 text-xs block">{tx.paymentMethod}</span>
+                                  {tx.razorpayPaymentId && (
+                                    <span className="font-mono text-[10px] text-emerald-700 font-extrabold block">ID: {tx.razorpayPaymentId}</span>
+                                  )}
+                                </td>
+                                <td className="p-3 text-slate-600 font-medium whitespace-nowrap">{tx.purchaseDate}</td>
+                                <td className="p-3 whitespace-nowrap text-center">
+                                  <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black">
+                                    Completed
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                            {userPkgs.length === 0 && (
+                              <tr>
+                                <td colSpan={7} className="p-6 text-center text-slate-500 font-bold">
+                                  कोणताही खरेदी व्यवहार उपलब्ध नाही.
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      );
+                    })()}
+                  </div>
+                </div>
+              )}
+
             </div>
           </div>
         </main>
@@ -4885,11 +5351,10 @@ function AdminDashboardPage() {
                               overtimeRate: autoHourlyRate.toString(),
                             }));
                           }}
-                          className={`px-2.5 py-1 rounded-lg text-[11px] font-black transition-all flex items-center gap-1 cursor-pointer ${
-                            workerForm.overtimeRateMode === "auto"
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-black transition-all flex items-center gap-1 cursor-pointer ${workerForm.overtimeRateMode === "auto"
                               ? "bg-amber-500 text-white shadow-xs"
                               : "text-slate-600 hover:text-slate-900"
-                          }`}
+                            }`}
                         >
                           <Zap className="size-3 fill-current" /> Auto Calculate
                         </button>
@@ -4902,11 +5367,10 @@ function AdminDashboardPage() {
                               overtimeRateMode: "manual",
                             }));
                           }}
-                          className={`px-2.5 py-1 rounded-lg text-[11px] font-black transition-all flex items-center gap-1 cursor-pointer ${
-                            workerForm.overtimeRateMode === "manual"
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-black transition-all flex items-center gap-1 cursor-pointer ${workerForm.overtimeRateMode === "manual"
                               ? "bg-[#063B78] text-white shadow-xs"
                               : "text-slate-600 hover:text-slate-900"
-                          }`}
+                            }`}
                         >
                           <Edit3 className="size-3" /> Manual Rate
                         </button>
@@ -4937,11 +5401,10 @@ function AdminDashboardPage() {
                               overtimeRateMode: "manual",
                             }));
                           }}
-                          className={`h-11 pl-8 pr-16 rounded-xl text-sm font-black border-slate-300 ${
-                            workerForm.overtimeRateMode === "auto"
+                          className={`h-11 pl-8 pr-16 rounded-xl text-sm font-black border-slate-300 ${workerForm.overtimeRateMode === "auto"
                               ? "bg-amber-50/60 text-amber-950 border-amber-300 font-extrabold"
                               : "bg-white text-emerald-800 border-emerald-400 ring-2 ring-emerald-400/20"
-                          }`}
+                            }`}
                         />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-extrabold text-slate-400">
                           / Hour
@@ -5447,17 +5910,15 @@ function AdminDashboardPage() {
                   <div className="flex bg-slate-100 rounded-lg p-0.5 shrink-0">
                     <button
                       onClick={() => setViewSlipPeriod("week")}
-                      className={`text-xs px-2.5 py-1 font-bold rounded-md transition-all cursor-pointer ${
-                        viewSlipPeriod === "week" ? "bg-white shadow-xs text-[#063B78] font-black" : "text-slate-500 hover:text-slate-900"
-                      }`}
+                      className={`text-xs px-2.5 py-1 font-bold rounded-md transition-all cursor-pointer ${viewSlipPeriod === "week" ? "bg-white shadow-xs text-[#063B78] font-black" : "text-slate-500 hover:text-slate-900"
+                        }`}
                     >
                       {t("salarySlipPeriodWeek")}
                     </button>
                     <button
                       onClick={() => setViewSlipPeriod("month")}
-                      className={`text-xs px-2.5 py-1 font-bold rounded-md transition-all cursor-pointer ${
-                        viewSlipPeriod === "month" ? "bg-white shadow-xs text-[#063B78] font-black" : "text-slate-500 hover:text-slate-900"
-                      }`}
+                      className={`text-xs px-2.5 py-1 font-bold rounded-md transition-all cursor-pointer ${viewSlipPeriod === "month" ? "bg-white shadow-xs text-[#063B78] font-black" : "text-slate-500 hover:text-slate-900"
+                        }`}
                     >
                       {t("salarySlipPeriodMonth")}
                     </button>
@@ -5519,11 +5980,10 @@ function AdminDashboardPage() {
                       <button
                         type="button"
                         onClick={() => { setSlipRangeStartDay(10); setSlipRangeEndDay(20); }}
-                        className={`px-1.5 py-0.5 rounded text-[10px] font-black cursor-pointer border ${
-                          slipRangeStartDay === 10 && slipRangeEndDay === 20
+                        className={`px-1.5 py-0.5 rounded text-[10px] font-black cursor-pointer border ${slipRangeStartDay === 10 && slipRangeEndDay === 20
                             ? "bg-[#063B78] text-white border-[#063B78]"
                             : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
-                        }`}
+                          }`}
                         title="Set 10 to 20"
                       >
                         10-20
@@ -5538,7 +5998,7 @@ function AdminDashboardPage() {
                 {(() => {
                   const effectiveMonthName = selectedSalaryMonth || new Date().toLocaleDateString("en-US", { month: "long" });
                   const effectiveYearStr = selectedSalaryYear || String(new Date().getFullYear());
-                  
+
                   const monthMap: Record<string, number> = {
                     January: 0, February: 1, March: 2, April: 3,
                     May: 4, June: 5, July: 6, August: 7,
@@ -5557,9 +6017,9 @@ function AdminDashboardPage() {
                   const customPayPeriod = `${String(startDay).padStart(2, "0")}-${String(mIdx + 1).padStart(2, "0")}-${yVal} to ${String(endDay).padStart(2, "0")}-${String(mIdx + 1).padStart(2, "0")}-${yVal}`;
 
                   const metrics = getWorkerReportMetrics(
-                    v, 
-                    viewSlipPeriod, 
-                    effectiveMonthName, 
+                    v,
+                    viewSlipPeriod,
+                    effectiveMonthName,
                     effectiveYearStr,
                     isCustomRange ? customStartDate : undefined,
                     isCustomRange ? customEndDate : undefined
@@ -5671,7 +6131,7 @@ function AdminDashboardPage() {
         );
       })()}
 
-            {/* ── EMPLOYEE ATTENDANCE CALENDAR & BULK FILL MODAL ── */}
+      {/* ── EMPLOYEE ATTENDANCE CALENDAR & BULK FILL MODAL ── */}
       {calendarWorker && (() => {
         const activeEmpId = currentUser?.id || currentUser?.fullName || currentUser?.email || empIdentifier;
         const monthNames = [
@@ -5731,15 +6191,15 @@ function AdminDashboardPage() {
         }
 
         return (
-          <div 
+          <div
             className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overflow-y-auto animate-in fade-in duration-200"
             onClick={() => setActiveCalendarDate(null)}
           >
-            <div 
+            <div
               className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[94vh] flex flex-col overflow-hidden my-auto"
               onClick={(e) => e.stopPropagation()}
             >
-              
+
               {/* MODAL HEADER */}
               <div className="bg-[#021D3D] text-white p-4 sm:p-5 flex items-center justify-between shadow-md">
                 <div className="flex items-center gap-3">
@@ -5779,7 +6239,7 @@ function AdminDashboardPage() {
 
               {/* MODAL BODY */}
               <div className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1 bg-white" onClick={() => setActiveCalendarDate(null)}>
-                
+
                 {/* Month Navigation & Controls */}
                 <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                   <div className="flex items-center gap-2">
@@ -5877,13 +6337,12 @@ function AdminDashboardPage() {
                     return (
                       <div
                         key={dateStr}
-                        className={`relative min-h-[72px] sm:min-h-[82px] p-1.5 sm:p-2 rounded-2xl border flex flex-col justify-between transition-all ${
-                          isFuture
+                        className={`relative min-h-[72px] sm:min-h-[82px] p-1.5 sm:p-2 rounded-2xl border flex flex-col justify-between transition-all ${isFuture
                             ? "bg-slate-50/70 border-slate-100 opacity-40 cursor-not-allowed select-none"
                             : isSunday
-                            ? "border-slate-100 bg-white hover:border-slate-300"
-                            : "border-slate-200 bg-white hover:border-slate-300"
-                        } ${isSelected && !isFuture ? "ring-2 ring-[#7C3AED] shadow-lg z-30" : "shadow-2xs"}`}
+                              ? "border-slate-100 bg-white hover:border-slate-300"
+                              : "border-slate-200 bg-white hover:border-slate-300"
+                          } ${isSelected && !isFuture ? "ring-2 ring-[#7C3AED] shadow-lg z-30" : "shadow-2xs"}`}
                       >
                         <div className="flex items-center justify-between">
                           <span className={`text-xs font-black ${isFuture ? "text-slate-400 font-semibold" : isSunday ? "text-rose-500 font-black" : "text-slate-800 font-extrabold"}`}>
@@ -5972,13 +6431,12 @@ function AdminDashboardPage() {
                           {/* ── DROPDOWN POPOVER FOR MARKING ATTENDANCE (Matches Image 1) ── */}
                           {isSelected && !isFuture && (
                             <div
-                              className={`absolute bottom-full mb-2 w-44 bg-white rounded-2xl p-1.5 shadow-2xl border border-slate-200 z-50 animate-in fade-in zoom-in-95 ${
-                                colIdx === 0
+                              className={`absolute bottom-full mb-2 w-44 bg-white rounded-2xl p-1.5 shadow-2xl border border-slate-200 z-50 animate-in fade-in zoom-in-95 ${colIdx === 0
                                   ? "left-0"
                                   : colIdx === 6
-                                  ? "right-0"
-                                  : "left-1/2 -translate-x-1/2"
-                              }`}
+                                    ? "right-0"
+                                    : "left-1/2 -translate-x-1/2"
+                                }`}
                               onClick={(e) => e.stopPropagation()}
                             >
                               <button
@@ -6225,12 +6683,13 @@ function AdminDashboardPage() {
         );
       })()}
 
-{/* ── MOBILE BOTTOM NAVIGATION BAR (Visible on < md) ── */}
+      {/* ── MOBILE BOTTOM NAVIGATION BAR (Visible on < md) ── */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[#021D3D] text-white border-t border-white/10 z-40 px-2 py-1.5 flex items-center justify-around shadow-2xl">
         {[
           { id: "overview", label: "Dashboard", icon: BarChart3 },
           { id: "jobs", label: "Jobs", icon: BriefcaseBusiness, count: jobs.length },
           { id: "applications", label: "Applications", icon: FileText, count: applications.length },
+          { id: "reports", label: "Reports", icon: PieChart },
           { id: "salary", label: "E-Salary", icon: FileText },
           { id: "attendance", label: "Attendance", icon: CalendarCheck },
           { id: "profile", label: "Profile", icon: User },
