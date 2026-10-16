@@ -20,6 +20,9 @@ import {
   CreditCard,
   Smartphone,
   Package,
+  BookOpen,
+  ShoppingBag,
+  ArrowUpRight,
   Check,
   CalendarCheck,
   UserCheck,
@@ -2080,7 +2083,7 @@ function AdminDashboardPage() {
                   { id: "applications", label: t("jobApplications"), icon: FileText, count: applications.length },
                   { id: "attendance", label: t("attendancePayroll"), icon: CalendarCheck, count: workers.length },
                   { id: "salary", label: t("eSalarySlips"), icon: FileText },
-                  { id: "reports", label: t("reports") ? `${t("reports")} / अहवाल (Reports)` : "रिपोर्ट / अहवाल (Reports)", icon: PieChart },
+                  { id: "reports", label: "Reports", icon: PieChart },
                   { id: "packages", label: t("myPackagesBilling"), icon: IndianRupee },
                   { id: "profile", label: t("myProfile"), icon: User },
                 ].map((item) => {
@@ -2164,7 +2167,7 @@ function AdminDashboardPage() {
             { id: "applications", label: t("jobApplications"), icon: FileText, count: applications.length },
             { id: "attendance", label: t("attendancePayroll"), icon: CalendarCheck, count: workers.length },
             { id: "salary", label: t("eSalarySlips"), icon: FileText },
-            { id: "reports", label: t("reports") ? `${t("reports")} / अहवाल (Reports)` : "रिपोर्ट / अहवाल (Reports)", icon: PieChart },
+            { id: "reports", label: "Reports", icon: PieChart },
             { id: "packages", label: t("myPackagesBilling"), icon: IndianRupee },
             { id: "profile", label: t("myProfile"), icon: User },
           ].map((item) => {
@@ -2229,7 +2232,7 @@ function AdminDashboardPage() {
               {activeTab === "packages" && t("myPackagesBilling")}
               {activeTab === "profile" && t("myProfile")}
               {activeTab === "salary" && t("employeeSalarySlipsTitle")}
-              {activeTab === "reports" && (t("reports") || "कंपनी व कर्मचारी अहवाल (Reports)")}
+              {activeTab === "reports" && "Reports"}
             </h2>
           </div>
 
@@ -2542,7 +2545,7 @@ function AdminDashboardPage() {
                     className="border-[#063B78]/30 bg-blue-50/50 hover:bg-blue-100/60 text-[#063B78] font-black text-xs px-3.5 py-2.5 rounded-xl flex items-center gap-2 shadow-xs transition-all w-full sm:w-auto shrink-0 cursor-pointer"
                   >
                     <PieChart className="size-4 text-[#063B78]" />
-                    <span>📊 {t("reports") || "रिपोर्ट"} (Reports)</span>
+                    <span>📊 Reports</span>
                   </Button>
 
                   <div className="w-full sm:w-72 relative">
@@ -4199,13 +4202,13 @@ function AdminDashboardPage() {
                 <div className="space-y-1.5 min-w-[280px] flex-1">
                   <div className="inline-flex items-center gap-2 rounded-full bg-[#063B78]/10 px-3 py-1 text-[11px] sm:text-xs font-black text-[#063B78] max-w-full truncate">
                     <PieChart className="size-3.5 text-[#063B78] shrink-0" />
-                    <span className="truncate">{t("reports") || "Reports & Analytics"}</span>
+                    <span className="truncate">Reports & Analytics</span>
                   </div>
                   <h2 className="text-xl sm:text-2xl font-black text-[#10233F] tracking-tight leading-snug break-words">
-                    कंपनी व कर्मचारी सर्वसमावेशक अहवाल (Employer Reports)
+                    Business & Operational Reports
                   </h2>
                   <p className="text-xs sm:text-sm font-semibold text-[#5B6B7F] max-w-2xl leading-relaxed">
-                    हजेरी, पगार खर्च, नोकऱ्यांचे अर्जदार आणि पॅकेज व्यवहारांचा संपूर्ण विश्लेषण अहवाल.
+                    Comprehensive overview of staff attendance, payroll expenses, recruitment performance, and package billing.
                   </p>
                 </div>
 
@@ -4215,19 +4218,19 @@ function AdminDashboardPage() {
                       if (typeof window !== "undefined") window.print();
                     }}
                     variant="outline"
-                    className="h-10 px-4 rounded-xl font-bold border-slate-300 text-[#063B78] hover:bg-slate-50 flex items-center gap-2 shadow-2xs"
+                    className="h-10 px-4 rounded-xl font-bold border-slate-300 text-[#063B78] hover:bg-slate-50 flex items-center gap-2 shadow-2xs cursor-pointer"
                   >
                     <Printer className="size-4" />
-                    <span>प्रिंट अहवाल (Print)</span>
+                    <span>Print Report</span>
                   </Button>
                   <Button
                     onClick={() => {
                       // Generate and download CSV
                       const rows = [
-                        ["Employee / Job Report", new Date().toLocaleDateString("en-IN")],
+                        ["RealJob Portal - Employer Business Report", new Date().toLocaleDateString("en-IN")],
                         [],
                         ["STAFF ATTENDANCE & PAYROLL SUMMARY"],
-                        ["Employee Name", "Mobile", "Role / Trade", "Daily Rate", "Present Days", "Half Days", "Absent", "OT Hours", "Total Wages (INR)"],
+                        ["Staff Name", "Mobile", "Role / Trade", "Daily Rate", "Present Days", "Half Days", "Absent", "OT Hours", "Total Wages (INR)"],
                         ...workers.map((w: any) => {
                           const wAtt = reportAttendanceRecords.filter((a: DailyAttendanceRecord) => a.workerId === w.id);
                           const pCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "Present" || a.status === "Overtime").length;
@@ -4239,7 +4242,7 @@ function AdminDashboardPage() {
                           return [w.name, w.mobile || "N/A", w.trade || "Staff", String(rate), String(pCount), String(hdCount), String(aCount), String(otHours), String(totalWages)];
                         }),
                         [],
-                        ["JOB POSTINGS SUMMARY"],
+                        ["JOB POSTINGS & RECRUITMENT SUMMARY"],
                         ["Job Title", "Category", "Location", "Vacancies", "Status"],
                         ...jobs.map(j => [j.title, j.category, j.location, String(j.vacancies || 1), j.status])
                       ];
@@ -4251,13 +4254,134 @@ function AdminDashboardPage() {
                       document.body.appendChild(link);
                       link.click();
                       document.body.removeChild(link);
-                      toast.success("अहवाल CSV फाईल डाउनलोड झाली!");
+                      toast.success("Report CSV downloaded successfully!");
                     }}
-                    className="h-10 px-4 rounded-xl font-black bg-[#063B78] hover:bg-[#082F63] text-white flex items-center gap-2 shadow-sm"
+                    className="h-10 px-4 rounded-xl font-black bg-[#063B78] hover:bg-[#082F63] text-white flex items-center gap-2 shadow-sm cursor-pointer"
                   >
                     <Download className="size-4" />
-                    <span>CSV डाउनलोड</span>
+                    <span>Download CSV</span>
                   </Button>
+                </div>
+              </div>
+
+              {/* ── 10 QUICK FEATURE CARDS (MATCHING USER IMAGE 2) ── */}
+              <div className="bg-slate-50/70 p-4 sm:p-6 rounded-3xl border border-slate-200/80">
+                <div className="grid grid-cols-3 gap-3 sm:gap-4 max-w-2xl mx-auto">
+                  {/* Card 1: Cashbook */}
+                  <button
+                    onClick={() => setReportFilterType("billing")}
+                    className="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-200/70 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md hover:-translate-y-1 transition-all duration-200 flex flex-col items-center justify-center text-center cursor-pointer group min-h-[105px] sm:min-h-[125px]"
+                  >
+                    <div className="size-11 sm:size-13 rounded-2xl bg-[#EEF4FF] text-[#2563EB] flex items-center justify-center mb-2 sm:mb-2.5 group-hover:scale-110 transition-transform">
+                      <BookOpen className="size-5 sm:size-6" />
+                    </div>
+                    <span className="text-xs sm:text-sm font-black text-slate-800 leading-tight">Cashbook</span>
+                  </button>
+
+                  {/* Card 2: My Report */}
+                  <button
+                    onClick={() => setReportFilterType("all")}
+                    className="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-200/70 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md hover:-translate-y-1 transition-all duration-200 flex flex-col items-center justify-center text-center cursor-pointer group min-h-[105px] sm:min-h-[125px]"
+                  >
+                    <div className="size-11 sm:size-13 rounded-2xl bg-[#FEECEC] text-[#DC2626] flex items-center justify-center mb-2 sm:mb-2.5 group-hover:scale-110 transition-transform">
+                      <BarChart3 className="size-5 sm:size-6" />
+                    </div>
+                    <span className="text-xs sm:text-sm font-black text-slate-800 leading-tight">My Report</span>
+                  </button>
+
+                  {/* Card 3: Expenses */}
+                  <button
+                    onClick={() => setReportFilterType("attendance")}
+                    className="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-200/70 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md hover:-translate-y-1 transition-all duration-200 flex flex-col items-center justify-center text-center cursor-pointer group min-h-[105px] sm:min-h-[125px]"
+                  >
+                    <div className="size-11 sm:size-13 rounded-2xl bg-[#FEF7EC] text-[#D97706] flex items-center justify-center mb-2 sm:mb-2.5 group-hover:scale-110 transition-transform">
+                      <IndianRupee className="size-5 sm:size-6" />
+                    </div>
+                    <span className="text-xs sm:text-sm font-black text-slate-800 leading-tight">Expenses</span>
+                  </button>
+
+                  {/* Card 4: Financial Reports */}
+                  <button
+                    onClick={() => setReportFilterType("billing")}
+                    className="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-200/70 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md hover:-translate-y-1 transition-all duration-200 flex flex-col items-center justify-center text-center cursor-pointer group min-h-[105px] sm:min-h-[125px]"
+                  >
+                    <div className="size-11 sm:size-13 rounded-2xl bg-[#F5F0FF] text-[#7C3AED] flex items-center justify-center mb-2 sm:mb-2.5 group-hover:scale-110 transition-transform">
+                      <FileText className="size-5 sm:size-6" />
+                    </div>
+                    <span className="text-xs sm:text-sm font-black text-slate-800 leading-tight">Financial Reports</span>
+                  </button>
+
+                  {/* Card 5: Items */}
+                  <button
+                    onClick={() => setReportFilterType("recruitment")}
+                    className="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-200/70 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md hover:-translate-y-1 transition-all duration-200 flex flex-col items-center justify-center text-center cursor-pointer group min-h-[105px] sm:min-h-[125px]"
+                  >
+                    <div className="size-11 sm:size-13 rounded-2xl bg-[#EDFBF2] text-[#059669] flex items-center justify-center mb-2 sm:mb-2.5 group-hover:scale-110 transition-transform">
+                      <Package className="size-5 sm:size-6" />
+                    </div>
+                    <span className="text-xs sm:text-sm font-black text-slate-800 leading-tight">Items</span>
+                  </button>
+
+                  {/* Card 6: Staff */}
+                  <button
+                    onClick={() => setReportFilterType("attendance")}
+                    className="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-200/70 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md hover:-translate-y-1 transition-all duration-200 flex flex-col items-center justify-center text-center cursor-pointer group min-h-[105px] sm:min-h-[125px]"
+                  >
+                    <div className="size-11 sm:size-13 rounded-2xl bg-[#E5F9FC] text-[#0891B2] flex items-center justify-center mb-2 sm:mb-2.5 group-hover:scale-110 transition-transform">
+                      <Users className="size-5 sm:size-6" />
+                    </div>
+                    <span className="text-xs sm:text-sm font-black text-slate-800 leading-tight">Staff</span>
+                  </button>
+
+                  {/* Card 7: My Order */}
+                  <button
+                    onClick={() => {
+                      setReportFilterType("billing");
+                      setShowPackageModal(true);
+                    }}
+                    className="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-200/70 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md hover:-translate-y-1 transition-all duration-200 flex flex-col items-center justify-center text-center cursor-pointer group min-h-[105px] sm:min-h-[125px]"
+                  >
+                    <div className="size-11 sm:size-13 rounded-2xl bg-[#FAF0FE] text-[#A21CAF] flex items-center justify-center mb-2 sm:mb-2.5 group-hover:scale-110 transition-transform">
+                      <ShoppingBag className="size-5 sm:size-6" />
+                    </div>
+                    <span className="text-xs sm:text-sm font-black text-slate-800 leading-tight">My Order</span>
+                  </button>
+
+                  {/* Card 8: Collections List */}
+                  <button
+                    onClick={() => setReportFilterType("billing")}
+                    className="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-200/70 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md hover:-translate-y-1 transition-all duration-200 flex flex-col items-center justify-center text-center cursor-pointer group min-h-[105px] sm:min-h-[125px]"
+                  >
+                    <div className="size-11 sm:size-13 rounded-2xl bg-[#FEFBE8] text-[#CA8A04] flex items-center justify-center mb-2 sm:mb-2.5 group-hover:scale-110 transition-transform">
+                      <Bell className="size-5 sm:size-6" />
+                    </div>
+                    <span className="text-xs sm:text-sm font-black text-slate-800 leading-tight">Collections List</span>
+                  </button>
+
+                  {/* Card 9: Online to Cash */}
+                  <button
+                    onClick={() => setReportFilterType("billing")}
+                    className="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-200/70 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md hover:-translate-y-1 transition-all duration-200 flex flex-col items-center justify-center text-center cursor-pointer group min-h-[105px] sm:min-h-[125px]"
+                  >
+                    <div className="size-11 sm:size-13 rounded-2xl bg-[#EEF8FF] text-[#0284C7] flex items-center justify-center mb-2 sm:mb-2.5 group-hover:scale-110 transition-transform">
+                      <Smartphone className="size-5 sm:size-6" />
+                    </div>
+                    <span className="text-xs sm:text-sm font-black text-slate-800 leading-tight">Online to Cash</span>
+                  </button>
+
+                  {/* Card 10: Cash Out (Centered in row 4) */}
+                  <button
+                    onClick={() => {
+                      setReportFilterType("attendance");
+                      if (workers.length > 0) setSelectedSalaryWorkerId(workers[0]!.id);
+                    }}
+                    className="col-start-2 bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-200/70 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md hover:-translate-y-1 transition-all duration-200 flex flex-col items-center justify-center text-center cursor-pointer group min-h-[105px] sm:min-h-[125px]"
+                  >
+                    <div className="size-11 sm:size-13 rounded-2xl bg-[#FEECEF] text-[#E11D48] flex items-center justify-center mb-2 sm:mb-2.5 group-hover:scale-110 transition-transform">
+                      <ArrowUpRight className="size-5 sm:size-6" />
+                    </div>
+                    <span className="text-xs sm:text-sm font-black text-slate-800 leading-tight">Cash Out</span>
+                  </button>
                 </div>
               </div>
 
@@ -4265,34 +4389,34 @@ function AdminDashboardPage() {
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-2xs">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider">एकूण कर्मचारी</span>
+                    <span className="text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider">TOTAL EMPLOYEES</span>
                     <div className="size-8 rounded-xl bg-blue-50 text-[#063B78] flex items-center justify-center font-bold">
                       <Users className="size-4" />
                     </div>
                   </div>
                   <div className="text-2xl sm:text-3xl font-black text-[#10233F]">{workers.length}</div>
-                  <div className="text-[11px] font-semibold text-emerald-700 mt-1">नोंदणीकृत कामगार / कर्मचारी</div>
+                  <div className="text-[11px] font-semibold text-emerald-700 mt-1">Registered staff members</div>
                 </div>
 
                 <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-2xs">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider">हजेरी व ओव्हरटाईम</span>
+                    <span className="text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider">ATTENDANCE & OT</span>
                     <div className="size-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
                       <CalendarCheck className="size-4" />
                     </div>
                   </div>
                   <div className="text-2xl sm:text-3xl font-black text-[#10233F]">
                     {reportAttendanceRecords.filter((a: DailyAttendanceRecord) => a.status === "Present" || a.status === "Overtime").length}
-                    <span className="text-xs font-bold text-slate-500 ml-1.5">दिवस</span>
+                    <span className="text-xs font-bold text-slate-500 ml-1.5">Days</span>
                   </div>
                   <div className="text-[11px] font-semibold text-amber-700 mt-1">
-                    +{reportAttendanceRecords.reduce((sum: number, a: DailyAttendanceRecord) => sum + (Number(a.overtimeHours) || 0), 0)} तास ओव्हरटाईम
+                    +{reportAttendanceRecords.reduce((sum: number, a: DailyAttendanceRecord) => sum + (Number(a.overtimeHours) || 0), 0)} hrs overtime
                   </div>
                 </div>
 
                 <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-2xs">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider">पगार खर्च दायित्व</span>
+                    <span className="text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider">PAYROLL EXPENSES</span>
                     <div className="size-8 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
                       <IndianRupee className="size-4" />
                     </div>
@@ -4311,22 +4435,22 @@ function AdminDashboardPage() {
                       return Math.round(total).toLocaleString("en-IN");
                     })()}
                   </div>
-                  <div className="text-[11px] font-semibold text-slate-500 mt-1">मोजलेला एकूण पगार</div>
+                  <div className="text-[11px] font-semibold text-slate-500 mt-1">Total calculated payroll liability</div>
                 </div>
 
                 <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-2xs">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider">जॉब आणि अर्जदार</span>
+                    <span className="text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider">JOBS & APPLICANTS</span>
                     <div className="size-8 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold">
                       <BriefcaseBusiness className="size-4" />
                     </div>
                   </div>
                   <div className="text-2xl sm:text-3xl font-black text-[#10233F]">
                     {jobs.length}
-                    <span className="text-xs font-bold text-slate-500 ml-1.5">जॉब्स</span>
+                    <span className="text-xs font-bold text-slate-500 ml-1.5">Jobs</span>
                   </div>
                   <div className="text-[11px] font-semibold text-purple-700 mt-1">
-                    {applications.length} एकूण आलेले अर्ज
+                    {applications.length} Total applications
                   </div>
                 </div>
               </div>
@@ -4336,34 +4460,34 @@ function AdminDashboardPage() {
                 <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl w-full sm:w-auto overflow-x-auto">
                   <button
                     onClick={() => setReportFilterType("all")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${reportFilterType === "all" ? "bg-white text-[#063B78] shadow-xs font-black" : "text-slate-600 hover:text-slate-900"}`}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${reportFilterType === "all" ? "bg-white text-[#063B78] shadow-xs font-black" : "text-slate-600 hover:text-slate-900"}`}
                   >
-                    सर्व अहवाल (All)
+                    All Reports
                   </button>
                   <button
                     onClick={() => setReportFilterType("attendance")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${reportFilterType === "attendance" ? "bg-white text-[#063B78] shadow-xs font-black" : "text-slate-600 hover:text-slate-900"}`}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${reportFilterType === "attendance" ? "bg-white text-[#063B78] shadow-xs font-black" : "text-slate-600 hover:text-slate-900"}`}
                   >
-                    कर्मचारी व पगार (Payroll)
+                    Staff & Payroll
                   </button>
                   <button
                     onClick={() => setReportFilterType("recruitment")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${reportFilterType === "recruitment" ? "bg-white text-[#063B78] shadow-xs font-black" : "text-slate-600 hover:text-slate-900"}`}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${reportFilterType === "recruitment" ? "bg-white text-[#063B78] shadow-xs font-black" : "text-slate-600 hover:text-slate-900"}`}
                   >
-                    नोकऱ्या व अर्ज (Jobs)
+                    Jobs & Recruitment
                   </button>
                   <button
                     onClick={() => setReportFilterType("billing")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${reportFilterType === "billing" ? "bg-white text-[#063B78] shadow-xs font-black" : "text-slate-600 hover:text-slate-900"}`}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${reportFilterType === "billing" ? "bg-white text-[#063B78] shadow-xs font-black" : "text-slate-600 hover:text-slate-900"}`}
                   >
-                    पॅकेज व व्यवहार (Billing)
+                    Billing & Orders
                   </button>
                 </div>
 
                 <div className="relative w-full sm:w-64">
                   <Search className="size-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <Input
-                    placeholder="नाव किंवा ट्रेड शोधा..."
+                    placeholder="Search by name, role or trade..."
                     value={reportSearchTerm}
                     onChange={(e) => setReportSearchTerm(e.target.value)}
                     className="pl-9 h-10 text-xs rounded-xl border-slate-300"
@@ -4378,10 +4502,10 @@ function AdminDashboardPage() {
                     <div>
                       <h3 className="text-base font-black text-[#10233F] flex items-center gap-2">
                         <CalendarCheck className="size-5 text-[#063B78]" />
-                        कर्मचारी हजेरी व पगार पत्रक (Staff Attendance & Payroll Statement)
+                        Staff Attendance & Payroll Statement
                       </h3>
                       <p className="text-xs font-semibold text-[#5B6B7F] mt-0.5">
-                        प्रत्येक कामगाराचे उपस्थित दिवस, ओव्हरटाईम आणि मोजलेला एकूण पगार.
+                        Working days, overtime hours, rates, and total payroll wages per employee.
                       </p>
                     </div>
                   </div>
@@ -4390,15 +4514,15 @@ function AdminDashboardPage() {
                     <table className="w-full text-left text-xs border-collapse">
                       <thead>
                         <tr className="bg-[#F8FAFF] border-b border-[#E0E8F5] text-[#5B6B7F] font-black uppercase tracking-wider text-[11px]">
-                          <th className="p-3 whitespace-nowrap">कर्मचारी नाव</th>
-                          <th className="p-3 whitespace-nowrap">ट्रेड / पद</th>
-                          <th className="p-3 whitespace-nowrap">दैनिक दर (Rate)</th>
-                          <th className="p-3 whitespace-nowrap text-center">हजर (P)</th>
-                          <th className="p-3 whitespace-nowrap text-center">अर्धा दिवस (HD)</th>
-                          <th className="p-3 whitespace-nowrap text-center">गैरहजर (A)</th>
-                          <th className="p-3 whitespace-nowrap text-center">ओव्हरटाईम (OT)</th>
-                          <th className="p-3 whitespace-nowrap text-right">एकूण पगार</th>
-                          <th className="p-3 whitespace-nowrap text-center">कृती (Action)</th>
+                          <th className="p-3 whitespace-nowrap">Staff Name</th>
+                          <th className="p-3 whitespace-nowrap">Role / Trade</th>
+                          <th className="p-3 whitespace-nowrap">Daily Rate</th>
+                          <th className="p-3 whitespace-nowrap text-center">Present (P)</th>
+                          <th className="p-3 whitespace-nowrap text-center">Half Day (HD)</th>
+                          <th className="p-3 whitespace-nowrap text-center">Absent (A)</th>
+                          <th className="p-3 whitespace-nowrap text-center">Overtime (OT)</th>
+                          <th className="p-3 whitespace-nowrap text-right">Total Wages</th>
+                          <th className="p-3 whitespace-nowrap text-center">Action</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-[#E0E8F5] font-semibold text-[#10233F]">
@@ -4424,7 +4548,7 @@ function AdminDashboardPage() {
                                     {w.trade || "Staff"}
                                   </Badge>
                                 </td>
-                                <td className="p-3 whitespace-nowrap font-black text-slate-700">₹{rate} / दिवस</td>
+                                <td className="p-3 whitespace-nowrap font-black text-slate-700">₹{rate} / day</td>
                                 <td className="p-3 whitespace-nowrap text-center">
                                   <span className="size-6 inline-flex items-center justify-center rounded-md bg-emerald-100 text-emerald-800 font-black text-xs">
                                     {pCount}
@@ -4458,7 +4582,7 @@ function AdminDashboardPage() {
                                     onClick={() => setSelectedWorkerReport(w)}
                                     className="bg-[#063B78] hover:bg-[#082F63] text-white text-xs font-bold h-7 px-3 rounded-lg shadow-2xs cursor-pointer"
                                   >
-                                    पगार स्लिप
+                                    Salary Slip
                                   </Button>
                                 </td>
                               </tr>
@@ -4467,7 +4591,7 @@ function AdminDashboardPage() {
                         {workers.length === 0 && (
                           <tr>
                             <td colSpan={9} className="p-6 text-center text-slate-500 font-bold">
-                              कोणताही कर्मचारी नोंदणीकृत नाही.
+                              No staff registered yet.
                             </td>
                           </tr>
                         )}
@@ -4484,10 +4608,10 @@ function AdminDashboardPage() {
                     <div>
                       <h3 className="text-base font-black text-[#10233F] flex items-center gap-2">
                         <BriefcaseBusiness className="size-5 text-[#063B78]" />
-                        जॉब पोस्टिंग व भरती कामगिरी (Recruitment & Job Performance)
+                        Recruitment & Job Performance
                       </h3>
                       <p className="text-xs font-semibold text-[#5B6B7F] mt-0.5">
-                        सक्रिय जॉब्स, उपलब्ध जागा आणि आलेल्या अर्जांची संख्या.
+                        Active job listings, openings, and candidate applications.
                       </p>
                     </div>
                   </div>
@@ -4496,12 +4620,12 @@ function AdminDashboardPage() {
                     <table className="w-full text-left text-xs border-collapse">
                       <thead>
                         <tr className="bg-[#F8FAFF] border-b border-[#E0E8F5] text-[#5B6B7F] font-black uppercase tracking-wider text-[11px]">
-                          <th className="p-3 whitespace-nowrap">जॉबचे नाव (Job Title)</th>
-                          <th className="p-3 whitespace-nowrap">वर्गवारी (Category)</th>
-                          <th className="p-3 whitespace-nowrap">ठिकाण (Location)</th>
-                          <th className="p-3 whitespace-nowrap text-center">उपलब्ध जागा</th>
-                          <th className="p-3 whitespace-nowrap text-center">एकूण अर्जदार</th>
-                          <th className="p-3 whitespace-nowrap text-center">स्थिती (Status)</th>
+                          <th className="p-3 whitespace-nowrap">Job Title</th>
+                          <th className="p-3 whitespace-nowrap">Category</th>
+                          <th className="p-3 whitespace-nowrap">Location</th>
+                          <th className="p-3 whitespace-nowrap text-center">Vacancies</th>
+                          <th className="p-3 whitespace-nowrap text-center">Applicants</th>
+                          <th className="p-3 whitespace-nowrap text-center">Status</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-[#E0E8F5] font-semibold text-[#10233F]">
@@ -4536,7 +4660,7 @@ function AdminDashboardPage() {
                         {jobs.length === 0 && (
                           <tr>
                             <td colSpan={6} className="p-6 text-center text-slate-500 font-bold">
-                              कोणतीही नोकरी पोस्ट केलेली नाही.
+                              No jobs posted yet.
                             </td>
                           </tr>
                         )}
@@ -4553,10 +4677,10 @@ function AdminDashboardPage() {
                     <div>
                       <h3 className="text-base font-black text-[#10233F] flex items-center gap-2">
                         <IndianRupee className="size-5 text-[#063B78]" />
-                        पॅकेज खरेदी व व्यवहार इतिहास (Package Purchases & Invoices)
+                        Package Purchases & Invoices (Razorpay)
                       </h3>
                       <p className="text-xs font-semibold text-[#5B6B7F] mt-0.5">
-                        Razorpay द्वारे भरलेले शुल्क आणि खरेदी केलेल्या जॉब क्रेडिट्सचा तपशील.
+                        Membership packages, activated credits, and transaction IDs.
                       </p>
                     </div>
                   </div>
@@ -4569,13 +4693,13 @@ function AdminDashboardPage() {
                         <table className="w-full text-left text-xs border-collapse">
                           <thead>
                             <tr className="bg-[#F8FAFF] border-b border-[#E0E8F5] text-[#5B6B7F] font-black uppercase tracking-wider text-[11px]">
-                              <th className="p-3 whitespace-nowrap">व्यवहार आयडी (Tx ID)</th>
-                              <th className="p-3 whitespace-nowrap">प्लॅनचे नाव (Plan)</th>
-                              <th className="p-3 whitespace-nowrap">भरलेली रक्कम</th>
-                              <th className="p-3 whitespace-nowrap">क्रेडिट्स</th>
-                              <th className="p-3 whitespace-nowrap">पेमेंट पद्धत</th>
-                              <th className="p-3 whitespace-nowrap">तारीख</th>
-                              <th className="p-3 whitespace-nowrap text-center">स्थिती</th>
+                              <th className="p-3 whitespace-nowrap">Transaction ID</th>
+                              <th className="p-3 whitespace-nowrap">Plan Name</th>
+                              <th className="p-3 whitespace-nowrap">Amount Paid</th>
+                              <th className="p-3 whitespace-nowrap">Credits</th>
+                              <th className="p-3 whitespace-nowrap">Payment Method</th>
+                              <th className="p-3 whitespace-nowrap">Date</th>
+                              <th className="p-3 whitespace-nowrap text-center">Status</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-[#E0E8F5] font-semibold text-[#10233F]">
@@ -4588,7 +4712,7 @@ function AdminDashboardPage() {
                                   </span>
                                 </td>
                                 <td className="p-3 font-black text-emerald-700 text-sm whitespace-nowrap">₹{tx.price}</td>
-                                <td className="p-3 font-bold text-amber-700 whitespace-nowrap">{tx.jobCount >= 999 ? "अमर्यादित" : `${tx.jobCount} जॉब्स`}</td>
+                                <td className="p-3 font-bold text-amber-700 whitespace-nowrap">{tx.jobCount >= 999 ? "Unlimited" : `${tx.jobCount} Jobs`}</td>
                                 <td className="p-3 whitespace-nowrap">
                                   <span className="font-bold uppercase text-slate-700 text-xs block">{tx.paymentMethod}</span>
                                   {tx.razorpayPaymentId && (
@@ -4606,7 +4730,7 @@ function AdminDashboardPage() {
                             {userPkgs.length === 0 && (
                               <tr>
                                 <td colSpan={7} className="p-6 text-center text-slate-500 font-bold">
-                                  कोणताही खरेदी व्यवहार उपलब्ध नाही.
+                                  No transaction records found.
                                 </td>
                               </tr>
                             )}

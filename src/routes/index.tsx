@@ -585,18 +585,6 @@ function LandingGatewayPage() {
             })}
           </div>
 
-          <div className="relative z-10 text-center px-4 max-w-4xl mx-auto flex flex-col items-center pointer-events-none">
-            {heroTitle && heroTitle.trim() !== "" && (
-              <h1 className="text-2xl sm:text-4xl md:text-5xl font-black text-white tracking-tight drop-shadow-[0_4px_16px_rgba(0,0,0,0.85)] mb-3 whitespace-pre-line">
-                {heroTitle}
-              </h1>
-            )}
-            {heroSubtitle && heroSubtitle.trim() !== "" && (
-              <p className="text-sm sm:text-lg md:text-xl font-bold text-amber-300 drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)] max-w-2xl">
-                {heroSubtitle}
-              </p>
-            )}
-          </div>
         </section>
 
         {/* METRICS & ADVANTAGES */}
