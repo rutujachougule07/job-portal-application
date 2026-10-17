@@ -53,15 +53,15 @@ export function PublicFooter() {
         {/* Contact Info & Links Grid */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 pt-5 border-t border-white/10">
           
-          <div className="flex items-center gap-2 text-sm font-semibold text-slate-200 hover:text-[#FFC400] transition-colors">
+          <a href="mailto:realjobandhiring@realjob.online" className="flex items-center gap-2 text-sm font-semibold text-slate-200 hover:text-[#FFC400] transition-colors">
             <span className="flex items-center justify-center size-7 rounded-full bg-white/10 text-[#FFC400]">✉</span>
-            rjsgroup108@gmail.com
-          </div>
+            realjobandhiring@realjob.online
+          </a>
           
-          <div className="flex items-center gap-2 text-sm font-semibold text-slate-200 hover:text-[#FFC400] transition-colors">
+          <a href="tel:9964216090" className="flex items-center gap-2 text-sm font-semibold text-slate-200 hover:text-[#FFC400] transition-colors">
             <span className="flex items-center justify-center size-7 rounded-full bg-white/10 text-[#FFC400]">📞</span>
-            8722739355
-          </div>
+            9964216090
+          </a>
           
           <div className="w-1 h-1 rounded-full bg-slate-500 hidden sm:block"></div>
 

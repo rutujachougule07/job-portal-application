@@ -330,6 +330,7 @@ function AdminDashboardPage() {
   const [reportAttendanceRecords, setReportAttendanceRecords] = useState<DailyAttendanceRecord[]>([]);
   const [reportFilterType, setReportFilterType] = useState<"all" | "attendance" | "recruitment" | "billing">("all");
   const [reportSearchTerm, setReportSearchTerm] = useState("");
+  const [selectedReportCard, setSelectedReportCard] = useState<string | null>(null);
 
   // Worker Individual Report & Salary Slip states
   const [selectedWorkerReport, setSelectedWorkerReport] = useState<EmployerWorker | null>(null);
@@ -1336,23 +1337,29 @@ function AdminDashboardPage() {
   };
 
   const handleOpenAddWorker = () => {
-    const userId = currentUser?.id || currentUser?.email || empIdentifier;
-    const allowedLimit = dataStore.getUserWorkerCredits(userId);
-    if (allowedLimit === 0) {
-      toast.error(
-        "⚠️ Active package required to add employees! Please purchase a package to continue.",
-        { duration: 6000 }
-      );
-      setShowPackageModal(true);
-      return;
-    }
-    if (workers.length >= allowedLimit) {
-      toast.error(
-        `⚠️ Employee limit reached for your active package! (Current Limit: ${allowedLimit} employees). Please upgrade package to add more employees!`,
-        { duration: 6000 }
-      );
-      setShowPackageModal(true);
-      return;
+    // Check if user has active package or is super admin (same as Job Posting check)
+    if (!isSuperAdmin) {
+      const activeEmpId = currentUser?.id || currentUser?.email || empIdentifier;
+      const userPkgs = dataStore.getUserPackages(activeEmpId);
+      const allowedLimit = dataStore.getUserWorkerCredits(activeEmpId);
+
+      if (!userPkgs || userPkgs.length === 0 || allowedLimit <= 0) {
+        toast.info(
+          "Please select a Package to add employees / CRM users (कर्मचारी ॲड करण्यासाठी कृपया पॅकेज निवडा).",
+          { duration: 6000 }
+        );
+        setShowPackageModal(true);
+        return;
+      }
+
+      if (workers.length >= allowedLimit) {
+        toast.error(
+          `⚠️ Employee limit reached for your active package! (Current Limit: ${allowedLimit} employees). Please upgrade package to add more employees!`,
+          { duration: 6000 }
+        );
+        setShowPackageModal(true);
+        return;
+      }
     }
 
     const defStart = "09:00";
@@ -1434,6 +1441,33 @@ function AdminDashboardPage() {
       toast.error("Please enter employee name");
       return;
     }
+
+    // Require active package when adding a new employee
+    if (!isSuperAdmin && !editingWorkerId) {
+      const activeEmpId = currentUser?.id || currentUser?.email || empIdentifier;
+      const userPkgs = dataStore.getUserPackages(activeEmpId);
+      const allowedLimit = dataStore.getUserWorkerCredits(activeEmpId);
+
+      if (!userPkgs || userPkgs.length === 0 || allowedLimit <= 0) {
+        toast.info(
+          "Please select a Package to add employees / CRM users (कर्मचारी ॲड करण्यासाठी कृपया पॅकेज निवडा).",
+          { duration: 6000 }
+        );
+        setShowWorkerModal(false);
+        setShowPackageModal(true);
+        return;
+      }
+
+      if (workers.length >= allowedLimit) {
+        toast.error(
+          `⚠️ Employee limit reached for your active package! (Current Limit: ${allowedLimit} employees). Please upgrade package to add more employees!`,
+          { duration: 6000 }
+        );
+        setShowWorkerModal(false);
+        setShowPackageModal(true);
+        return;
+      }
+    }
     const baseHrsNum = computeHoursFromTimes(workerForm.workShiftStart, workerForm.workShiftEnd);
     const dailyWageNum = Number(workerForm.dailyRate) || 500;
     const workingHrsNum = Number(workerForm.dailyWorkingHours) || baseHrsNum;
@@ -1465,6 +1499,18 @@ function AdminDashboardPage() {
       attendanceMode: workerForm.attendanceMode,
       customFields: customFields.filter((f) => f.label.trim() !== ""),
     } as any);
+
+    // If user typed a custom category manually, persist it for future quick selection
+    const trimmedCat = workerForm.category.trim();
+    if (trimmedCat && !customCategories.includes(trimmedCat) && !getIndustryDefaultCategories().includes(trimmedCat)) {
+      const updatedCats = Array.from(new Set([...customCategories, trimmedCat]));
+      setCustomCategories(updatedCats);
+      try {
+        localStorage.setItem(`emp_custom_cats_${activeEmpId}`, JSON.stringify(updatedCats));
+        localStorage.setItem("emp_custom_cats_global", JSON.stringify(updatedCats));
+      } catch { }
+    }
+
     setShowWorkerModal(false);
     setEditingWorkerId(null);
     loadAttendanceData();
@@ -1503,6 +1549,13 @@ function AdminDashboardPage() {
 
   useEffect(() => {
     loadAllData();
+    const handleFirebaseSync = () => {
+      loadAllData();
+    };
+    window.addEventListener("realjob_firebase_synced", handleFirebaseSync);
+    return () => {
+      window.removeEventListener("realjob_firebase_synced", handleFirebaseSync);
+    };
   }, [empIdentifier]);
 
   const [replyInputs, setReplyInputs] = useState<Record<string, string>>({});
@@ -2780,22 +2833,12 @@ function AdminDashboardPage() {
                               <div className="text-[11px] text-[#125BB5]">{a.companyName || "Company"} • {a.location}</div>
                             </td>
                             <td className="p-3.5">
-                              <div className="flex items-center gap-2">
-                                <a
-                                  href={`tel:${formatCallNumber(a.candidateMobile)}`}
-                                  className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-bold text-[10px] hover:bg-emerald-700 transition-all flex items-center gap-1"
-                                >
-                                  📞 Call Candidate
-                                </a>
-                                <a
-                                  href={`https://wa.me/${formatWaNumber(a.candidateMobile)}?text=${encodeURIComponent(`Hello ${a.candidateName}, regarding your application for ${a.jobTitle}.`)}`}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="px-2.5 py-1 rounded-lg bg-green-600 text-white font-bold text-[10px] hover:bg-green-700 transition-all flex items-center gap-1"
-                                >
-                                  💬 WhatsApp
-                                </a>
-                              </div>
+                              <a
+                                href={`tel:${formatCallNumber(a.candidateMobile)}`}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-bold text-[10px] hover:bg-emerald-700 transition-all shadow-2xs"
+                              >
+                                📞 Call Candidate
+                              </a>
                             </td>
                             <td className="p-3.5 text-[#5B6B7F] font-bold">{a.appliedDate}</td>
                             <td className="p-3.5">
@@ -4197,426 +4240,595 @@ function AdminDashboardPage() {
           <div className={activeTab === "reports" ? "block" : "hidden"}>
             <div className="space-y-6 sm:space-y-8 animate-fade-in min-w-0">
 
-              {/* Top Reports Header Banner */}
-              <div className="rounded-2xl border border-[#DCE5F0] bg-white p-4 sm:p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 min-w-0 overflow-hidden flex-wrap">
-                <div className="space-y-1.5 min-w-[280px] flex-1">
-                  <div className="inline-flex items-center gap-2 rounded-full bg-[#063B78]/10 px-3 py-1 text-[11px] sm:text-xs font-black text-[#063B78] max-w-full truncate">
-                    <PieChart className="size-3.5 text-[#063B78] shrink-0" />
-                    <span className="truncate">Reports & Analytics</span>
-                  </div>
-                  <h2 className="text-xl sm:text-2xl font-black text-[#10233F] tracking-tight leading-snug break-words">
-                    Business & Operational Reports
-                  </h2>
-                  <p className="text-xs sm:text-sm font-semibold text-[#5B6B7F] max-w-2xl leading-relaxed">
-                    Comprehensive overview of staff attendance, payroll expenses, recruitment performance, and package billing.
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                  <Button
-                    onClick={() => {
-                      if (typeof window !== "undefined") window.print();
-                    }}
-                    variant="outline"
-                    className="h-10 px-4 rounded-xl font-bold border-slate-300 text-[#063B78] hover:bg-slate-50 flex items-center gap-2 shadow-2xs cursor-pointer"
-                  >
-                    <Printer className="size-4" />
-                    <span>Print Report</span>
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      // Generate and download CSV
-                      const rows = [
-                        ["RealJob Portal - Employer Business Report", new Date().toLocaleDateString("en-IN")],
-                        [],
-                        ["STAFF ATTENDANCE & PAYROLL SUMMARY"],
-                        ["Staff Name", "Mobile", "Role / Trade", "Daily Rate", "Present Days", "Half Days", "Absent", "OT Hours", "Total Wages (INR)"],
-                        ...workers.map((w: any) => {
-                          const wAtt = reportAttendanceRecords.filter((a: DailyAttendanceRecord) => a.workerId === w.id);
-                          const pCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "Present" || a.status === "Overtime").length;
-                          const hdCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "HalfDay").length;
-                          const aCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "Absent").length;
-                          const otHours = wAtt.reduce((sum: number, a: DailyAttendanceRecord) => sum + (Number(a.overtimeHours) || 0), 0);
-                          const rate = Number(w.dailyRate) || 0;
-                          const totalWages = Math.round((pCount * rate) + (hdCount * rate * 0.5) + (otHours * (rate / 8)));
-                          return [w.name, w.mobile || "N/A", w.trade || "Staff", String(rate), String(pCount), String(hdCount), String(aCount), String(otHours), String(totalWages)];
-                        }),
-                        [],
-                        ["JOB POSTINGS & RECRUITMENT SUMMARY"],
-                        ["Job Title", "Category", "Location", "Vacancies", "Status"],
-                        ...jobs.map(j => [j.title, j.category, j.location, String(j.vacancies || 1), j.status])
-                      ];
-                      const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
-                      const encodedUri = encodeURI(csvContent);
-                      const link = document.createElement("a");
-                      link.setAttribute("href", encodedUri);
-                      link.setAttribute("download", `realjob_report_${new Date().toISOString().split("T")[0]}.csv`);
-                      document.body.appendChild(link);
-                      link.click();
-                      document.body.removeChild(link);
-                      toast.success("Report CSV downloaded successfully!");
-                    }}
-                    className="h-10 px-4 rounded-xl font-black bg-[#063B78] hover:bg-[#082F63] text-white flex items-center gap-2 shadow-sm cursor-pointer"
-                  >
-                    <Download className="size-4" />
-                    <span>Download CSV</span>
-                  </Button>
-                </div>
-              </div>
-
-              {/* ── 10 QUICK FEATURE CARDS (MATCHING USER IMAGE 2) ── */}
-              <div className="bg-slate-50/70 p-4 sm:p-6 rounded-3xl border border-slate-200/80">
-                <div className="grid grid-cols-3 gap-3 sm:gap-4 max-w-2xl mx-auto">
+              {/* ── 10 QUICK FEATURE CARDS (COMPACT 5-COLUMN DASHBOARD GRID) ── */}
+              <div className="bg-white p-3 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs max-w-5xl mx-auto">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5 sm:gap-3">
                   {/* Card 1: Cashbook */}
                   <button
-                    onClick={() => setReportFilterType("billing")}
-                    className="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-200/70 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md hover:-translate-y-1 transition-all duration-200 flex flex-col items-center justify-center text-center cursor-pointer group min-h-[105px] sm:min-h-[125px]"
+                    onClick={() => setSelectedReportCard(selectedReportCard === "cashbook" ? null : "cashbook")}
+                    className={`rounded-2xl p-2.5 sm:p-3 border transition-all duration-150 flex flex-col items-center justify-center text-center cursor-pointer group min-h-[90px] sm:min-h-[100px] ${
+                      selectedReportCard === "cashbook"
+                        ? "border-[#063B78] ring-2 ring-[#063B78] bg-blue-50/50 shadow-xs"
+                        : "bg-white border-slate-200/80 hover:border-slate-300 hover:bg-slate-50/60 shadow-2xs"
+                    }`}
                   >
-                    <div className="size-11 sm:size-13 rounded-2xl bg-[#EEF4FF] text-[#2563EB] flex items-center justify-center mb-2 sm:mb-2.5 group-hover:scale-110 transition-transform">
-                      <BookOpen className="size-5 sm:size-6" />
+                    <div className="size-10 sm:size-11 rounded-xl bg-[#EEF4FF] text-[#2563EB] flex items-center justify-center mb-1.5 group-hover:scale-105 transition-transform">
+                      <BookOpen className="size-5" />
                     </div>
-                    <span className="text-xs sm:text-sm font-black text-slate-800 leading-tight">Cashbook</span>
+                    <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight">Cashbook</span>
+                    {selectedReportCard === "cashbook" && (
+                      <span className="mt-1 text-[9px] font-black text-blue-700 bg-blue-100 px-1.5 py-0.2 rounded-full">Active</span>
+                    )}
                   </button>
 
                   {/* Card 2: My Report */}
                   <button
-                    onClick={() => setReportFilterType("all")}
-                    className="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-200/70 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md hover:-translate-y-1 transition-all duration-200 flex flex-col items-center justify-center text-center cursor-pointer group min-h-[105px] sm:min-h-[125px]"
+                    onClick={() => setSelectedReportCard(selectedReportCard === "my-report" ? null : "my-report")}
+                    className={`rounded-2xl p-2.5 sm:p-3 border transition-all duration-150 flex flex-col items-center justify-center text-center cursor-pointer group min-h-[90px] sm:min-h-[100px] ${
+                      selectedReportCard === "my-report"
+                        ? "border-[#DC2626] ring-2 ring-[#DC2626] bg-rose-50/50 shadow-xs"
+                        : "bg-white border-slate-200/80 hover:border-slate-300 hover:bg-slate-50/60 shadow-2xs"
+                    }`}
                   >
-                    <div className="size-11 sm:size-13 rounded-2xl bg-[#FEECEC] text-[#DC2626] flex items-center justify-center mb-2 sm:mb-2.5 group-hover:scale-110 transition-transform">
-                      <BarChart3 className="size-5 sm:size-6" />
+                    <div className="size-10 sm:size-11 rounded-xl bg-[#FEECEC] text-[#DC2626] flex items-center justify-center mb-1.5 group-hover:scale-105 transition-transform">
+                      <BarChart3 className="size-5" />
                     </div>
-                    <span className="text-xs sm:text-sm font-black text-slate-800 leading-tight">My Report</span>
+                    <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight">My Report</span>
+                    {selectedReportCard === "my-report" && (
+                      <span className="mt-1 text-[9px] font-black text-rose-700 bg-rose-100 px-1.5 py-0.2 rounded-full">Active</span>
+                    )}
                   </button>
 
                   {/* Card 3: Expenses */}
                   <button
-                    onClick={() => setReportFilterType("attendance")}
-                    className="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-200/70 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md hover:-translate-y-1 transition-all duration-200 flex flex-col items-center justify-center text-center cursor-pointer group min-h-[105px] sm:min-h-[125px]"
+                    onClick={() => setSelectedReportCard(selectedReportCard === "expenses" ? null : "expenses")}
+                    className={`rounded-2xl p-2.5 sm:p-3 border transition-all duration-150 flex flex-col items-center justify-center text-center cursor-pointer group min-h-[90px] sm:min-h-[100px] ${
+                      selectedReportCard === "expenses"
+                        ? "border-[#D97706] ring-2 ring-[#D97706] bg-amber-50/50 shadow-xs"
+                        : "bg-white border-slate-200/80 hover:border-slate-300 hover:bg-slate-50/60 shadow-2xs"
+                    }`}
                   >
-                    <div className="size-11 sm:size-13 rounded-2xl bg-[#FEF7EC] text-[#D97706] flex items-center justify-center mb-2 sm:mb-2.5 group-hover:scale-110 transition-transform">
-                      <IndianRupee className="size-5 sm:size-6" />
+                    <div className="size-10 sm:size-11 rounded-xl bg-[#FEF7EC] text-[#D97706] flex items-center justify-center mb-1.5 group-hover:scale-105 transition-transform">
+                      <IndianRupee className="size-5" />
                     </div>
-                    <span className="text-xs sm:text-sm font-black text-slate-800 leading-tight">Expenses</span>
+                    <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight">Expenses</span>
+                    {selectedReportCard === "expenses" && (
+                      <span className="mt-1 text-[9px] font-black text-amber-700 bg-amber-100 px-1.5 py-0.2 rounded-full">Active</span>
+                    )}
                   </button>
 
                   {/* Card 4: Financial Reports */}
                   <button
-                    onClick={() => setReportFilterType("billing")}
-                    className="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-200/70 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md hover:-translate-y-1 transition-all duration-200 flex flex-col items-center justify-center text-center cursor-pointer group min-h-[105px] sm:min-h-[125px]"
+                    onClick={() => setSelectedReportCard(selectedReportCard === "financial-reports" ? null : "financial-reports")}
+                    className={`rounded-2xl p-2.5 sm:p-3 border transition-all duration-150 flex flex-col items-center justify-center text-center cursor-pointer group min-h-[90px] sm:min-h-[100px] ${
+                      selectedReportCard === "financial-reports"
+                        ? "border-[#7C3AED] ring-2 ring-[#7C3AED] bg-purple-50/50 shadow-xs"
+                        : "bg-white border-slate-200/80 hover:border-slate-300 hover:bg-slate-50/60 shadow-2xs"
+                    }`}
                   >
-                    <div className="size-11 sm:size-13 rounded-2xl bg-[#F5F0FF] text-[#7C3AED] flex items-center justify-center mb-2 sm:mb-2.5 group-hover:scale-110 transition-transform">
-                      <FileText className="size-5 sm:size-6" />
+                    <div className="size-10 sm:size-11 rounded-xl bg-[#F5F0FF] text-[#7C3AED] flex items-center justify-center mb-1.5 group-hover:scale-105 transition-transform">
+                      <FileText className="size-5" />
                     </div>
-                    <span className="text-xs sm:text-sm font-black text-slate-800 leading-tight">Financial Reports</span>
+                    <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight">Financial Reports</span>
+                    {selectedReportCard === "financial-reports" && (
+                      <span className="mt-1 text-[9px] font-black text-purple-700 bg-purple-100 px-1.5 py-0.2 rounded-full">Active</span>
+                    )}
                   </button>
 
                   {/* Card 5: Items */}
                   <button
-                    onClick={() => setReportFilterType("recruitment")}
-                    className="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-200/70 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md hover:-translate-y-1 transition-all duration-200 flex flex-col items-center justify-center text-center cursor-pointer group min-h-[105px] sm:min-h-[125px]"
+                    onClick={() => setSelectedReportCard(selectedReportCard === "items" ? null : "items")}
+                    className={`rounded-2xl p-2.5 sm:p-3 border transition-all duration-150 flex flex-col items-center justify-center text-center cursor-pointer group min-h-[90px] sm:min-h-[100px] ${
+                      selectedReportCard === "items"
+                        ? "border-[#059669] ring-2 ring-[#059669] bg-emerald-50/50 shadow-xs"
+                        : "bg-white border-slate-200/80 hover:border-slate-300 hover:bg-slate-50/60 shadow-2xs"
+                    }`}
                   >
-                    <div className="size-11 sm:size-13 rounded-2xl bg-[#EDFBF2] text-[#059669] flex items-center justify-center mb-2 sm:mb-2.5 group-hover:scale-110 transition-transform">
-                      <Package className="size-5 sm:size-6" />
+                    <div className="size-10 sm:size-11 rounded-xl bg-[#EDFBF2] text-[#059669] flex items-center justify-center mb-1.5 group-hover:scale-105 transition-transform">
+                      <Package className="size-5" />
                     </div>
-                    <span className="text-xs sm:text-sm font-black text-slate-800 leading-tight">Items</span>
+                    <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight">Items</span>
+                    {selectedReportCard === "items" && (
+                      <span className="mt-1 text-[9px] font-black text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded-full">Active</span>
+                    )}
                   </button>
 
                   {/* Card 6: Staff */}
                   <button
-                    onClick={() => setReportFilterType("attendance")}
-                    className="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-200/70 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md hover:-translate-y-1 transition-all duration-200 flex flex-col items-center justify-center text-center cursor-pointer group min-h-[105px] sm:min-h-[125px]"
+                    onClick={() => setSelectedReportCard(selectedReportCard === "staff" ? null : "staff")}
+                    className={`rounded-2xl p-2.5 sm:p-3 border transition-all duration-150 flex flex-col items-center justify-center text-center cursor-pointer group min-h-[90px] sm:min-h-[100px] ${
+                      selectedReportCard === "staff"
+                        ? "border-[#0891B2] ring-2 ring-[#0891B2] bg-cyan-50/50 shadow-xs"
+                        : "bg-white border-slate-200/80 hover:border-slate-300 hover:bg-slate-50/60 shadow-2xs"
+                    }`}
                   >
-                    <div className="size-11 sm:size-13 rounded-2xl bg-[#E5F9FC] text-[#0891B2] flex items-center justify-center mb-2 sm:mb-2.5 group-hover:scale-110 transition-transform">
-                      <Users className="size-5 sm:size-6" />
+                    <div className="size-10 sm:size-11 rounded-xl bg-[#E5F9FC] text-[#0891B2] flex items-center justify-center mb-1.5 group-hover:scale-105 transition-transform">
+                      <Users className="size-5" />
                     </div>
-                    <span className="text-xs sm:text-sm font-black text-slate-800 leading-tight">Staff</span>
+                    <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight">Staff</span>
+                    {selectedReportCard === "staff" && (
+                      <span className="mt-1 text-[9px] font-black text-cyan-700 bg-cyan-100 px-1.5 py-0.2 rounded-full">Active</span>
+                    )}
                   </button>
 
                   {/* Card 7: My Order */}
                   <button
-                    onClick={() => {
-                      setReportFilterType("billing");
-                      setShowPackageModal(true);
-                    }}
-                    className="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-200/70 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md hover:-translate-y-1 transition-all duration-200 flex flex-col items-center justify-center text-center cursor-pointer group min-h-[105px] sm:min-h-[125px]"
+                    onClick={() => setSelectedReportCard(selectedReportCard === "my-order" ? null : "my-order")}
+                    className={`rounded-2xl p-2.5 sm:p-3 border transition-all duration-150 flex flex-col items-center justify-center text-center cursor-pointer group min-h-[90px] sm:min-h-[100px] ${
+                      selectedReportCard === "my-order"
+                        ? "border-[#A21CAF] ring-2 ring-[#A21CAF] bg-pink-50/50 shadow-xs"
+                        : "bg-white border-slate-200/80 hover:border-slate-300 hover:bg-slate-50/60 shadow-2xs"
+                    }`}
                   >
-                    <div className="size-11 sm:size-13 rounded-2xl bg-[#FAF0FE] text-[#A21CAF] flex items-center justify-center mb-2 sm:mb-2.5 group-hover:scale-110 transition-transform">
-                      <ShoppingBag className="size-5 sm:size-6" />
+                    <div className="size-10 sm:size-11 rounded-xl bg-[#FAF0FE] text-[#A21CAF] flex items-center justify-center mb-1.5 group-hover:scale-105 transition-transform">
+                      <ShoppingBag className="size-5" />
                     </div>
-                    <span className="text-xs sm:text-sm font-black text-slate-800 leading-tight">My Order</span>
+                    <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight">My Order</span>
+                    {selectedReportCard === "my-order" && (
+                      <span className="mt-1 text-[9px] font-black text-pink-700 bg-pink-100 px-1.5 py-0.2 rounded-full">Active</span>
+                    )}
                   </button>
 
                   {/* Card 8: Collections List */}
                   <button
-                    onClick={() => setReportFilterType("billing")}
-                    className="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-200/70 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md hover:-translate-y-1 transition-all duration-200 flex flex-col items-center justify-center text-center cursor-pointer group min-h-[105px] sm:min-h-[125px]"
+                    onClick={() => setSelectedReportCard(selectedReportCard === "collections-list" ? null : "collections-list")}
+                    className={`rounded-2xl p-2.5 sm:p-3 border transition-all duration-150 flex flex-col items-center justify-center text-center cursor-pointer group min-h-[90px] sm:min-h-[100px] ${
+                      selectedReportCard === "collections-list"
+                        ? "border-[#CA8A04] ring-2 ring-[#CA8A04] bg-yellow-50/50 shadow-xs"
+                        : "bg-white border-slate-200/80 hover:border-slate-300 hover:bg-slate-50/60 shadow-2xs"
+                    }`}
                   >
-                    <div className="size-11 sm:size-13 rounded-2xl bg-[#FEFBE8] text-[#CA8A04] flex items-center justify-center mb-2 sm:mb-2.5 group-hover:scale-110 transition-transform">
-                      <Bell className="size-5 sm:size-6" />
+                    <div className="size-10 sm:size-11 rounded-xl bg-[#FEFBE8] text-[#CA8A04] flex items-center justify-center mb-1.5 group-hover:scale-105 transition-transform">
+                      <Bell className="size-5" />
                     </div>
-                    <span className="text-xs sm:text-sm font-black text-slate-800 leading-tight">Collections List</span>
+                    <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight">Collections List</span>
+                    {selectedReportCard === "collections-list" && (
+                      <span className="mt-1 text-[9px] font-black text-amber-700 bg-yellow-100 px-1.5 py-0.2 rounded-full">Active</span>
+                    )}
                   </button>
 
                   {/* Card 9: Online to Cash */}
                   <button
-                    onClick={() => setReportFilterType("billing")}
-                    className="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-200/70 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md hover:-translate-y-1 transition-all duration-200 flex flex-col items-center justify-center text-center cursor-pointer group min-h-[105px] sm:min-h-[125px]"
+                    onClick={() => setSelectedReportCard(selectedReportCard === "online-to-cash" ? null : "online-to-cash")}
+                    className={`rounded-2xl p-2.5 sm:p-3 border transition-all duration-150 flex flex-col items-center justify-center text-center cursor-pointer group min-h-[90px] sm:min-h-[100px] ${
+                      selectedReportCard === "online-to-cash"
+                        ? "border-[#0284C7] ring-2 ring-[#0284C7] bg-sky-50/50 shadow-xs"
+                        : "bg-white border-slate-200/80 hover:border-slate-300 hover:bg-slate-50/60 shadow-2xs"
+                    }`}
                   >
-                    <div className="size-11 sm:size-13 rounded-2xl bg-[#EEF8FF] text-[#0284C7] flex items-center justify-center mb-2 sm:mb-2.5 group-hover:scale-110 transition-transform">
-                      <Smartphone className="size-5 sm:size-6" />
+                    <div className="size-10 sm:size-11 rounded-xl bg-[#EEF8FF] text-[#0284C7] flex items-center justify-center mb-1.5 group-hover:scale-105 transition-transform">
+                      <Smartphone className="size-5" />
                     </div>
-                    <span className="text-xs sm:text-sm font-black text-slate-800 leading-tight">Online to Cash</span>
+                    <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight">Online to Cash</span>
+                    {selectedReportCard === "online-to-cash" && (
+                      <span className="mt-1 text-[9px] font-black text-sky-700 bg-sky-100 px-1.5 py-0.2 rounded-full">Active</span>
+                    )}
                   </button>
 
-                  {/* Card 10: Cash Out (Centered in row 4) */}
+                  {/* Card 10: Cash Out */}
                   <button
-                    onClick={() => {
-                      setReportFilterType("attendance");
-                      if (workers.length > 0) setSelectedSalaryWorkerId(workers[0]!.id);
-                    }}
-                    className="col-start-2 bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-200/70 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-md hover:-translate-y-1 transition-all duration-200 flex flex-col items-center justify-center text-center cursor-pointer group min-h-[105px] sm:min-h-[125px]"
+                    onClick={() => setSelectedReportCard(selectedReportCard === "cash-out" ? null : "cash-out")}
+                    className={`rounded-2xl p-2.5 sm:p-3 border transition-all duration-150 flex flex-col items-center justify-center text-center cursor-pointer group min-h-[90px] sm:min-h-[100px] ${
+                      selectedReportCard === "cash-out"
+                        ? "border-[#E11D48] ring-2 ring-[#E11D48] bg-rose-50/50 shadow-xs"
+                        : "bg-white border-slate-200/80 hover:border-slate-300 hover:bg-slate-50/60 shadow-2xs"
+                    }`}
                   >
-                    <div className="size-11 sm:size-13 rounded-2xl bg-[#FEECEF] text-[#E11D48] flex items-center justify-center mb-2 sm:mb-2.5 group-hover:scale-110 transition-transform">
-                      <ArrowUpRight className="size-5 sm:size-6" />
+                    <div className="size-10 sm:size-11 rounded-xl bg-[#FEECEF] text-[#E11D48] flex items-center justify-center mb-1.5 group-hover:scale-105 transition-transform">
+                      <ArrowUpRight className="size-5" />
                     </div>
-                    <span className="text-xs sm:text-sm font-black text-slate-800 leading-tight">Cash Out</span>
+                    <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight">Cash Out</span>
+                    {selectedReportCard === "cash-out" && (
+                      <span className="mt-1 text-[9px] font-black text-rose-700 bg-rose-100 px-1.5 py-0.2 rounded-full">Active</span>
+                    )}
                   </button>
                 </div>
               </div>
 
-              {/* KPI Summary Cards */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-2xs">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider">TOTAL EMPLOYEES</span>
-                    <div className="size-8 rounded-xl bg-blue-50 text-[#063B78] flex items-center justify-center font-bold">
-                      <Users className="size-4" />
+              {/* ── HELPER HINT WHEN NO CARD IS CLICKED ── */}
+              {!selectedReportCard && (
+                <div className="text-center py-3 text-xs sm:text-sm font-semibold text-slate-400">
+                  Click any card above to view its detailed report and records.
+                </div>
+              )}
+
+              {/* ── CARD 1 DETAILS: CASHBOOK ── */}
+              {selectedReportCard === "cashbook" && (() => {
+                const userId = currentUser?.id || currentUser?.email || empIdentifier;
+                const userPkgs = dataStore.getUserPackages(userId);
+                let totalOutflow = 0;
+                workers.forEach((w: any) => {
+                  const wAtt = reportAttendanceRecords.filter((a: DailyAttendanceRecord) => a.workerId === w.id);
+                  const pCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "Present" || a.status === "Overtime").length;
+                  const hdCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "HalfDay").length;
+                  const otHours = wAtt.reduce((sum: number, a: DailyAttendanceRecord) => sum + (Number(a.overtimeHours) || 0), 0);
+                  const rate = Number(w.dailyRate) || 0;
+                  totalOutflow += (pCount * rate) + (hdCount * rate * 0.5) + (otHours * (rate / 8));
+                });
+                const totalInflow = userPkgs.reduce((acc, p) => acc + (Number(p.price) || 0), 0);
+                const netBalance = totalInflow - Math.round(totalOutflow);
+
+                return (
+                  <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-8 shadow-xs space-y-6 animate-fade-in max-w-5xl mx-auto">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                      <div className="flex items-center gap-3">
+                        <div className="size-12 rounded-2xl bg-[#EEF4FF] text-[#2563EB] flex items-center justify-center shrink-0">
+                          <BookOpen className="size-6" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg sm:text-xl font-black text-slate-800">Cashbook Register & Daily Ledger</h3>
+                          <p className="text-xs text-slate-500 font-semibold">Incoming package payments, wage disbursements, and net cash balance.</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSelectedReportCard(null)}
+                          className="h-9 px-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
+                        >
+                          <X className="size-3.5 mr-1" /> Close View
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                  <div className="text-2xl sm:text-3xl font-black text-[#10233F]">{workers.length}</div>
-                  <div className="text-[11px] font-semibold text-emerald-700 mt-1">Registered staff members</div>
-                </div>
 
-                <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-2xs">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider">ATTENDANCE & OT</span>
-                    <div className="size-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
-                      <CalendarCheck className="size-4" />
+                    {/* Cashbook Stats */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                      <div className="bg-emerald-50/60 p-4 rounded-2xl border border-emerald-100">
+                        <span className="text-[11px] font-black text-emerald-800 uppercase tracking-wider block">Total Inflow (Cr)</span>
+                        <div className="text-2xl font-black text-emerald-700 mt-1">₹{totalInflow.toLocaleString("en-IN")}</div>
+                        <span className="text-[11px] text-emerald-600 font-semibold">Package credits added</span>
+                      </div>
+                      <div className="bg-rose-50/60 p-4 rounded-2xl border border-rose-100">
+                        <span className="text-[11px] font-black text-rose-800 uppercase tracking-wider block">Total Outflow (Dr)</span>
+                        <div className="text-2xl font-black text-rose-700 mt-1">₹{Math.round(totalOutflow).toLocaleString("en-IN")}</div>
+                        <span className="text-[11px] text-rose-600 font-semibold">Calculated staff wages</span>
+                      </div>
+                      <div className="bg-blue-50/60 p-4 rounded-2xl border border-blue-100">
+                        <span className="text-[11px] font-black text-blue-800 uppercase tracking-wider block">Net Ledger Balance</span>
+                        <div className="text-2xl font-black text-[#063B78] mt-1">₹{netBalance.toLocaleString("en-IN")}</div>
+                        <span className="text-[11px] text-blue-600 font-semibold">Reconciled cash position</span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="text-2xl sm:text-3xl font-black text-[#10233F]">
-                    {reportAttendanceRecords.filter((a: DailyAttendanceRecord) => a.status === "Present" || a.status === "Overtime").length}
-                    <span className="text-xs font-bold text-slate-500 ml-1.5">Days</span>
-                  </div>
-                  <div className="text-[11px] font-semibold text-amber-700 mt-1">
-                    +{reportAttendanceRecords.reduce((sum: number, a: DailyAttendanceRecord) => sum + (Number(a.overtimeHours) || 0), 0)} hrs overtime
-                  </div>
-                </div>
 
-                <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-2xs">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider">PAYROLL EXPENSES</span>
-                    <div className="size-8 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
-                      <IndianRupee className="size-4" />
-                    </div>
-                  </div>
-                  <div className="text-2xl sm:text-3xl font-black text-emerald-700">
-                    ₹{(() => {
-                      let total = 0;
-                      workers.forEach((w: any) => {
-                        const wAtt = reportAttendanceRecords.filter((a: DailyAttendanceRecord) => a.workerId === w.id);
-                        const pCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "Present" || a.status === "Overtime").length;
-                        const hdCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "HalfDay").length;
-                        const otHours = wAtt.reduce((sum: number, a: DailyAttendanceRecord) => sum + (Number(a.overtimeHours) || 0), 0);
-                        const rate = Number(w.dailyRate) || 0;
-                        total += (pCount * rate) + (hdCount * rate * 0.5) + (otHours * (rate / 8));
-                      });
-                      return Math.round(total).toLocaleString("en-IN");
-                    })()}
-                  </div>
-                  <div className="text-[11px] font-semibold text-slate-500 mt-1">Total calculated payroll liability</div>
-                </div>
-
-                <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-2xs">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider">JOBS & APPLICANTS</span>
-                    <div className="size-8 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold">
-                      <BriefcaseBusiness className="size-4" />
-                    </div>
-                  </div>
-                  <div className="text-2xl sm:text-3xl font-black text-[#10233F]">
-                    {jobs.length}
-                    <span className="text-xs font-bold text-slate-500 ml-1.5">Jobs</span>
-                  </div>
-                  <div className="text-[11px] font-semibold text-purple-700 mt-1">
-                    {applications.length} Total applications
-                  </div>
-                </div>
-              </div>
-
-              {/* Filter Tabs & Search Bar */}
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
-                <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl w-full sm:w-auto overflow-x-auto">
-                  <button
-                    onClick={() => setReportFilterType("all")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${reportFilterType === "all" ? "bg-white text-[#063B78] shadow-xs font-black" : "text-slate-600 hover:text-slate-900"}`}
-                  >
-                    All Reports
-                  </button>
-                  <button
-                    onClick={() => setReportFilterType("attendance")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${reportFilterType === "attendance" ? "bg-white text-[#063B78] shadow-xs font-black" : "text-slate-600 hover:text-slate-900"}`}
-                  >
-                    Staff & Payroll
-                  </button>
-                  <button
-                    onClick={() => setReportFilterType("recruitment")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${reportFilterType === "recruitment" ? "bg-white text-[#063B78] shadow-xs font-black" : "text-slate-600 hover:text-slate-900"}`}
-                  >
-                    Jobs & Recruitment
-                  </button>
-                  <button
-                    onClick={() => setReportFilterType("billing")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${reportFilterType === "billing" ? "bg-white text-[#063B78] shadow-xs font-black" : "text-slate-600 hover:text-slate-900"}`}
-                  >
-                    Billing & Orders
-                  </button>
-                </div>
-
-                <div className="relative w-full sm:w-64">
-                  <Search className="size-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <Input
-                    placeholder="Search by name, role or trade..."
-                    value={reportSearchTerm}
-                    onChange={(e) => setReportSearchTerm(e.target.value)}
-                    className="pl-9 h-10 text-xs rounded-xl border-slate-300"
-                  />
-                </div>
-              </div>
-
-              {/* REPORT SECTION 1: WORKER ATTENDANCE & PAYROLL */}
-              {(reportFilterType === "all" || reportFilterType === "attendance") && (
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-                  <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                    <div>
-                      <h3 className="text-base font-black text-[#10233F] flex items-center gap-2">
-                        <CalendarCheck className="size-5 text-[#063B78]" />
-                        Staff Attendance & Payroll Statement
-                      </h3>
-                      <p className="text-xs font-semibold text-[#5B6B7F] mt-0.5">
-                        Working days, overtime hours, rates, and total payroll wages per employee.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead>
-                        <tr className="bg-[#F8FAFF] border-b border-[#E0E8F5] text-[#5B6B7F] font-black uppercase tracking-wider text-[11px]">
-                          <th className="p-3 whitespace-nowrap">Staff Name</th>
-                          <th className="p-3 whitespace-nowrap">Role / Trade</th>
-                          <th className="p-3 whitespace-nowrap">Daily Rate</th>
-                          <th className="p-3 whitespace-nowrap text-center">Present (P)</th>
-                          <th className="p-3 whitespace-nowrap text-center">Half Day (HD)</th>
-                          <th className="p-3 whitespace-nowrap text-center">Absent (A)</th>
-                          <th className="p-3 whitespace-nowrap text-center">Overtime (OT)</th>
-                          <th className="p-3 whitespace-nowrap text-right">Total Wages</th>
-                          <th className="p-3 whitespace-nowrap text-center">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[#E0E8F5] font-semibold text-[#10233F]">
-                        {workers
-                          .filter((w: any) => !reportSearchTerm || w.name.toLowerCase().includes(reportSearchTerm.toLowerCase()) || (w.trade || "").toLowerCase().includes(reportSearchTerm.toLowerCase()))
-                          .map((w: any) => {
+                    {/* Cashbook Transactions Table */}
+                    <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="bg-[#F8FAFF] border-b border-[#E0E8F5] text-[#5B6B7F] font-black uppercase tracking-wider text-[11px]">
+                            <th className="p-3 whitespace-nowrap">Date</th>
+                            <th className="p-3 whitespace-nowrap">Reference / Particulars</th>
+                            <th className="p-3 whitespace-nowrap">Type</th>
+                            <th className="p-3 whitespace-nowrap">Mode</th>
+                            <th className="p-3 whitespace-nowrap text-right">Inflow (Cr)</th>
+                            <th className="p-3 whitespace-nowrap text-right">Outflow (Dr)</th>
+                            <th className="p-3 whitespace-nowrap text-center">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#E0E8F5] font-semibold text-[#10233F]">
+                          {userPkgs.map((tx) => (
+                            <tr key={tx.id} className="hover:bg-slate-50/70">
+                              <td className="p-3 text-slate-600 whitespace-nowrap">{tx.purchaseDate}</td>
+                              <td className="p-3 whitespace-nowrap">
+                                <div className="font-bold text-[#063B78]">{tx.planName} Package</div>
+                                <div className="text-[10px] text-slate-400 font-mono">{tx.id}</div>
+                              </td>
+                              <td className="p-3 whitespace-nowrap">
+                                <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black">Credit</span>
+                              </td>
+                              <td className="p-3 whitespace-nowrap uppercase text-slate-600">{tx.paymentMethod}</td>
+                              <td className="p-3 whitespace-nowrap text-right font-black text-emerald-700">₹{tx.price}</td>
+                              <td className="p-3 whitespace-nowrap text-right text-slate-400">-</td>
+                              <td className="p-3 whitespace-nowrap text-center">
+                                <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black">Completed</span>
+                              </td>
+                            </tr>
+                          ))}
+                          {workers.map((w: any) => {
                             const wAtt = reportAttendanceRecords.filter((a: DailyAttendanceRecord) => a.workerId === w.id);
                             const pCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "Present" || a.status === "Overtime").length;
                             const hdCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "HalfDay").length;
-                            const aCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "Absent").length;
                             const otHours = wAtt.reduce((sum: number, a: DailyAttendanceRecord) => sum + (Number(a.overtimeHours) || 0), 0);
                             const rate = Number(w.dailyRate) || 0;
-                            const grossWages = Math.round((pCount * rate) + (hdCount * rate * 0.5) + (otHours * (rate / 8)));
-
+                            const wages = Math.round((pCount * rate) + (hdCount * rate * 0.5) + (otHours * (rate / 8)));
+                            if (wages <= 0) return null;
                             return (
-                              <tr key={w.id} className="hover:bg-slate-50/70 transition-colors">
+                              <tr key={`worker-${w.id}`} className="hover:bg-slate-50/70">
+                                <td className="p-3 text-slate-600 whitespace-nowrap">{new Date().toISOString().split("T")[0]}</td>
                                 <td className="p-3 whitespace-nowrap">
-                                  <div className="font-bold text-[#063B78] text-sm">{w.name}</div>
-                                  <div className="text-[10px] text-slate-500 font-normal">📞 {w.mobile || "N/A"}</div>
+                                  <div className="font-bold text-slate-800">Staff Payroll: {w.name}</div>
+                                  <div className="text-[10px] text-slate-400">{w.trade || "Staff"} • {pCount} days</div>
                                 </td>
                                 <td className="p-3 whitespace-nowrap">
-                                  <Badge className="bg-blue-50 text-[#063B78] border border-blue-200 text-[10px] font-bold">
-                                    {w.trade || "Staff"}
-                                  </Badge>
+                                  <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 text-[10px] font-black">Debit</span>
                                 </td>
-                                <td className="p-3 whitespace-nowrap font-black text-slate-700">₹{rate} / day</td>
+                                <td className="p-3 whitespace-nowrap text-slate-600">CASH / BANK</td>
+                                <td className="p-3 whitespace-nowrap text-right text-slate-400">-</td>
+                                <td className="p-3 whitespace-nowrap text-right font-black text-rose-700">₹{wages.toLocaleString("en-IN")}</td>
                                 <td className="p-3 whitespace-nowrap text-center">
-                                  <span className="size-6 inline-flex items-center justify-center rounded-md bg-emerald-100 text-emerald-800 font-black text-xs">
-                                    {pCount}
-                                  </span>
-                                </td>
-                                <td className="p-3 whitespace-nowrap text-center">
-                                  <span className="size-6 inline-flex items-center justify-center rounded-md bg-amber-100 text-amber-800 font-black text-xs">
-                                    {hdCount}
-                                  </span>
-                                </td>
-                                <td className="p-3 whitespace-nowrap text-center">
-                                  <span className="size-6 inline-flex items-center justify-center rounded-md bg-rose-100 text-rose-800 font-black text-xs">
-                                    {aCount}
-                                  </span>
-                                </td>
-                                <td className="p-3 whitespace-nowrap text-center">
-                                  {otHours > 0 ? (
-                                    <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 font-black text-xs">
-                                      +{otHours}h
-                                    </span>
-                                  ) : (
-                                    <span className="text-slate-400">-</span>
-                                  )}
-                                </td>
-                                <td className="p-3 whitespace-nowrap text-right font-black text-emerald-700 text-sm">
-                                  ₹{grossWages.toLocaleString("en-IN")}
-                                </td>
-                                <td className="p-3 whitespace-nowrap text-center">
-                                  <Button
-                                    size="sm"
-                                    onClick={() => setSelectedWorkerReport(w)}
-                                    className="bg-[#063B78] hover:bg-[#082F63] text-white text-xs font-bold h-7 px-3 rounded-lg shadow-2xs cursor-pointer"
-                                  >
-                                    Salary Slip
-                                  </Button>
+                                  <span className="px-2 py-0.5 rounded-full bg-blue-100 text-[#063B78] text-[10px] font-black">Accrued</span>
                                 </td>
                               </tr>
                             );
                           })}
-                        {workers.length === 0 && (
-                          <tr>
-                            <td colSpan={9} className="p-6 text-center text-slate-500 font-bold">
-                              No staff registered yet.
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {/* REPORT SECTION 2: JOB VACANCIES & RECRUITMENT */}
-              {(reportFilterType === "all" || reportFilterType === "recruitment") && (
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-                  <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                    <div>
-                      <h3 className="text-base font-black text-[#10233F] flex items-center gap-2">
-                        <BriefcaseBusiness className="size-5 text-[#063B78]" />
-                        Recruitment & Job Performance
-                      </h3>
-                      <p className="text-xs font-semibold text-[#5B6B7F] mt-0.5">
-                        Active job listings, openings, and candidate applications.
-                      </p>
+                        </tbody>
+                      </table>
                     </div>
                   </div>
+                );
+              })()}
 
-                  <div className="overflow-x-auto">
+              {/* ── CARD 2 DETAILS: MY REPORT ── */}
+              {selectedReportCard === "my-report" && (() => {
+                let totalPayroll = 0;
+                workers.forEach((w: any) => {
+                  const wAtt = reportAttendanceRecords.filter((a: DailyAttendanceRecord) => a.workerId === w.id);
+                  const pCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "Present" || a.status === "Overtime").length;
+                  const hdCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "HalfDay").length;
+                  const otHours = wAtt.reduce((sum: number, a: DailyAttendanceRecord) => sum + (Number(a.overtimeHours) || 0), 0);
+                  const rate = Number(w.dailyRate) || 0;
+                  totalPayroll += (pCount * rate) + (hdCount * rate * 0.5) + (otHours * (rate / 8));
+                });
+
+                return (
+                  <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-8 shadow-xs space-y-6 animate-fade-in max-w-5xl mx-auto">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                      <div className="flex items-center gap-3">
+                        <div className="size-12 rounded-2xl bg-[#FEECEC] text-[#DC2626] flex items-center justify-center shrink-0">
+                          <BarChart3 className="size-6" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg sm:text-xl font-black text-slate-800">My Consolidated Business Report</h3>
+                          <p className="text-xs text-slate-500 font-semibold">All-in-one performance report of employees, jobs, and finances.</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            if (typeof window !== "undefined") window.print();
+                          }}
+                          variant="outline"
+                          className="h-9 px-3 rounded-xl text-xs font-bold text-[#063B78] hover:bg-slate-50"
+                        >
+                          <Printer className="size-3.5 mr-1" /> Print Report
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSelectedReportCard(null)}
+                          className="h-9 px-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
+                        >
+                          <X className="size-3.5 mr-1" /> Close View
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* KPI 4 Cards */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                        <span className="text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider block">TOTAL EMPLOYEES</span>
+                        <div className="text-2xl sm:text-3xl font-black text-[#10233F] mt-1">{workers.length}</div>
+                        <div className="text-[11px] font-semibold text-emerald-700 mt-0.5">Registered staff</div>
+                      </div>
+                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                        <span className="text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider block">ATTENDANCE & OT</span>
+                        <div className="text-2xl sm:text-3xl font-black text-[#10233F] mt-1">
+                          {reportAttendanceRecords.filter((a: DailyAttendanceRecord) => a.status === "Present" || a.status === "Overtime").length}
+                          <span className="text-xs font-bold text-slate-500 ml-1">Days</span>
+                        </div>
+                        <div className="text-[11px] font-semibold text-amber-700 mt-0.5">
+                          +{reportAttendanceRecords.reduce((sum: number, a: DailyAttendanceRecord) => sum + (Number(a.overtimeHours) || 0), 0)} hrs OT
+                        </div>
+                      </div>
+                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                        <span className="text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider block">PAYROLL EXPENSES</span>
+                        <div className="text-2xl sm:text-3xl font-black text-emerald-700 mt-1">₹{Math.round(totalPayroll).toLocaleString("en-IN")}</div>
+                        <div className="text-[11px] font-semibold text-slate-500 mt-0.5">Calculated liability</div>
+                      </div>
+                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                        <span className="text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider block">JOBS & APPLICANTS</span>
+                        <div className="text-2xl sm:text-3xl font-black text-[#10233F] mt-1">
+                          {jobs.length}
+                          <span className="text-xs font-bold text-slate-500 ml-1">Jobs</span>
+                        </div>
+                        <div className="text-[11px] font-semibold text-purple-700 mt-0.5">{applications.length} applications</div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* ── CARD 3 DETAILS: EXPENSES ── */}
+              {selectedReportCard === "expenses" && (() => {
+                let totalWages = 0;
+                let totalOt = 0;
+                workers.forEach((w: any) => {
+                  const wAtt = reportAttendanceRecords.filter((a: DailyAttendanceRecord) => a.workerId === w.id);
+                  const pCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "Present" || a.status === "Overtime").length;
+                  const hdCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "HalfDay").length;
+                  const otHours = wAtt.reduce((sum: number, a: DailyAttendanceRecord) => sum + (Number(a.overtimeHours) || 0), 0);
+                  const rate = Number(w.dailyRate) || 0;
+                  const base = (pCount * rate) + (hdCount * rate * 0.5);
+                  const ot = (otHours * (rate / 8));
+                  totalWages += base;
+                  totalOt += ot;
+                });
+
+                return (
+                  <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-8 shadow-xs space-y-6 animate-fade-in max-w-5xl mx-auto">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                      <div className="flex items-center gap-3">
+                        <div className="size-12 rounded-2xl bg-[#FEF7EC] text-[#D97706] flex items-center justify-center shrink-0">
+                          <IndianRupee className="size-6" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg sm:text-xl font-black text-slate-800">Company & Payroll Expenses</h3>
+                          <p className="text-xs text-slate-500 font-semibold">Base staff salaries, overtime compensation, and worker allowances.</p>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setSelectedReportCard(null)}
+                        className="h-9 px-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
+                      >
+                        <X className="size-3.5 mr-1" /> Close View
+                      </Button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                      <div className="bg-amber-50/60 p-4 rounded-2xl border border-amber-100">
+                        <span className="text-[11px] font-black text-amber-800 uppercase tracking-wider block">Base Wages</span>
+                        <div className="text-2xl font-black text-amber-700 mt-1">₹{Math.round(totalWages).toLocaleString("en-IN")}</div>
+                        <span className="text-[11px] text-amber-600 font-semibold">Standard working days</span>
+                      </div>
+                      <div className="bg-purple-50/60 p-4 rounded-2xl border border-purple-100">
+                        <span className="text-[11px] font-black text-purple-800 uppercase tracking-wider block">Overtime Pay</span>
+                        <div className="text-2xl font-black text-purple-700 mt-1">₹{Math.round(totalOt).toLocaleString("en-IN")}</div>
+                        <span className="text-[11px] text-purple-600 font-semibold">Extra duty hours</span>
+                      </div>
+                      <div className="bg-emerald-50/60 p-4 rounded-2xl border border-emerald-100">
+                        <span className="text-[11px] font-black text-emerald-800 uppercase tracking-wider block">Total Liability</span>
+                        <div className="text-2xl font-black text-emerald-700 mt-1">₹{Math.round(totalWages + totalOt).toLocaleString("en-IN")}</div>
+                        <span className="text-[11px] text-emerald-600 font-semibold">Combined staff expense</span>
+                      </div>
+                    </div>
+
+                    <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="bg-[#F8FAFF] border-b border-[#E0E8F5] text-[#5B6B7F] font-black uppercase tracking-wider text-[11px]">
+                            <th className="p-3 whitespace-nowrap">Staff Member</th>
+                            <th className="p-3 whitespace-nowrap">Role / Trade</th>
+                            <th className="p-3 whitespace-nowrap">Daily Rate</th>
+                            <th className="p-3 whitespace-nowrap text-right">Base Wages</th>
+                            <th className="p-3 whitespace-nowrap text-right">OT Pay</th>
+                            <th className="p-3 whitespace-nowrap text-right">Total Expense</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#E0E8F5] font-semibold text-[#10233F]">
+                          {workers.map((w: any) => {
+                            const wAtt = reportAttendanceRecords.filter((a: DailyAttendanceRecord) => a.workerId === w.id);
+                            const pCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "Present" || a.status === "Overtime").length;
+                            const hdCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "HalfDay").length;
+                            const otHours = wAtt.reduce((sum: number, a: DailyAttendanceRecord) => sum + (Number(a.overtimeHours) || 0), 0);
+                            const rate = Number(w.dailyRate) || 0;
+                            const base = Math.round((pCount * rate) + (hdCount * rate * 0.5));
+                            const ot = Math.round(otHours * (rate / 8));
+                            return (
+                              <tr key={w.id} className="hover:bg-slate-50/70">
+                                <td className="p-3 whitespace-nowrap font-bold text-[#063B78]">{w.name}</td>
+                                <td className="p-3 whitespace-nowrap text-slate-600">{w.trade || "Staff"}</td>
+                                <td className="p-3 whitespace-nowrap font-black text-slate-700">₹{rate}</td>
+                                <td className="p-3 whitespace-nowrap text-right">₹{base.toLocaleString("en-IN")}</td>
+                                <td className="p-3 whitespace-nowrap text-right text-purple-700">₹{ot.toLocaleString("en-IN")}</td>
+                                <td className="p-3 whitespace-nowrap text-right font-black text-emerald-700 text-sm">₹{(base + ot).toLocaleString("en-IN")}</td>
+                              </tr>
+                            );
+                          })}
+                          {workers.length === 0 && (
+                            <tr>
+                              <td colSpan={6} className="p-6 text-center text-slate-500 font-bold">No staff registered.</td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* ── CARD 4 DETAILS: FINANCIAL REPORTS ── */}
+              {selectedReportCard === "financial-reports" && (() => {
+                const userId = currentUser?.id || currentUser?.email || empIdentifier;
+                const userPkgs = dataStore.getUserPackages(userId);
+
+                return (
+                  <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-8 shadow-xs space-y-6 animate-fade-in max-w-5xl mx-auto">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                      <div className="flex items-center gap-3">
+                        <div className="size-12 rounded-2xl bg-[#F5F0FF] text-[#7C3AED] flex items-center justify-center shrink-0">
+                          <FileText className="size-6" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg sm:text-xl font-black text-slate-800">Financial Reports & Tax Invoices</h3>
+                          <p className="text-xs text-slate-500 font-semibold">Official billing statements, payment receipts, and GST breakdown.</p>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setSelectedReportCard(null)}
+                        className="h-9 px-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
+                      >
+                        <X className="size-3.5 mr-1" /> Close View
+                      </Button>
+                    </div>
+
+                    <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="bg-[#F8FAFF] border-b border-[#E0E8F5] text-[#5B6B7F] font-black uppercase tracking-wider text-[11px]">
+                            <th className="p-3 whitespace-nowrap">Transaction ID</th>
+                            <th className="p-3 whitespace-nowrap">Plan Name</th>
+                            <th className="p-3 whitespace-nowrap">Amount Paid</th>
+                            <th className="p-3 whitespace-nowrap">Job Credits</th>
+                            <th className="p-3 whitespace-nowrap">Payment Method</th>
+                            <th className="p-3 whitespace-nowrap">Date</th>
+                            <th className="p-3 whitespace-nowrap text-center">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#E0E8F5] font-semibold text-[#10233F]">
+                          {userPkgs.map((tx) => (
+                            <tr key={tx.id} className="hover:bg-slate-50/70">
+                              <td className="p-3 font-mono text-[11px] text-[#063B78] whitespace-nowrap">{tx.id}</td>
+                              <td className="p-3 whitespace-nowrap font-bold">{tx.planName}</td>
+                              <td className="p-3 font-black text-emerald-700 text-sm whitespace-nowrap">₹{tx.price}</td>
+                              <td className="p-3 font-bold text-amber-700 whitespace-nowrap">{tx.jobCount >= 999 ? "Unlimited" : `${tx.jobCount} Jobs`}</td>
+                              <td className="p-3 whitespace-nowrap uppercase text-slate-600">{tx.paymentMethod}</td>
+                              <td className="p-3 text-slate-600 whitespace-nowrap">{tx.purchaseDate}</td>
+                              <td className="p-3 whitespace-nowrap text-center">
+                                <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black">Completed</span>
+                              </td>
+                            </tr>
+                          ))}
+                          {userPkgs.length === 0 && (
+                            <tr>
+                              <td colSpan={7} className="p-6 text-center text-slate-500 font-bold">No financial transactions recorded.</td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* ── CARD 5 DETAILS: ITEMS ── */}
+              {selectedReportCard === "items" && (
+                <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-8 shadow-xs space-y-6 animate-fade-in max-w-5xl mx-auto">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                    <div className="flex items-center gap-3">
+                      <div className="size-12 rounded-2xl bg-[#EDFBF2] text-[#059669] flex items-center justify-center shrink-0">
+                        <Package className="size-6" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg sm:text-xl font-black text-slate-800">Items & Job Vacancies</h3>
+                        <p className="text-xs text-slate-500 font-semibold">Active job openings, open vacancies, and applicant response rate.</p>
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setSelectedReportCard(null)}
+                      className="h-9 px-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
+                    >
+                      <X className="size-3.5 mr-1" /> Close View
+                    </Button>
+                  </div>
+
+                  <div className="overflow-x-auto rounded-2xl border border-slate-200">
                     <table className="w-full text-left text-xs border-collapse">
                       <thead>
                         <tr className="bg-[#F8FAFF] border-b border-[#E0E8F5] text-[#5B6B7F] font-black uppercase tracking-wider text-[11px]">
@@ -4632,15 +4844,15 @@ function AdminDashboardPage() {
                         {jobs.map((j) => {
                           const jobApps = applications.filter(a => a.jobId === j.id);
                           return (
-                            <tr key={j.id} className="hover:bg-slate-50/70 transition-colors">
+                            <tr key={j.id} className="hover:bg-slate-50/70">
                               <td className="p-3 whitespace-nowrap">
                                 <div className="font-bold text-[#063B78] text-sm">{j.title}</div>
                                 <div className="text-[10px] text-slate-500 font-normal">{j.jobType} • {j.workMode}</div>
                               </td>
                               <td className="p-3 whitespace-nowrap">
-                                <Badge className="bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold">
+                                <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold">
                                   {j.category}
-                                </Badge>
+                                </span>
                               </td>
                               <td className="p-3 whitespace-nowrap font-medium text-slate-700">{j.location}</td>
                               <td className="p-3 whitespace-nowrap text-center font-bold text-slate-800">{j.vacancies || 1}</td>
@@ -4659,9 +4871,7 @@ function AdminDashboardPage() {
                         })}
                         {jobs.length === 0 && (
                           <tr>
-                            <td colSpan={6} className="p-6 text-center text-slate-500 font-bold">
-                              No jobs posted yet.
-                            </td>
+                            <td colSpan={6} className="p-6 text-center text-slate-500 font-bold">No jobs posted yet.</td>
                           </tr>
                         )}
                       </tbody>
@@ -4670,74 +4880,400 @@ function AdminDashboardPage() {
                 </div>
               )}
 
-              {/* REPORT SECTION 3: PACKAGE PURCHASES & INVOICES */}
-              {(reportFilterType === "all" || reportFilterType === "billing") && (
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-                  <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                    <div>
-                      <h3 className="text-base font-black text-[#10233F] flex items-center gap-2">
-                        <IndianRupee className="size-5 text-[#063B78]" />
-                        Package Purchases & Invoices (Razorpay)
-                      </h3>
-                      <p className="text-xs font-semibold text-[#5B6B7F] mt-0.5">
-                        Membership packages, activated credits, and transaction IDs.
-                      </p>
+              {/* ── CARD 6 DETAILS: STAFF ── */}
+              {selectedReportCard === "staff" && (
+                <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-8 shadow-xs space-y-6 animate-fade-in max-w-5xl mx-auto">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                    <div className="flex items-center gap-3">
+                      <div className="size-12 rounded-2xl bg-[#E5F9FC] text-[#0891B2] flex items-center justify-center shrink-0">
+                        <Users className="size-6" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg sm:text-xl font-black text-slate-800">Staff Attendance & Workforce Log</h3>
+                        <p className="text-xs text-slate-500 font-semibold">Registered employees, attendance statement, and daily pay rate.</p>
+                      </div>
                     </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setSelectedReportCard(null)}
+                      className="h-9 px-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
+                    >
+                      <X className="size-3.5 mr-1" /> Close View
+                    </Button>
                   </div>
 
-                  <div className="overflow-x-auto">
-                    {(() => {
-                      const userId = currentUser?.id || currentUser?.email || empIdentifier;
-                      const userPkgs = dataStore.getUserPackages(userId);
-                      return (
-                        <table className="w-full text-left text-xs border-collapse">
-                          <thead>
-                            <tr className="bg-[#F8FAFF] border-b border-[#E0E8F5] text-[#5B6B7F] font-black uppercase tracking-wider text-[11px]">
-                              <th className="p-3 whitespace-nowrap">Transaction ID</th>
-                              <th className="p-3 whitespace-nowrap">Plan Name</th>
-                              <th className="p-3 whitespace-nowrap">Amount Paid</th>
-                              <th className="p-3 whitespace-nowrap">Credits</th>
-                              <th className="p-3 whitespace-nowrap">Payment Method</th>
-                              <th className="p-3 whitespace-nowrap">Date</th>
-                              <th className="p-3 whitespace-nowrap text-center">Status</th>
+                  <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-[#F8FAFF] border-b border-[#E0E8F5] text-[#5B6B7F] font-black uppercase tracking-wider text-[11px]">
+                          <th className="p-3 whitespace-nowrap">Staff Name</th>
+                          <th className="p-3 whitespace-nowrap">Role / Trade</th>
+                          <th className="p-3 whitespace-nowrap">Daily Rate</th>
+                          <th className="p-3 whitespace-nowrap text-center">Present (P)</th>
+                          <th className="p-3 whitespace-nowrap text-center">Half Day (HD)</th>
+                          <th className="p-3 whitespace-nowrap text-center">Absent (A)</th>
+                          <th className="p-3 whitespace-nowrap text-center">Overtime (OT)</th>
+                          <th className="p-3 whitespace-nowrap text-right">Total Wages</th>
+                          <th className="p-3 whitespace-nowrap text-center">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#E0E8F5] font-semibold text-[#10233F]">
+                        {workers.map((w: any) => {
+                          const wAtt = reportAttendanceRecords.filter((a: DailyAttendanceRecord) => a.workerId === w.id);
+                          const pCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "Present" || a.status === "Overtime").length;
+                          const hdCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "HalfDay").length;
+                          const aCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "Absent").length;
+                          const otHours = wAtt.reduce((sum: number, a: DailyAttendanceRecord) => sum + (Number(a.overtimeHours) || 0), 0);
+                          const rate = Number(w.dailyRate) || 0;
+                          const grossWages = Math.round((pCount * rate) + (hdCount * rate * 0.5) + (otHours * (rate / 8)));
+
+                          return (
+                            <tr key={w.id} className="hover:bg-slate-50/70">
+                              <td className="p-3 whitespace-nowrap">
+                                <div className="font-bold text-[#063B78] text-sm">{w.name}</div>
+                                <div className="text-[10px] text-slate-500 font-normal">📞 {w.mobile || "N/A"}</div>
+                              </td>
+                              <td className="p-3 whitespace-nowrap">
+                                <span className="px-2 py-0.5 rounded-full bg-blue-50 text-[#063B78] border border-blue-200 text-[10px] font-bold">
+                                  {w.trade || "Staff"}
+                                </span>
+                              </td>
+                              <td className="p-3 whitespace-nowrap font-black text-slate-700">₹{rate} / day</td>
+                              <td className="p-3 whitespace-nowrap text-center">
+                                <span className="size-6 inline-flex items-center justify-center rounded-md bg-emerald-100 text-emerald-800 font-black text-xs">
+                                  {pCount}
+                                </span>
+                              </td>
+                              <td className="p-3 whitespace-nowrap text-center">
+                                <span className="size-6 inline-flex items-center justify-center rounded-md bg-amber-100 text-amber-800 font-black text-xs">
+                                  {hdCount}
+                                </span>
+                              </td>
+                              <td className="p-3 whitespace-nowrap text-center">
+                                <span className="size-6 inline-flex items-center justify-center rounded-md bg-rose-100 text-rose-800 font-black text-xs">
+                                  {aCount}
+                                </span>
+                              </td>
+                              <td className="p-3 whitespace-nowrap text-center">
+                                {otHours > 0 ? (
+                                  <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 font-black text-xs">
+                                    +{otHours}h
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-400">-</span>
+                                )}
+                              </td>
+                              <td className="p-3 whitespace-nowrap text-right font-black text-emerald-700 text-sm">
+                                ₹{grossWages.toLocaleString("en-IN")}
+                              </td>
+                              <td className="p-3 whitespace-nowrap text-center">
+                                <Button
+                                  size="sm"
+                                  onClick={() => setSelectedWorkerReport(w)}
+                                  className="bg-[#063B78] hover:bg-[#082F63] text-white text-xs font-bold h-7 px-3 rounded-lg shadow-2xs cursor-pointer"
+                                >
+                                  Salary Slip
+                                </Button>
+                              </td>
                             </tr>
-                          </thead>
-                          <tbody className="divide-y divide-[#E0E8F5] font-semibold text-[#10233F]">
-                            {userPkgs.map((tx) => (
-                              <tr key={tx.id} className="hover:bg-slate-50/70 transition-colors">
-                                <td className="p-3 font-mono text-[11px] text-[#063B78] whitespace-nowrap">{tx.id}</td>
-                                <td className="p-3 whitespace-nowrap">
-                                  <span className="px-2.5 py-1 rounded-xl bg-blue-50 text-[#063B78] border border-blue-200 font-black text-xs">
-                                    {tx.planName}
-                                  </span>
-                                </td>
-                                <td className="p-3 font-black text-emerald-700 text-sm whitespace-nowrap">₹{tx.price}</td>
-                                <td className="p-3 font-bold text-amber-700 whitespace-nowrap">{tx.jobCount >= 999 ? "Unlimited" : `${tx.jobCount} Jobs`}</td>
-                                <td className="p-3 whitespace-nowrap">
-                                  <span className="font-bold uppercase text-slate-700 text-xs block">{tx.paymentMethod}</span>
-                                  {tx.razorpayPaymentId && (
-                                    <span className="font-mono text-[10px] text-emerald-700 font-extrabold block">ID: {tx.razorpayPaymentId}</span>
-                                  )}
-                                </td>
-                                <td className="p-3 text-slate-600 font-medium whitespace-nowrap">{tx.purchaseDate}</td>
-                                <td className="p-3 whitespace-nowrap text-center">
-                                  <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black">
-                                    Completed
-                                  </span>
-                                </td>
-                              </tr>
-                            ))}
-                            {userPkgs.length === 0 && (
-                              <tr>
-                                <td colSpan={7} className="p-6 text-center text-slate-500 font-bold">
-                                  No transaction records found.
-                                </td>
-                              </tr>
-                            )}
-                          </tbody>
-                        </table>
-                      );
-                    })()}
+                          );
+                        })}
+                        {workers.length === 0 && (
+                          <tr>
+                            <td colSpan={9} className="p-6 text-center text-slate-500 font-bold">No staff registered yet.</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* ── CARD 7 DETAILS: MY ORDER ── */}
+              {selectedReportCard === "my-order" && (() => {
+                const userId = currentUser?.id || currentUser?.email || empIdentifier;
+                const userPkgs = dataStore.getUserPackages(userId);
+
+                return (
+                  <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-8 shadow-xs space-y-6 animate-fade-in max-w-5xl mx-auto">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                      <div className="flex items-center gap-3">
+                        <div className="size-12 rounded-2xl bg-[#FAF0FE] text-[#A21CAF] flex items-center justify-center shrink-0">
+                          <ShoppingBag className="size-6" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg sm:text-xl font-black text-slate-800">My Orders & Packages</h3>
+                          <p className="text-xs text-slate-500 font-semibold">Purchased membership packages, credits, and active plans.</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => setShowPackageModal(true)}
+                          className="h-9 px-4 rounded-xl text-xs font-black bg-[#A21CAF] hover:bg-[#86198f] text-white"
+                        >
+                          + Purchase New Plan
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSelectedReportCard(null)}
+                          className="h-9 px-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
+                        >
+                          <X className="size-3.5 mr-1" /> Close View
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="bg-[#F8FAFF] border-b border-[#E0E8F5] text-[#5B6B7F] font-black uppercase tracking-wider text-[11px]">
+                            <th className="p-3 whitespace-nowrap">Order ID</th>
+                            <th className="p-3 whitespace-nowrap">Plan Name</th>
+                            <th className="p-3 whitespace-nowrap">Amount</th>
+                            <th className="p-3 whitespace-nowrap">Job Posting Credits</th>
+                            <th className="p-3 whitespace-nowrap">Date</th>
+                            <th className="p-3 whitespace-nowrap text-center">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#E0E8F5] font-semibold text-[#10233F]">
+                          {userPkgs.map((tx) => (
+                            <tr key={tx.id} className="hover:bg-slate-50/70">
+                              <td className="p-3 font-mono text-[11px] text-[#063B78] whitespace-nowrap">{tx.id}</td>
+                              <td className="p-3 whitespace-nowrap font-bold text-slate-800">{tx.planName}</td>
+                              <td className="p-3 whitespace-nowrap font-black text-emerald-700">₹{tx.price}</td>
+                              <td className="p-3 whitespace-nowrap font-bold text-purple-700">{tx.jobCount >= 999 ? "Unlimited" : `${tx.jobCount} Jobs`}</td>
+                              <td className="p-3 whitespace-nowrap text-slate-600">{tx.purchaseDate}</td>
+                              <td className="p-3 whitespace-nowrap text-center">
+                                <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black">Success</span>
+                              </td>
+                            </tr>
+                          ))}
+                          {userPkgs.length === 0 && (
+                            <tr>
+                              <td colSpan={6} className="p-6 text-center text-slate-500 font-bold">No orders placed yet.</td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* ── CARD 8 DETAILS: COLLECTIONS LIST ── */}
+              {selectedReportCard === "collections-list" && (
+                <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-8 shadow-xs space-y-6 animate-fade-in max-w-5xl mx-auto">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                    <div className="flex items-center gap-3">
+                      <div className="size-12 rounded-2xl bg-[#FEFBE8] text-[#CA8A04] flex items-center justify-center shrink-0">
+                        <Bell className="size-6" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg sm:text-xl font-black text-slate-800">Collections & Applications List</h3>
+                        <p className="text-xs text-slate-500 font-semibold">Candidate job applications received, resume profiles, and collection status.</p>
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setSelectedReportCard(null)}
+                      className="h-9 px-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
+                    >
+                      <X className="size-3.5 mr-1" /> Close View
+                    </Button>
+                  </div>
+
+                  <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-[#F8FAFF] border-b border-[#E0E8F5] text-[#5B6B7F] font-black uppercase tracking-wider text-[11px]">
+                          <th className="p-3 whitespace-nowrap">Candidate Name</th>
+                          <th className="p-3 whitespace-nowrap">Applied Position</th>
+                          <th className="p-3 whitespace-nowrap">Contact / Phone</th>
+                          <th className="p-3 whitespace-nowrap">Applied Date</th>
+                          <th className="p-3 whitespace-nowrap text-center">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#E0E8F5] font-semibold text-[#10233F]">
+                        {applications.map((app) => (
+                          <tr key={app.id} className="hover:bg-slate-50/70">
+                            <td className="p-3 whitespace-nowrap font-bold text-[#063B78]">{app.candidateName || "Candidate"}</td>
+                            <td className="p-3 whitespace-nowrap text-slate-700">{app.jobTitle}</td>
+                            <td className="p-3 whitespace-nowrap text-slate-600">📞 {app.candidateMobile || "N/A"}</td>
+                            <td className="p-3 whitespace-nowrap text-slate-500">{app.appliedDate || "Recent"}</td>
+                            <td className="p-3 whitespace-nowrap text-center">
+                              <span className="px-2.5 py-1 rounded-full bg-blue-100 text-[#063B78] text-[10px] font-black">{app.status || "Pending"}</span>
+                            </td>
+                          </tr>
+                        ))}
+                        {applications.length === 0 && (
+                          <tr>
+                            <td colSpan={5} className="p-6 text-center text-slate-500 font-bold">No candidate applications received yet.</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* ── CARD 9 DETAILS: ONLINE TO CASH ── */}
+              {selectedReportCard === "online-to-cash" && (() => {
+                const userId = currentUser?.id || currentUser?.email || empIdentifier;
+                const userPkgs = dataStore.getUserPackages(userId);
+                const onlineTotal = userPkgs.reduce((acc, p) => acc + (Number(p.price) || 0), 0);
+
+                return (
+                  <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-8 shadow-xs space-y-6 animate-fade-in max-w-5xl mx-auto">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                      <div className="flex items-center gap-3">
+                        <div className="size-12 rounded-2xl bg-[#EEF8FF] text-[#0284C7] flex items-center justify-center shrink-0">
+                          <Smartphone className="size-6" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg sm:text-xl font-black text-slate-800">Online to Cash Reconciliation</h3>
+                          <p className="text-xs text-slate-500 font-semibold">Online payments (Razorpay UPI, cards, netbanking) settled to employer cash ledger.</p>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setSelectedReportCard(null)}
+                        className="h-9 px-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
+                      >
+                        <X className="size-3.5 mr-1" /> Close View
+                      </Button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                      <div className="bg-sky-50/60 p-4 rounded-2xl border border-sky-100">
+                        <span className="text-[11px] font-black text-sky-800 uppercase tracking-wider block">Online Collected</span>
+                        <div className="text-2xl font-black text-sky-700 mt-1">₹{onlineTotal.toLocaleString("en-IN")}</div>
+                        <span className="text-[11px] text-sky-600 font-semibold">Digital transactions</span>
+                      </div>
+                      <div className="bg-emerald-50/60 p-4 rounded-2xl border border-emerald-100">
+                        <span className="text-[11px] font-black text-emerald-800 uppercase tracking-wider block">Cash Converted</span>
+                        <div className="text-2xl font-black text-emerald-700 mt-1">₹{onlineTotal.toLocaleString("en-IN")}</div>
+                        <span className="text-[11px] text-emerald-600 font-semibold">100% settled</span>
+                      </div>
+                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                        <span className="text-[11px] font-black text-slate-600 uppercase tracking-wider block">Pending Settlement</span>
+                        <div className="text-2xl font-black text-slate-700 mt-1">₹0</div>
+                        <span className="text-[11px] text-slate-500 font-semibold">All accounts clear</span>
+                      </div>
+                    </div>
+
+                    <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="bg-[#F8FAFF] border-b border-[#E0E8F5] text-[#5B6B7F] font-black uppercase tracking-wider text-[11px]">
+                            <th className="p-3 whitespace-nowrap">Gateway Ref</th>
+                            <th className="p-3 whitespace-nowrap">Channel</th>
+                            <th className="p-3 whitespace-nowrap">Digital Amount</th>
+                            <th className="p-3 whitespace-nowrap">Settlement Date</th>
+                            <th className="p-3 whitespace-nowrap text-center">Cash Reconciliation</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#E0E8F5] font-semibold text-[#10233F]">
+                          {userPkgs.map((tx) => (
+                            <tr key={tx.id} className="hover:bg-slate-50/70">
+                              <td className="p-3 font-mono text-[11px] text-[#063B78] whitespace-nowrap">
+                                {tx.razorpayPaymentId || tx.id}
+                              </td>
+                              <td className="p-3 whitespace-nowrap uppercase font-bold text-slate-700">{tx.paymentMethod}</td>
+                              <td className="p-3 whitespace-nowrap font-black text-emerald-700">₹{tx.price}</td>
+                              <td className="p-3 whitespace-nowrap text-slate-600">{tx.purchaseDate}</td>
+                              <td className="p-3 whitespace-nowrap text-center">
+                                <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black">Settled to Cash</span>
+                              </td>
+                            </tr>
+                          ))}
+                          {userPkgs.length === 0 && (
+                            <tr>
+                              <td colSpan={5} className="p-6 text-center text-slate-500 font-bold">No online gateway payments recorded.</td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* ── CARD 10 DETAILS: CASH OUT ── */}
+              {selectedReportCard === "cash-out" && (
+                <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-8 shadow-xs space-y-6 animate-fade-in max-w-5xl mx-auto">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                    <div className="flex items-center gap-3">
+                      <div className="size-12 rounded-2xl bg-[#FEECEF] text-[#E11D48] flex items-center justify-center shrink-0">
+                        <ArrowUpRight className="size-6" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg sm:text-xl font-black text-slate-800">Cash Out & Wage Disbursements</h3>
+                        <p className="text-xs text-slate-500 font-semibold">Worker payout receipts, generated salary slips, and cash distributions.</p>
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setSelectedReportCard(null)}
+                      className="h-9 px-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
+                    >
+                      <X className="size-3.5 mr-1" /> Close View
+                    </Button>
+                  </div>
+
+                  <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-[#F8FAFF] border-b border-[#E0E8F5] text-[#5B6B7F] font-black uppercase tracking-wider text-[11px]">
+                          <th className="p-3 whitespace-nowrap">Staff Member</th>
+                          <th className="p-3 whitespace-nowrap">Trade / Role</th>
+                          <th className="p-3 whitespace-nowrap">Daily Rate</th>
+                          <th className="p-3 whitespace-nowrap text-center">Days Worked</th>
+                          <th className="p-3 whitespace-nowrap text-right">Net Payable</th>
+                          <th className="p-3 whitespace-nowrap text-center">Disbursement Voucher</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#E0E8F5] font-semibold text-[#10233F]">
+                        {workers.map((w: any) => {
+                          const wAtt = reportAttendanceRecords.filter((a: DailyAttendanceRecord) => a.workerId === w.id);
+                          const pCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "Present" || a.status === "Overtime").length;
+                          const hdCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "HalfDay").length;
+                          const otHours = wAtt.reduce((sum: number, a: DailyAttendanceRecord) => sum + (Number(a.overtimeHours) || 0), 0);
+                          const rate = Number(w.dailyRate) || 0;
+                          const grossWages = Math.round((pCount * rate) + (hdCount * rate * 0.5) + (otHours * (rate / 8)));
+
+                          return (
+                            <tr key={w.id} className="hover:bg-slate-50/70">
+                              <td className="p-3 whitespace-nowrap font-bold text-[#063B78]">{w.name}</td>
+                              <td className="p-3 whitespace-nowrap text-slate-600">{w.trade || "Staff"}</td>
+                              <td className="p-3 whitespace-nowrap font-black text-slate-700">₹{rate} / day</td>
+                              <td className="p-3 whitespace-nowrap text-center font-bold text-slate-800">{pCount + hdCount * 0.5} days</td>
+                              <td className="p-3 whitespace-nowrap text-right font-black text-rose-700 text-sm">₹{grossWages.toLocaleString("en-IN")}</td>
+                              <td className="p-3 whitespace-nowrap text-center">
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleDownloadPDFSalarySlip(w, "month")}
+                                  className="h-7 px-3 rounded-lg text-xs font-bold bg-[#E11D48] hover:bg-[#be123c] text-white flex items-center gap-1 mx-auto cursor-pointer"
+                                >
+                                  <Download className="size-3" />
+                                  <span>Download Slip PDF</span>
+                                </Button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        {workers.length === 0 && (
+                          <tr>
+                            <td colSpan={6} className="p-6 text-center text-slate-500 font-bold">No staff registered for cash out.</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               )}
@@ -5114,24 +5650,42 @@ function AdminDashboardPage() {
                 </div>
 
                 <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setIsCategoryDropdownOpen((prev) => !prev)}
-                    className="w-full h-11 px-3 rounded-xl text-xs font-bold border border-slate-300 bg-white text-[#10233F] flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-[#063B78] shadow-xs"
-                  >
-                    <span className="truncate">{workerForm.category || "Select Category"}</span>
-                    <ChevronDown className={`size-4 text-slate-400 transition-transform duration-200 ${isCategoryDropdownOpen ? "rotate-180" : ""}`} />
-                  </button>
+                  <div className="flex items-center border border-slate-300 rounded-xl focus-within:border-[#063B78] focus-within:ring-2 focus-within:ring-[#063B78]/20 bg-white transition-all shadow-xs">
+                    <Input
+                      value={workerForm.category}
+                      onChange={(e) => {
+                        setWorkerForm((p) => ({ ...p, category: e.target.value }));
+                        setIsCategoryDropdownOpen(true);
+                      }}
+                      onFocus={() => setIsCategoryDropdownOpen(true)}
+                      placeholder="Type category manually or select below..."
+                      className="h-11 border-0 shadow-none text-xs font-bold text-[#10233F] focus-visible:ring-0 focus-visible:ring-offset-0 px-3 flex-1"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setIsCategoryDropdownOpen((prev) => !prev)}
+                      className="px-3 h-11 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer shrink-0"
+                      title="Toggle Category Dropdown"
+                    >
+                      <ChevronDown className={`size-4 transition-transform duration-200 ${isCategoryDropdownOpen ? "rotate-180" : ""}`} />
+                    </button>
+                  </div>
 
-                  {/* Dropdown Menu Popup with ✕ delete buttons directly on custom category options! */}
+                  {/* Dropdown Menu Popup with filtered suggestions + all categories */}
                   {isCategoryDropdownOpen && (
-                    <div className="absolute left-0 right-0 top-12 z-50 bg-white border border-slate-200 rounded-2xl shadow-xl max-h-72 overflow-y-auto p-1.5 space-y-0.5 animate-fade-in">
+                    <div
+                      className="absolute left-0 right-0 top-12 z-50 bg-white border border-slate-200 rounded-2xl shadow-xl max-h-64 overflow-y-auto p-1.5 space-y-0.5 animate-fade-in"
+                      onMouseDown={(e) => e.preventDefault()}
+                    >
                       {[
                         ...getIndustryDefaultCategories(),
                         ...customCategories,
-                        "⚙️ Other / Custom",
                       ]
-                        .filter((catName) => !removedCategories.includes(catName))
+                        .filter((catName, idx, arr) => arr.indexOf(catName) === idx && !removedCategories.includes(catName))
+                        .filter((catName) => {
+                          if (!workerForm.category || workerForm.category.trim() === "") return true;
+                          return catName.toLowerCase().includes(workerForm.category.toLowerCase());
+                        })
                         .map((catName) => {
                           const isSelected = workerForm.category === catName;
                           return (
@@ -5140,7 +5694,6 @@ function AdminDashboardPage() {
                               onClick={() => {
                                 setWorkerForm((p) => ({ ...p, category: catName }));
                                 setIsCategoryDropdownOpen(false);
-                                setShowOtherCategoryInput(false);
                               }}
                               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-colors ${isSelected ? "bg-[#063B78] text-white" : "hover:bg-slate-100 text-[#10233F]"
                                 }`}
@@ -5162,53 +5715,23 @@ function AdminDashboardPage() {
                           );
                         })}
 
-                      {/* Textbox inside the dropdown when adding a new custom category */}
-                      {showOtherCategoryInput ? (
-                        <div
-                          onClick={(e) => e.stopPropagation()}
-                          className="p-2 bg-blue-50/90 rounded-xl border border-blue-200 mt-1 flex items-center gap-1.5 animate-fade-in"
-                        >
-                          <Input
-                            autoFocus
-                            placeholder={t("typeNewCategoryPlaceholder")}
-                            value={newCustomCategoryInput}
-                            onChange={(e) => setNewCustomCategoryInput(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                e.preventDefault();
-                                handleAddCustomCategory();
-                              }
+                      {/* If the user typed something custom that isn't in the list, offer to save */}
+                      {workerForm.category &&
+                        workerForm.category.trim() !== "" &&
+                        ![...getIndustryDefaultCategories(), ...customCategories].some(
+                          (c) => c.toLowerCase() === workerForm.category.trim().toLowerCase()
+                        ) && (
+                          <div
+                            onClick={() => {
+                              handleAddCustomCategory();
+                              setIsCategoryDropdownOpen(false);
                             }}
-                            className="h-9 text-xs font-bold bg-white border-blue-300 focus:border-[#063B78]"
-                          />
-                          <button
-                            type="button"
-                            onClick={handleAddCustomCategory}
-                            className="px-3 py-2 rounded-lg bg-[#063B78] hover:bg-[#0A4F9E] text-white font-extrabold text-xs shrink-0 shadow-xs"
+                            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-extrabold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors cursor-pointer border-t border-slate-100 mt-1"
                           >
-                            + Add
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setShowOtherCategoryInput(false)}
-                            className="p-1 text-slate-400 hover:text-slate-700 text-xs font-bold shrink-0"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setShowOtherCategoryInput(true);
-                          }}
-                          className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-black text-[#063B78] hover:bg-blue-50 transition-colors border-t border-slate-100 mt-1"
-                        >
-                          <Plus className="size-3.5" />
-                          <span>{t("addNewCategoryPrompt")}</span>
-                        </button>
-                      )}
+                            <Plus className="size-3.5 shrink-0" />
+                            <span className="truncate">Use custom: "{workerForm.category}"</span>
+                          </div>
+                        )}
                     </div>
                   )}
                 </div>
@@ -6320,40 +6843,50 @@ function AdminDashboardPage() {
             onClick={() => setActiveCalendarDate(null)}
           >
             <div
-              className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[94vh] flex flex-col overflow-hidden my-auto"
+              className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[92vh] sm:max-h-[94vh] flex flex-col overflow-hidden my-auto"
               onClick={(e) => e.stopPropagation()}
             >
 
               {/* MODAL HEADER */}
-              <div className="bg-[#021D3D] text-white p-4 sm:p-5 flex items-center justify-between shadow-md">
-                <div className="flex items-center gap-3">
-                  <div className="size-11 sm:size-12 rounded-2xl bg-[#063B78] border border-white/20 flex items-center justify-center text-lg sm:text-xl font-black text-amber-300 shadow-inner">
+              <div className="bg-[#021D3D] text-white p-3 sm:p-5 flex items-center justify-between shadow-md shrink-0">
+                <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1 pr-2">
+                  <div className="size-10 sm:size-12 rounded-xl sm:rounded-2xl bg-[#063B78] border border-white/20 flex items-center justify-center text-base sm:text-xl font-black text-amber-300 shadow-inner shrink-0">
                     {activeWorker.name.charAt(0).toUpperCase()}
                   </div>
-                  <div>
-                    <h3 className="text-base sm:text-lg font-black tracking-tight">{activeWorker.name}</h3>
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-white/80 mt-0.5">
-                      <span className="flex items-center gap-1">✂️ {activeWorker.category || activeWorker.trade || "कर्मचारी"}</span>
-                      <span>•</span>
-                      <span>{activeWorker.trade || "General Worker"}</span>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-sm sm:text-lg font-black tracking-tight truncate">{activeWorker.name}</h3>
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] sm:text-xs text-white/80 mt-0.5">
+                      <span className="truncate max-w-[150px] sm:max-w-none">
+                        {activeWorker.category && activeWorker.category.startsWith("✂️")
+                          ? activeWorker.category
+                          : (activeWorker.category || activeWorker.trade || "कर्मचारी")}
+                      </span>
+                      {activeWorker.trade && activeWorker.trade !== activeWorker.category && (
+                        <>
+                          <span className="text-white/40">•</span>
+                          <span className="truncate max-w-[120px] sm:max-w-none text-white/70">{activeWorker.trade}</span>
+                        </>
+                      )}
                       {activeWorker.mobile && (
                         <>
-                          <span>•</span>
-                          <span className="flex items-center gap-1 text-emerald-400 font-bold"><Phone className="size-3" /> {activeWorker.mobile}</span>
+                          <span className="text-white/40">•</span>
+                          <span className="flex items-center gap-1 text-emerald-400 font-bold shrink-0">
+                            <Phone className="size-2.5 sm:size-3" /> {activeWorker.mobile}
+                          </span>
                         </>
                       )}
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={() => {
                       setCalendarWorker(null);
                       setActiveCalendarDate(null);
                       setOvertimeModalDate(null);
                     }}
-                    className="size-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold text-lg transition-all cursor-pointer"
+                    className="size-8 sm:size-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold text-base sm:text-lg transition-all cursor-pointer"
                     title={t("closeBtn")}
                   >
                     ✕
@@ -6362,11 +6895,11 @@ function AdminDashboardPage() {
               </div>
 
               {/* MODAL BODY */}
-              <div className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1 bg-white" onClick={() => setActiveCalendarDate(null)}>
+              <div className="p-2.5 sm:p-6 overflow-y-auto space-y-2.5 sm:space-y-4 flex-1 bg-white overscroll-contain" onClick={() => setActiveCalendarDate(null)}>
 
                 {/* Month Navigation & Controls */}
                 <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
                     <button
                       type="button"
                       onClick={() => {
@@ -6378,20 +6911,20 @@ function AdminDashboardPage() {
                         }
                         setActiveCalendarDate(null);
                       }}
-                      className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold transition-all cursor-pointer"
+                      className="p-1 sm:p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold transition-all cursor-pointer"
                       title={t("previousMonthTitle")}
                     >
                       <ChevronLeft className="size-4" />
                     </button>
 
-                    <div className="flex items-center gap-1.5 px-1">
+                    <div className="flex items-center gap-1 sm:gap-1.5">
                       <select
                         value={calendarMonth}
                         onChange={(e) => {
                           setCalendarMonth(Number(e.target.value));
                           setActiveCalendarDate(null);
                         }}
-                        className="text-xs sm:text-sm font-black text-slate-900 bg-slate-50 border border-slate-200 rounded-lg py-1 px-2 cursor-pointer focus:outline-none"
+                        className="text-xs sm:text-sm font-black text-slate-900 bg-slate-50 border border-slate-200 rounded-lg py-1 px-1.5 sm:px-2 cursor-pointer focus:outline-none"
                       >
                         {monthNames.map((m, idx) => (
                           <option key={m} value={idx}>📅 {m}</option>
@@ -6403,7 +6936,7 @@ function AdminDashboardPage() {
                           setCalendarYear(Number(e.target.value));
                           setActiveCalendarDate(null);
                         }}
-                        className="text-xs sm:text-sm font-black text-slate-900 bg-slate-50 border border-slate-200 rounded-lg py-1 px-2 cursor-pointer focus:outline-none"
+                        className="text-xs sm:text-sm font-black text-slate-900 bg-slate-50 border border-slate-200 rounded-lg py-1 px-1.5 sm:px-2 cursor-pointer focus:outline-none"
                       >
                         {[2023, 2024, 2025, 2026, 2027, 2028].map((y) => (
                           <option key={y} value={y}>{y}</option>
@@ -6422,7 +6955,7 @@ function AdminDashboardPage() {
                         }
                         setActiveCalendarDate(null);
                       }}
-                      className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold transition-all cursor-pointer"
+                      className="p-1 sm:p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold transition-all cursor-pointer"
                       title={t("nextMonthTitle")}
                     >
                       <ChevronRight className="size-4" />
@@ -6430,13 +6963,13 @@ function AdminDashboardPage() {
                   </div>
                 </div>
 
-                {/* ── 7-DAY CALENDAR GRID (Matches Design in Image 1) ── */}
-                <div className="grid grid-cols-7 gap-1.5 sm:gap-2.5">
+                {/* ── 7-DAY CALENDAR GRID ── */}
+                <div className="grid grid-cols-7 gap-1 sm:gap-2">
                   {/* Day Names */}
                   {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((dayName, idx) => (
                     <div
                       key={dayName}
-                      className={`text-center text-xs py-1.5 ${idx === 0 ? "text-rose-500 font-extrabold" : "text-slate-600 font-extrabold"}`}
+                      className={`text-center text-[10px] sm:text-xs py-1 ${idx === 0 ? "text-rose-500 font-extrabold" : "text-slate-600 font-extrabold"}`}
                     >
                       {dayName}
                     </div>
@@ -6444,7 +6977,7 @@ function AdminDashboardPage() {
 
                   {/* Leading empty spaces before 1st of month */}
                   {Array.from({ length: firstDayOfWeek }).map((_, i) => (
-                    <div key={`empty-${i}`} className="min-h-[72px] sm:min-h-[82px] rounded-2xl bg-slate-50/40 border border-slate-100/60"></div>
+                    <div key={`empty-${i}`} className="min-h-[46px] sm:min-h-[76px] rounded-xl sm:rounded-2xl bg-slate-50/40 border border-slate-100/60"></div>
                   ))}
 
                   {/* Days of Month */}
@@ -6454,6 +6987,8 @@ function AdminDashboardPage() {
                     const rec = recordsMap.get(dateStr);
                     const isSelected = activeCalendarDate === dateStr;
                     const colIdx = (firstDayOfWeek + i) % 7;
+                    const rowIndex = Math.floor((firstDayOfWeek + i) / 7);
+                    const isTopRow = rowIndex < 2;
                     const isSunday = colIdx === 0;
                     const todayStr = new Date().toISOString().split("T")[0]!;
                     const isFuture = dateStr > todayStr;
@@ -6461,7 +6996,7 @@ function AdminDashboardPage() {
                     return (
                       <div
                         key={dateStr}
-                        className={`relative min-h-[72px] sm:min-h-[82px] p-1.5 sm:p-2 rounded-2xl border flex flex-col justify-between transition-all ${isFuture
+                        className={`relative min-h-[46px] sm:min-h-[76px] p-1 sm:p-2 rounded-xl sm:rounded-2xl border flex flex-col justify-between transition-all ${isFuture
                             ? "bg-slate-50/70 border-slate-100 opacity-40 cursor-not-allowed select-none"
                             : isSunday
                               ? "border-slate-100 bg-white hover:border-slate-300"
@@ -6469,7 +7004,7 @@ function AdminDashboardPage() {
                           } ${isSelected && !isFuture ? "ring-2 ring-[#7C3AED] shadow-lg z-30" : "shadow-2xs"}`}
                       >
                         <div className="flex items-center justify-between">
-                          <span className={`text-xs font-black ${isFuture ? "text-slate-400 font-semibold" : isSunday ? "text-rose-500 font-black" : "text-slate-800 font-extrabold"}`}>
+                          <span className={`text-[10px] sm:text-xs font-black ${isFuture ? "text-slate-400 font-semibold" : isSunday ? "text-rose-500 font-black" : "text-slate-800 font-extrabold"}`}>
                             {dayNum}
                           </span>
                         </div>
@@ -6477,7 +7012,7 @@ function AdminDashboardPage() {
                         {/* Cell Attendance Status / Action Button */}
                         <div className="mt-auto relative">
                           {isFuture ? (
-                            <div className="w-full flex items-center justify-center py-1 text-[11px] font-bold text-slate-300 select-none cursor-not-allowed" title={t("futureDateTitle")}>
+                            <div className="w-full flex items-center justify-center py-0.5 text-[9px] sm:text-[11px] font-bold text-slate-300 select-none cursor-not-allowed" title={t("futureDateTitle")}>
                               --
                             </div>
                           ) : rec?.status === "Present" ? (
@@ -6487,11 +7022,11 @@ function AdminDashboardPage() {
                                 e.stopPropagation();
                                 setActiveCalendarDate(isSelected ? null : dateStr);
                               }}
-                              className="w-full flex items-center justify-center py-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-all cursor-pointer"
+                              className="w-full flex items-center justify-center py-0.5 sm:py-1 rounded-lg sm:rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-all cursor-pointer"
                               title={t("clickToEditPresent")}
                             >
-                              <div className="size-6 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-xs">
-                                <Check className="size-3.5 stroke-[3]" />
+                              <div className="size-4.5 sm:size-6 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-xs">
+                                <Check className="size-2.5 sm:size-3.5 stroke-[3]" />
                               </div>
                             </button>
                           ) : rec?.status === "Absent" ? (
@@ -6501,11 +7036,11 @@ function AdminDashboardPage() {
                                 e.stopPropagation();
                                 setActiveCalendarDate(isSelected ? null : dateStr);
                               }}
-                              className="w-full flex items-center justify-center py-1 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-all cursor-pointer"
+                              className="w-full flex items-center justify-center py-0.5 sm:py-1 rounded-lg sm:rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-all cursor-pointer"
                               title={t("clickToEditAbsent")}
                             >
-                              <div className="size-6 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-xs">
-                                <X className="size-3.5 stroke-[3]" />
+                              <div className="size-4.5 sm:size-6 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-xs">
+                                <X className="size-2.5 sm:size-3.5 stroke-[3]" />
                               </div>
                             </button>
                           ) : rec?.status === "HalfDay" ? (
@@ -6515,10 +7050,10 @@ function AdminDashboardPage() {
                                 e.stopPropagation();
                                 setActiveCalendarDate(isSelected ? null : dateStr);
                               }}
-                              className="w-full flex items-center justify-center py-1 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 transition-all cursor-pointer"
+                              className="w-full flex items-center justify-center py-0.5 sm:py-1 rounded-lg sm:rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 transition-all cursor-pointer"
                               title={t("clickToEditHalfDay")}
                             >
-                              <div className="size-6 rounded-full bg-amber-500 text-white flex items-center justify-center shadow-xs font-black text-[10px]">
+                              <div className="size-4.5 sm:size-6 rounded-full bg-amber-500 text-white flex items-center justify-center shadow-xs font-black text-[9px] sm:text-[10px]">
                                 ½
                               </div>
                             </button>
@@ -6529,14 +7064,14 @@ function AdminDashboardPage() {
                                 e.stopPropagation();
                                 setActiveCalendarDate(isSelected ? null : dateStr);
                               }}
-                              className="w-full flex flex-col items-center justify-center py-1 px-0.5 sm:px-1 rounded-xl bg-purple-50 hover:bg-purple-100 border border-purple-200 transition-all cursor-pointer gap-0.5 overflow-hidden"
+                              className="w-full flex flex-col items-center justify-center py-0.5 sm:py-1 px-0.5 rounded-lg sm:rounded-xl bg-purple-50 hover:bg-purple-100 border border-purple-200 transition-all cursor-pointer gap-0.5"
                               title={`Present + Overtime: ${rec.overtimeHours || 2} hours - Click to edit`}
                             >
-                              <div className="size-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-xs shrink-0 font-black text-[10px]">
+                              <div className="size-4 sm:size-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-xs shrink-0 font-black text-[8px] sm:text-[10px]">
                                 P
                               </div>
-                              <span className="text-[9px] sm:text-[10px] font-black text-[#7C3AED] bg-purple-100/90 px-1 py-0.2 rounded truncate max-w-full">
-                                +{rec.overtimeHours || 2}h OT
+                              <span className="text-[8px] sm:text-[9px] font-black text-[#7C3AED] bg-purple-100/90 px-1 py-0.2 rounded whitespace-nowrap">
+                                +{rec.overtimeHours || 2}h
                               </span>
                             </button>
                           ) : (
@@ -6546,18 +7081,21 @@ function AdminDashboardPage() {
                                 e.stopPropagation();
                                 setActiveCalendarDate(isSelected ? null : dateStr);
                               }}
-                              className="text-[11px] font-bold text-slate-500 hover:text-blue-700 bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-200 rounded-xl py-1 px-2 transition-all w-full text-center cursor-pointer shadow-2xs"
+                              className="w-full flex items-center justify-center py-0.5 sm:py-1 rounded-lg sm:rounded-xl bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-200 transition-all cursor-pointer group shadow-2xs"
+                              title="Mark Attendance (+)"
                             >
-                              + Mark
+                              <div className="size-4.5 sm:size-6 rounded-full bg-slate-100 group-hover:bg-blue-100 border border-slate-200 group-hover:border-blue-300 text-slate-500 group-hover:text-blue-600 flex items-center justify-center font-black text-xs sm:text-sm transition-all">
+                                +
+                              </div>
                             </button>
                           )}
 
-                          {/* ── DROPDOWN POPOVER FOR MARKING ATTENDANCE (Matches Image 1) ── */}
+                          {/* ── DROPDOWN POPOVER FOR MARKING ATTENDANCE ── */}
                           {isSelected && !isFuture && (
                             <div
-                              className={`absolute bottom-full mb-2 w-44 bg-white rounded-2xl p-1.5 shadow-2xl border border-slate-200 z-50 animate-in fade-in zoom-in-95 ${colIdx === 0
+                              className={`absolute ${isTopRow ? "top-full mt-2" : "bottom-full mb-2"} w-40 sm:w-44 bg-white rounded-2xl p-1.5 shadow-2xl border border-slate-200 z-50 animate-in fade-in zoom-in-95 ${colIdx <= 1
                                   ? "left-0"
-                                  : colIdx === 6
+                                  : colIdx >= 5
                                     ? "right-0"
                                     : "left-1/2 -translate-x-1/2"
                                 }`}
@@ -6569,9 +7107,9 @@ function AdminDashboardPage() {
                                   handleMarkAttendance(activeWorker, "Present", dateStr);
                                   setActiveCalendarDate(null);
                                 }}
-                                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-emerald-50 text-slate-800 hover:text-emerald-700 text-xs font-bold transition-all text-left cursor-pointer"
+                                className="w-full flex items-center gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl hover:bg-emerald-50 text-slate-800 hover:text-emerald-700 text-xs font-bold transition-all text-left cursor-pointer"
                               >
-                                <div className="size-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                                <div className="size-4.5 sm:size-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-2xs">
                                   <Check className="size-3 stroke-[3]" />
                                 </div>
                                 <span>{t("present")}</span>
@@ -6583,9 +7121,9 @@ function AdminDashboardPage() {
                                   handleMarkAttendance(activeWorker, "Absent", dateStr);
                                   setActiveCalendarDate(null);
                                 }}
-                                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-rose-50 text-slate-800 hover:text-rose-700 text-xs font-bold transition-all text-left cursor-pointer"
+                                className="w-full flex items-center gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl hover:bg-rose-50 text-slate-800 hover:text-rose-700 text-xs font-bold transition-all text-left cursor-pointer"
                               >
-                                <div className="size-5 rounded-full bg-rose-500 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                                <div className="size-4.5 sm:size-5 rounded-full bg-rose-500 text-white flex items-center justify-center shrink-0 shadow-2xs">
                                   <X className="size-3 stroke-[3]" />
                                 </div>
                                 <span>{t("absent")}</span>
@@ -6597,9 +7135,9 @@ function AdminDashboardPage() {
                                   handleMarkAttendance(activeWorker, "HalfDay", dateStr);
                                   setActiveCalendarDate(null);
                                 }}
-                                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-amber-50 text-slate-800 hover:text-amber-700 text-xs font-bold transition-all text-left cursor-pointer"
+                                className="w-full flex items-center gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl hover:bg-amber-50 text-slate-800 hover:text-amber-700 text-xs font-bold transition-all text-left cursor-pointer"
                               >
-                                <div className="size-5 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-2xs font-black text-[10px]">
+                                <div className="size-4.5 sm:size-5 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-2xs font-black text-[10px]">
                                   ½
                                 </div>
                                 <span>{t("halfDay")}</span>
@@ -6612,12 +7150,12 @@ function AdminDashboardPage() {
                                   setOvertimeModalDate(dateStr);
                                   setOvertimeModalHours(rec?.overtimeHours || 1);
                                 }}
-                                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl bg-purple-50/70 hover:bg-purple-100 text-[#7C3AED] text-xs font-bold transition-all text-left cursor-pointer"
+                                className="w-full flex items-center gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-purple-50/70 hover:bg-purple-100 text-[#7C3AED] text-xs font-bold transition-all text-left cursor-pointer"
                               >
-                                <div className="size-5 rounded-full bg-[#7C3AED] text-white flex items-center justify-center shrink-0 shadow-2xs">
+                                <div className="size-4.5 sm:size-5 rounded-full bg-[#7C3AED] text-white flex items-center justify-center shrink-0 shadow-2xs">
                                   <Clock className="size-3" />
                                 </div>
-                                <span>{t("overtime")} (हजर + OT)</span>
+                                <span className="truncate">{t("overtime")} (हजर+OT)</span>
                               </button>
 
                               {rec && (
@@ -6629,7 +7167,7 @@ function AdminDashboardPage() {
                                     setActiveCalendarDate(null);
                                     toast.success(`Cleared for ${dateStr}`);
                                   }}
-                                  className="w-full flex items-center gap-2 px-3 py-1.5 mt-1 border-t border-slate-100 text-slate-400 hover:text-rose-600 text-[11px] font-bold transition-all cursor-pointer"
+                                  className="w-full flex items-center gap-2 px-2.5 sm:px-3 py-1.5 mt-1 border-t border-slate-100 text-slate-400 hover:text-rose-600 text-[11px] font-bold transition-all cursor-pointer"
                                 >
                                   <Trash2 className="size-3" />
                                   <span>{t("clearAttendanceBtn")}</span>
@@ -6643,57 +7181,57 @@ function AdminDashboardPage() {
                   })}
                 </div>
 
-                {/* ── 3. BOTTOM LEGEND (Matches Image 1) ── */}
-                <div className="bg-[#FAF8FF] border border-purple-100 rounded-2xl p-3 sm:p-3.5 grid grid-cols-2 sm:flex sm:flex-wrap items-center justify-around gap-2.5 text-xs font-bold text-slate-700 mt-2">
-                  <div className="flex items-center gap-2">
-                    <div className="size-6 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-2xs">
-                      <Check className="size-3.5 stroke-[3]" />
+                {/* ── 3. BOTTOM LEGEND ── */}
+                <div className="bg-[#FAF8FF] border border-purple-100 rounded-2xl p-2.5 sm:p-3.5 grid grid-cols-2 sm:flex sm:flex-wrap items-center justify-around gap-2 text-xs font-bold text-slate-700 mt-2">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    <div className="size-5 sm:size-6 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-2xs shrink-0">
+                      <Check className="size-3 sm:size-3.5 stroke-[3]" />
                     </div>
-                    <span className="font-extrabold text-slate-800">{t("present")}</span>
+                    <span className="font-extrabold text-slate-800 text-[11px] sm:text-xs">{t("present")}</span>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <div className="size-6 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-2xs">
-                      <X className="size-3.5 stroke-[3]" />
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    <div className="size-5 sm:size-6 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-2xs shrink-0">
+                      <X className="size-3 sm:size-3.5 stroke-[3]" />
                     </div>
-                    <span className="font-extrabold text-slate-800">{t("absent")}</span>
+                    <span className="font-extrabold text-slate-800 text-[11px] sm:text-xs">{t("absent")}</span>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <div className="size-6 rounded-full bg-amber-500 text-white flex items-center justify-center shadow-2xs font-black text-[10px]">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    <div className="size-5 sm:size-6 rounded-full bg-amber-500 text-white flex items-center justify-center shadow-2xs font-black text-[9px] sm:text-[10px] shrink-0">
                       ½
                     </div>
-                    <span className="font-extrabold text-slate-800">{t("halfDay")}</span>
+                    <span className="font-extrabold text-slate-800 text-[11px] sm:text-xs">{t("halfDay")}</span>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1 bg-emerald-50 border border-emerald-300 rounded-xl px-1.5 py-0.5 shadow-2xs">
-                      <div className="size-4 rounded-full bg-emerald-500 text-white flex items-center justify-center font-black text-[9px]">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    <div className="flex items-center gap-1 bg-emerald-50 border border-emerald-300 rounded-lg px-1.5 py-0.5 shadow-2xs shrink-0">
+                      <div className="size-3.5 sm:size-4 rounded-full bg-emerald-500 text-white flex items-center justify-center font-black text-[8px] sm:text-[9px]">
                         P
                       </div>
-                      <span className="text-[10px] font-black text-[#7C3AED] bg-purple-100 px-1 rounded">
+                      <span className="text-[9px] sm:text-[10px] font-black text-[#7C3AED] bg-purple-100 px-1 rounded">
                         +OT
                       </span>
                     </div>
-                    <span className="font-extrabold text-slate-800">{t("overtime")} (हजर + OT)</span>
+                    <span className="font-extrabold text-slate-800 text-[11px] sm:text-xs truncate">{t("overtime")} (हजर + OT)</span>
                   </div>
                 </div>
 
                 {/* ── 4. MONTHLY SUMMARY & PAYROLL CARD ── */}
-                <div className="bg-gradient-to-br from-slate-900 to-[#063B78] text-white rounded-2xl p-4 sm:p-5 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="bg-gradient-to-br from-slate-900 to-[#063B78] text-white rounded-2xl p-3 sm:p-5 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-2">
                   <div className="space-y-1">
                     <span className="text-xs font-bold text-amber-400">
                       {monthNames[calendarMonth]} {calendarYear} — Monthly Attendance Summary
                     </span>
-                    <div className="flex flex-wrap items-center gap-3 text-xs font-extrabold mt-1">
-                      <span className="text-emerald-400">🟢 Present: {presentCount} days</span>
-                      <span className="text-amber-400">🟠 Half Day: {halfDayCount} days</span>
-                      <span className="text-rose-400">🔴 Absent: {absentCount} days</span>
-                      <span className="text-purple-300">🟣 Overtime: {overtimeCount} days ({totalOvertimeHours} hrs)</span>
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs font-extrabold mt-1">
+                      <span className="text-emerald-400">🟢 Present: {presentCount}</span>
+                      <span className="text-amber-400">🟠 Half: {halfDayCount}</span>
+                      <span className="text-rose-400">🔴 Absent: {absentCount}</span>
+                      <span className="text-purple-300">🟣 OT: {overtimeCount} ({totalOvertimeHours}h)</span>
                     </div>
                     {overtimeDetails.length > 0 && (
                       <div className="mt-2.5 pt-2 border-t border-white/15 text-xs">
-                        <span className="text-purple-300 font-extrabold block mb-1">📅 Overtime Work Log (Date & Hours):</span>
+                        <span className="text-purple-300 font-extrabold block mb-1">📅 Overtime Work Log:</span>
                         <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
                           {overtimeDetails.map((ot) => (
                             <span key={ot.date} className="px-2 py-0.5 rounded-md bg-purple-500/25 border border-purple-400/40 text-purple-200 text-[11px] font-bold">
@@ -6705,10 +7243,10 @@ function AdminDashboardPage() {
                     )}
                   </div>
 
-                  <div className="flex items-center gap-4 border-t sm:border-t-0 sm:border-l border-white/20 pt-3 sm:pt-0 sm:pl-4">
+                  <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-4 border-t sm:border-t-0 sm:border-l border-white/20 pt-2.5 sm:pt-0 sm:pl-4">
                     <div>
                       <div className="text-[10px] text-white/70 font-bold uppercase tracking-wider">{t("estTotalSalaryLabel")}</div>
-                      <div className="text-xl sm:text-2xl font-black text-amber-300">
+                      <div className="text-lg sm:text-2xl font-black text-amber-300">
                         ₹{Math.round(totalEarned).toLocaleString("en-IN")}
                       </div>
                     </div>
@@ -6723,7 +7261,7 @@ function AdminDashboardPage() {
                         setViewSlipWorker(activeWorker);
                         setCalendarWorker(null);
                       }}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs px-3.5 py-2 rounded-xl shadow-md cursor-pointer"
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs px-3 sm:px-3.5 py-2 rounded-xl shadow-md cursor-pointer shrink-0"
                     >
                       🧾 View Salary Slip
                     </Button>

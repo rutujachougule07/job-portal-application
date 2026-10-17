@@ -554,6 +554,23 @@ export class DataStoreManager {
       } catch (e) {
         // Fallback gracefully if collection not initialized
       }
+
+      // 6. Sync Package Purchases strictly from Firebase Firestore
+      try {
+        const packagesSnap = await getDocs(collection(db, "package_purchases"));
+        if (!packagesSnap.empty) {
+          const fbPackages = packagesSnap.docs.map(d => ({ ...(d.data() as PackageTransaction), id: d.id }));
+          localStorage.setItem(this.STORAGE_KEYS.PACKAGES, JSON.stringify(fbPackages));
+        } else {
+          localStorage.setItem(this.STORAGE_KEYS.PACKAGES, JSON.stringify([]));
+        }
+      } catch (e) {
+        // Fallback gracefully
+      }
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("realjob_firebase_synced"));
+      }
     });
   }
 
@@ -1483,12 +1500,18 @@ export class DataStoreManager {
   }
 
   public getUserPackages(userId: string): PackageTransaction[] {
-    if (typeof window === "undefined") return [];
+    if (typeof window === "undefined" || !userId) return [];
     const raw = localStorage.getItem(this.STORAGE_KEYS.PACKAGES);
     if (!raw) return [];
     try {
       const all: PackageTransaction[] = JSON.parse(raw);
-      return all.filter((p) => p.userId === userId);
+      const cleanUid = userId.trim().toLowerCase();
+      return all.filter((p) => {
+        if (!p.userId) return false;
+        const pUid = p.userId.trim().toLowerCase();
+        const pEmail = (p.userEmail || "").trim().toLowerCase();
+        return pUid === cleanUid || (pEmail && pEmail === cleanUid);
+      });
     } catch {
       return [];
     }
@@ -1625,7 +1648,7 @@ export class DataStoreManager {
   public getUserWorkerCredits(userId: string): number {
     if (typeof window === "undefined" || !userId) return 0;
     try {
-      const purchases = this.getAllPackagePurchases().filter((p: PackageTransaction) => p.userId === userId);
+      const purchases = this.getUserPackages(userId);
       if (!purchases || purchases.length === 0) {
         // Require active package purchase to add employees!
         return 0;

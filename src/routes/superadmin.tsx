@@ -281,6 +281,13 @@ function SuperAdminPage() {
 
   useEffect(() => {
     refreshData();
+    const handleFirebaseSync = () => {
+      refreshData();
+    };
+    window.addEventListener("realjob_firebase_synced", handleFirebaseSync);
+    return () => {
+      window.removeEventListener("realjob_firebase_synced", handleFirebaseSync);
+    };
   }, []);
 
   // Sub-Admins State
