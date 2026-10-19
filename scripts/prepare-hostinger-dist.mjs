@@ -88,14 +88,47 @@ if (fs.existsSync(zipPath)) {
 
 console.log("📦 Creating production dist.zip for Hostinger public_html...");
 try {
-  // Use PowerShell to archive the files inside dist-hostinger including hidden files (.htaccess)
-  execSync(
-    `powershell -NoProfile -Command "Get-ChildItem -Path '${hostingerDir}' -Force | Compress-Archive -DestinationPath '${zipPath}' -Force"`,
-    { stdio: "inherit" }
-  );
-  console.log("🎉 dist.zip successfully generated at:", zipPath);
+  if (process.platform === "win32") {
+    execSync(
+      `powershell -NoProfile -Command "Get-ChildItem -Path '${hostingerDir}' -Force | Compress-Archive -DestinationPath '${zipPath}' -Force"`,
+      { stdio: "inherit" }
+    );
+    console.log("🎉 dist.zip successfully generated at:", zipPath);
+  } else {
+    try {
+      execSync(`cd "${hostingerDir}" && zip -r "${zipPath}" .`, { stdio: "inherit" });
+      console.log("🎉 dist.zip successfully generated at:", zipPath);
+    } catch {
+      console.log("ℹ️ Skipping zip creation on non-Windows environment without zip utility.");
+    }
+  }
 } catch (err) {
-  console.error("⚠️ Failed to generate zip with PowerShell:", err.message);
+  console.log("⚠️ Could not generate zip archive:", err.message);
+}
+
+// 8. Generate .vercel/output for Vercel Build Output API v3 compatibility
+try {
+  const vercelOutputDir = path.join(rootDir, ".vercel", "output");
+  const vercelStaticDir = path.join(vercelOutputDir, "static");
+  fs.mkdirSync(vercelStaticDir, { recursive: true });
+  fs.cpSync(clientDir, vercelStaticDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(vercelOutputDir, "config.json"),
+    JSON.stringify(
+      {
+        version: 3,
+        routes: [
+          { handle: "filesystem" },
+          { src: "/(.*)", dest: "/index.html" },
+        ],
+      },
+      null,
+      2
+    )
+  );
+  console.log("✅ Created clean '.vercel/output' for Vercel deployment.");
+} catch (e) {
+  console.log("ℹ️ Notice: .vercel/output generation skipped:", e.message);
 }
 
 console.log("\n========================================================");
