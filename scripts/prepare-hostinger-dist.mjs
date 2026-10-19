@@ -69,16 +69,24 @@ fs.mkdirSync(hostingerDir, { recursive: true });
 fs.cpSync(clientDir, hostingerDir, { recursive: true });
 console.log("✅ Created clean 'dist-hostinger' directory with all deployable files.");
 
-// 6. Also sync index.html, .htaccess and assets directly to dist root so dist/ itself is valid
+// 6. Also sync index.html, .htaccess, robots.txt, sitemap.xml and assets directly to dist root so dist/ itself is valid
 fs.copyFileSync(indexHtmlPath, path.join(distDir, "index.html"));
 if (fs.existsSync(htaccessTarget)) {
   fs.copyFileSync(htaccessTarget, path.join(distDir, ".htaccess"));
+}
+const robotsTarget = path.join(clientDir, "robots.txt");
+if (fs.existsSync(robotsTarget)) {
+  fs.copyFileSync(robotsTarget, path.join(distDir, "robots.txt"));
+}
+const sitemapTarget = path.join(clientDir, "sitemap.xml");
+if (fs.existsSync(sitemapTarget)) {
+  fs.copyFileSync(sitemapTarget, path.join(distDir, "sitemap.xml"));
 }
 const distAssetsDir = path.join(distDir, "assets");
 const clientAssetsDir = path.join(clientDir, "assets");
 if (fs.existsSync(clientAssetsDir)) {
   fs.cpSync(clientAssetsDir, distAssetsDir, { recursive: true });
-  console.log("✅ Mirrored assets to dist/assets for flat root compatibility.");
+  console.log("✅ Mirrored assets, robots.txt and sitemap.xml to dist/ root.");
 }
 
 // 7. Generate clean dist.zip directly containing the files of dist-hostinger

@@ -100,19 +100,41 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "REAL JOB" },
-      { name: "description", content: "Jobs, hiring, workforce management and E-Salary." },
-      { name: "author", content: "REAL JOB" },
-      { property: "og:title", content: "REAL JOB" },
-      { property: "og:description", content: "Jobs, hiring, workforce management and E-Salary." },
+      { title: "REAL JOB — India's Trusted Blue-Collar & Industrial Job Portal" },
+      {
+        name: "description",
+        content:
+          "Right Person, Right Job, Right Opportunity. Search verified factory jobs, skilled technicians, attendance tracking & E-Salary slips on REAL JOB.",
+      },
+      { name: "author", content: "REAL JOB (Expertskill Technology)" },
+      { name: "robots", content: "index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" },
+      { property: "og:site_name", content: "REAL JOB" },
+      { property: "og:title", content: "REAL JOB — India's Trusted Blue-Collar & Industrial Job Portal" },
+      {
+        property: "og:description",
+        content:
+          "Find verified factory, driver, ITI, welder and technical jobs across Maharashtra and India. Hire skilled candidates with automated payroll.",
+      },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://realjob.online" },
+      { property: "og:image", content: "https://realjob.online/logo.png" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "REAL JOB — Find Work | Find Workers" },
+      {
+        name: "twitter:description",
+        content: "India's verified industrial recruitment, attendance management and E-Salary platform.",
+      },
+      { name: "twitter:image", content: "https://realjob.online/logo.png" },
     ],
     links: [
+      { rel: "canonical", href: "https://realjob.online" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700;800&display=swap" },
+      {
+        rel: "stylesheet",
+        href:
+          "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700;800&display=swap",
+      },
       {
         rel: "stylesheet",
         href: appCss,
@@ -128,10 +150,54 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: ReactNode }) {
+  const jsonLdOrg = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "REAL JOB",
+    legalName: "Expertskill Technology",
+    url: "https://realjob.online",
+    logo: "https://realjob.online/logo.png",
+    description:
+      "India's trusted digital blue-collar recruitment, industrial workforce staffing and automated payroll platform.",
+    contactPoint: [
+      {
+        "@type": "ContactPoint",
+        telephone: "+91-9964216090",
+        contactType: "customer service",
+        areaServed: "IN",
+        availableLanguage: ["English", "Hindi", "Marathi"],
+      },
+    ],
+    sameAs: ["https://realjob.online"],
+  };
+
+  const jsonLdWebsite = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "REAL JOB",
+    url: "https://realjob.online",
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: "https://realjob.online/search?q={search_term_string}",
+      },
+      "query-input": "required name=search_term_string",
+    },
+  };
+
   return (
     <html lang="mr" translate="no" className="notranslate">
       <head>
         <HeadContent />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdOrg) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdWebsite) }}
+        />
       </head>
       <body className="overscroll-y-none notranslate" translate="no">
         {children}

@@ -8,6 +8,7 @@ import {
   LogOut,
   Mail,
   Menu,
+  Search,
   ShieldCheck,
   User,
   UserRound,
@@ -76,6 +77,19 @@ export function PublicHeader() {
 
         {/* Action Buttons & Utilities */}
         <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+          {/* Google-Style Site Search Button */}
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 h-8 sm:h-9 rounded-full border border-slate-200 text-xs font-bold text-slate-700 hover:text-[#063B78] hover:border-[#063B78] bg-slate-50/80 shadow-2xs"
+          >
+            <Link to="/search" title="Search REAL JOB (Google-style search)">
+              <Search className="size-3.5 text-[#063B78]" />
+              <span className="hidden sm:inline">Search</span>
+            </Link>
+          </Button>
+
           <LanguageSwitcher />
 
           {user ? (
@@ -149,6 +163,14 @@ export function PublicHeader() {
                 >
                   <Briefcase className="size-5 text-[#063B78]" />
                   {t("home")}
+                </Link>
+                <Link
+                  to="/search"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 font-bold text-[#10233F] hover:bg-[#F5F8FC]"
+                >
+                  <Search className="size-5 text-[#063B78]" />
+                  <span>Search Portal</span>
                 </Link>
                 <Link
                   to="/jobs"
