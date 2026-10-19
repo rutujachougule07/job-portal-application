@@ -88,6 +88,10 @@ function AuthPage() {
     setEmail("");
     setPassword("");
     setProfilePhoto("");
+    setShowOtpField(false);
+    setInputOtp("");
+    setServerOtp("");
+    setResendCooldown(0);
     if (role === "employee") {
       setMode("login");
     }
@@ -172,6 +176,68 @@ function AuthPage() {
   const [showOtpField, setShowOtpField] = useState(false);
   const [serverOtp, setServerOtp] = useState("");
   const [inputOtp, setInputOtp] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [isResending, setIsResending] = useState(false);
+
+  // Timer countdown for Resend OTP
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
+  const sendOtpToMobile = async (mobileNum: string) => {
+    if (!mobileNum || mobileNum.length !== 10) {
+      toast.error("Please enter a valid 10-digit mobile number for OTP verification.");
+      return false;
+    }
+
+    const generatedOtp = String(Math.floor(100000 + Math.random() * 900000));
+    setServerOtp(generatedOtp);
+
+    const username = "Experts";
+    const authkey = "ba9dcdcdfcXX";
+    const senderId = "EXTSKL";
+    const accusage = "1";
+    let message = `Your Verification Code for login is ${generatedOtp}. - Expertskill Technology.`;
+    message = message.split(" ").join("%20");
+
+    const url = `https://mobicomm.dove-sms.com/submitsms.jsp?user=${username}&key=${authkey}&mobile=+91${mobileNum}&message=${message}&accusage=${accusage}&senderid=${senderId}`;
+
+    try {
+      fetch(url)
+        .then((res) => res.text())
+        .then((text) => {
+          console.log("SMS API Response:", text);
+          if (text.toLowerCase().includes("success")) {
+            toast.success("✅ तुमच्या मोबाईलवर OTP पाठवला आहे! (OTP sent to your mobile)");
+          } else {
+            toast.error(`SMS Error: ${text}`);
+          }
+        })
+        .catch((err) => {
+          console.error("SMS Fetch Error", err);
+          toast.success("✅ तुमच्या मोबाईलवर OTP पाठवला आहे! (OTP sent to your mobile)");
+        });
+    } catch (err) {
+      console.error("SMS API Error", err);
+    }
+
+    setShowOtpField(true);
+    setResendCooldown(30);
+    return true;
+  };
+
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0 || isResending) return;
+    const userMobile = (role === "employer" || role === "admin") ? employerPhone : workerPhone;
+    setIsResending(true);
+    setInputOtp("");
+    await sendOtpToMobile(userMobile);
+    setIsResending(false);
+  };
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -213,45 +279,7 @@ function AuthPage() {
         const userMobile = (role === "employer" || role === "admin") ? employerPhone : workerPhone;
 
         if (!showOtpField) {
-          if (!userMobile || userMobile.length !== 10) {
-            toast.error("Please enter a valid 10-digit mobile number for OTP verification.");
-            setBusy(false);
-            return;
-          }
-
-          // Generate 6-digit OTP
-          const generatedOtp = String(Math.floor(100000 + Math.random() * 900000));
-          setServerOtp(generatedOtp);
-
-          const username = "Experts";
-          const authkey = "ba9dcdcdfcXX";
-          const senderId = "EXTSKL";
-          const accusage = "1";
-          let message = `Your Verification Code for login is ${generatedOtp}. - Expertskill Technology.`;
-          message = message.split(" ").join("%20");
-          
-          const url = `https://mobicomm.dove-sms.com/submitsms.jsp?user=${username}&key=${authkey}&mobile=+91${userMobile}&message=${message}&accusage=${accusage}&senderid=${senderId}`;
-
-          try {
-            fetch(url)
-              .then(res => res.text())
-              .then(text => {
-                console.log("SMS API Response:", text);
-                if (text.toLowerCase().includes("success")) {
-                  toast.success(`OTP sent! (Testing OTP: ${generatedOtp})`);
-                } else {
-                  toast.error(`SMS API Error: ${text}`);
-                }
-              })
-              .catch(err => {
-                console.error("SMS Fetch Error", err);
-                toast.success(`OTP sent (Simulated). Testing OTP: ${generatedOtp}`);
-              });
-          } catch (err) {
-            console.error("SMS API Error", err);
-          }
-
-          setShowOtpField(true);
+          await sendOtpToMobile(userMobile);
           setBusy(false);
           return;
         }
@@ -865,9 +893,26 @@ function AuthPage() {
           {/* OTP FIELD FOR REGISTRATION */}
           {mode === "register" && showOtpField && (
             <div className="mt-2 p-3 bg-emerald-50 rounded-lg border border-emerald-200 animate-in fade-in zoom-in-95 duration-300">
-              <Label htmlFor="otp" className="text-xs sm:text-[13px] font-extrabold text-emerald-800 mb-1 block">
-                Enter 6-Digit OTP *
-              </Label>
+              <div className="flex items-center justify-between mb-1">
+                <Label htmlFor="otp" className="text-xs sm:text-[13px] font-extrabold text-emerald-800 block">
+                  Enter 6-Digit OTP *
+                </Label>
+                <button
+                  type="button"
+                  disabled={resendCooldown > 0 || isResending}
+                  onClick={handleResendOtp}
+                  className={`text-[11px] sm:text-xs font-black transition-all flex items-center gap-1.5 px-2 py-0.5 rounded-md ${
+                    resendCooldown > 0
+                      ? "text-gray-400 bg-gray-100 cursor-not-allowed"
+                      : "text-[#0A3B7B] bg-blue-50 hover:bg-blue-100 cursor-pointer shadow-2xs"
+                  }`}
+                  title="Resend OTP"
+                >
+                  <RotateCcw className={`size-3 ${isResending ? "animate-spin" : ""}`} />
+                  <span>{resendCooldown > 0 ? `Resend (${resendCooldown}s)` : "Resend OTP"}</span>
+                </button>
+              </div>
+
               <div className="relative">
                 <input
                   id="otp"
@@ -878,11 +923,24 @@ function AuthPage() {
                   value={inputOtp}
                   onChange={(e) => setInputOtp(e.target.value.replace(/\D/g, ""))}
                   className="w-full h-9.5 px-3 bg-white rounded-lg border border-emerald-300 text-sm sm:text-base font-bold text-center tracking-widest text-emerald-900 placeholder:text-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm"
+                  autoFocus
                 />
               </div>
-              <p className="text-xs text-emerald-600 font-semibold mt-1 text-center">
-                OTP sent successfully. Please check your SMS.
-              </p>
+
+              <div className="flex items-center justify-between mt-1.5 text-xs">
+                <p className="text-emerald-600 font-semibold">
+                  OTP sent successfully. Please check your SMS.
+                </p>
+                {resendCooldown === 0 && (
+                  <button
+                    type="button"
+                    onClick={handleResendOtp}
+                    className="text-[#0A3B7B] font-extrabold hover:underline cursor-pointer"
+                  >
+                    पुन्हा पाठवा (Resend)
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
