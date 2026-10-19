@@ -1,0 +1,1 @@
+import{t as e}from"./jsx-runtime-BNakU3Ej.js";import{i as t}from"./Dashboards-CU6sGKi8.js";var n=e(),r=()=>(0,n.jsx)(t,{role:`admin`});export{r as component};

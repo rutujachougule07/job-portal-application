@@ -61,7 +61,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { StatCard } from "@/components/portal/Stats";
-import { DashboardHeroBanner } from "@/components/DashboardHeroBanner";
+import { DashboardHeroBanner } from "@/components/portal/DashboardHeroBanner";
 import {
   dataStore,
   DataStoreManager,
@@ -2333,8 +2333,8 @@ function AdminDashboardPage() {
           {/* TAB 1: OVERVIEW */}
           <div className={activeTab === "overview" ? "block" : "hidden"}>
             <div className="space-y-6">
-              {/* Landing Page Posters & Video Slider Banner */}
-              <DashboardHeroBanner />
+              {/* Reference Screenshot Matching Banner for Employer / Job Poster */}
+              <DashboardHeroBanner role="employer" />
 
               {/* Active Package Banner */}
               {(() => {

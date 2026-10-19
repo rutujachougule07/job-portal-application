@@ -34,6 +34,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { UserSidebarLayout } from "@/components/portal/UserSidebarLayout";
 import { JobCard } from "@/components/portal/JobCard";
+import { DashboardTopHeader } from "@/components/portal/DashboardTopHeader";
+import { DashboardHeroBanner } from "@/components/portal/DashboardHeroBanner";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 
@@ -109,163 +111,19 @@ function UserDashboard() {
     <UserSidebarLayout activeTab={activeTab}>
       <div className={activeTab === "overview" ? "block" : "hidden"}>
         <div className="space-y-6 animate-in fade-in duration-300">
-          
+          {/* Top Sticky Header */}
+          <DashboardTopHeader
+            role="seeker"
+            userName={user.fullName || "payal"}
+            userEmail={user.email || "payal@gmail.com"}
+            userPhoto={user.profilePhoto}
+          />
+
+          {/* Hero Banner with Landing Page Video */}
+          <DashboardHeroBanner role="seeker" />
+
           {/* Main Left Column (Full Width) */}
           <div className="w-full space-y-6 min-w-0">
-            
-            {/* Hero Welcome Banner */}
-            <div className="relative bg-gradient-to-r from-[#EFF6FF] via-[#F4F8FF] to-[#EBEFFA] rounded-3xl p-6 sm:p-8 border border-blue-100 overflow-hidden shadow-sm">
-              <div className="relative z-20 max-w-xl">
-                <h1 className="text-2xl sm:text-3xl font-black text-[#10233F] tracking-tight">
-                  {t("welcomeBack")}, {user.fullName?.split(" ")[0] || user.email?.split("@")[0] || "User"}! 👋
-                </h1>
-                <p className="text-[#5B6B7F] font-semibold mt-1.5 text-sm">
-                  {t("jobSearchToday")}
-                </p>
-
-                {/* 3 Feature Pills */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6">
-                  {/* Pill 1 */}
-                  <div className="bg-white/80 backdrop-blur-sm p-2.5 rounded-2xl border border-blue-100/60 flex items-center gap-2.5 shadow-sm">
-                    <div className="size-8 rounded-xl bg-blue-100 flex items-center justify-center text-[#125BB5] shrink-0">
-                      <Briefcase className="size-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-black text-[#10233F] truncate">{t("findOpportunities")}</p>
-                      <p className="text-[10px] font-bold text-gray-400 truncate">{t("discoverBestJobs")}</p>
-                    </div>
-                  </div>
-
-                  {/* Pill 2 */}
-                  <div className="bg-white/80 backdrop-blur-sm p-2.5 rounded-2xl border border-orange-100/60 flex items-center gap-2.5 shadow-sm">
-                    <div className="size-8 rounded-xl bg-orange-100 flex items-center justify-center text-orange-600 shrink-0">
-                      <Bookmark className="size-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-black text-[#10233F] truncate">{t("saveJobs")}</p>
-                      <p className="text-[10px] font-bold text-gray-400 truncate">{t("keepTrackInterests")}</p>
-                    </div>
-                  </div>
-
-                  {/* Pill 3 */}
-                  <div className="bg-white/80 backdrop-blur-sm p-2.5 rounded-2xl border border-emerald-100/60 flex items-center gap-2.5 shadow-sm">
-                    <div className="size-8 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
-                      <TrendingUp className="size-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-black text-[#10233F] truncate">{t("growCareer")}</p>
-                      <p className="text-[10px] font-bold text-gray-400 truncate">{t("getHiredFaster")}</p>
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-            </div>
-            
-            {/* Statistics Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-              
-              {/* Stat 1: Applied Jobs */}
-              <div className="bg-white p-5 rounded-3xl shadow-sm border border-[#DCE5F0] relative overflow-hidden flex flex-col justify-between">
-                <div className="flex items-center justify-between mb-4 relative z-10">
-                  <div className="size-10 bg-[#EBF3FF] rounded-xl flex items-center justify-center text-[#125BB5]">
-                    <FileText className="size-5" />
-                  </div>
-                  <span className="text-[11px] font-black text-[#125BB5] bg-[#EBF3FF] px-3 py-1 rounded-full">{t("allTime")}</span>
-                </div>
-                
-                <div className="relative z-10 flex items-end justify-between mt-2">
-                  <div>
-                    <h3 className="text-xs font-bold text-[#5B6B7F] mb-1">{t("appliedJobs")}</h3>
-                    <p className="text-3xl font-black text-[#10233F]">{applications.length}</p>
-                  </div>
-                  <Link to="/dashboard" search={{ tab: "applied" }} className="size-8 rounded-full border border-blue-200 text-[#125BB5] hover:bg-[#125BB5] hover:text-white flex items-center justify-center transition-all">
-                    <ChevronRight className="size-4" />
-                  </Link>
-                </div>
-
-                {/* Soft Wave SVG Background */}
-                <svg className="absolute bottom-0 left-0 w-full h-12 text-[#EBF3FF]/60 pointer-events-none" viewBox="0 0 100 30" preserveAspectRatio="none">
-                  <path d="M0,20 Q25,5 50,20 T100,10 L100,30 L0,30 Z" fill="currentColor" />
-                </svg>
-              </div>
-              
-              {/* Stat 2: Saved Jobs */}
-              <div className="bg-white p-5 rounded-3xl shadow-sm border border-[#DCE5F0] relative overflow-hidden flex flex-col justify-between">
-                <div className="flex items-center justify-between mb-4 relative z-10">
-                  <div className="size-10 bg-[#FFF4E5] rounded-xl flex items-center justify-center text-[#D97706]">
-                    <Bookmark className="size-5" />
-                  </div>
-                  <span className="text-[11px] font-black text-[#D97706] bg-[#FFF4E5] px-3 py-1 rounded-full">{t("saved")}</span>
-                </div>
-                
-                <div className="relative z-10 flex items-end justify-between mt-2">
-                  <div>
-                    <h3 className="text-xs font-bold text-[#5B6B7F] mb-1">{t("savedJobs")}</h3>
-                    <p className="text-3xl font-black text-[#10233F]">{savedJobRecords.length}</p>
-                  </div>
-                  <Link to="/dashboard" search={{ tab: "saved" }} className="size-8 rounded-full border border-orange-200 text-[#D97706] hover:bg-[#D97706] hover:text-white flex items-center justify-center transition-all">
-                    <ChevronRight className="size-4" />
-                  </Link>
-                </div>
-
-                {/* Soft Wave SVG Background */}
-                <svg className="absolute bottom-0 left-0 w-full h-12 text-[#FFF4E5]/60 pointer-events-none" viewBox="0 0 100 30" preserveAspectRatio="none">
-                  <path d="M0,15 Q30,28 60,10 T100,20 L100,30 L0,30 Z" fill="currentColor" />
-                </svg>
-              </div>
-
-              {/* Stat 3: Profile Views */}
-              <div className="bg-white p-5 rounded-3xl shadow-sm border border-[#DCE5F0] relative overflow-hidden flex flex-col justify-between">
-                <div className="flex items-center justify-between mb-4 relative z-10">
-                  <div className="size-10 bg-[#E8F8F0] rounded-xl flex items-center justify-center text-emerald-600">
-                    <User className="size-5" />
-                  </div>
-                  <span className="text-[11px] font-black text-emerald-600 bg-[#E8F8F0] px-3 py-1 rounded-full">{t("thisWeek")}</span>
-                </div>
-                
-                <div className="relative z-10 flex items-end justify-between mt-2">
-                  <div>
-                    <h3 className="text-xs font-bold text-[#5B6B7F] mb-1">{t("profileViews")}</h3>
-                    <div className="flex items-center gap-3">
-                      <p className="text-3xl font-black text-[#10233F]">{applications.length > 0 ? applications.length * 2 : 0}</p>
-                      {/* Micro Bar Chart Graphic */}
-                      <div className="flex items-end gap-1 h-6">
-                        <div className="w-1.5 h-2 bg-emerald-200 rounded-full"></div>
-                        <div className="w-1.5 h-3.5 bg-emerald-300 rounded-full"></div>
-                        <div className="w-1.5 h-5 bg-emerald-400 rounded-full"></div>
-                        <div className="w-1.5 h-6 bg-emerald-500 rounded-full"></div>
-                      </div>
-                    </div>
-                  </div>
-                  <Link to="/dashboard" search={{ tab: "profile" }} className="size-8 rounded-full border border-emerald-200 text-emerald-600 hover:bg-emerald-600 hover:text-white flex items-center justify-center transition-all">
-                    <ChevronRight className="size-4" />
-                  </Link>
-                </div>
-              </div>
-
-            </div>
-
-            {/* Inline Search Bar */}
-            <div className="bg-white p-2.5 rounded-2xl shadow-sm border border-[#DCE5F0] flex flex-col sm:flex-row items-center gap-2">
-              <div className="flex-1 flex items-center gap-3 px-4 w-full sm:w-auto h-11">
-                <Search className="size-4 text-gray-400" />
-                <input 
-                  type="text" 
-                  placeholder={t("searchJobsPlaceholder")}
-                  className="w-full bg-transparent border-none focus:outline-none text-xs font-semibold placeholder:text-gray-400 text-[#10233F]"
-                />
-              </div>
-              <div className="w-full sm:w-px h-[1px] sm:h-7 bg-gray-200"></div>
-              <div className="flex items-center gap-2.5 px-4 h-11 w-full sm:w-[220px] cursor-pointer hover:bg-gray-50 rounded-xl transition-colors">
-                <MapPin className="size-4 text-gray-400 shrink-0" />
-                <span className="flex-1 text-xs font-black text-[#10233F] truncate">Pune, Maharashtra</span>
-                <ChevronDown className="size-3.5 text-gray-400 shrink-0" />
-              </div>
-              <Button asChild className="w-full sm:w-auto h-11 px-7 rounded-xl bg-[#051B38] hover:bg-[#092B57] text-white font-bold text-xs shadow-md transition-all flex items-center gap-2">
-                <Link to="/jobs"><Search className="size-3.5" /> {t("searchJobs")}</Link>
-              </Button>
-            </div>
 
             {/* Recent Applications Section */}
             <div className="bg-white rounded-3xl shadow-sm border border-[#DCE5F0] overflow-hidden">
