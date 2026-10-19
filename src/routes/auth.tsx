@@ -271,13 +271,27 @@ function AuthPage() {
         }
         const nameString = (rawName && rawName.trim()) ? rawName.trim() : (finalEmail ? (finalEmail.split("@")[0] || "User") : "User");
 
-        const { getAuth, createUserWithEmailAndPassword } = await import("firebase/auth");
+        const { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } = await import("firebase/auth");
         const { getFirestore, doc, setDoc } = await import("firebase/firestore");
         const auth = getAuth();
         const db = getFirestore();
 
-        const credential = await createUserWithEmailAndPassword(auth, finalEmail, password);
-        const uid = credential.user.uid;
+        let uid: string;
+        try {
+          const credential = await createUserWithEmailAndPassword(auth, finalEmail, password);
+          uid = credential.user.uid;
+        } catch (createErr: any) {
+          if (createErr?.code === "auth/email-already-in-use") {
+            try {
+              const signCred = await signInWithEmailAndPassword(auth, finalEmail, password);
+              uid = signCred.user.uid;
+            } catch {
+              throw createErr;
+            }
+          } else {
+            throw createErr;
+          }
+        }
 
         let finalPhoto = profilePhoto || "";
         if (finalPhoto && finalPhoto.startsWith("data:")) {
@@ -449,11 +463,22 @@ function AuthPage() {
               // Keep local store cache in sync with actual Firebase record
               dataStore.registerAccount({ ...(existingAccount as any), id: uid });
             } else {
-              // User exists in Firebase Auth but was deleted from Firestore
-              await auth.signOut().catch(() => {});
-              toast.error("❌ तुमचे खाते काढण्यात आले आहे! (Account has been deleted or not found.)");
-              setBusy(false);
-              return;
+              // Self-heal: User authenticated successfully in Firebase Auth, but Firestore doc was missing
+              const fallbackRole = role === "worker" ? "worker" : "employer";
+              const cleanName = credential.user.displayName || (enteredEmail.split("@")[0] || "User");
+              const reconstructedUser: any = {
+                id: uid,
+                email: credential.user.email || enteredEmail,
+                role: fallbackRole,
+                fullName: cleanName,
+                mobile: credential.user.phoneNumber || "",
+                profilePhoto: credential.user.photoURL || "",
+                createdAt: new Date().toISOString(),
+              };
+              const { setDoc } = await import("firebase/firestore");
+              await setDoc(doc(db, "users", uid), reconstructedUser).catch(() => {});
+              existingAccount = reconstructedUser;
+              dataStore.registerAccount(reconstructedUser);
             }
           } catch (firebaseErr: any) {
             console.error("Firebase Login Error:", firebaseErr);
@@ -539,10 +564,13 @@ function AuthPage() {
         toast.error("❌ चुकीचा पासवर्ड किंवा ईमेल! (Invalid Password or Email)");
       } else if (code === "auth/user-not-found") {
         toast.error("❌ हा यूझर सापडला नाही. User not found.");
-      } else if (code === "auth/too-many-requests") {
-        toast.error("⚠️ जास्त प्रयत्न झाले. Too many attempts. Try later.");
+      } else if (code === "auth/email-already-in-use") {
+        toast.error("❌ हा ईमेल आधीच वापरलेला आहे! कृपया लॉगिन (Sign In) करा किंवा दुसरा ईमेल वापरा. (Email already registered.)");
+      } else if (code === "auth/weak-password") {
+        toast.error("❌ पासवर्ड किमान ६ अक्षरांचा असावा! (Password should be at least 6 characters.)");
       } else {
-        toast.error(`Login Failed: ${err?.message || "Unknown error"}`);
+        const prefix = mode === "register" ? "Registration Failed" : "Login Failed";
+        toast.error(`${prefix}: ${err?.message || "Unknown error"}`);
       }
     } finally {
       setBusy(false);

@@ -303,7 +303,7 @@ function AdminDashboardPage() {
   const [activeCalendarDate, setActiveCalendarDate] = useState<string | null>(null);
   const [customOtHoursInput, setCustomOtHoursInput] = useState<number>(2);
   const [overtimeModalDate, setOvertimeModalDate] = useState<string | null>(null);
-  const [overtimeModalHours, setOvertimeModalHours] = useState<number>(3);
+  const [overtimeModalHours, setOvertimeModalHours] = useState<string>("");
   const [showBulkFillSection, setShowBulkFillSection] = useState(false);
   const [bulkFillStatus, setBulkFillStatus] = useState<"Present" | "HalfDay" | "Absent" | "Overtime">("Present");
   const [bulkFillOtHours, setBulkFillOtHours] = useState<number>(2);
@@ -1337,29 +1337,27 @@ function AdminDashboardPage() {
   };
 
   const handleOpenAddWorker = () => {
-    // Check if user has active package or is super admin (same as Job Posting check)
-    if (!isSuperAdmin) {
-      const activeEmpId = currentUser?.id || currentUser?.email || empIdentifier;
-      const userPkgs = dataStore.getUserPackages(activeEmpId);
-      const allowedLimit = dataStore.getUserWorkerCredits(activeEmpId);
+    // Require active package with available employee credits to add employees
+    const activeEmpId = currentUser?.id || currentUser?.email || empIdentifier;
+    const userPkgs = dataStore.getUserPackages(activeEmpId);
+    const allowedLimit = dataStore.getUserWorkerCredits(activeEmpId);
 
-      if (!userPkgs || userPkgs.length === 0 || allowedLimit <= 0) {
-        toast.info(
-          "Please select a Package to add employees / CRM users (कर्मचारी ॲड करण्यासाठी कृपया पॅकेज निवडा).",
-          { duration: 6000 }
-        );
-        setShowPackageModal(true);
-        return;
-      }
+    if (!userPkgs || userPkgs.length === 0 || allowedLimit <= 0) {
+      toast.info(
+        "Please select a Package to add employees / CRM users (कर्मचारी ॲड करण्यासाठी कृपया पॅकेज निवडा).",
+        { duration: 6000 }
+      );
+      setShowPackageModal(true);
+      return;
+    }
 
-      if (workers.length >= allowedLimit) {
-        toast.error(
-          `⚠️ Employee limit reached for your active package! (Current Limit: ${allowedLimit} employees). Please upgrade package to add more employees!`,
-          { duration: 6000 }
-        );
-        setShowPackageModal(true);
-        return;
-      }
+    if (workers.length >= allowedLimit) {
+      toast.error(
+        `⚠️ Employee limit reached for your active package! (Current Limit: ${allowedLimit} employees). Please upgrade package to add more employees!`,
+        { duration: 6000 }
+      );
+      setShowPackageModal(true);
+      return;
     }
 
     const defStart = "09:00";
@@ -1443,7 +1441,7 @@ function AdminDashboardPage() {
     }
 
     // Require active package when adding a new employee
-    if (!isSuperAdmin && !editingWorkerId) {
+    if (!editingWorkerId) {
       const activeEmpId = currentUser?.id || currentUser?.email || empIdentifier;
       const userPkgs = dataStore.getUserPackages(activeEmpId);
       const allowedLimit = dataStore.getUserWorkerCredits(activeEmpId);
@@ -7148,7 +7146,7 @@ function AdminDashboardPage() {
                                 onClick={() => {
                                   setActiveCalendarDate(null);
                                   setOvertimeModalDate(dateStr);
-                                  setOvertimeModalHours(rec?.overtimeHours || 1);
+                                  setOvertimeModalHours("");
                                 }}
                                 className="w-full flex items-center gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-purple-50/70 hover:bg-purple-100 text-[#7C3AED] text-xs font-bold transition-all text-left cursor-pointer"
                               >
@@ -7275,7 +7273,10 @@ function AdminDashboardPage() {
             {overtimeModalDate && (
               <div
                 className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in"
-                onClick={() => setOvertimeModalDate(null)}
+                onClick={() => {
+                  setOvertimeModalDate(null);
+                  setOvertimeModalHours("");
+                }}
               >
                 <div
                   className="bg-white rounded-3xl p-6 shadow-2xl border border-slate-200 w-full max-w-sm space-y-4 animate-in zoom-in-95"
@@ -7290,7 +7291,10 @@ function AdminDashboardPage() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => setOvertimeModalDate(null)}
+                      onClick={() => {
+                        setOvertimeModalDate(null);
+                        setOvertimeModalHours("");
+                      }}
                       className="size-7 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition-all cursor-pointer font-bold"
                     >
                       ✕
@@ -7305,11 +7309,25 @@ function AdminDashboardPage() {
                       <Clock className="size-5 text-slate-400 shrink-0 ml-1 mr-3" />
                       <input
                         type="number"
-                        min={1}
-                        max={16}
+                        min={0.5}
+                        max={24}
                         step={0.5}
+                        placeholder=""
                         value={overtimeModalHours}
-                        onChange={(e) => setOvertimeModalHours(Math.max(1, Math.min(16, Number(e.target.value) || 1)))}
+                        onChange={(e) => setOvertimeModalHours(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            const hours = parseFloat(overtimeModalHours);
+                            if (!overtimeModalHours.trim() || isNaN(hours) || hours <= 0) {
+                              toast.error("कृपया ओव्हरटाईम तास टाका (Please enter hours)");
+                              return;
+                            }
+                            handleMarkAttendance(activeWorker, "Overtime", overtimeModalDate, hours);
+                            setOvertimeModalDate(null);
+                            setOvertimeModalHours("");
+                          }
+                        }}
                         className="w-full font-black text-base bg-transparent outline-hidden text-slate-900"
                         autoFocus
                       />
@@ -7320,7 +7338,10 @@ function AdminDashboardPage() {
                   <div className="flex items-center gap-3 pt-2">
                     <button
                       type="button"
-                      onClick={() => setOvertimeModalDate(null)}
+                      onClick={() => {
+                        setOvertimeModalDate(null);
+                        setOvertimeModalHours("");
+                      }}
                       className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-50 transition-all cursor-pointer"
                     >
                       Cancel
@@ -7328,9 +7349,14 @@ function AdminDashboardPage() {
                     <button
                       type="button"
                       onClick={() => {
-                        handleMarkAttendance(activeWorker, "Overtime", overtimeModalDate, overtimeModalHours);
+                        const hours = parseFloat(overtimeModalHours);
+                        if (!overtimeModalHours.trim() || isNaN(hours) || hours <= 0) {
+                          toast.error("कृपया ओव्हरटाईम तास टाका (Please enter hours)");
+                          return;
+                        }
+                        handleMarkAttendance(activeWorker, "Overtime", overtimeModalDate, hours);
                         setOvertimeModalDate(null);
-                        toast.success(`Overtime (${overtimeModalHours} hrs) saved for ${overtimeModalDate}`);
+                        setOvertimeModalHours("");
                       }}
                       className="flex-1 py-2.5 rounded-xl bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-black text-xs shadow-md transition-all cursor-pointer"
                     >
