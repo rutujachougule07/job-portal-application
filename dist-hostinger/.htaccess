@@ -13,6 +13,10 @@
   RewriteCond %{REQUEST_URI} \.php$ [NC]
   RewriteRule ^ - [L]
 
+  # Never rewrite missing static assets (images, css, js, fonts) to index.html to avoid CDN 422 errors
+  RewriteCond %{REQUEST_URI} \.(png|jpe?g|gif|webp|svg|ico|css|js|woff2?|ttf|eot|json|map)$ [NC]
+  RewriteRule ^ - [R=404,L]
+
   # Route all other requests to index.html for client-side routing
   RewriteRule ^ index.html [L]
 </IfModule>
