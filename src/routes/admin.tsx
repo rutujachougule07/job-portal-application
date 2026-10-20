@@ -1119,32 +1119,6 @@ function AdminDashboardPage() {
     }
   }, [currentUser, navigate]);
 
-  // Session revocation when navigating away or clicking back button without logging out
-  useEffect(() => {
-    const handlePopState = () => {
-      dataStore.logout("employer");
-      localStorage.removeItem("realjob-employer-profile");
-      localStorage.removeItem("realjob-user-admin");
-      localStorage.removeItem("realjob-user-employer");
-      localStorage.removeItem("realjob-user");
-      localStorage.removeItem("realjob-role");
-      sessionStorage.removeItem("realjob_tab_user");
-      window.location.replace("/auth?mode=login&role=admin");
-    };
-
-    window.addEventListener("popstate", handlePopState);
-
-    return () => {
-      window.removeEventListener("popstate", handlePopState);
-      dataStore.logout("employer");
-      localStorage.removeItem("realjob-employer-profile");
-      localStorage.removeItem("realjob-user-admin");
-      localStorage.removeItem("realjob-user-employer");
-      localStorage.removeItem("realjob-user");
-      localStorage.removeItem("realjob-role");
-      sessionStorage.removeItem("realjob_tab_user");
-    };
-  }, []);
 
   const isSuperAdmin = currentUser?.email?.toLowerCase() === "supera@gmail.com" || currentUser?.email?.toLowerCase() === "superadmin";
   const empIdentifier = currentUser?.fullName || currentUser?.email || "admin-001";
