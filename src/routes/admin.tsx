@@ -218,9 +218,14 @@ function calculateWorkAndOvertime(
 }
 
 export const Route = createFileRoute("/admin")({
+  validateSearch: (search: Record<string, unknown>): { tab?: string } => {
+    return {
+      tab: (search["tab"] as string) || "overview",
+    };
+  },
   head: () => ({
     meta: [
-      { title: "Employer Portal & Control Dashboard — REAL JOB" },
+      { title: "Employer Portal & Control Dashboard —  REAL JOB" },
       { name: "description", content: "Employer dashboard, job control panel, candidate application manager, and hiring portal." },
     ],
   }),
@@ -234,8 +239,6 @@ const monthlyAnalytics = [
   { month: "Aug", workers: 0, jobs: 0, hires: 0 },
   { month: "Sep", workers: 0, jobs: 0, hires: 0 },
 ];
-
-
 
 function formatWaNumber(phone: string): string {
   const raw = (phone || "").trim();
@@ -259,15 +262,47 @@ function formatCallNumber(phone: string): string {
 
 function AdminDashboardPage() {
   const navigate = useNavigate();
+  const search = Route.useSearch();
   const { t, n } = useI18n();
 
-  const [activeTabState, setActiveTabState] = useState<"overview" | "jobs" | "applications" | "attendance" | "salary" | "reports" | "packages" | "profile">("overview");
+  const initialTab = (search.tab as any) || "overview";
+  const [activeTabState, setActiveTabState] = useState<"overview" | "jobs" | "applications" | "attendance" | "salary" | "reports" | "packages" | "profile">(initialTab);
   const [isPendingTab, startTransitionTab] = useTransition();
+
+  // Synchronize state when user navigates using browser back / forward buttons
+  useEffect(() => {
+    const tabFromUrl = (search.tab as any) || "overview";
+    if (tabFromUrl && tabFromUrl !== activeTabState) {
+      startTransitionTab(() => {
+        setActiveTabState(tabFromUrl);
+      });
+    }
+  }, [search.tab]);
+
+  // Intercept back button if it tries to escape to /auth (login screen)
+  useEffect(() => {
+    const handlePopState = () => {
+      if (typeof window !== "undefined" && window.location.pathname === "/auth") {
+        window.history.replaceState(null, "", "/admin?tab=overview");
+        startTransitionTab(() => {
+          setActiveTabState("overview");
+        });
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   const activeTab = activeTabState;
   const setActiveTab = (tab: "overview" | "jobs" | "applications" | "attendance" | "salary" | "reports" | "packages" | "profile" | any) => {
+    if (tab === activeTabState) return;
     startTransitionTab(() => {
       setActiveTabState(tab);
+    });
+    // Record this tab in browser history so the browser Back button navigates to the previous tab
+    navigate({
+      to: "/admin",
+      search: { tab },
     });
   };
 
@@ -2643,13 +2678,9 @@ function AdminDashboardPage() {
                           <div>{j.location}</div>
                           <div className="text-[#125BB5] font-bold flex items-center gap-1.5 flex-wrap">
                             <span>{j.salary}</span>
-                            {(j.showSalary === false || j.hideSalary) ? (
+                            {(j.showSalary === false || j.hideSalary) && (
                               <span className="text-[10px] bg-rose-50 text-rose-700 border border-rose-200 px-1.5 py-0.5 rounded font-black">
                                 🔒 {t("hiddenFromSeekers")}
-                              </span>
-                            ) : (
-                              <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded font-black">
-                                👁️ {t("visibleToSeekers")}
                               </span>
                             )}
                           </div>

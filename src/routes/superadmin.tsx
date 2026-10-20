@@ -169,6 +169,17 @@ function SuperAdminPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
+  // Prevent browser autofill of saved credentials
+  useEffect(() => {
+    setUsername("");
+    setPassword("");
+    const t = setTimeout(() => {
+      setUsername("");
+      setPassword("");
+    }, 150);
+    return () => clearTimeout(t);
+  }, []);
+
   // Dynamic Packages & Purchases State
   const [dynamicPackages, setDynamicPackages] = useState<JobPackagePlan[]>(() => dataStore.getJobPackages());
   const [packagePurchases, setPackagePurchases] = useState<PackageTransaction[]>(() => dataStore.getAllPackagePurchases());
@@ -1059,10 +1070,9 @@ function SuperAdminPage() {
             </div>
             <h1 className="text-2xl font-black text-[#063B78] tracking-tight">REAL JOB Admin Portal</h1>
             <p className="text-xs sm:text-[13px] font-bold text-[#5B6B7F] mt-1">Superadmin Control & Sub-Admin Work Access</p>
-            <p className="text-xs sm:text-[13px] font-semibold text-[#0A4F9E] mt-0.5">सुपरॲडमिन किंवा सब-ॲडमिन युझरनेम/ईमेल व पासवर्डने लॉगिन करा</p>
           </div>
 
-          <form onSubmit={handleLogin} className="p-8 space-y-4">
+          <form onSubmit={handleLogin} className="p-8 space-y-4" autoComplete="off">
             <div>
               <label className="block text-xs sm:text-[13px] font-black text-[#5B6B7F] uppercase tracking-wider mb-2">
                 Username or Email Address *
@@ -1071,6 +1081,9 @@ function SuperAdminPage() {
                 <Users className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-[#9DAEC5] group-focus-within:text-[#063B78] transition-colors" />
                 <input
                   type="text"
+                  name="rj_admin_account_name"
+                  id="rj_admin_account_name"
+                  autoComplete="new-password"
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
@@ -1088,6 +1101,9 @@ function SuperAdminPage() {
                 <Key className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-[#9DAEC5] group-focus-within:text-[#063B78] transition-colors" />
                 <input
                   type="password"
+                  name="rj_admin_security_key"
+                  id="rj_admin_security_key"
+                  autoComplete="new-password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}

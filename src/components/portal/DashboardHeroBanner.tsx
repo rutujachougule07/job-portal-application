@@ -60,9 +60,9 @@ export function DashboardHeroBanner({ role = "seeker" }: DashboardHeroBannerProp
 
   const totalSlides = landingMedia.length > 0 ? landingMedia.length : DEFAULT_LANDING_MEDIA.length;
   const mediaList = landingMedia.length > 0 ? landingMedia : DEFAULT_LANDING_MEDIA;
-  const currentMediaUrl = mediaList[currentSlide % totalSlides] || mediaList[0];
+  const currentMediaUrl = mediaList[currentSlide % totalSlides] || mediaList[0] || "";
   const isVideo = isVideoMedia(currentMediaUrl);
-  const ytEmbed = isVideo ? getYouTubeEmbedUrl(currentMediaUrl) : null;
+  const ytEmbed = isVideo && currentMediaUrl ? getYouTubeEmbedUrl(currentMediaUrl) : null;
 
   // Auto advance every 7 seconds
   useEffect(() => {

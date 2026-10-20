@@ -36,26 +36,22 @@ const searchParamsSchema = z.object({
 
 export const Route = createFileRoute("/search")({
   validateSearch: (s) => searchParamsSchema.parse(s),
-  head: ({ search }) => {
-    const q = search?.q?.trim();
-    const title = q ? `${q} - Google Search Results | REAL JOB` : "Search REAL JOB — Jobs, Workers & Services";
-    return {
-      meta: [
-        { title },
-        {
-          name: "description",
-          content: "Search verified factory jobs, skilled workers, company listings and workforce services across India on REAL JOB.",
-        },
-        { property: "og:title", content: title },
-        { property: "og:description", content: "Search verified factory jobs, skilled workers, company listings and workforce services on REAL JOB." },
-        { property: "og:url", content: `https://realjob.online/search${q ? `?q=${encodeURIComponent(q)}` : ""}` },
-        { name: "robots", content: "index, follow" },
-      ],
-      links: [
-        { rel: "canonical", href: `https://realjob.online/search${q ? `?q=${encodeURIComponent(q)}` : ""}` },
-      ],
-    };
-  },
+  head: () => ({
+    meta: [
+      { title: "Search REAL JOB — Jobs, Workers & Services" },
+      {
+        name: "description",
+        content: "Search verified factory jobs, skilled workers, company listings and workforce services across India on REAL JOB.",
+      },
+      { property: "og:title", content: "Search REAL JOB — Jobs, Workers & Services" },
+      { property: "og:description", content: "Search verified factory jobs, skilled workers, company listings and workforce services on REAL JOB." },
+      { property: "og:url", content: "https://realjob.online/search" },
+      { name: "robots", content: "index, follow" },
+    ],
+    links: [
+      { rel: "canonical", href: "https://realjob.online/search" },
+    ],
+  }),
   component: GoogleSearchPage,
 });
 
@@ -220,6 +216,10 @@ function GoogleSearchPage() {
   // Sync state if url param changes
   useEffect(() => {
     setInputVal(q);
+    const trimmed = q?.trim();
+    document.title = trimmed
+      ? `${trimmed} - Google Search Results | REAL JOB`
+      : "Search REAL JOB — Jobs, Workers & Services";
   }, [q]);
 
   useEffect(() => {
@@ -307,25 +307,27 @@ function GoogleSearchPage() {
         if (!job.id || seenJobIds.has(job.id)) return;
         seenJobIds.add(job.id);
 
+        const jobType = ("jobType" in job ? job.jobType : (job as any).type) || "Full Time";
+
         items.push({
           id: `job-${job.id}`,
           type: "job",
           title: `${job.title} — ${job.company}`,
           url: `/jobs/${job.id}`,
           breadcrumb: `https://realjob.online › jobs › ${job.id}`,
-          snippet: `Location: ${job.location || "Pune, Maharashtra"} | Salary: ${job.salary || "Best in Industry"} | Experience: ${job.experience || "Freshers / Experienced"} | Job Type: ${job.type || "Full Time"}. Urgent opening for ${job.title} at ${job.company}.`,
+          snippet: `Location: ${job.location || "Pune, Maharashtra"} | Salary: ${job.salary || "Best in Industry"} | Experience: ${job.experience || "Freshers / Experienced"} | Job Type: ${jobType}. Urgent opening for ${job.title} at ${job.company}.`,
           tags: [
             job.title,
             job.company,
             job.location,
             job.category,
-            job.type,
+            jobType,
             "job",
             "vacancy",
             "opening",
             "salary",
           ],
-          badge: job.type || "Full Time",
+          badge: jobType,
           extraMeta: `${job.salary} • ${job.location}`,
         });
       });
@@ -706,7 +708,9 @@ function GoogleSearchPage() {
                     <div>
                       <div className="flex items-center gap-1.5">
                         <h3 className="text-xl font-bold tracking-tight">REAL JOB</h3>
-                        <ShieldCheck className="size-4 text-[#FFC400]" title="Verified Official Entity" />
+                        <span title="Verified Official Entity" className="inline-flex items-center">
+                          <ShieldCheck className="size-4 text-[#FFC400]" />
+                        </span>
                       </div>
                       <p className="text-xs text-blue-100 mt-0.5">
                         Workforce & Employment Platform
@@ -812,7 +816,8 @@ function GoogleSearchPage() {
                       <span>Search All 1,500+ Jobs</span>
                     </Link>
                     <Link
-                      to="/auth?role=employer&mode=register"
+                      to="/auth"
+                      search={{ role: "employer", mode: "register" }}
                       className="w-full py-2 px-3 border border-[#dadce0] hover:bg-slate-50 text-slate-800 rounded-lg font-bold text-xs text-center transition-colors flex items-center justify-center gap-1.5"
                     >
                       <Building2 className="size-3.5 text-[#063B78]" />
