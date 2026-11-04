@@ -5,7 +5,6 @@ import { useI18n } from "@/lib/i18n";
 import {
   Bookmark,
   User,
-  LogOut,
   FileText,
   BadgeCheck,
   Home,
@@ -124,18 +123,6 @@ export function UserSidebarLayout({ children, activeTab }: { children: ReactNode
                   <div className="min-w-0 flex-1">
                     <h2 className="font-black text-sm text-white truncate">{user.fullName || "User"}</h2>
                     <p className="text-[11px] text-white/70 truncate">{user.email || ""}</p>
-                    <button
-                      onClick={() => {
-                        setIsMobileMenuOpen(false);
-                        dataStore.logout("worker");
-                        navigate({ to: "/", hash: "main", replace: true });
-                        if (typeof window !== "undefined") window.scrollTo(0, 0);
-                      }}
-                      className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-bold text-rose-300 hover:text-white bg-rose-500/20 hover:bg-rose-500/30 px-2.5 py-0.5 rounded-full border border-rose-400/40 transition-colors cursor-pointer"
-                    >
-                      <LogOut className="size-3" />
-                      <span>{t("signOut")}</span>
-                    </button>
                   </div>
                 </div>
                 <button
@@ -170,21 +157,6 @@ export function UserSidebarLayout({ children, activeTab }: { children: ReactNode
                 })}
               </nav>
             </div>
-
-            <div className="pt-4 border-t border-white/10">
-              <button
-                onClick={() => {
-                  setIsMobileMenuOpen(false);
-                  dataStore.logout("worker");
-                  navigate({ to: "/", hash: "main", replace: true });
-                  if (typeof window !== "undefined") window.scrollTo(0, 0);
-                }}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold text-rose-400 hover:bg-rose-500/10 transition-colors"
-              >
-                <LogOut className="size-4" />
-                <span>{t("signOut")}</span>
-              </button>
-            </div>
           </aside>
         </div>
       )}
@@ -215,23 +187,8 @@ export function UserSidebarLayout({ children, activeTab }: { children: ReactNode
               <p className="text-xs font-semibold text-white/70 truncate px-2">{user.email || ""}</p>
             </Link>
 
-            <div className="mt-2.5 flex items-center justify-center gap-2 flex-wrap">
-              <div className="inline-flex items-center gap-1.5 bg-[#FFC400]/20 border border-[#FFC400] text-[#FFC400] px-2.5 py-0.5 rounded-full text-[11px] font-black">
-                <BadgeCheck className="size-3.5" /> {t("verifiedUser")}
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  dataStore.logout("worker");
-                  navigate({ to: "/", hash: "main", replace: true });
-                  if (typeof window !== "undefined") window.scrollTo(0, 0);
-                }}
-                className="inline-flex items-center gap-1 bg-rose-500/20 border border-rose-400/40 hover:bg-rose-500/35 text-rose-300 hover:text-white px-2.5 py-0.5 rounded-full text-[11px] font-bold cursor-pointer transition-colors shadow-2xs"
-                title={t("signOut")}
-              >
-                <LogOut className="size-3" />
-                <span>{t("signOut")}</span>
-              </button>
+            <div className="mt-2.5 inline-flex items-center gap-1.5 bg-[#FFC400]/20 border border-[#FFC400] text-[#FFC400] px-3 py-0.5 rounded-full text-[11px] font-black">
+              <BadgeCheck className="size-3.5" /> {t("verifiedUser")}
             </div>
           </div>
 
@@ -258,21 +215,6 @@ export function UserSidebarLayout({ children, activeTab }: { children: ReactNode
               );
             })}
           </nav>
-        </div>
-
-        {/* Sign Out Action */}
-        <div className="pt-4 border-t border-white/10">
-          <button
-            onClick={() => {
-              dataStore.logout("worker");
-              navigate({ to: "/", hash: "main", replace: true });
-              if (typeof window !== "undefined") window.scrollTo(0, 0);
-            }}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
-          >
-            <LogOut className="size-4.5" />
-            <span>{t("signOut")}</span>
-          </button>
         </div>
       </aside>
 

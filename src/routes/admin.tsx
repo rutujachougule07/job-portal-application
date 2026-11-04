@@ -3235,19 +3235,7 @@ function AdminDashboardPage() {
                     <h2 suppressHydrationWarning className="font-black text-sm text-white truncate">
                       {currentUser?.fullName || "Employer"}
                     </h2>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <p className="text-[11px] text-[#FFC400] font-bold">{t("verifiedEmployer")}</p>
-                      <button
-                        onClick={() => {
-                          setIsMobileMenuOpen(false);
-                          handleEmployerLogout();
-                        }}
-                        className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-300 hover:text-white bg-rose-500/20 hover:bg-rose-500/30 px-2 py-0.5 rounded-full border border-rose-400/40 transition-colors cursor-pointer"
-                      >
-                        <LogOut className="size-2.5" />
-                        <span>{t("signOut")}</span>
-                      </button>
-                    </div>
+                    <p className="text-[11px] text-[#FFC400] font-bold mt-0.5">{t("verifiedEmployer")}</p>
                   </div>
                 </div>
                 <button onClick={() => setIsMobileMenuOpen(false)} className="p-1.5 rounded-lg text-white/60 hover:text-white hover:bg-white/10">
@@ -3293,19 +3281,6 @@ function AdminDashboardPage() {
                   );
                 })}
               </nav>
-            </div>
-
-            <div className="pt-4 border-t border-white/10">
-              <button
-                onClick={() => {
-                  setIsMobileMenuOpen(false);
-                  handleEmployerLogout();
-                }}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold text-rose-400 hover:bg-rose-500/10 transition-colors"
-              >
-                <LogOut className="size-4" />
-                <span>{t("signOut")}</span>
-              </button>
             </div>
           </aside>
         </div>
@@ -3364,17 +3339,6 @@ function AdminDashboardPage() {
               </button>
             );
           })}
-        </div>
-
-        {/* Bottom Sign Out Action */}
-        <div className="p-4 border-t border-white/10 shrink-0 mt-auto">
-          <button
-            onClick={handleEmployerLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-rose-400 hover:bg-rose-500/10 transition-all"
-          >
-            <LogOut className="size-4" />
-            <span>{t("signOut")}</span>
-          </button>
         </div>
       </aside>
 
