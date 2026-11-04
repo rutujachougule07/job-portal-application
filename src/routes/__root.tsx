@@ -33,6 +33,29 @@ if (typeof Node === 'function' && Node.prototype) {
     }
     return originalInsertBefore.apply(this, arguments as any);
   } as any;
+
+  const originalReplaceChild = Node.prototype.replaceChild;
+  Node.prototype.replaceChild = function (this: Node, newChild: Node, oldChild: Node) {
+    if (oldChild && oldChild.parentNode !== this) {
+      if (console) console.warn('Cannot replace a child from a different parent', oldChild, this);
+      return newChild;
+    }
+    return originalReplaceChild.apply(this, arguments as any);
+  } as any;
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('vite:preloadError', (event) => {
+    console.warn('Vite dynamic chunk preload error detected. Auto-reloading with cache buster...', event);
+    const key = 'realjob_vite_preload_reload';
+    const last = Number(sessionStorage.getItem(key) || 0);
+    if (Date.now() - last > 15000) {
+      sessionStorage.setItem(key, String(Date.now()));
+      const url = new URL(window.location.href);
+      url.searchParams.set('reload', String(Date.now()));
+      window.location.replace(url.toString());
+    }
+  });
 }
 
 function NotFoundComponent() {
@@ -64,6 +87,46 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
     reportLovableError(error as Error, { boundary: "tanstack_root_error_component" });
   }, [error]);
 
+  const errorMessage = error instanceof Error ? error.message : String(error || "");
+  const isChunkOrNetworkError =
+    /dynamically imported|Loading chunk|Failed to fetch|Importing a module script failed|error loading/i.test(
+      errorMessage,
+    );
+
+  // Auto-reload once if dynamic chunk failed due to a new deployment
+  useEffect(() => {
+    if (typeof window !== "undefined" && isChunkOrNetworkError) {
+      const reloadKey = "realjob_chunk_reload_attempt";
+      const lastAttempt = Number(sessionStorage.getItem(reloadKey) || "0");
+      if (Date.now() - lastAttempt > 15000) {
+        sessionStorage.setItem(reloadKey, String(Date.now()));
+        const url = new URL(window.location.href);
+        url.searchParams.set("reload", String(Date.now()));
+        window.location.replace(url.toString());
+      }
+    }
+  }, [isChunkOrNetworkError]);
+
+  const handleClearCacheAndReload = () => {
+    if (typeof window !== "undefined") {
+      try {
+        sessionStorage.clear();
+        const nonEssentialKeys = [
+          "cms_heroTitle",
+          "cms_heroSubtitle",
+          "cms_heroImages",
+          "cms_metrics",
+          "cms_aboutData",
+          "cms_categories",
+          "cms_companyPillars",
+          "karyam-gate-dismissed",
+        ];
+        nonEssentialKeys.forEach((k) => localStorage.removeItem(k));
+      } catch {}
+      window.location.href = `/?reload=${Date.now()}`;
+    }
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
@@ -71,17 +134,31 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
           This page didn't load
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
+          {isChunkOrNetworkError
+            ? "A newer version of the website was updated. Please refresh or clear cache."
+            : "Something went wrong on our end. You can try refreshing or head back home."}
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => {
-              router.invalidate();
-              reset();
+              if (typeof window !== "undefined") {
+                const url = new URL(window.location.href);
+                url.searchParams.set("v", String(Date.now()));
+                window.location.replace(url.toString());
+              } else {
+                router.invalidate();
+                reset();
+              }
             }}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 cursor-pointer"
           >
             Try again
+          </button>
+          <button
+            onClick={handleClearCacheAndReload}
+            className="inline-flex items-center justify-center rounded-md border border-primary/40 bg-primary/10 px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/20 cursor-pointer"
+          >
+            Clear Cache & Reload
           </button>
           <a
             href="/"
@@ -100,6 +177,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "google", content: "notranslate" },
       { title: "REAL JOB — India's Trusted Blue-Collar & Industrial Job Portal" },
       {
         name: "description",

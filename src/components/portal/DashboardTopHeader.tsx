@@ -10,6 +10,7 @@ interface DashboardTopHeaderProps {
   userPhoto?: string;
   searchPlaceholder?: string;
   onSearch?: (query: string) => void;
+  showSearch?: boolean;
 }
 
 const LOCATIONS = [
@@ -29,6 +30,7 @@ export function DashboardTopHeader({
   userPhoto,
   searchPlaceholder = "Search jobs, companies, or skills...",
   onSearch,
+  showSearch = true,
 }: DashboardTopHeaderProps) {
   const navigate = useNavigate();
   const [selectedLocation, setSelectedLocation] = useState("Pune, Maharashtra");
@@ -72,19 +74,29 @@ export function DashboardTopHeader({
 
   return (
     <header className="bg-white/95 backdrop-blur-md sticky top-0 z-30 px-3 sm:px-6 py-2.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between gap-3 mb-6 transition-all">
-      {/* Search Input Bar (Left) */}
-      <form onSubmit={handleSearchSubmit} className="flex-1 max-w-xl relative">
-        <div className="relative flex items-center">
-          <Search className="size-4 text-slate-400 absolute left-3.5 pointer-events-none" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={searchPlaceholder}
-            className="w-full bg-[#F1F5F9] hover:bg-[#EAEFF5] focus:bg-white text-slate-800 placeholder:text-slate-400 text-xs sm:text-sm font-medium rounded-xl pl-10 pr-4 py-2 border border-transparent focus:border-[#0E356A]/30 focus:outline-none transition-all shadow-2xs"
-          />
+      {/* Search Input Bar (Left) or Brand Welcome */}
+      {showSearch ? (
+        <form onSubmit={handleSearchSubmit} className="flex-1 max-w-xl relative">
+          <div className="relative flex items-center">
+            <Search className="size-4 text-slate-400 absolute left-3.5 pointer-events-none" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={searchPlaceholder}
+              className="w-full bg-[#F1F5F9] hover:bg-[#EAEFF5] focus:bg-white text-slate-800 placeholder:text-slate-400 text-xs sm:text-sm font-medium rounded-xl pl-10 pr-4 py-2 border border-transparent focus:border-[#0E356A]/30 focus:outline-none transition-all shadow-2xs"
+            />
+          </div>
+        </form>
+      ) : (
+        <div className="flex items-center gap-2.5 min-w-0">
+          <img src="/logo_icon.png" alt="REAL JOB" className="size-8 object-contain shrink-0" />
+          <div className="min-w-0">
+            <h2 className="text-sm font-black text-[#0A2540] truncate leading-tight">Welcome, {displayName}!</h2>
+            <p className="text-[11px] font-semibold text-slate-500 truncate">Find Work • Find Workers</p>
+          </div>
         </div>
-      </form>
+      )}
 
       {/* Right Controls: Location, Notifications, Profile Pill */}
       <div className="flex items-center gap-2 sm:gap-4 shrink-0">

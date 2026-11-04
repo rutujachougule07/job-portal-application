@@ -28,7 +28,8 @@ import {
   Plus,
   X,
   UploadCloud,
-  Check
+  Check,
+  LogOut
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +37,7 @@ import { UserSidebarLayout } from "@/components/portal/UserSidebarLayout";
 import { JobCard } from "@/components/portal/JobCard";
 import { DashboardTopHeader } from "@/components/portal/DashboardTopHeader";
 import { DashboardHeroBanner } from "@/components/portal/DashboardHeroBanner";
+import { UserDashboardFeed } from "@/components/portal/UserDashboardFeed";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 
@@ -56,6 +58,7 @@ function UserDashboard() {
   const { t, lang } = useI18n();
 
   const [user, setUser] = useState<any>(null);
+  const [refreshTick, setRefreshTick] = useState(0);
 
   useEffect(() => {
     const raw = typeof window !== "undefined" ? (localStorage.getItem("realjob-user") || localStorage.getItem("realjob_db_user")) : null;
@@ -110,17 +113,12 @@ function UserDashboard() {
   return (
     <UserSidebarLayout activeTab={activeTab}>
       <div className={activeTab === "overview" ? "block" : "hidden"}>
-        <div className="space-y-6 animate-in fade-in duration-300">
-          {/* Top Sticky Header */}
-          <DashboardTopHeader
-            role="seeker"
-            userName={user.fullName || "payal"}
-            userEmail={user.email || "payal@gmail.com"}
-            userPhoto={user.profilePhoto}
+        <div className="space-y-4 animate-in fade-in duration-300">
+          {/* Feed Layout starting directly from Search Bar matching specification */}
+          <UserDashboardFeed
+            currentUser={user}
+            onJobApplied={() => setRefreshTick((t) => t + 1)}
           />
-
-          {/* Hero Banner with Landing Page Video */}
-          <DashboardHeroBanner role="seeker" />
 
           {/* Main Left Column (Full Width) */}
           <div className="w-full space-y-6 min-w-0">
@@ -322,7 +320,8 @@ function UserDashboard() {
 }
 
 function UserProfileSection({ user }: { user: any }) {
-  const { t } = useI18n();
+  const navigate = useNavigate();
+  const { t, lang } = useI18n();
   const [profile, setProfile] = useState<JobSeekerProfile>(() => {
     const existing = dataStore.getJobSeekerProfile(user.id || user.email);
     if (existing) {
@@ -494,7 +493,20 @@ function UserProfileSection({ user }: { user: any }) {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              dataStore.logout("worker");
+              navigate({ to: "/", hash: "main", replace: true });
+              if (typeof window !== "undefined") window.scrollTo(0, 0);
+            }}
+            className="h-10 px-4 rounded-xl border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300 font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs"
+          >
+            <LogOut className="size-3.5" />
+            <span>{t("signOut")}</span>
+          </Button>
           {isEditing ? (
             <>
               <Button 
@@ -795,6 +807,35 @@ function UserProfileSection({ user }: { user: any }) {
             <input type="file" accept=".pdf,.doc,.docx,image/*" onChange={handleResumeUpload} className="hidden" />
           </label>
         </div>
+      </div>
+
+      {/* Account & Session Sign Out Card */}
+      <div className="bg-white rounded-3xl border border-rose-100 p-6 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-3 text-center sm:text-left">
+          <div className="size-11 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+            <LogOut className="size-5" />
+          </div>
+          <div>
+            <h4 className="text-sm font-black text-[#10233F]">
+              {lang === "mr" ? "खात्यातून लॉग आउट करा" : "Sign Out of Account"}
+            </h4>
+            <p className="text-xs font-semibold text-slate-500">
+              {lang === "mr" ? "तुमचे सत्र सुरक्षितपणे बंद करण्यासाठी लॉग आउट करा." : "Safely end your active session and return to home page."}
+            </p>
+          </div>
+        </div>
+        <Button
+          type="button"
+          onClick={() => {
+            dataStore.logout("worker");
+            navigate({ to: "/", hash: "main", replace: true });
+            if (typeof window !== "undefined") window.scrollTo(0, 0);
+          }}
+          className="h-10 px-6 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md flex items-center gap-2 cursor-pointer w-full sm:w-auto justify-center"
+        >
+          <LogOut className="size-4" />
+          <span>{t("signOut")}</span>
+        </Button>
       </div>
 
     </div>

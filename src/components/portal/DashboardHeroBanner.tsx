@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { ChevronLeft, ChevronRight, Volume2, VolumeX } from "lucide-react";
 import { isVideoMedia, getYouTubeEmbedUrl } from "@/components/video-utils";
 
@@ -58,19 +58,51 @@ export function DashboardHeroBanner({ role = "seeker" }: DashboardHeroBannerProp
     };
   }, []);
 
-  const totalSlides = landingMedia.length > 0 ? landingMedia.length : DEFAULT_LANDING_MEDIA.length;
-  const mediaList = landingMedia.length > 0 ? landingMedia : DEFAULT_LANDING_MEDIA;
+  // Always show IMAGES first, and VIDEO at the very end
+  const mediaList = useMemo(() => {
+    const raw = landingMedia.length > 0 ? landingMedia : DEFAULT_LANDING_MEDIA;
+    const images: string[] = [];
+    const videos: string[] = [];
+
+    raw.forEach((url) => {
+      if (
+        isVideoMedia(url) ||
+        url.includes(".mp4") ||
+        url.includes(".webm") ||
+        url.includes("hero_media") ||
+        url.includes("youtube.com") ||
+        url.includes("youtu.be")
+      ) {
+        videos.push(url);
+      } else {
+        images.push(url);
+      }
+    });
+
+    return [...images, ...videos];
+  }, [landingMedia]);
+
+  const totalSlides = mediaList.length;
   const currentMediaUrl = mediaList[currentSlide % totalSlides] || mediaList[0] || "";
   const isVideo = isVideoMedia(currentMediaUrl);
   const ytEmbed = isVideo && currentMediaUrl ? getYouTubeEmbedUrl(currentMediaUrl) : null;
 
-  // Auto advance every 7 seconds
+  // Auto advance: 3 seconds (3000ms) for images, video advances ONLY after it ends
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % totalSlides);
-    }, 7000);
-    return () => clearInterval(timer);
-  }, [totalSlides]);
+    if (totalSlides <= 1) return;
+
+    if (!isVideo) {
+      const timer = setTimeout(() => {
+        setCurrentSlide((prev) => (prev + 1) % totalSlides);
+      }, 3000);
+      return () => clearTimeout(timer);
+    } else {
+      if (videoRef.current) {
+        videoRef.current.playbackRate = 1.0;
+      }
+      return undefined;
+    }
+  }, [currentSlide, totalSlides, isVideo]);
 
   const prevSlide = () => {
     setCurrentSlide((prev) => (prev === 0 ? totalSlides - 1 : prev - 1));
@@ -100,14 +132,17 @@ export function DashboardHeroBanner({ role = "seeker" }: DashboardHeroBannerProp
               src={currentMediaUrl}
               autoPlay
               muted={isMuted}
-              loop
               playsInline
               preload="auto"
               className="w-full h-full object-cover object-center"
               onLoadedData={() => {
                 if (videoRef.current) {
+                  videoRef.current.playbackRate = 1.0;
                   videoRef.current.play().catch(() => {});
                 }
+              }}
+              onEnded={() => {
+                setCurrentSlide((prev) => (prev + 1) % totalSlides);
               }}
             />
           )

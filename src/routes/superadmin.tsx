@@ -233,15 +233,31 @@ function SuperAdminPage() {
 
     if (savedTitle) setHeroTitle(savedTitle);
     if (savedSubtitle) setHeroSubtitle(savedSubtitle);
-    if (savedImages) setHeroImages(JSON.parse(savedImages));
-    if (savedMetrics) setMetrics(JSON.parse(savedMetrics));
-    if (savedAbout) setAboutData(JSON.parse(savedAbout));
+    if (savedImages) {
+      try {
+        setHeroImages(JSON.parse(savedImages));
+      } catch (e) {}
+    }
+    if (savedMetrics) {
+      try {
+        setMetrics(JSON.parse(savedMetrics));
+      } catch (e) {}
+    }
+    if (savedAbout) {
+      try {
+        setAboutData(JSON.parse(savedAbout));
+      } catch (e) {}
+    }
     if (savedPillars) {
       try {
         setCompanyPillars(JSON.parse(savedPillars));
-      } catch (e) { }
+      } catch (e) {}
     }
-    if (savedCategories) setCategories(JSON.parse(savedCategories));
+    if (savedCategories) {
+      try {
+        setCategories(JSON.parse(savedCategories));
+      } catch (e) {}
+    }
 
     // Also load cloud settings from Firestore
     const syncFromCloud = async () => {

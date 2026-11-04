@@ -95,9 +95,8 @@ export function LoginDropdown({ className = "" }: { className?: string }) {
 
         {/* Chevron Icon: hidden on mobile (< sm), shown on tablet & desktop (sm+) */}
         <ChevronDown
-          className={`hidden sm:inline size-4 text-[#10233F] stroke-[2.5] transition-transform duration-200 ${
-            isOpen ? "rotate-180" : ""
-          }`}
+          className={`hidden sm:inline size-4 text-[#10233F] stroke-[2.5] transition-transform duration-200 ${isOpen ? "rotate-180" : ""
+            }`}
         />
       </button>
 

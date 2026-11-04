@@ -17,8 +17,18 @@
   RewriteCond %{REQUEST_URI} \.(png|jpe?g|gif|webp|svg|ico|css|js|woff2?|ttf|eot|json|map)$ [NC]
   RewriteRule ^ - [R=404,L]
 
-  # Route all other requests to index.html for client-side routing
-  RewriteRule ^ index.html [L]
+  # Route all other requests to root index.html for client-side routing
+  RewriteRule ^ /index.html [L]
+</IfModule>
+
+# Ensure proper MIME types for modern ES modules, styles, and web assets
+<IfModule mod_mime.c>
+  AddType application/javascript .js .mjs
+  AddType text/css .css
+  AddType image/svg+xml .svg
+  AddType image/webp .webp
+  AddType font/woff2 .woff2
+  AddType font/woff .woff
 </IfModule>
 
 # Browser Caching & MIME types
@@ -37,7 +47,7 @@
 <IfModule mod_headers.c>
   # Never cache HTML index so users always get the latest bundle hashes
   <FilesMatch "\.(html|htm)$">
-    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Cache-Control "no-cache, no-store, must-revalidate, max-age=0"
     Header set Pragma "no-cache"
     Header set Expires "0"
   </FilesMatch>

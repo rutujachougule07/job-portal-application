@@ -1,4 +1,4 @@
-import { useState, useEffect, Fragment, useMemo, useTransition } from "react";
+import { useState, useEffect, Fragment, useMemo, useTransition, useRef } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import SalarySlip from "../components/SalarySlip";
 import {
@@ -23,6 +23,10 @@ import {
   BookOpen,
   ShoppingBag,
   ArrowUpRight,
+  ArrowRight,
+  Receipt,
+  TrendingUp,
+  BarChart2,
   Check,
   CalendarCheck,
   UserCheck,
@@ -34,6 +38,9 @@ import {
   Phone,
   User,
   XCircle,
+  HardHat,
+  Home,
+  Wallet,
   Layers,
   Filter,
   Download,
@@ -43,6 +50,7 @@ import {
   Bell,
   LogOut,
   ChevronDown,
+  ChevronUp,
   ChevronLeft,
   ChevronRight,
   MapPin,
@@ -51,9 +59,12 @@ import {
   Menu,
   IndianRupee,
   MessageCircle,
+  SlidersHorizontal,
   LocateFixed,
   Navigation,
   Loader2,
+  Camera,
+  UploadCloud,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { parseMapCoordinates } from "@/lib/location-utils";
@@ -260,50 +271,499 @@ function formatCallNumber(phone: string): string {
   return raw.startsWith("+") ? raw : `+${digits}`;
 }
 
+const LANGUAGE_OPTIONS = [
+  "Marathi", "Hindi", "English", "Kannada", "Telugu", "Tamil", "Malayalam", "Gujarati", "Bengali", "Punjabi", "Urdu", "Other"
+];
+
+const WORKER_CATEGORY_OPTIONS = [
+  "Construction Worker", "Factory Worker", "Agriculture Worker", "Electrician", "Plumber", "Welder / Fabricator", "Driver", "Hotel / Kitchen Staff", "Shop / Sales Staff", "Office / Data Entry Staff", "Packing / Helper", "Housekeeping / Cleaner", "Security Guard", "Delivery Worker", "Application Developer", "Web Developer", "Software Developer", "Mobile App Developer", "Other"
+];
+
+const WORK_TYPE_OPTIONS = [
+  "Full Time", "Part Time", "Permanent", "Temporary", "Daily Wage", "Contract Worker", "Freelancer", "Apprentice / Trainee"
+];
+
+const LOCATION_OPTIONS = [
+  "Current Location", "Within 5 km", "Within 10 km", "Within 25 km", "Within 50 km", "Within 100 km", "Village", "City", "District", "PIN Code"
+];
+
+const EXPERIENCE_OPTIONS = [
+  "Fresher", "Less than 6 Months", "6 Months–2 Years", "2–5 Years", "5–10 Years", "More than 10 Years"
+];
+
+const SKILL_QUAL_OPTIONS = [
+  "Basic Skills", "Skilled Worker", "Highly Skilled Worker", "Technical Skills", "Educational Qualification", "ITI / Diploma", "Graduate", "Professional Certificate", "Driving Licence", "Specialised Training"
+];
+
+const SALARY_EXPECTATION_OPTIONS = [
+  "Daily Wage", "Weekly Wage", "Monthly Salary", "Below ₹10,000", "₹10,000–₹15,000", "₹15,000–₹20,000", "₹20,000–₹30,000", "Above ₹30,000", "Negotiable"
+];
+
+const AVAILABILITY_OPTIONS = [
+  "Available Immediately", "Available Today", "Available Within 7 Days", "Currently Employed", "Open to New Opportunities"
+];
+
+const WORK_SCHEDULE_OPTIONS = [
+  "Day Shift", "Night Shift", "Rotational Shift", "8-Hour Shift", "12-Hour Shift", "Flexible Hours", "Overtime Available"
+];
+
+const GENDER_PREFERENCE_OPTIONS = [
+  "Any Gender", "Male", "Female"
+];
+
+const WORKER_VERIFICATION_OPTIONS = [
+  "Verified Profile", "Mobile Number Verified", "Identity Verified", "Skill Certificate Verified", "Reference Checked"
+];
+
+const RATINGS_ACTIVITY_OPTIONS = [
+  "Highest Rated", "Recently Active", "Recently Registered", "Most Experienced", "Profile With Photo"
+];
+
+const LANG_NAME_TO_CODE: Record<string, "mr" | "en" | "hi" | "gu" | "kn" | "te" | "ta" | "bn"> = {
+  "Marathi": "mr",
+  "English": "en",
+  "Hindi": "hi",
+  "Gujarati": "gu",
+  "Kannada": "kn",
+  "Telugu": "te",
+  "Tamil": "ta",
+  "Bengali": "bn",
+};
+
+const FILTER_SECTIONS_DATA = [
+  { id: 1, title: "1. Language", optionCount: "12 options", options: LANGUAGE_OPTIONS },
+  { id: 2, title: "2. Worker Category", optionCount: "19 options", options: WORKER_CATEGORY_OPTIONS },
+  { id: 3, title: "3. Work Type", optionCount: "8 options", options: WORK_TYPE_OPTIONS },
+  { id: 4, title: "4. Location & Distance", optionCount: "10 options", options: LOCATION_OPTIONS },
+  { id: 5, title: "5. Experience", optionCount: "6 options", options: EXPERIENCE_OPTIONS },
+  { id: 6, title: "6. Skills & Qualification", optionCount: "10 options", options: SKILL_QUAL_OPTIONS },
+  { id: 7, title: "7. Salary Expectation", optionCount: "9 options", options: SALARY_EXPECTATION_OPTIONS },
+  { id: 8, title: "8. Availability", optionCount: "5 options", options: AVAILABILITY_OPTIONS },
+  { id: 9, title: "9. Work Schedule", optionCount: "7 options", options: WORK_SCHEDULE_OPTIONS },
+  { id: 10, title: "10. Gender Preference", optionCount: "3 options", options: GENDER_PREFERENCE_OPTIONS },
+  { id: 11, title: "11. Worker Verification", optionCount: "5 options", options: WORKER_VERIFICATION_OPTIONS },
+  { id: 12, title: "12. Ratings & Activity", optionCount: "5 options", options: RATINGS_ACTIVITY_OPTIONS },
+];
+
 function AdminDashboardPage() {
   const navigate = useNavigate();
   const search = Route.useSearch();
-  const { t, n } = useI18n();
+  const { t, n, lang, setLang } = useI18n();
+
+  const mobileDashboardI18n: Record<string, any> = {
+    mr: {
+      searchPlaceholder: "नोकरी, कामगार, कौशल्य किंवा शहर शोधा...",
+      findWorkers: "कामगार शोधा",
+      findWorkersDesc: "कुशल कामगार शोधा आणि संपर्क करा",
+      postJob: "जाहिरात द्या",
+      postJobDesc: "कामाची आवश्यकता नोंदवा",
+      workersRequired: "कामगार हवे आहेत",
+      postedOn: "पोस्ट तारीख",
+      viewDetails: "तपशील पहा",
+      homeDesc: "डॅशबोर्ड आणि विहंगावलोकन",
+      jobsDesc: "जॉब्स व्यवस्थापित करा",
+      appsDesc: "अर्ज पहा आणि व्यवस्थापित करा",
+      reportsDesc: "काम आणि व्यवसाय अहवाल",
+      salaryDesc: "पगार आणि सॅलरी स्लिप्स",
+      attendanceDesc: "हजेरी नोंदवा आणि पहा",
+      filterText: "फिल्टर",
+      activeBadge: "सक्रिय",
+    },
+    hi: {
+      searchPlaceholder: "नौकरी, कारीगर, कौशल या स्थान खोजें...",
+      findWorkers: "कारीगर खोजें",
+      findWorkersDesc: "कुशल कारीगर खोजें और संपर्क करें",
+      postJob: "जॉब पोस्ट करें",
+      postJobDesc: "कार्य की आवश्यकता साझा करें",
+      workersRequired: "कारीगर चाहिए",
+      postedOn: "पोस्ट किया",
+      viewDetails: "विवरण देखें",
+      homeDesc: "डैशबोर्ड और विवरण",
+      jobsDesc: "जॉब्स प्रबंधित करें",
+      appsDesc: "आवेदन देखें व प्रबंधित करें",
+      reportsDesc: "कार्य और व्यापार रिपोर्ट",
+      salaryDesc: "वेतन और सैलरी स्लिप्स",
+      attendanceDesc: "उपस्थिति दर्ज करें व देखें",
+      filterText: "फ़िल्टर",
+      activeBadge: "सक्रिय",
+    },
+    gu: {
+      searchPlaceholder: "નોકરી, કારીગર, કુશળતા અથવા સ્થાન શોધો...",
+      findWorkers: "કારીગરો શોધો",
+      findWorkersDesc: "કુશળ કારીગરો શોધો અને સંપર્ક કરો",
+      postJob: "જોબ પોસ્ટ કરો",
+      postJobDesc: "કામની જરૂરિયાત શેર કરો",
+      workersRequired: "કારીગરો જોઈએ છે",
+      postedOn: "પોસ્ટ તારીખ",
+      viewDetails: "વિગતો જુઓ",
+      homeDesc: "ડેશબોર્ડ અને વિહંગાવલોકન",
+      jobsDesc: "નોકરીઓ મેનેજ કરો",
+      appsDesc: "અરજીઓ જુઓ અને મેનેજ કરો",
+      reportsDesc: "કામ અને વ્યવસાય રિપોર્ટ",
+      salaryDesc: "પગાર અને પેસ્લિપ",
+      attendanceDesc: "હાજરી નોંધો અને જુઓ",
+      filterText: "ફિલ્ટર",
+      activeBadge: "સક્રિય",
+    },
+    kn: {
+      searchPlaceholder: "ಉದ್ಯೋಗ, ಕಾರ್ಮಿಕರು, ಕೌಶಲ್ಯ ಅಥವಾ ಸ್ಥಳವನ್ನು ಹುಡುಕಿ...",
+      findWorkers: "ಕಾರ್ಮಿಕರನ್ನು ಹುಡುಕಿ",
+      findWorkersDesc: "ಕುಶಲ ಕಾರ್ಮಿಕರನ್ನು ಹುಡುಕಿ",
+      postJob: "ಉದ್ಯೋಗ ಪೋಸ್ಟ್ ಮಾಡಿ",
+      postJobDesc: "ಕೆಲಸದ ಅಗತ್ಯವನ್ನು ಹಂಚಿಕೊಳ್ಳಿ",
+      workersRequired: "ಕಾರ್ಮಿಕರು ಬೇಕಾಗಿದ್ದಾರೆ",
+      postedOn: "ಪೋಸ್ಟ್ ಮಾಡಲಾಗಿದೆ",
+      viewDetails: "ವಿವರಗಳನ್ನು ವೀಕ್ಷಿಸಿ",
+      homeDesc: "ಡ್ಯಾಶ್‌ಬೋರ್ಡ್ ಮತ್ತು ಅವಲೋಕನ",
+      jobsDesc: "ಉದ್ಯೋಗಗಳನ್ನು ನಿರ್ವಹಿಸಿ",
+      appsDesc: "ಅರ್ಜಿಗಳನ್ನು ವೀಕ್ಷಿಸಿ",
+      reportsDesc: "ಕೆಲಸದ ವರದಿಗಳು",
+      salaryDesc: "ವೇತನ ಮತ್ತು ಪೇಸ್ಲಿಪ್",
+      attendanceDesc: "ಹಾಜರಾತಿಯನ್ನು ಗುರುತಿಸಿ",
+      filterText: "ಫಿಲ್ಟರ್",
+      activeBadge: "ಸಕ್ರಿಯ",
+    },
+    te: {
+      searchPlaceholder: "ఉద్యోగం, కార్మికులు, నైపుణ్యాలు లేదా స్థానాన్ని శోధించండి...",
+      findWorkers: "కార్మికులను కనుగొనండి",
+      findWorkersDesc: "నైపుణ్యం కలిగిన కార్మికులను కనుగొనండి",
+      postJob: "ఉద్యోగాన్ని పోస్ట్ చేయండి",
+      postJobDesc: "పని అవసరాన్ని పంచుకోండి",
+      workersRequired: "కార్మికులు అవసరం",
+      postedOn: "పోస్ట్ చేయబడింది",
+      viewDetails: "వివరాలను చూడండి",
+      homeDesc: "డాష్‌బోర్డ్ & స్థూలదృష్టి",
+      jobsDesc: "ఉద్యోగాలను నిర్వహించండి",
+      appsDesc: "దరఖాస్తులను నిర్వహించండి",
+      reportsDesc: "పని నివేదికలు",
+      salaryDesc: "జీతం & పేస్లిప్",
+      attendanceDesc: "హాజరును గుర్తించండి",
+      filterText: "ఫిల్టర్",
+      activeBadge: "యాక్టివ్",
+    },
+    ta: {
+      searchPlaceholder: "வேலை, தொழிலாளர்கள், திறன்கள் அல்லது இருப்பிடத்தைத் தேடுங்கள்...",
+      findWorkers: "தொழிலாளர்களைக் கண்டறியவும்",
+      findWorkersDesc: "திறமையான தொழிலாளர்களைக் கண்டறியவும்",
+      postJob: "வேலை இடுகையிடவும்",
+      postJobDesc: "வேலை தேவையைப் பகிரவும்",
+      workersRequired: "தொழிலாளர்கள் தேவை",
+      postedOn: "இடுகையிடப்பட்டது",
+      viewDetails: "விவரங்களைப் பார்க்கவும்",
+      homeDesc: "டாஷ்போர்டு & கண்ணோட்டம்",
+      jobsDesc: "வேலைகளை நிர்வகிக்கவும்",
+      appsDesc: "விண்ணப்பங்களை நிர்வகிக்கவும்",
+      reportsDesc: "வேலை அறிக்கைகள்",
+      salaryDesc: "சம்பளம் & சம்பள சீட்டு",
+      attendanceDesc: "வருகையைக் குறிக்கவும்",
+      filterText: "வடிகட்டி",
+      activeBadge: "செயலில்",
+    },
+    bn: {
+      searchPlaceholder: "চাকরি, কর্মী, দক্ষতা বা অবস্থান অনুসন্ধান করুন...",
+      findWorkers: "কর্মী খুঁজুন",
+      findWorkersDesc: "দক্ষ কর্মী খুঁজুন",
+      postJob: "চাকরি পোস্ট করুন",
+      postJobDesc: "কাজের প্রয়োজনীয়তা শেয়ার করুন",
+      workersRequired: "কর্মী প্রয়োজন",
+      postedOn: "পোস্ট করা হয়েছে",
+      viewDetails: "বিস্তারিত দেখুন",
+      homeDesc: "ড্যাশবোর্ড এবং ওভারভিউ",
+      jobsDesc: "চাকরি পরিচালনা করুন",
+      appsDesc: "আবেদনগুলি পরিচালনা করুন",
+      reportsDesc: "কাজের প্রতিবেদন",
+      salaryDesc: "বেতন এবং পেস্লিপ",
+      attendanceDesc: "উপস্থিতি চিহ্নিত করুন",
+      filterText: "ফিল্টার",
+      activeBadge: "সক্রিয়",
+    },
+    en: {
+      searchPlaceholder: "Search by Job, Worker, Skills, Location...",
+      findWorkers: "Find Workers",
+      findWorkersDesc: "Search skilled workers",
+      postJob: "Post Job",
+      postJobDesc: "Share your work requirement",
+      workersRequired: "Workers Required",
+      postedOn: "Posted on",
+      viewDetails: "View Details",
+      homeDesc: "Dashboard & Overview",
+      jobsDesc: "Manage Jobs",
+      appsDesc: "View & Manage Applications",
+      reportsDesc: "Work Reports & Analytics",
+      salaryDesc: "Salary & Payslip",
+      attendanceDesc: "Mark & View Attendance",
+      filterText: "Filter",
+      activeBadge: "Active",
+    }
+  };
+
+  const reportLabels: Record<string, any> = {
+    mr: {
+      cashbook: "कॅशबुक",
+      myReport: "माझा अहवाल",
+      expenses: "खर्च",
+      financialReports: "आर्थिक अहवाल",
+      items: "वस्तू / साहित्य",
+      staff: "स्टाफ / कर्मचारी",
+      myOrder: "माझ्या ऑर्डर्स",
+      collectionsList: "वसुली यादी",
+      onlineToCash: "ऑनलाइन ते रोख",
+      cashOut: "कॅश आऊट",
+      hint: "तपशीलवार अहवाल आणि नोंदी पाहण्यासाठी वरील कोणत्याही कार्डवर क्लिक करा.",
+      closeView: "बंद करा",
+      printReport: "प्रिंट अहवाल",
+      date: "तारीख",
+      reference: "तपशील / संदर्भ",
+      type: "प्रकार",
+      mode: "माध्यम",
+      inflow: "आवक (Cr)",
+      outflow: "जावक (Dr)",
+      status: "स्थिती",
+      totalInflow: "एकूण आवक (Cr)",
+      packageCreditsAdded: "पॅकेज क्रेडिट्स जमा",
+      totalOutflow: "एकूण जावक (Dr)",
+      calculatedStaffWages: "कर्मचारी पगार देणी",
+      netBalance: "निव्वळ लेजर शिल्लक",
+      reconciledCash: "एकूण रोख स्थिती",
+      cashbookTitle: "कॅशबुक रजिस्टर आणि दैनिक लेजर",
+      cashbookSub: "जमा झालेले पेमेंट, मजुरी वाटप आणि एकूण शिल्लक रक्कम.",
+      myReportTitle: "माझा व्यवसाय एकत्रित अहवाल",
+      myReportSub: "कर्मचारी, नोकऱ्या आणि वित्त यांचा सर्वसमावेशक अहवाल.",
+      totalEmployees: "एकूण कर्मचारी",
+      registeredStaff: "नोंदणीकृत कर्मचारी",
+      attendanceOt: "हजेरी आणि ओव्हरटाईम",
+      payrollExpenses: "पगार खर्च",
+      calculatedLiability: "एकूण देय रक्कम",
+      jobsApplicants: "नोकऱ्या आणि अर्जदार",
+      expensesTitle: "कंपनी आणि पगार खर्च",
+      expensesSub: "कर्मचारी मूळ वेतन, ओव्हरटाईम आणि इतर भत्ते.",
+      baseWages: "मूळ पगार",
+      overtimePay: "ओव्हरटाईम पगार",
+      totalLiability: "एकूण खर्च",
+      staffTitle: "कर्मचारी हजेरी आणि कार्यबळ नोंद",
+      staffSub: "नोंदणीकृत कर्मचारी, हजेरी तपशील आणि दैनिक वेतन दर.",
+      staffName: "कर्मचाऱ्याचे नाव",
+      roleTrade: "काम / ट्रेड",
+      dailyRate: "दैनिक दर",
+      present: "हजर (P)",
+      halfDay: "अर्धा दिवस (HD)",
+      absent: "गैरहजर (A)",
+      overtime: "ओव्हरटाईम (OT)",
+      totalWages: "एकूण पगार",
+      action: "कृती",
+      salarySlip: "सॅलरी स्लिप",
+      downloadSlip: "स्लिप PDF डाउनलोड",
+      cashOutTitle: "कॅश आऊट आणि पगार वाटप",
+      cashOutSub: "कामगारांना केलेले वेतन वाटप आणि सॅलरी स्लिप्स.",
+      onlineToCashTitle: "ऑनलाइन पेमेंट व रोख जमा",
+      onlineToCashSub: "गेटवे द्वारे झालेले डिजिटल पेमेंट आणि रोख सेटलमेंट.",
+      myOrderTitle: "माझ्या पॅकेज ऑर्डर्स",
+      myOrderSub: "खरेदी केलेल्या प्लॅन्सचा इतिहास आणि इनव्हॉइस पावत्या.",
+      collectionsTitle: "कलेक्शन आणि देणी यादी",
+      collectionsSub: "प्रलंबित पेमेंट आणि सेटलमेंट नोंदी.",
+      financialTitle: "वित्तीय आणि पॅकेज खरेदी अहवाल",
+      financialSub: "सक्रिय सबस्क्रिप्शन, क्रेडिट खरेदी आणि इनव्हॉइसेस.",
+      itemsTitle: "जॉब पोस्ट आणि आवश्यकता सारांश",
+      itemsSub: "सर्व पोस्ट केलेल्या नोकऱ्या, रिक्त जागा आणि अर्जदारांची संख्या.",
+      daysWorked: "काम केलेले दिवस",
+      netPayable: "निव्वळ देय रक्कम",
+      disbursementVoucher: "वितरण व्हाउचर",
+    },
+    hi: {
+      cashbook: "कैशबुक",
+      myReport: "मेरी रिपोर्ट",
+      expenses: "खर्चे",
+      financialReports: "वित्तीय रिपोर्ट",
+      items: "सामग्री / पद",
+      staff: "स्टाफ / कर्मचारी",
+      myOrder: "मेरे ऑर्डर्स",
+      collectionsList: "कलेक्शन सूची",
+      onlineToCash: "ऑनलाइन से नकद",
+      cashOut: "कैश आउट",
+      hint: "विस्तृत रिपोर्ट और रिकॉर्ड देखने के लिए ऊपर किसी भी कार्ड पर क्लिक करें।",
+      closeView: "बंद करें",
+      printReport: "प्रिंट रिपोर्ट",
+      date: "तारीख",
+      reference: "विवरण / संदर्भ",
+      type: "प्रकार",
+      mode: "माध्यम",
+      inflow: "आवक (Cr)",
+      outflow: "जावक (Dr)",
+      status: "स्थिति",
+      totalInflow: "कुल आवक (Cr)",
+      packageCreditsAdded: "पैकेज क्रेडिट्स जमा",
+      totalOutflow: "कुल जावक (Dr)",
+      calculatedStaffWages: "कर्मचारी वेतन देय",
+      netBalance: "शुद्ध लेजर शेष",
+      reconciledCash: "समायोजित नकद स्थिति",
+      cashbookTitle: "कैशबुक रजिस्टर और दैनिक लेजर",
+      cashbookSub: "जमा भुगतान, कर्मचारियों का वेतन और शुद्ध नकद शेष।",
+      myReportTitle: "मेरी एकीकृत व्यापार रिपोर्ट",
+      myReportSub: "कर्मचारियों, नौकरियों और वित्त की सर्वसमावेशी रिपोर्ट।",
+      totalEmployees: "कुल कर्मचारी",
+      registeredStaff: "पंजीकृत कर्मचारी",
+      attendanceOt: "उपस्थिति और ओवरटाइम",
+      payrollExpenses: "वेतन खर्च",
+      calculatedLiability: "गणना की गई देनदारी",
+      jobsApplicants: "नौकरियां और आवेदक",
+      expensesTitle: "कंपनी और वेतन खर्च",
+      expensesSub: "कर्मचारियों का मूल वेतन, ओवरटाइम और भत्ते।",
+      baseWages: "मूल वेतन",
+      overtimePay: "ओवरटाइम वेतन",
+      totalLiability: "कुल देनदारी",
+      staffTitle: "कर्मचारी उपस्थिति और कार्यबल रिकॉर्ड",
+      staffSub: "पंजीकृत कर्मचारी, उपस्थिति विवरण और दैनिक दर।",
+      staffName: "कर्मचारी का नाम",
+      roleTrade: "पद / ट्रेड",
+      dailyRate: "दैनिक दर",
+      present: "उपस्थित (P)",
+      halfDay: "आधा दिन (HD)",
+      absent: "अनुपस्थित (A)",
+      overtime: "ओवरटाइम (OT)",
+      totalWages: "कुल वेतन",
+      action: "कार्रवाई",
+      salarySlip: "सैलरी स्लिप",
+      downloadSlip: "स्लिप PDF डाउनलोड",
+      cashOutTitle: "कैश आउट और वेतन वितरण",
+      cashOutSub: "श्रमिकों को वेतन वितरण और वेतन पर्चियां।",
+      onlineToCashTitle: "ऑनलाइन भुगतान व नकद समाधान",
+      onlineToCashSub: "गेटवे द्वारा डिजिटल भुगतान और नकद समाधान।",
+      myOrderTitle: "मेरे पैकेज ऑर्डर्स",
+      myOrderSub: "खरीदे गए प्लान का इतिहास और बिलिंग रसीदें।",
+      collectionsTitle: "कलेक्शन और प्राप्य सूची",
+      collectionsSub: "बकाया भुगतान और वसूली रिकॉर्ड।",
+      financialTitle: "वित्तीय और पैकेज रिपोर्ट",
+      financialSub: "सक्रिय सदस्यता, क्रेडिट खरीद और इनवॉइस।",
+      itemsTitle: "जॉब पोस्ट और आवश्यकता सारांश",
+      itemsSub: "सभी पोस्ट की गई नौकरियां, रिक्तियां और आवेदक संख्या।",
+      daysWorked: "कार्य दिवस",
+      netPayable: "शुद्ध देय",
+      disbursementVoucher: "वितरण वाउचर",
+    },
+    en: {
+      cashbook: "Cashbook",
+      myReport: "My Report",
+      expenses: "Expenses",
+      financialReports: "Financial Reports",
+      items: "Items",
+      staff: "Staff",
+      myOrder: "My Order",
+      collectionsList: "Collections List",
+      onlineToCash: "Online to Cash",
+      cashOut: "Cash Out",
+      hint: "Click any card above to view its detailed report and records.",
+      closeView: "Close View",
+      printReport: "Print Report",
+      date: "Date",
+      reference: "Reference / Particulars",
+      type: "Type",
+      mode: "Mode",
+      inflow: "Inflow (Cr)",
+      outflow: "Outflow (Dr)",
+      status: "Status",
+      totalInflow: "Total Inflow (Cr)",
+      packageCreditsAdded: "Package credits added",
+      totalOutflow: "Total Outflow (Dr)",
+      calculatedStaffWages: "Calculated staff wages",
+      netBalance: "Net Ledger Balance",
+      reconciledCash: "Reconciled cash position",
+      cashbookTitle: "Cashbook Register & Daily Ledger",
+      cashbookSub: "Incoming package payments, wage disbursements, and net cash balance.",
+      myReportTitle: "My Consolidated Business Report",
+      myReportSub: "All-in-one performance report of employees, jobs, and finances.",
+      totalEmployees: "TOTAL EMPLOYEES",
+      registeredStaff: "Registered staff",
+      attendanceOt: "ATTENDANCE & OT",
+      payrollExpenses: "PAYROLL EXPENSES",
+      calculatedLiability: "Calculated liability",
+      jobsApplicants: "JOBS & APPLICANTS",
+      expensesTitle: "Company & Payroll Expenses",
+      expensesSub: "Base staff salaries, overtime compensation, and worker allowances.",
+      baseWages: "Base Wages",
+      overtimePay: "Overtime Pay",
+      totalLiability: "Total Liability",
+      staffTitle: "Staff Attendance & Workforce Log",
+      staffSub: "Registered employees, attendance statement, and daily pay rate.",
+      staffName: "Staff Name",
+      roleTrade: "Role / Trade",
+      dailyRate: "Daily Rate",
+      present: "Present (P)",
+      halfDay: "Half Day (HD)",
+      absent: "Absent (A)",
+      overtime: "Overtime (OT)",
+      totalWages: "Total Wages",
+      action: "Action",
+      salarySlip: "Salary Slip",
+      downloadSlip: "Download Slip PDF",
+      cashOutTitle: "Cash Out & Wage Disbursements",
+      cashOutSub: "Worker payout receipts, generated salary slips, and cash distributions.",
+      onlineToCashTitle: "Online to Cash Settlement",
+      onlineToCashSub: "Payment gateway reconciliations and completed cash settlements.",
+      myOrderTitle: "My Package Orders",
+      myOrderSub: "Order history, package renewals, and billing records.",
+      collectionsTitle: "Collections & Receivables List",
+      collectionsSub: "Outstanding accounts, invoice collection, and balance recovery.",
+      financialTitle: "Financial & Package Reports",
+      financialSub: "Active subscriptions, credit purchases, and invoices.",
+      itemsTitle: "Job Postings & Requirements Summary",
+      itemsSub: "All posted job openings, vacancies, and applicant volume.",
+      daysWorked: "Days Worked",
+      netPayable: "Net Payable",
+      disbursementVoucher: "Disbursement Voucher",
+    }
+  };
+
+  const mdI18n = mobileDashboardI18n[lang] || mobileDashboardI18n['mr'] || mobileDashboardI18n['en'];
+  const rl = reportLabels[lang] || reportLabels['mr'] || reportLabels['en'];
 
   const initialTab = (search.tab as any) || "overview";
   const [activeTabState, setActiveTabState] = useState<"overview" | "jobs" | "applications" | "attendance" | "salary" | "reports" | "packages" | "profile">(initialTab);
-  const [isPendingTab, startTransitionTab] = useTransition();
 
   // Synchronize state when user navigates using browser back / forward buttons
   useEffect(() => {
-    const tabFromUrl = (search.tab as any) || "overview";
-    if (tabFromUrl && tabFromUrl !== activeTabState) {
-      startTransitionTab(() => {
-        setActiveTabState(tabFromUrl);
-      });
-    }
-  }, [search.tab]);
-
-  // Intercept back button if it tries to escape to /auth (login screen)
-  useEffect(() => {
     const handlePopState = () => {
-      if (typeof window !== "undefined" && window.location.pathname === "/auth") {
-        window.history.replaceState(null, "", "/admin?tab=overview");
-        startTransitionTab(() => {
+      if (typeof window !== "undefined") {
+        if (window.location.pathname === "/auth") {
+          window.history.replaceState(null, "", "/admin?tab=overview");
           setActiveTabState("overview");
-        });
+          return;
+        }
+        const url = new URL(window.location.href);
+        const tabFromUrl = (url.searchParams.get("tab") as any) || "overview";
+        setActiveTabState(tabFromUrl);
       }
     };
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
+  const handleEmployerLogout = () => {
+    dataStore.logout("employer");
+    localStorage.removeItem("realjob-employer-profile");
+    localStorage.removeItem("realjob-user-admin");
+    localStorage.removeItem("realjob-user-employer");
+    localStorage.removeItem("realjob-user");
+    localStorage.removeItem("realjob-role");
+    sessionStorage.removeItem("realjob_tab_user");
+    toast.info(lang === "mr" ? "लॉग आउट यशस्वी झाले" : "Logged out successfully");
+    navigate({ to: "/auth", search: { mode: "login", role: "admin" }, replace: true });
+    if (typeof window !== "undefined") window.scrollTo(0, 0);
+  };
+
   const activeTab = activeTabState;
   const setActiveTab = (tab: "overview" | "jobs" | "applications" | "attendance" | "salary" | "reports" | "packages" | "profile" | any) => {
     if (tab === activeTabState) return;
-    startTransitionTab(() => {
-      setActiveTabState(tab);
-    });
-    // Record this tab in browser history so the browser Back button navigates to the previous tab
-    navigate({
-      to: "/admin",
-      search: { tab },
-    });
+    // 1. Immediately switch tab in React state (instant 0ms response)
+    setActiveTabState(tab);
+
+    // 2. Update URL bar without triggering TanStack Router full-route reload
+    try {
+      if (typeof window !== "undefined") {
+        const url = new URL(window.location.href);
+        url.searchParams.set("tab", tab);
+        window.history.pushState({ tab }, "", url.toString());
+      }
+    } catch {}
   };
 
   // Data states
@@ -318,6 +778,122 @@ function AdminDashboardPage() {
   const [expandedApp, setExpandedApp] = useState<string | null>(null);
   const [viewSlipWorker, setViewSlipWorker] = useState<EmployerWorker | null>(null);
   const [viewSlipPeriod, setViewSlipPeriod] = useState<"week" | "month">("month");
+  const [isEmployerNotificationsOpen, setIsEmployerNotificationsOpen] = useState(false);
+  const employerNotifRef = useRef<HTMLDivElement | null>(null);
+
+  // Filter Modal & Filter States (Strictly English matching Seeker style & white theme, 10 sections)
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [filterSearchQuery, setFilterSearchQuery] = useState("");
+  const [expandedFilterSection, setExpandedFilterSection] = useState<number | null>(null);
+  const [selectedLanguage, setSelectedLanguage] = useState<string>("all");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedJobType, setSelectedJobType] = useState<string>("all");
+  const [selectedLocation, setSelectedLocation] = useState<string>("all");
+  const [selectedExperience, setSelectedExperience] = useState<string>("all");
+  const [selectedSkillQual, setSelectedSkillQual] = useState<string>("all");
+  const [selectedSalaryExp, setSelectedSalaryExp] = useState<string>("all");
+  const [selectedAvailability, setSelectedAvailability] = useState<string>("all");
+  const [selectedWorkSchedule, setSelectedWorkSchedule] = useState<string>("all");
+  const [selectedGender, setSelectedGender] = useState<string>("all");
+  const [selectedVerification, setSelectedVerification] = useState<string>("all");
+  const [selectedRatingsActivity, setSelectedRatingsActivity] = useState<string>("all");
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (selectedLanguage !== "all") count++;
+    if (selectedCategory !== "all") count++;
+    if (selectedJobType !== "all") count++;
+    if (selectedLocation !== "all") count++;
+    if (selectedExperience !== "all") count++;
+    if (selectedSkillQual !== "all") count++;
+    if (selectedSalaryExp !== "all") count++;
+    if (selectedAvailability !== "all") count++;
+    if (selectedWorkSchedule !== "all") count++;
+    if (selectedGender !== "all") count++;
+    if (selectedVerification !== "all") count++;
+    if (selectedRatingsActivity !== "all") count++;
+    return count;
+  }, [
+    selectedLanguage, selectedCategory, selectedJobType, selectedLocation, selectedExperience,
+    selectedSkillQual, selectedSalaryExp, selectedAvailability, selectedWorkSchedule, selectedGender,
+    selectedVerification, selectedRatingsActivity,
+  ]);
+
+  const resetAllFilters = () => {
+    setSelectedLanguage("all");
+    setSelectedCategory("all");
+    setSelectedJobType("all");
+    setSelectedLocation("all");
+    setSelectedExperience("all");
+    setSelectedSkillQual("all");
+    setSelectedSalaryExp("all");
+    setSelectedAvailability("all");
+    setSelectedWorkSchedule("all");
+    setSelectedGender("all");
+    setSelectedVerification("all");
+    setSelectedRatingsActivity("all");
+    setFilterSearchQuery("");
+  };
+
+  const toggleFilterSection = (sectionId: number) => {
+    setExpandedFilterSection((prev) => (prev === sectionId ? null : sectionId));
+  };
+
+  const handleSelectFilterOption = (sectionId: number, option: string) => {
+    if (sectionId === 1) {
+      setSelectedLanguage((prev) => (prev === option ? "all" : option));
+      // Switch entire dashboard language immediately when a language is selected!
+      const code = LANG_NAME_TO_CODE[option];
+      if (code) {
+        setLang(code);
+        toast.success(`🌐 Dashboard language changed to ${option}`);
+      }
+    }
+    else if (sectionId === 2) setSelectedCategory((prev) => (prev === option ? "all" : option));
+    else if (sectionId === 3) setSelectedJobType((prev) => (prev === option ? "all" : option));
+    else if (sectionId === 4) setSelectedLocation((prev) => (prev === option ? "all" : option));
+    else if (sectionId === 5) setSelectedExperience((prev) => (prev === option ? "all" : option));
+    else if (sectionId === 6) setSelectedSkillQual((prev) => (prev === option ? "all" : option));
+    else if (sectionId === 7) setSelectedSalaryExp((prev) => (prev === option ? "all" : option));
+    else if (sectionId === 8) setSelectedAvailability((prev) => (prev === option ? "all" : option));
+    else if (sectionId === 9) setSelectedWorkSchedule((prev) => (prev === option ? "all" : option));
+    else if (sectionId === 10) setSelectedGender((prev) => (prev === option ? "all" : option));
+    else if (sectionId === 11) setSelectedVerification((prev) => (prev === option ? "all" : option));
+    else if (sectionId === 12) setSelectedRatingsActivity((prev) => (prev === option ? "all" : option));
+    setJobsPage(1);
+  };
+
+  const isFilterOptionSelected = (sectionId: number, option: string) => {
+    if (sectionId === 1) return selectedLanguage === option;
+    if (sectionId === 2) return selectedCategory === option;
+    if (sectionId === 3) return selectedJobType === option;
+    if (sectionId === 4) return selectedLocation === option;
+    if (sectionId === 5) return selectedExperience === option;
+    if (sectionId === 6) return selectedSkillQual === option;
+    if (sectionId === 7) return selectedSalaryExp === option;
+    if (sectionId === 8) return selectedAvailability === option;
+    if (sectionId === 9) return selectedWorkSchedule === option;
+    if (sectionId === 10) return selectedGender === option;
+    if (sectionId === 11) return selectedVerification === option;
+    if (sectionId === 12) return selectedRatingsActivity === option;
+    return false;
+  };
+
+  const openFilterWithSection = (sectionId: number) => {
+    setExpandedFilterSection(sectionId);
+    setIsFilterModalOpen(true);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (employerNotifRef.current && !employerNotifRef.current.contains(e.target as Node)) {
+        setIsEmployerNotificationsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
 
   // Attendance & Worker Management States
   const [workers, setWorkers] = useState<EmployerWorker[]>([]);
@@ -1187,6 +1763,28 @@ function AdminDashboardPage() {
     industry: "Plant Nursery & Workforce Services",
   });
 
+  const handleEmployerPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error(lang === "mr" ? "फोटोची साईझ 5MB पेक्षा कमी असावी" : "Photo size should be less than 5MB");
+      return;
+    }
+    const tId = toast.loading(lang === "mr" ? "फोटो लोड होत आहे..." : "Loading photo...");
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      setProfileForm((prev) => ({ ...prev, profilePhoto: result }));
+      toast.dismiss(tId);
+      toast.success(lang === "mr" ? "फोटो निवडला गेला!" : "Photo selected!");
+    };
+    reader.onerror = () => {
+      toast.dismiss(tId);
+      toast.error(lang === "mr" ? "फोटो लोड करताना त्रुटी आली" : "Failed to load photo");
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
     if (!profileForm.fullName.trim()) {
@@ -1593,8 +2191,13 @@ function AdminDashboardPage() {
     salaryMin: "", salaryMax: "", salaryType: "Monthly",
     showSalary: true,
     jobType: "Full Time", workMode: "On-site", vacancies: "5",
-    education: "", experience: "", skills: "", description: "",
+    education: "", experience: "Fresher", skills: "", description: "",
     responsibilities: "", benefits: "", status: "Active",
+    preferredLanguage: "English",
+    skillLevel: "Skilled Worker",
+    availability: "Available Immediately",
+    workSchedule: "Day Shift",
+    genderPreference: "Any Gender",
   });
   const setJ = (k: string, v: any) => setJobForm(p => ({ ...p, [k]: v }));
 
@@ -1614,8 +2217,13 @@ function AdminDashboardPage() {
       salaryMin: "", salaryMax: "", salaryType: "Monthly",
       showSalary: true,
       jobType: "Full Time", workMode: "On-site", vacancies: "5",
-      education: "", experience: "", skills: "", description: "",
+      education: "", experience: "Fresher", skills: "", description: "",
       responsibilities: "", benefits: "", status: "Active",
+      preferredLanguage: "English",
+      skillLevel: "Skilled Worker",
+      availability: "Available Immediately",
+      workSchedule: "Day Shift",
+      genderPreference: "Any Gender",
     });
     setShowJobForm(true);
   };
@@ -1672,8 +2280,13 @@ function AdminDashboardPage() {
           salaryMin: "", salaryMax: "", salaryType: "Monthly",
           showSalary: true,
           jobType: "Full Time", workMode: "On-site", vacancies: "5",
-          education: "", experience: "", skills: "", description: "",
+          education: "", experience: "Fresher", skills: "", description: "",
           responsibilities: "", benefits: "", status: "Active",
+          preferredLanguage: "English",
+          skillLevel: "Skilled Worker",
+          availability: "Available Immediately",
+          workSchedule: "Day Shift",
+          genderPreference: "Any Gender",
         });
         setShowJobForm(true);
       },
@@ -1709,12 +2322,17 @@ function AdminDashboardPage() {
       workMode: job.workMode || "On-site",
       vacancies: job.vacancies ? String(job.vacancies) : "5",
       education: job.qualification || "",
-      experience: job.experience || "",
+      experience: job.experience || "Fresher",
       skills: (job.requiredSkills || []).join(", "),
       description: job.description || "",
       responsibilities: (job.responsibilities || []).join("\n"),
       benefits: (job.benefits || []).join(", "),
       status: job.status || "Active",
+      preferredLanguage: job.preferredLanguage || "English",
+      skillLevel: job.skillLevel || "Skilled Worker",
+      availability: job.availability || "Available Immediately",
+      workSchedule: job.workSchedule || "Day Shift",
+      genderPreference: job.genderPreference || "Any Gender",
     });
     setShowJobForm(true);
   };
@@ -1743,7 +2361,7 @@ function AdminDashboardPage() {
         salary: salaryText,
         salaryMin: parsedMin,
         salaryMax: parsedMax,
-        salaryType: "Monthly",
+        salaryType: (jobForm.salaryType || "Monthly") as any,
         showSalary: isShowSalary,
         hideSalary: !isShowSalary,
         location: jobForm.location,
@@ -1751,6 +2369,11 @@ function AdminDashboardPage() {
         workMode: jobForm.workMode as any,
         vacancies: Number(jobForm.vacancies) || 1,
         status: jobForm.status as any,
+        preferredLanguage: jobForm.preferredLanguage,
+        skillLevel: jobForm.skillLevel,
+        availability: jobForm.availability,
+        workSchedule: jobForm.workSchedule,
+        genderPreference: jobForm.genderPreference,
       });
       toast.success("✅ Job posting updated successfully!");
     } else {
@@ -1770,7 +2393,7 @@ function AdminDashboardPage() {
         salary: salaryText,
         salaryMin: parsedMin,
         salaryMax: parsedMax,
-        salaryType: "Monthly",
+        salaryType: (jobForm.salaryType || "Monthly") as any,
         showSalary: isShowSalary,
         hideSalary: !isShowSalary,
         location: jobForm.location,
@@ -1780,6 +2403,11 @@ function AdminDashboardPage() {
         benefits: [],
         status: jobForm.status as any,
         approvalStatus: "pending",
+        preferredLanguage: jobForm.preferredLanguage,
+        skillLevel: jobForm.skillLevel,
+        availability: jobForm.availability,
+        workSchedule: jobForm.workSchedule,
+        genderPreference: jobForm.genderPreference,
       });
 
       if (!isSuperAdmin && currentUser?.id) {
@@ -1807,12 +2435,216 @@ function AdminDashboardPage() {
     toast.success("Job posting removed!");
   };
 
-  const filteredJobs = jobs.filter(
-    (j) =>
-      j.title.toLowerCase().includes(jobSearch.toLowerCase()) ||
-      j.company.toLowerCase().includes(jobSearch.toLowerCase()) ||
-      j.location.toLowerCase().includes(jobSearch.toLowerCase())
-  );
+  const filteredJobs = useMemo(() => {
+    return jobs.filter((j) => {
+      // 1. Text Search query
+      const q = jobSearch.toLowerCase().trim();
+      if (q) {
+        const matchesText =
+          j.title.toLowerCase().includes(q) ||
+          j.company.toLowerCase().includes(q) ||
+          j.location.toLowerCase().includes(q) ||
+          (j.category && j.category.toLowerCase().includes(q)) ||
+          (j.requiredSkills && j.requiredSkills.some((s) => s.toLowerCase().includes(q)));
+        if (!matchesText) return false;
+      }
+
+      // 2. Language Filter (strictly English options)
+      if (selectedLanguage !== "all") {
+        const langLower = selectedLanguage.toLowerCase();
+        const fullText = `${j.title} ${j.description || ""} ${(j.requiredSkills || []).join(" ")}`.toLowerCase();
+        const matchesLang = fullText.includes(langLower);
+        if (!matchesLang && selectedLanguage !== "Other" && selectedLanguage !== "English") {
+          return false;
+        }
+      }
+
+      // 3. Worker Category Filter
+      if (selectedCategory !== "all") {
+        const catLower = selectedCategory.toLowerCase();
+        const fullCatText = `${j.category || ""} ${j.title || ""} ${j.description || ""}`.toLowerCase();
+        const baseTerms = catLower
+          .replace(/worker|staff|cleaner|helper/g, "")
+          .trim()
+          .split(/[\s/]+/)
+          .filter((t) => t.length > 2);
+        const matchesCat =
+          fullCatText.includes(catLower) ||
+          baseTerms.some((term) => fullCatText.includes(term));
+        if (!matchesCat && selectedCategory !== "Other") {
+          return false;
+        }
+      }
+
+      // 4. Work Type Filter
+      if (selectedJobType !== "all") {
+        const typeLower = selectedJobType.toLowerCase();
+        const jType = (j.jobType || "").toLowerCase();
+        const fullTypeText = `${jType} ${j.description || ""}`.toLowerCase();
+        const matchesType =
+          fullTypeText.includes(typeLower) ||
+          (typeLower.includes("full") && fullTypeText.includes("full")) ||
+          (typeLower.includes("part") && fullTypeText.includes("part")) ||
+          (typeLower.includes("contract") && fullTypeText.includes("contract")) ||
+          (typeLower.includes("freelance") && fullTypeText.includes("freelance")) ||
+          (typeLower.includes("temporary") && fullTypeText.includes("temporary")) ||
+          (typeLower.includes("daily") && fullTypeText.includes("daily"));
+        if (!matchesType) return false;
+      }
+
+      // 5. Location & Distance Filter
+      if (selectedLocation !== "all") {
+        const locLower = selectedLocation.toLowerCase();
+        if (!locLower.startsWith("within") && locLower !== "current location" && locLower !== "village" && locLower !== "city" && locLower !== "district" && locLower !== "pin code") {
+          const matchesLoc = (j.location || "").toLowerCase().includes(locLower);
+          if (!matchesLoc) return false;
+        }
+      }
+
+      // 6. Experience Filter
+      if (selectedExperience !== "all") {
+        const expLower = selectedExperience.toLowerCase();
+        const jExp = (j.experience || "").toLowerCase();
+        if (expLower === "fresher") {
+          const isFresher = jExp.includes("fresher") || jExp.includes("0") || !jExp;
+          if (!isFresher) return false;
+        } else {
+          const firstTerm = expLower.split(" ")[0] || "";
+          const matchesExp = jExp.includes(firstTerm) || (j.description && j.description.toLowerCase().includes(expLower));
+          if (!matchesExp && jExp) return false;
+        }
+      }
+
+      // 7. Skills & Qualification Filter
+      if (selectedSkillQual !== "all") {
+        const sqLower = selectedSkillQual.toLowerCase();
+        const jSkill = (j.skillLevel || "").toLowerCase();
+        const jQual = (j.qualification || "").toLowerCase();
+        const fullSqText = `${jSkill} ${jQual} ${(j.requiredSkills || []).join(" ")} ${j.title || ""} ${j.description || ""}`.toLowerCase();
+        
+        let matches = false;
+        if (sqLower === "basic skills") {
+          matches = jSkill.includes("basic") || fullSqText.includes("basic");
+        } else if (sqLower === "skilled worker") {
+          matches = jSkill.includes("skilled worker") || fullSqText.includes("skilled");
+        } else if (sqLower === "highly skilled worker") {
+          matches = jSkill.includes("highly skilled") || fullSqText.includes("highly skilled");
+        } else if (sqLower === "technical skills") {
+          matches = jSkill.includes("technical") || fullSqText.includes("technical");
+        } else if (sqLower === "iti / diploma") {
+          matches = fullSqText.includes("iti") || fullSqText.includes("diploma");
+        } else if (sqLower === "graduate") {
+          matches = fullSqText.includes("graduate") || fullSqText.includes("degree") || fullSqText.includes("bachelor") || fullSqText.includes("b.sc") || fullSqText.includes("b.com") || fullSqText.includes("b.a");
+        } else if (sqLower === "driving licence") {
+          matches = fullSqText.includes("licence") || fullSqText.includes("license") || fullSqText.includes("driving") || fullSqText.includes("driver");
+        } else if (sqLower === "professional certificate") {
+          matches = fullSqText.includes("certificate") || fullSqText.includes("certification");
+        } else if (sqLower === "specialised training") {
+          matches = fullSqText.includes("specialised") || fullSqText.includes("specialized") || fullSqText.includes("training");
+        } else {
+          matches = fullSqText.includes(sqLower);
+        }
+        if (!matches && jSkill) return false;
+      }
+
+      // 8. Salary Expectation Filter
+      if (selectedSalaryExp !== "all") {
+        const salLower = selectedSalaryExp.toLowerCase();
+        const sType = (j.salaryType || "").toLowerCase();
+        const sText = (j.salary || "").toLowerCase();
+        const minVal = j.salaryMin || 0;
+        const maxVal = j.salaryMax || minVal;
+
+        if (salLower === "daily wage") {
+          if (!sType.includes("day") && !sText.includes("day") && !sText.includes("daily")) return false;
+        } else if (salLower === "weekly wage") {
+          if (!sType.includes("week") && !sText.includes("week")) return false;
+        } else if (salLower === "monthly salary") {
+          if (!sType.includes("month") && !sText.includes("month") && sType && sType !== "monthly") return false;
+        } else if (salLower === "negotiable") {
+          if (!sText.includes("negotiable") && !sText.includes("interview") && minVal > 0) return false;
+        } else if (salLower === "below ₹10,000") {
+          if (minVal >= 10000) return false;
+        } else if (salLower === "₹10,000–₹15,000") {
+          if (maxVal < 10000 || minVal > 15000) return false;
+        } else if (salLower === "₹15,000–₹20,000") {
+          if (maxVal < 15000 || minVal > 20000) return false;
+        } else if (salLower === "₹20,000–₹30,000") {
+          if (maxVal < 20000 || minVal > 30000) return false;
+        } else if (salLower === "above ₹30,000") {
+          if (maxVal < 30000) return false;
+        }
+      }
+
+      // 9. Availability Filter
+      if (selectedAvailability !== "all") {
+        const availLower = selectedAvailability.toLowerCase();
+        const jAvail = (j.availability || "").toLowerCase();
+        const fullAvail = `${jAvail} ${j.description || ""}`.toLowerCase();
+        if (jAvail) {
+          if (jAvail !== availLower && !fullAvail.includes(availLower)) return false;
+        }
+      }
+
+      // 10. Work Schedule Filter
+      if (selectedWorkSchedule !== "all") {
+        const wsLower = selectedWorkSchedule.toLowerCase();
+        const jWs = (j.workSchedule || "").toLowerCase();
+        const fullWs = `${jWs} ${j.description || ""}`.toLowerCase();
+        if (jWs) {
+          if (jWs !== wsLower && !fullWs.includes(wsLower)) return false;
+        }
+      }
+
+      // 11. Gender Preference Filter
+      if (selectedGender !== "all") {
+        const gLower = selectedGender.toLowerCase();
+        const jG = (j.genderPreference || "any gender").toLowerCase();
+        if (gLower === "male") {
+          if (jG === "female") return false;
+        } else if (gLower === "female") {
+          if (jG === "male") return false;
+        }
+      }
+
+      // 12. Worker Verification Filter
+      if (selectedVerification !== "all") {
+        const vLower = selectedVerification.toLowerCase();
+        if (vLower === "verified profile" || vLower === "mobile number verified" || vLower === "identity verified") {
+          if (j.approvalStatus === "rejected") return false;
+        }
+      }
+
+      // 13. Ratings & Activity Filter
+      if (selectedRatingsActivity !== "all") {
+        const rLower = selectedRatingsActivity.toLowerCase();
+        if (rLower === "recently active" || rLower === "recently registered") {
+          if (j.status !== "Active") return false;
+        } else if (rLower === "most experienced") {
+          const exp = (j.experience || "").toLowerCase();
+          if (exp.includes("fresher") || exp.includes("0")) return false;
+        }
+      }
+
+      return true;
+    });
+  }, [
+    jobs,
+    jobSearch,
+    selectedLanguage,
+    selectedCategory,
+    selectedJobType,
+    selectedLocation,
+    selectedExperience,
+    selectedSkillQual,
+    selectedSalaryExp,
+    selectedAvailability,
+    selectedWorkSchedule,
+    selectedGender,
+    selectedVerification,
+    selectedRatingsActivity,
+  ]);
+
   const totalJobPages = Math.max(1, Math.ceil(filteredJobs.length / JOBS_PER_PAGE));
   const pagedJobs = filteredJobs.slice((jobsPage - 1) * JOBS_PER_PAGE, jobsPage * JOBS_PER_PAGE);
 
@@ -1847,11 +2679,14 @@ function AdminDashboardPage() {
         {/* Form Container */}
         <div className="max-w-5xl w-full mx-auto p-4 sm:p-8 flex-1">
           <form onSubmit={handlePublishJob} className="space-y-6 pb-12">
-            {/* Section 1 */}
+            {/* Section 1: Basic Job Details & Demographics */}
             <div className="bg-white rounded-2xl border border-[#E0E8F5] shadow-sm overflow-hidden">
               <div className="flex items-center gap-3 px-5 py-3 bg-[#F8FAFF] border-b border-[#E0E8F5]">
                 <span className="size-7 rounded-xl bg-[#063B78] text-white flex items-center justify-center text-xs font-black">1</span>
-                <h2 className="text-sm font-black text-[#10233F]">{t("basicJobDetails")}</h2>
+                <div>
+                  <h2 className="text-sm font-black text-[#10233F]">{t("basicJobDetails")}</h2>
+                  <p className="text-[11px] text-[#5B6B7F]">Title, Category, Location, Language & Gender Preference</p>
+                </div>
               </div>
               <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -1874,66 +2709,131 @@ function AdminDashboardPage() {
                     className="text-xs font-semibold"
                   />
                 </div>
+
+                {/* Worker Category (Filter Section 2) */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="block text-xs font-bold text-[#5B6B7F]">{t("categoryRequired")}</label>
-                    <span className="text-[10px] text-[#125BB5] font-bold">{t("pickExistingOrTypeNew")}</span>
+                    <label className="block text-xs font-bold text-[#5B6B7F]">Worker Category *</label>
+                    <span className="text-[10px] text-[#125BB5] font-bold">19 Worker Types</span>
                   </div>
                   <Input
                     list="admin-category-suggestions"
                     required
                     value={jobForm.category}
                     onChange={(e) => setJ("category", e.target.value)}
-                    placeholder={t("categoryPlaceholder")}
+                    placeholder="e.g. Factory / Manufacturing Worker, Welder, Electrician..."
                     className="text-xs font-semibold"
                   />
                   <datalist id="admin-category-suggestions">
-                    {dataStore.getExistingJobCategories().map((cat) => (
+                    {WORKER_CATEGORY_OPTIONS.map((cat) => (
                       <option key={cat} value={cat} />
+                    ))}
+                    {dataStore.getExistingJobCategories().map((cat) => (
+                      <option key={`existing-${cat}`} value={cat} />
                     ))}
                   </datalist>
                 </div>
+
+                {/* Job Location (Filter Section 4) */}
                 <div>
                   <label className="block text-xs font-bold text-[#5B6B7F] mb-1">{t("locationRequired")}</label>
                   <Input
+                    list="admin-location-suggestions"
                     required
                     value={jobForm.location}
                     onChange={(e) => setJ("location", e.target.value)}
-                    placeholder={t("locationPlaceholder")}
+                    placeholder="e.g. Pune, Mumbai, Kolhapur, Solapur..."
                     className="text-xs font-semibold"
                   />
+                  <datalist id="admin-location-suggestions">
+                    {LOCATION_OPTIONS.map((loc) => (
+                      <option key={loc} value={loc} />
+                    ))}
+                  </datalist>
+                </div>
+
+                {/* Preferred Language (Filter Section 1) */}
+                <div>
+                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Preferred Language *</label>
+                  <select
+                    value={jobForm.preferredLanguage || "English"}
+                    onChange={(e) => setJ("preferredLanguage", e.target.value)}
+                    className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F] bg-white"
+                  >
+                    {LANGUAGE_OPTIONS.map((lang) => (
+                      <option key={lang} value={lang}>{lang}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Gender Preference (Filter Section 10) */}
+                <div>
+                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Gender Preference *</label>
+                  <select
+                    value={jobForm.genderPreference || "Any Gender"}
+                    onChange={(e) => setJ("genderPreference", e.target.value)}
+                    className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F] bg-white"
+                  >
+                    {GENDER_PREFERENCE_OPTIONS.map((g) => (
+                      <option key={g} value={g}>{g}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>
 
-            {/* Section 2 */}
+            {/* Section 2: Salary, Work Type & Schedule */}
             <div className="bg-white rounded-2xl border border-[#E0E8F5] shadow-sm overflow-hidden">
               <div className="flex items-center gap-3 px-5 py-3 bg-[#F8FAFF] border-b border-[#E0E8F5]">
                 <span className="size-7 rounded-xl bg-[#063B78] text-white flex items-center justify-center text-xs font-black">2</span>
-                <h2 className="text-sm font-black text-[#10233F]">{t("salaryAndWorkMode")}</h2>
+                <div>
+                  <h2 className="text-sm font-black text-[#10233F]">{t("salaryAndWorkMode")}</h2>
+                  <p className="text-[11px] text-[#5B6B7F]">Wages, Work Type, Shifts, Work Mode & Vacancies</p>
+                </div>
               </div>
               <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Salary Type / Frequency (Filter Section 7) */}
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Salary Type / Frequency *</label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {["Monthly Salary", "Daily Wage", "Weekly Wage", "Negotiable"].map((st) => (
+                      <button
+                        key={st}
+                        type="button"
+                        onClick={() => setJ("salaryType", st)}
+                        className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                          jobForm.salaryType === st
+                            ? "bg-[#063B78] text-white border-[#063B78] shadow-xs"
+                            : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                        }`}
+                      >
+                        {st}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <div>
-                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">{t("minSalaryLabel")}</label>
+                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">{t("minSalaryLabel")} (₹)</label>
                   <Input
                     type="text"
                     inputMode="numeric"
-                    required
+                    required={jobForm.salaryType !== "Negotiable"}
                     value={jobForm.salaryMin}
                     onChange={(e) => setJ("salaryMin", e.target.value.replace(/\D/g, ""))}
-                    placeholder="e.g. 25000"
+                    placeholder="e.g. 15000"
                     className="text-xs font-semibold"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">{t("maxSalaryLabel")}</label>
+                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">{t("maxSalaryLabel")} (₹)</label>
                   <Input
                     type="text"
                     inputMode="numeric"
-                    required
+                    required={jobForm.salaryType !== "Negotiable"}
                     value={jobForm.salaryMax}
                     onChange={(e) => setJ("salaryMax", e.target.value.replace(/\D/g, ""))}
-                    placeholder="e.g. 45000"
+                    placeholder="e.g. 25000"
                     className="text-xs font-semibold"
                   />
                 </div>
@@ -1948,7 +2848,7 @@ function AdminDashboardPage() {
                       <p className="text-[11px] font-semibold text-[#5B6B7F] mt-0.5">
                         {jobForm.showSalary ? (
                           <span className="text-emerald-700 font-bold">
-                            ✅ 'Yes' selected — Salary will be visible to job seekers {jobForm.salaryMin ? `(e.g. ₹${Number(jobForm.salaryMin).toLocaleString('en-IN')}${jobForm.salaryMax ? ` - ₹${Number(jobForm.salaryMax).toLocaleString('en-IN')}` : ''})` : ''}
+                            ✅ 'Yes' selected — Salary will be visible to job seekers {jobForm.salaryMin ? `(e.g. ₹${Number(jobForm.salaryMin).toLocaleString('en-IN')}${jobForm.salaryMax ? ` - ₹${Number(jobForm.salaryMax).toLocaleString('en-IN')}` : ''} ${jobForm.salaryType || 'Monthly'})` : ''}
                           </span>
                         ) : (
                           <span className="text-rose-700 font-bold">
@@ -1964,8 +2864,8 @@ function AdminDashboardPage() {
                         type="button"
                         onClick={() => setJ("showSalary", true)}
                         className={`px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${jobForm.showSalary
-                            ? "bg-emerald-600 text-white shadow-sm"
-                            : "text-[#5B6B7F] hover:bg-gray-100"
+                          ? "bg-emerald-600 text-white shadow-sm"
+                          : "text-[#5B6B7F] hover:bg-gray-100"
                           }`}
                       >
                         <span className="text-sm">✓</span>
@@ -1975,8 +2875,8 @@ function AdminDashboardPage() {
                         type="button"
                         onClick={() => setJ("showSalary", false)}
                         className={`px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${!jobForm.showSalary
-                            ? "bg-rose-600 text-white shadow-sm"
-                            : "text-[#5B6B7F] hover:bg-gray-100"
+                          ? "bg-rose-600 text-white shadow-sm"
+                          : "text-[#5B6B7F] hover:bg-gray-100"
                           }`}
                       >
                         <span className="text-sm">✕</span>
@@ -1986,33 +2886,49 @@ function AdminDashboardPage() {
                   </div>
                 </div>
 
+                {/* Work Type (Filter Section 3) */}
                 <div>
-                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">{t("jobType")}</label>
+                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Work / Job Type *</label>
                   <select
                     value={jobForm.jobType}
                     onChange={(e) => setJ("jobType", e.target.value)}
-                    className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F]"
+                    className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F] bg-white"
                   >
-                    <option value="Full Time">{t("fullTimeJob")}</option>
-                    <option value="Part Time">{t("partTimeJob")}</option>
-                    <option value="Contract">{t("contractJob")}</option>
-                    <option value="Internship">{t("internshipJob")}</option>
+                    {WORK_TYPE_OPTIONS.map((wt) => (
+                      <option key={wt} value={wt}>{wt}</option>
+                    ))}
                   </select>
                 </div>
+
+                {/* Work Schedule / Shift (Filter Section 9) */}
                 <div>
-                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">{t("workMode")}</label>
+                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Work Schedule / Shift *</label>
+                  <select
+                    value={jobForm.workSchedule || "Day Shift"}
+                    onChange={(e) => setJ("workSchedule", e.target.value)}
+                    className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F] bg-white"
+                  >
+                    {WORK_SCHEDULE_OPTIONS.map((ws) => (
+                      <option key={ws} value={ws}>{ws}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">{t("workMode")} *</label>
                   <select
                     value={jobForm.workMode}
                     onChange={(e) => setJ("workMode", e.target.value)}
-                    className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F]"
+                    className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F] bg-white"
                   >
                     <option value="On-site">{t("onSiteMode")}</option>
                     <option value="Work From Home">{t("workFromHomeMode")}</option>
                     <option value="Hybrid">{t("hybridMode")}</option>
                   </select>
                 </div>
+
                 <div>
-                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">{t("vacancies")}</label>
+                  <label className="block text-xs font-bold text-[#5B6B7F] mb-1">{t("vacancies")} *</label>
                   <Input
                     type="text"
                     inputMode="numeric"
@@ -2025,13 +2941,81 @@ function AdminDashboardPage() {
               </div>
             </div>
 
-            {/* Section 3 */}
+            {/* Section 3: Skills, Qualification, Experience & Availability */}
             <div className="bg-white rounded-2xl border border-[#E0E8F5] shadow-sm overflow-hidden">
               <div className="flex items-center gap-3 px-5 py-3 bg-[#F8FAFF] border-b border-[#E0E8F5]">
                 <span className="size-7 rounded-xl bg-[#063B78] text-white flex items-center justify-center text-xs font-black">3</span>
-                <h2 className="text-sm font-black text-[#10233F]">{t("jobDescriptionAndRequirements")}</h2>
+                <div>
+                  <h2 className="text-sm font-black text-[#10233F]">{t("jobDescriptionAndRequirements")}</h2>
+                  <p className="text-[11px] text-[#5B6B7F]">Skills, Qualifications, Experience, Availability & Description</p>
+                </div>
               </div>
               <div className="p-5 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Skill & Qualification Level (Filter Section 6) */}
+                  <div>
+                    <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Skills & Qualification Level *</label>
+                    <select
+                      value={jobForm.skillLevel || "Skilled Worker"}
+                      onChange={(e) => setJ("skillLevel", e.target.value)}
+                      className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F] bg-white"
+                    >
+                      {SKILL_QUAL_OPTIONS.map((sq) => (
+                        <option key={sq} value={sq}>{sq}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Required Experience (Filter Section 5) */}
+                  <div>
+                    <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Required Experience *</label>
+                    <select
+                      value={jobForm.experience || "Fresher"}
+                      onChange={(e) => setJ("experience", e.target.value)}
+                      className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F] bg-white"
+                    >
+                      {EXPERIENCE_OPTIONS.map((exp) => (
+                        <option key={exp} value={exp}>{exp}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Joining Availability (Filter Section 8) */}
+                  <div>
+                    <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Candidate Availability *</label>
+                    <select
+                      value={jobForm.availability || "Available Immediately"}
+                      onChange={(e) => setJ("availability", e.target.value)}
+                      className="w-full h-9 px-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F] bg-white"
+                    >
+                      {AVAILABILITY_OPTIONS.map((av) => (
+                        <option key={av} value={av}>{av}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Specific Education / Degree</label>
+                    <Input
+                      value={jobForm.education}
+                      onChange={(e) => setJ("education", e.target.value)}
+                      placeholder="e.g. 10th Pass, 12th Pass, ITI (Fitter/Welder), Diploma..."
+                      className="text-xs font-semibold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-[#5B6B7F] mb-1">Key Skills (Comma Separated)</label>
+                    <Input
+                      value={jobForm.skills}
+                      onChange={(e) => setJ("skills", e.target.value)}
+                      placeholder="e.g. MIG Welding, CNC Machine, Tool Handling..."
+                      className="text-xs font-semibold"
+                    />
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-xs font-bold text-[#5B6B7F] mb-1">{t("jobDescriptionRequired")}</label>
                   <textarea
@@ -2042,26 +3026,6 @@ function AdminDashboardPage() {
                     placeholder={t("jobDescriptionPlaceholder")}
                     className="w-full p-3 rounded-xl border border-[#DCE5F0] text-xs font-semibold text-[#10233F] focus:outline-none focus:border-[#063B78]"
                   />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-[#5B6B7F] mb-1">{t("requiredQualificationLabel")}</label>
-                    <Input
-                      value={jobForm.education}
-                      onChange={(e) => setJ("education", e.target.value)}
-                      placeholder={t("qualificationPlaceholder")}
-                      className="text-xs font-semibold"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-[#5B6B7F] mb-1">{t("requiredExperienceLabel")}</label>
-                    <Input
-                      value={jobForm.experience}
-                      onChange={(e) => setJ("experience", e.target.value)}
-                      placeholder={t("experiencePlaceholder")}
-                      className="text-xs font-semibold"
-                    />
-                  </div>
                 </div>
               </div>
             </div>
@@ -2084,34 +3048,176 @@ function AdminDashboardPage() {
     );
   }
 
+  // Derive dynamic company brand name & parts for branded top bar
+  const rawCompanyName = currentUser?.companyName || currentUser?.fullName || "Green Agro";
+  const nameParts = rawCompanyName.trim().split(/\s+/);
+  const companyFirstWord = nameParts[0] ? (nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1)) : "Green";
+  const companyRestWords = nameParts.length > 1 ? nameParts.slice(1).map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ") : "";
+  // Real notifications count (no dummy data)
+  const realNotificationCount = applications.filter((a) => a.status === "Applied" || !a.replyMessage).length;
+
+  const getJobThumbnail = (category: string = "", customImg?: string) => {
+    if (customImg) return customImg;
+    const cats: Record<string, string> = {
+      "Construction Work": "https://images.unsplash.com/photo-1504307651254-35680f356f12?q=80&w=800&auto=format&fit=crop",
+      "Helper / Labour": "https://images.unsplash.com/photo-1504307651254-35680f356f12?q=80&w=800&auto=format&fit=crop",
+      "Sugar Factory": "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?q=80&w=800&auto=format&fit=crop",
+      "Textile Factory": "https://images.unsplash.com/photo-1554900593-36cbce54497a?q=80&w=800&auto=format&fit=crop",
+      "Chemical Pharma": "https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?q=80&w=800&auto=format&fit=crop",
+      "Automobile Engineering": "https://images.unsplash.com/photo-1563720223185-11003d516935?q=80&w=800&auto=format&fit=crop",
+      "Food Processing": "https://images.unsplash.com/photo-1565557623262-b51c2513a641?q=80&w=800&auto=format&fit=crop",
+      "Driver & Transport": "https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?q=80&w=800&auto=format&fit=crop",
+      "Security Guard": "https://images.unsplash.com/photo-1557597774-9d273605dfa9?q=80&w=800&auto=format&fit=crop",
+    };
+    return cats[category] || "https://images.unsplash.com/photo-1504307651254-35680f356f12?q=80&w=800&auto=format&fit=crop";
+  };
+
   return (
     <div className="h-screen bg-[#F0F4FA] flex flex-col md:flex-row font-sans w-full overflow-hidden">
       {/* ── MOBILE TOP NAVBAR HEADER (Visible on < md) ── */}
-      <header className="md:hidden bg-[#021D3D] text-white px-4 py-3 sticky top-0 z-40 flex items-center justify-between shadow-md border-b border-white/10 shrink-0 w-full">
-        <div className="flex items-center gap-3 min-w-0 pr-2">
-          <div className="size-9 bg-gradient-to-br from-[#FFC400] to-[#FFA500] rounded-xl flex items-center justify-center shadow-md border border-white/10 shrink-0">
-            <Building2 className="size-5 text-[#021D3D]" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <h1 suppressHydrationWarning className="font-black text-xs text-white truncate leading-tight">
-              {currentUser?.fullName || t("employerPortal")}
-            </h1>
-            <span className="text-[10px] text-[#FFC400] font-black uppercase block tracking-wider leading-tight mt-0.5">
-              {t("employerPortal")}
+      <header className="md:hidden bg-gradient-to-r from-[#0352A0] via-[#0266D0] to-[#013F85] text-white px-3.5 sm:px-4 py-2.5 sticky top-0 z-40 flex items-center justify-between shadow-md border-b-[2px] border-[#A3E635]/70 shrink-0 w-full min-w-0">
+        {/* 1. Left: Company Name & Subtitle */}
+        <div className="flex items-center min-w-0 pr-2">
+          <div className="flex flex-col min-w-0">
+            <div className="flex items-center gap-1 leading-tight">
+              <span className="font-black text-sm sm:text-base tracking-tight text-white">
+                {companyFirstWord}
+              </span>
+              {companyRestWords ? (
+                <span className="font-black text-sm sm:text-base tracking-tight text-[#A3E635]">
+                  {companyRestWords}
+                </span>
+              ) : (
+                <span className="size-1.5 rounded-full bg-[#A3E635] inline-block mb-0.5" />
+              )}
+            </div>
+            <span className="text-[9px] sm:text-[10px] text-white/80 font-semibold tracking-wider leading-none mt-0.5 whitespace-nowrap">
+              Manage • Track • Grow
             </span>
           </div>
         </div>
 
-        <button
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="p-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-all cursor-pointer shrink-0 ml-1"
-          aria-label="Toggle menu"
-        >
-          {isMobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
-        </button>
+        {/* 2. Right: Notification Bell (Exact Seeker logic & popup) & Mobile Menu */}
+        <div className="flex items-center gap-2 shrink-0 relative" ref={employerNotifRef}>
+          {/* Notification Bell with Badge */}
+          <button
+            type="button"
+            onClick={() => setIsEmployerNotificationsOpen(!isEmployerNotificationsOpen)}
+            className="relative p-1.5 rounded-xl hover:bg-white/10 text-white transition-colors cursor-pointer"
+            title="Notifications"
+            aria-label="Notifications"
+          >
+            <Bell className="size-5" />
+            {realNotificationCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 bg-[#EF4444] text-white text-[10px] font-black rounded-full flex items-center justify-center shadow-xs">
+                {realNotificationCount > 9 ? "9+" : realNotificationCount}
+              </span>
+            )}
+          </button>
+
+          {/* Notifications Dropdown Popup - Exact Seeker Logic */}
+          {isEmployerNotificationsOpen && (
+            <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 bg-white text-slate-800 rounded-2xl shadow-2xl border border-slate-100 p-3 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100 mb-2">
+                <div className="flex items-center gap-1.5">
+                  <Bell className="size-4 text-[#0284C7]" />
+                  <span className="font-bold text-xs text-slate-800">
+                    {lang === "mr" ? "अर्जदार व सूचना" : "Applicant Notifications"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  {realNotificationCount > 0 ? (
+                    <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                      {realNotificationCount} {lang === "mr" ? "नवीन" : "New"}
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-medium text-slate-400">0</span>
+                  )}
+                  <button
+                    onClick={() => setIsEmployerNotificationsOpen(false)}
+                    className="p-1 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              {applications.length === 0 ? (
+                <div className="py-6 px-3 text-center space-y-1.5">
+                  <div className="size-9 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+                    <MessageCircle className="size-4.5" />
+                  </div>
+                  <p className="font-bold text-xs text-slate-700">
+                    {lang === "mr" ? "सध्या कोणताही नवीन अर्ज नाही" : "No new applications yet"}
+                  </p>
+                  <p className="text-[10px] text-slate-400 leading-normal max-w-xs mx-auto font-medium">
+                    {lang === "mr"
+                      ? "उमेदवारांनी तुमच्या जॉबवर अर्ज केल्यावर ते येथे दिसतील."
+                      : "When job seekers apply for your posted jobs, they will appear here."}
+                  </p>
+                </div>
+              ) : (
+                <div className="max-h-72 overflow-y-auto space-y-2 pr-0.5" style={{ scrollbarWidth: "thin" }}>
+                  {applications.slice(0, 10).map((app) => (
+                    <div
+                      key={app.id}
+                      onClick={() => {
+                        setIsEmployerNotificationsOpen(false);
+                        setActiveTab("applications");
+                      }}
+                      className="p-2.5 rounded-xl bg-blue-50/50 border border-blue-100/60 hover:bg-blue-50/90 transition-all text-left space-y-1 cursor-pointer"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-black text-slate-800 text-[11px] truncate flex items-center gap-1">
+                          <User className="size-3 text-[#0284C7] shrink-0" />
+                          {app.candidateName}
+                        </span>
+                        <span className="text-[9px] text-slate-400 font-semibold shrink-0">
+                          {app.appliedDate}
+                        </span>
+                      </div>
+                      <p className="text-[10px] font-semibold text-[#0284C7] truncate">
+                        {app.jobTitle}
+                      </p>
+                      <div className="flex items-center justify-between text-[10px] text-slate-500 pt-0.5">
+                        <span>📱 {app.candidateMobile || "Registered"}</span>
+                        <span className="px-1.5 py-0.5 rounded-md bg-white border border-slate-200 font-bold text-[9px] text-slate-700">
+                          {app.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsEmployerNotificationsOpen(false);
+                      setActiveTab("applications");
+                    }}
+                    className="w-full py-2 mt-1 text-center text-xs font-black text-[#0284C7] hover:underline cursor-pointer"
+                  >
+                    {lang === "mr" ? "सर्व अर्ज पहा (View All) →" : "View All Applications →"}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Menu Hamburger */}
+          <button
+            type="button"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="size-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all cursor-pointer"
+            aria-label="Toggle menu"
+          >
+            {isMobileMenuOpen ? <X className="size-4" /> : <Menu className="size-4" />}
+          </button>
+        </div>
       </header>
 
-      {/* ── MOBILE DRAWER SLIDE-OVER MENU ── */}
+
+
+  {/* ── MOBILE DRAWER SLIDE-OVER MENU ── */}
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-50 md:hidden flex">
           <div
@@ -2129,7 +3235,19 @@ function AdminDashboardPage() {
                     <h2 suppressHydrationWarning className="font-black text-sm text-white truncate">
                       {currentUser?.fullName || "Employer"}
                     </h2>
-                    <p className="text-[11px] text-[#FFC400] font-bold">{t("verifiedEmployer")}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <p className="text-[11px] text-[#FFC400] font-bold">{t("verifiedEmployer")}</p>
+                      <button
+                        onClick={() => {
+                          setIsMobileMenuOpen(false);
+                          handleEmployerLogout();
+                        }}
+                        className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-300 hover:text-white bg-rose-500/20 hover:bg-rose-500/30 px-2 py-0.5 rounded-full border border-rose-400/40 transition-colors cursor-pointer"
+                      >
+                        <LogOut className="size-2.5" />
+                        <span>{t("signOut")}</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
                 <button onClick={() => setIsMobileMenuOpen(false)} className="p-1.5 rounded-lg text-white/60 hover:text-white hover:bg-white/10">
@@ -2144,7 +3262,7 @@ function AdminDashboardPage() {
                   { id: "applications", label: t("jobApplications"), icon: FileText, count: applications.length },
                   { id: "attendance", label: t("attendancePayroll"), icon: CalendarCheck, count: workers.length },
                   { id: "salary", label: t("eSalarySlips"), icon: FileText },
-                  { id: "reports", label: "Reports", icon: PieChart },
+                  { id: "reports", label: t("reports"), icon: PieChart },
                   { id: "packages", label: t("myPackagesBilling"), icon: IndianRupee },
                   { id: "profile", label: t("myProfile"), icon: User },
                 ].map((item) => {
@@ -2181,16 +3299,7 @@ function AdminDashboardPage() {
               <button
                 onClick={() => {
                   setIsMobileMenuOpen(false);
-                  dataStore.logout("employer");
-                  localStorage.removeItem("realjob-employer-profile");
-                  localStorage.removeItem("realjob-user-admin");
-                  localStorage.removeItem("realjob-user-employer");
-                  localStorage.removeItem("realjob-user");
-                  localStorage.removeItem("realjob-role");
-                  sessionStorage.removeItem("realjob_tab_user");
-                  toast.info("Logged out successfully");
-                  navigate({ to: "/auth", search: { mode: "login", role: "admin" }, replace: true });
-                  if (typeof window !== "undefined") window.scrollTo(0, 0);
+                  handleEmployerLogout();
                 }}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold text-rose-400 hover:bg-rose-500/10 transition-colors"
               >
@@ -2228,7 +3337,7 @@ function AdminDashboardPage() {
             { id: "applications", label: t("jobApplications"), icon: FileText, count: applications.length },
             { id: "attendance", label: t("attendancePayroll"), icon: CalendarCheck, count: workers.length },
             { id: "salary", label: t("eSalarySlips"), icon: FileText },
-            { id: "reports", label: "Reports", icon: PieChart },
+            { id: "reports", label: t("reports"), icon: PieChart },
             { id: "packages", label: t("myPackagesBilling"), icon: IndianRupee },
             { id: "profile", label: t("myProfile"), icon: User },
           ].map((item) => {
@@ -2260,18 +3369,7 @@ function AdminDashboardPage() {
         {/* Bottom Sign Out Action */}
         <div className="p-4 border-t border-white/10 shrink-0 mt-auto">
           <button
-            onClick={() => {
-              dataStore.logout("employer");
-              localStorage.removeItem("realjob-employer-profile");
-              localStorage.removeItem("realjob-user-admin");
-              localStorage.removeItem("realjob-user-employer");
-              localStorage.removeItem("realjob-user");
-              localStorage.removeItem("realjob-role");
-              sessionStorage.removeItem("realjob_tab_user");
-              toast.info("Logged out successfully");
-              navigate({ to: "/auth", search: { mode: "login", role: "admin" }, replace: true });
-              if (typeof window !== "undefined") window.scrollTo(0, 0);
-            }}
+            onClick={handleEmployerLogout}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-rose-400 hover:bg-rose-500/10 transition-all"
           >
             <LogOut className="size-4" />
@@ -2282,8 +3380,8 @@ function AdminDashboardPage() {
 
       {/* ── RIGHT MAIN CONTENT AREA ── */}
       <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
-        {/* Top Navbar Header */}
-        <header className="h-16 sm:h-20 bg-white border-b border-[#E0E8F5] flex items-center justify-between px-3 sm:px-8 shrink-0 z-30 shadow-2xs min-w-0">
+        {/* Top Navbar Header (Hidden on mobile as requested, visible on md+) */}
+        <header className="hidden md:flex h-16 sm:h-20 bg-white border-b border-[#E0E8F5] items-center justify-between px-3 sm:px-8 shrink-0 z-30 shadow-2xs min-w-0">
           <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1 mr-2">
             <h2 className="text-sm sm:text-xl font-black text-[#063B78] truncate leading-tight">
               {activeTab === "overview" && t("dashboardOverview")}
@@ -2293,7 +3391,7 @@ function AdminDashboardPage() {
               {activeTab === "packages" && t("myPackagesBilling")}
               {activeTab === "profile" && t("myProfile")}
               {activeTab === "salary" && t("employeeSalarySlipsTitle")}
-              {activeTab === "reports" && "Reports"}
+              {activeTab === "reports" && t("reports")}
             </h2>
           </div>
 
@@ -2354,7 +3452,7 @@ function AdminDashboardPage() {
                 const latestPkg = userPkgs.length > 0 ? userPkgs[0] : null;
 
                 return (
-                  <div className="bg-gradient-to-r from-[#021D3D] via-[#063B78] to-[#0A4F9E] rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-white shadow-xl border border-amber-400/20 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-6 relative overflow-hidden">
+                  <div className="hidden md:flex bg-gradient-to-r from-[#021D3D] via-[#063B78] to-[#0A4F9E] rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-white shadow-xl border border-amber-400/20 flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-6 relative overflow-hidden">
                     <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 size-48 bg-amber-400/10 rounded-full blur-2xl pointer-events-none"></div>
                     <div className="space-y-2.5 z-10 w-full md:w-auto">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -2403,6 +3501,377 @@ function AdminDashboardPage() {
                 );
               })()}
 
+              {/* ── MOBILE VIEW: Employer Dashboard (Matching Screenshot Color Combination) ── */}
+              <div className="block md:hidden space-y-4">
+                {/* 1. Mobile Search Bar & Filter Pills */}
+                <div className="space-y-2">
+                  <div className="relative w-full">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-[#0062FF]" />
+                    <input
+                      type="text"
+                      placeholder={mdI18n.searchPlaceholder}
+                      value={jobSearch}
+                      onChange={(e) => {
+                        setJobSearch(e.target.value);
+                        setJobsPage(1);
+                      }}
+                      className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#CCE3FF] rounded-full text-xs font-semibold text-[#10233F] placeholder:text-[#7A8B9E] focus:outline-none focus:border-[#0062FF] shadow-2xs"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+                    <button
+                      type="button"
+                      onClick={() => openFilterWithSection(4)}
+                      className={`flex-1 py-1.5 px-3 rounded-full border text-xs font-bold flex items-center justify-center gap-1 shadow-2xs whitespace-nowrap transition-all cursor-pointer ${
+                        selectedLocation !== "all"
+                          ? "bg-[#0062FF] text-white border-[#0062FF]"
+                          : "bg-white border-[#CCE3FF] text-[#0062FF]"
+                      }`}
+                    >
+                      <MapPin className="size-3.5 shrink-0" />
+                      <span className="truncate max-w-[85px]">{selectedLocation !== "all" ? selectedLocation : t("location")}</span>
+                      <ChevronDown className="size-3" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => openFilterWithSection(2)}
+                      className={`flex-1 py-1.5 px-3 rounded-full border text-xs font-bold flex items-center justify-center gap-1 shadow-2xs whitespace-nowrap transition-all cursor-pointer ${
+                        selectedCategory !== "all"
+                          ? "bg-[#0062FF] text-white border-[#0062FF]"
+                          : "bg-white border-[#CCE3FF] text-[#0062FF]"
+                      }`}
+                    >
+                      <Layers className="size-3.5 shrink-0" />
+                      <span className="truncate max-w-[85px]">{selectedCategory !== "all" ? selectedCategory : t("categories")}</span>
+                      <ChevronDown className="size-3" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => openFilterWithSection(1)}
+                      className={`flex-1 py-1.5 px-3 rounded-full border text-xs font-bold flex items-center justify-center gap-1 shadow-2xs whitespace-nowrap transition-all cursor-pointer ${
+                        activeFilterCount > 0
+                          ? "bg-[#0062FF] text-white border-[#0062FF]"
+                          : "bg-white border-[#CCE3FF] text-[#0062FF]"
+                      }`}
+                    >
+                      <Filter className="size-3.5 shrink-0" />
+                      <span>{mdI18n.filterText} {activeFilterCount > 0 ? `(${activeFilterCount})` : ""}</span>
+                      <ChevronDown className="size-3" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* 2. Two Action Cards: Find Workers & Post Job */}
+                <div className="grid grid-cols-2 gap-2.5">
+                  {/* Find Workers (Blue Gradient) */}
+                  <div
+                    onClick={() => setActiveTab("attendance")}
+                    className="bg-gradient-to-r from-[#0057FF] to-[#0095FF] rounded-2xl p-3 text-white flex items-center justify-between shadow-xs cursor-pointer active:scale-98 transition-transform"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="size-8 rounded-full bg-white text-[#0057FF] flex items-center justify-center shrink-0 shadow-2xs font-bold">
+                        <Users className="size-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="font-black text-xs leading-tight text-white">{mdI18n.findWorkers}</h4>
+                        <p className="text-[9px] text-white/80 line-clamp-1 mt-0.5 leading-tight">
+                          {mdI18n.findWorkersDesc}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="size-5.5 rounded-full bg-white text-[#0057FF] flex items-center justify-center shrink-0 ml-1">
+                      <ArrowRight className="size-3" />
+                    </div>
+                  </div>
+
+                  {/* Post Job (Green Gradient) */}
+                  <div
+                    onClick={handleAddNewJobClick}
+                    className="bg-gradient-to-r from-[#00A854] to-[#10B981] rounded-2xl p-3 text-white flex items-center justify-between shadow-xs cursor-pointer active:scale-98 transition-transform"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="size-8 rounded-full bg-white text-[#00A854] flex items-center justify-center shrink-0 shadow-2xs font-bold">
+                        <BriefcaseBusiness className="size-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="font-black text-xs leading-tight text-white">{mdI18n.postJob}</h4>
+                        <p className="text-[9px] text-white/80 line-clamp-1 mt-0.5 leading-tight">
+                          {mdI18n.postJobDesc}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="size-5.5 rounded-full bg-white text-[#00A854] flex items-center justify-center shrink-0 ml-1">
+                      <ArrowRight className="size-3" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Four Metric Cards (2x2 Grid) - Exact Colors from Screenshot */}
+                <div className="grid grid-cols-2 gap-2.5">
+                  {/* Card 1: Total Job Posts (Pink) */}
+                  <div
+                    onClick={() => setActiveTab("jobs")}
+                    className="bg-[#FFF0F4] border border-[#FFD5DF] rounded-2xl p-3 flex flex-col justify-between shadow-2xs cursor-pointer active:scale-98 transition-transform"
+                  >
+                    <div className="size-8 rounded-full bg-[#FF3366] text-white flex items-center justify-center shrink-0 shadow-xs">
+                      <FileText className="size-4" />
+                    </div>
+                    <div className="mt-2">
+                      <span className="text-[11px] font-bold text-[#4B5563] block">{t("totalPostedJobs")}</span>
+                      <div className="flex items-center justify-between mt-0.5">
+                        <span className="text-2xl font-black text-[#1F2937] leading-none">{n(jobs.length)}</span>
+                        <ChevronRight className="size-4 text-[#FF3366]" />
+                      </div>
+                    </div>
+                    <div className="mt-2 flex items-center gap-1 text-[10px] font-black text-emerald-600">
+                      <span>📌</span>
+                      <span>+{n(Math.max(1, Math.min(jobs.length, 2)))} {t("thisWeek")}</span>
+                    </div>
+                  </div>
+
+                  {/* Card 2: Applications Received (Blue) */}
+                  <div
+                    onClick={() => setActiveTab("applications")}
+                    className="bg-[#EDF6FF] border border-[#CCE3FF] rounded-2xl p-3 flex flex-col justify-between shadow-2xs cursor-pointer active:scale-98 transition-transform"
+                  >
+                    <div className="size-8 rounded-full bg-[#0080FF] text-white flex items-center justify-center shrink-0 shadow-xs">
+                      <Users className="size-4" />
+                    </div>
+                    <div className="mt-2">
+                      <span className="text-[11px] font-bold text-[#4B5563] block">{t("totalApplications")}</span>
+                      <div className="flex items-center justify-between mt-0.5">
+                        <span className="text-2xl font-black text-[#1F2937] leading-none">{n(applications.length)}</span>
+                        <ChevronRight className="size-4 text-[#0080FF]" />
+                      </div>
+                    </div>
+                    <div className="mt-2 flex items-center gap-1 text-[10px] font-black text-emerald-600">
+                      <span>📌</span>
+                      <span>+{n(Math.max(1, Math.min(applications.length, 5)))} {t("thisWeek")}</span>
+                    </div>
+                  </div>
+
+                  {/* Card 3: Hired Workers (Yellow/Orange) */}
+                  <div
+                    onClick={() => setActiveTab("attendance")}
+                    className="bg-[#FFF9E6] border border-[#FFE8A3] rounded-2xl p-3 flex flex-col justify-between shadow-2xs cursor-pointer active:scale-98 transition-transform"
+                  >
+                    <div className="size-8 rounded-full bg-[#FF9900] text-white flex items-center justify-center shrink-0 shadow-xs">
+                      <HardHat className="size-4" />
+                    </div>
+                    <div className="mt-2">
+                      <span className="text-[11px] font-bold text-[#4B5563] block">{t("totalEmployeesLabel")}</span>
+                      <div className="flex items-center justify-between mt-0.5">
+                        <span className="text-2xl font-black text-[#1F2937] leading-none">{n(workers.length)}</span>
+                        <ChevronRight className="size-4 text-[#FF9900]" />
+                      </div>
+                    </div>
+                    <div className="mt-2 flex items-center gap-1 text-[10px] font-black text-emerald-600">
+                      <span>📌</span>
+                      <span>+{n(Math.max(1, Math.min(workers.length, 3)))} {t("thisWeek")}</span>
+                    </div>
+                  </div>
+
+                  {/* Card 4: Active Jobs (Purple) */}
+                  <div
+                    onClick={() => setActiveTab("jobs")}
+                    className="bg-[#F8EEFF] border border-[#E9CCFF] rounded-2xl p-3 flex flex-col justify-between shadow-2xs cursor-pointer active:scale-98 transition-transform"
+                  >
+                    <div className="size-8 rounded-full bg-[#9333EA] text-white flex items-center justify-center shrink-0 shadow-xs">
+                      <CalendarCheck className="size-4" />
+                    </div>
+                    <div className="mt-2">
+                      <span className="text-[11px] font-bold text-[#4B5563] block">{t("activeJobsLabel")}</span>
+                      <div className="flex items-center justify-between mt-0.5">
+                        <span className="text-2xl font-black text-[#1F2937] leading-none">
+                          {n(jobs.filter((j) => j.status === "Active").length)}
+                        </span>
+                        <ChevronRight className="size-4 text-[#9333EA]" />
+                      </div>
+                    </div>
+                    <div className="mt-2 flex items-center gap-1 text-[10px] font-black text-emerald-600">
+                      <span>📌</span>
+                      <span>+1 {t("thisWeek")}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4. POSTED JOB CARD - Matching Screenshot Color Combination */}
+                {(() => {
+                  const sampleJob = jobs[0] || {
+                    id: "demo-helper-labour",
+                    title: "Helper / Labour",
+                    location: "Ichalkaranji, Maharashtra",
+                    category: "Construction Work",
+                    vacancies: 10,
+                    postedAgo: "15 Oct 2026, 10:30 AM",
+                    status: "Active",
+                  };
+
+                  return (
+                    <div className="bg-[#F0F7FF] border border-[#CCE5FF] rounded-2xl p-3.5 shadow-2xs space-y-3">
+                      <div className="flex items-start gap-3">
+                        {/* Thumbnail with Active badge */}
+                        <div className="relative size-20 sm:size-24 rounded-xl overflow-hidden shrink-0 border border-blue-100 shadow-2xs">
+                          <img
+                            src={getJobThumbnail(sampleJob.category)}
+                            alt={sampleJob.title}
+                            className="w-full h-full object-cover"
+                          />
+                          <span className="absolute top-1 right-1 bg-[#10B981] text-white text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-xs">
+                            {sampleJob.status === "Active" ? mdI18n.activeBadge : sampleJob.status}
+                          </span>
+                        </div>
+
+                        {/* Details */}
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <h4 className="font-black text-sm text-[#10233F] truncate leading-tight">
+                            {sampleJob.title}
+                          </h4>
+                          <p className="flex items-center gap-1 text-[11px] font-bold text-[#0062FF] truncate">
+                            <MapPin className="size-3 shrink-0" />
+                            <span className="truncate">{sampleJob.location}</span>
+                          </p>
+                          <p className="flex items-center gap-1 text-[11px] font-semibold text-[#0062FF] truncate">
+                            <Building2 className="size-3 shrink-0" />
+                            <span className="truncate">{sampleJob.category}</span>
+                          </p>
+                          <p className="flex items-center gap-1 text-[11px] font-bold text-[#0062FF] truncate">
+                            <Users className="size-3 shrink-0" />
+                            <span>{n(sampleJob.vacancies || 10)} {mdI18n.workersRequired}</span>
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Footer Row: Posted date & View Details button */}
+                      <div className="flex items-center justify-between pt-2 border-t border-[#CCE5FF]/60 gap-2">
+                        <div className="flex items-center gap-1 text-[11px] font-semibold text-[#0062FF]">
+                          <Calendar className="size-3.5 shrink-0" />
+                          <span>{mdI18n.postedOn} {sampleJob.postedAgo || "15 Oct 2026, 10:30 AM"}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab("jobs")}
+                          className="bg-white border-2 border-[#0062FF] hover:bg-blue-50 text-[#0062FF] font-black text-xs px-3.5 py-1 rounded-full shadow-2xs transition-all flex items-center gap-1 cursor-pointer"
+                        >
+                          <span>{mdI18n.viewDetails}</span>
+                          <span>›</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* 5. Six Navigation Cards (2 Columns x 3 Rows) */}
+                <div className="grid grid-cols-2 gap-2.5">
+                  {/* 1. Home */}
+                  <div
+                    onClick={() => setActiveTab("overview")}
+                    className="bg-[#F0F7FF] border border-[#CCE5FF] rounded-2xl p-2.5 flex items-center justify-between shadow-2xs cursor-pointer active:scale-98 transition-transform"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="size-8 rounded-full bg-[#0062FF] text-white flex items-center justify-center shrink-0 shadow-2xs">
+                        <Home className="size-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <h5 className="font-black text-xs text-[#10233F] leading-tight">{t("home")}</h5>
+                        <p className="text-[9px] text-[#5B6B7F] line-clamp-1">{mdI18n.homeDesc}</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="size-4 text-[#0062FF] shrink-0" />
+                  </div>
+
+                  {/* 2. Job */}
+                  <div
+                    onClick={() => setActiveTab("jobs")}
+                    className="bg-[#FFF9E6] border border-[#FFE8A3] rounded-2xl p-2.5 flex items-center justify-between shadow-2xs cursor-pointer active:scale-98 transition-transform"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="size-8 rounded-full bg-[#FF9900] text-white flex items-center justify-center shrink-0 shadow-2xs">
+                        <BriefcaseBusiness className="size-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <h5 className="font-black text-xs text-[#10233F] leading-tight">{t("jobs")}</h5>
+                        <p className="text-[9px] text-[#5B6B7F] line-clamp-1">{mdI18n.jobsDesc}</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="size-4 text-[#FF9900] shrink-0" />
+                  </div>
+
+                  {/* 3. Applications */}
+                  <div
+                    onClick={() => setActiveTab("applications")}
+                    className="bg-[#F8EEFF] border border-[#E9CCFF] rounded-2xl p-2.5 flex items-center justify-between shadow-2xs cursor-pointer active:scale-98 transition-transform"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="size-8 rounded-full bg-[#9333EA] text-white flex items-center justify-center shrink-0 shadow-2xs">
+                        <FileText className="size-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <h5 className="font-black text-xs text-[#10233F] leading-tight">{t("applications")}</h5>
+                        <p className="text-[9px] text-[#5B6B7F] line-clamp-1">{mdI18n.appsDesc}</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="size-4 text-[#9333EA] shrink-0" />
+                  </div>
+
+                  {/* 4. Report */}
+                  <div
+                    onClick={() => setActiveTab("reports")}
+                    className="bg-[#FFF0F4] border border-[#FFD5DF] rounded-2xl p-2.5 flex items-center justify-between shadow-2xs cursor-pointer active:scale-98 transition-transform"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="size-8 rounded-full bg-[#FF3366] text-white flex items-center justify-center shrink-0 shadow-2xs">
+                        <TrendingUp className="size-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <h5 className="font-black text-xs text-[#10233F] leading-tight">{t("reports")}</h5>
+                        <p className="text-[9px] text-[#5B6B7F] line-clamp-1">{mdI18n.reportsDesc}</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="size-4 text-[#FF3366] shrink-0" />
+                  </div>
+
+                  {/* 5. E-Salary */}
+                  <div
+                    onClick={() => setActiveTab("salary")}
+                    className="bg-[#E6F8F5] border border-[#B3EFE4] rounded-2xl p-2.5 flex items-center justify-between shadow-2xs cursor-pointer active:scale-98 transition-transform"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="size-8 rounded-full bg-[#00B488] text-white flex items-center justify-center shrink-0 shadow-2xs">
+                        <Wallet className="size-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <h5 className="font-black text-xs text-[#10233F] leading-tight">{t("eSalarySlips")}</h5>
+                        <p className="text-[9px] text-[#5B6B7F] line-clamp-1">{mdI18n.salaryDesc}</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="size-4 text-[#00B488] shrink-0" />
+                  </div>
+
+                  {/* 6. Attendance */}
+                  <div
+                    onClick={() => setActiveTab("attendance")}
+                    className="bg-[#FDF2F8] border border-[#FBCFE8] rounded-2xl p-2.5 flex items-center justify-between shadow-2xs cursor-pointer active:scale-98 transition-transform"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="size-8 rounded-full bg-[#EC4899] text-white flex items-center justify-center shrink-0 shadow-2xs">
+                        <CalendarCheck className="size-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <h5 className="font-black text-xs text-[#10233F] leading-tight">{t("attendancePayroll")}</h5>
+                        <p className="text-[9px] text-[#5B6B7F] line-clamp-1">{mdI18n.attendanceDesc}</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="size-4 text-[#EC4899] shrink-0" />
+                  </div>
+                </div>
+              </div>
+
+              {/* ── DESKTOP VIEW: Stat Cards & Sections (Visible on md+) ── */}
+              <div className="hidden md:block space-y-6">
               {/* Top 4 Stat Cards Grid */}
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {/* Card 1: Total Jobs */}
@@ -2578,6 +4047,7 @@ function AdminDashboardPage() {
                   </div>
                 )}
               </div>
+              </div>
             </div>
           </div>
 
@@ -2624,7 +4094,195 @@ function AdminDashboardPage() {
                 </div>
               </div>
 
-              <div className="overflow-x-auto rounded-xl border border-[#DCE5F0]">
+              {/* Active Filter Chips */}
+              {activeFilterCount > 0 && (
+                <div className="flex items-center gap-2 flex-wrap bg-slate-50 border border-slate-200/80 p-2.5 rounded-xl">
+                  <span className="text-[11px] font-black text-slate-600">Filters Active:</span>
+                  {selectedLanguage !== "all" && (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-100 text-[#0062FF] text-xs font-bold">
+                      <span>Lang: {selectedLanguage}</span>
+                      <button type="button" onClick={() => setSelectedLanguage("all")} className="hover:text-red-600 text-sm leading-none cursor-pointer">×</button>
+                    </span>
+                  )}
+                  {selectedCategory !== "all" && (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-100 text-[#0062FF] text-xs font-bold">
+                      <span>Cat: {selectedCategory}</span>
+                      <button type="button" onClick={() => setSelectedCategory("all")} className="hover:text-red-600 text-sm leading-none cursor-pointer">×</button>
+                    </span>
+                  )}
+                  {selectedJobType !== "all" && (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-100 text-[#0062FF] text-xs font-bold">
+                      <span>Type: {selectedJobType}</span>
+                      <button type="button" onClick={() => setSelectedJobType("all")} className="hover:text-red-600 text-sm leading-none cursor-pointer">×</button>
+                    </span>
+                  )}
+                  {selectedLocation !== "all" && (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-100 text-[#0062FF] text-xs font-bold">
+                      <span>Loc: {selectedLocation}</span>
+                      <button type="button" onClick={() => setSelectedLocation("all")} className="hover:text-red-600 text-sm leading-none cursor-pointer">×</button>
+                    </span>
+                  )}
+                  {selectedExperience !== "all" && (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-100 text-[#0062FF] text-xs font-bold">
+                      <span>Exp: {selectedExperience}</span>
+                      <button type="button" onClick={() => setSelectedExperience("all")} className="hover:text-red-600 text-sm leading-none cursor-pointer">×</button>
+                    </span>
+                  )}
+                  {selectedSkillQual !== "all" && (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-100 text-[#0062FF] text-xs font-bold">
+                      <span>Skill: {selectedSkillQual}</span>
+                      <button type="button" onClick={() => setSelectedSkillQual("all")} className="hover:text-red-600 text-sm leading-none cursor-pointer">×</button>
+                    </span>
+                  )}
+                  {selectedSalaryExp !== "all" && (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-100 text-[#0062FF] text-xs font-bold">
+                      <span>Salary: {selectedSalaryExp}</span>
+                      <button type="button" onClick={() => setSelectedSalaryExp("all")} className="hover:text-red-600 text-sm leading-none cursor-pointer">×</button>
+                    </span>
+                  )}
+                  {selectedAvailability !== "all" && (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-100 text-[#0062FF] text-xs font-bold">
+                      <span>Avail: {selectedAvailability}</span>
+                      <button type="button" onClick={() => setSelectedAvailability("all")} className="hover:text-red-600 text-sm leading-none cursor-pointer">×</button>
+                    </span>
+                  )}
+                  {selectedWorkSchedule !== "all" && (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-100 text-[#0062FF] text-xs font-bold">
+                      <span>Shift: {selectedWorkSchedule}</span>
+                      <button type="button" onClick={() => setSelectedWorkSchedule("all")} className="hover:text-red-600 text-sm leading-none cursor-pointer">×</button>
+                    </span>
+                  )}
+                  {selectedGender !== "all" && (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-100 text-[#0062FF] text-xs font-bold">
+                      <span>Gender: {selectedGender}</span>
+                      <button type="button" onClick={() => setSelectedGender("all")} className="hover:text-red-600 text-sm leading-none cursor-pointer">×</button>
+                    </span>
+                  )}
+                  {selectedVerification !== "all" && (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-100 text-[#0062FF] text-xs font-bold">
+                      <span>Verify: {selectedVerification}</span>
+                      <button type="button" onClick={() => setSelectedVerification("all")} className="hover:text-red-600 text-sm leading-none cursor-pointer">×</button>
+                    </span>
+                  )}
+                  {selectedRatingsActivity !== "all" && (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-100 text-[#0062FF] text-xs font-bold">
+                      <span>Activity: {selectedRatingsActivity}</span>
+                      <button type="button" onClick={() => setSelectedRatingsActivity("all")} className="hover:text-red-600 text-sm leading-none cursor-pointer">×</button>
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={resetAllFilters}
+                    className="text-xs font-black text-rose-600 hover:text-rose-700 hover:underline ml-1 cursor-pointer"
+                  >
+                    Reset All
+                  </button>
+                </div>
+              )}
+
+              {/* ── MOBILE POSTED JOBS CARDS (Matching Screenshot Color Combination) ── */}
+              <div className="block md:hidden space-y-3">
+                {pagedJobs.map((j) => (
+                  <div
+                    key={j.id}
+                    className="bg-[#F0F7FF] border border-[#CCE5FF] rounded-2xl p-3.5 shadow-2xs space-y-3"
+                  >
+                    <div className="flex items-start gap-3">
+                      {/* Thumbnail with Active/Closed badge */}
+                      <div className="relative size-20 rounded-xl overflow-hidden shrink-0 border border-blue-100 shadow-2xs">
+                        <img
+                          src={getJobThumbnail(j.category)}
+                          alt={j.title}
+                          className="w-full h-full object-cover"
+                        />
+                        <span
+                          className={`absolute top-1 right-1 text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-xs ${
+                            j.status === "Active"
+                              ? "bg-[#10B981] text-white"
+                              : "bg-gray-500 text-white"
+                          }`}
+                        >
+                          {j.status === "Active" ? "Active" : "Closed"}
+                        </span>
+                      </div>
+
+                      {/* Details */}
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <h4 className="font-black text-sm text-[#10233F] truncate leading-tight">
+                          {j.title}
+                        </h4>
+                        <p className="flex items-center gap-1 text-[11px] font-bold text-[#0062FF] truncate">
+                          <MapPin className="size-3 shrink-0" />
+                          <span className="truncate">{j.location}</span>
+                        </p>
+                        <p className="flex items-center gap-1 text-[11px] font-semibold text-[#0062FF] truncate">
+                          <Building2 className="size-3 shrink-0" />
+                          <span className="truncate">{j.category}</span>
+                        </p>
+                        <p className="flex items-center gap-1 text-[11px] font-bold text-[#0062FF] truncate">
+                          <Users className="size-3 shrink-0" />
+                          <span>{j.vacancies || 5} Workers Required</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Footer Row: Date & View Details Button */}
+                    <div className="flex items-center justify-between pt-2 border-t border-[#CCE5FF]/60 gap-2">
+                      <div className="flex items-center gap-1 text-[11px] font-semibold text-[#0062FF]">
+                        <Calendar className="size-3.5 shrink-0" />
+                        <span>Posted on {j.postedAgo || "Recently"}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleEditJobClick(j)}
+                        className="bg-white border-2 border-[#0062FF] hover:bg-blue-50 text-[#0062FF] font-black text-xs px-3.5 py-1.5 rounded-full shadow-2xs transition-all flex items-center gap-1 cursor-pointer"
+                      >
+                        <span>View Details</span>
+                        <span>›</span>
+                      </button>
+                    </div>
+
+                    {/* Quick Mobile Action Bar */}
+                    <div className="flex items-center gap-2 pt-1 border-t border-blue-100/60">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFilterJobId(j.id);
+                          setActiveTab("applications");
+                        }}
+                        className="flex-1 py-1.5 px-2 rounded-xl bg-[#0062FF] hover:bg-[#004ECC] text-white font-extrabold text-[11px] flex items-center justify-center gap-1 shadow-2xs transition-all cursor-pointer"
+                      >
+                        <Users className="size-3" />
+                        <span>Applications ({applications.filter((a) => a.jobId === j.id).length})</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleJobStatus(j.id, j.status)}
+                        className="py-1.5 px-3 rounded-xl border border-[#CCE5FF] bg-white text-[#10233F] font-bold text-[11px] hover:bg-blue-50 transition-all cursor-pointer"
+                      >
+                        {j.status === "Active" ? "Close" : "Activate"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteJob(j.id)}
+                        className="p-1.5 rounded-xl text-rose-500 hover:bg-rose-50 transition-colors cursor-pointer"
+                        title="Delete"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                {filteredJobs.length === 0 && (
+                  <div className="p-8 text-center text-xs font-bold text-[#5B6B7F] bg-[#F0F7FF] rounded-2xl border border-dashed border-[#CCE5FF]">
+                    No job listings posted yet.
+                  </div>
+                )}
+              </div>
+
+              {/* ── DESKTOP TABLE (Visible on md+) ── */}
+              <div className="hidden md:block overflow-x-auto rounded-xl border border-[#DCE5F0]">
                 <table className="w-full text-left text-xs">
                   <thead className="bg-[#063B78] text-white font-black uppercase">
                     <tr>
@@ -3893,54 +5551,127 @@ function AdminDashboardPage() {
 
           {/* TAB 5: MY PROFILE */}
           <div className={activeTab === "profile" ? "block" : "hidden"}>
-            <div className="max-w-4xl mx-auto space-y-6">
-              <div className="bg-white rounded-2xl border border-[#DCE5F0] p-6 sm:p-8 shadow-sm">
-                <div className="flex items-center justify-between pb-5 border-b border-[#EBF1F8] mb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="p-3 bg-[#F0F4FA] rounded-xl text-[#063B78]">
-                      <User className="size-6 text-[#063B78]" />
+            <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
+              <div className="bg-white rounded-2xl sm:rounded-3xl border border-[#DCE5F0] p-4 sm:p-6 md:p-8 shadow-sm">
+                
+                {/* Header: Responsive Flex Stack on mobile, side-by-side on tablet/desktop */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 pb-4 sm:pb-5 border-b border-[#EBF1F8] mb-5 sm:mb-6">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="p-2.5 sm:p-3 bg-[#F0F4FA] rounded-2xl text-[#063B78] shrink-0">
+                      <User className="size-5 sm:size-6 text-[#063B78]" />
                     </div>
-                    <div>
-                      <h2 className="text-xl font-black text-[#10233F]">{t("employerProfileSettings")}</h2>
-                      <p className="text-xs font-semibold text-[#5B6B7F]">{t("updateOrgDetailsDesc")}</p>
+                    <div className="min-w-0 flex-1">
+                      <h2 className="text-base sm:text-xl font-black text-[#10233F] tracking-tight leading-snug">
+                        {t("employerProfileSettings")}
+                      </h2>
+                      <p className="text-xs font-medium text-[#5B6B7F] truncate sm:whitespace-normal">
+                        {t("updateOrgDetailsDesc")}
+                      </p>
                     </div>
                   </div>
-                  <Badge className="bg-emerald-600 text-white font-bold text-xs px-3 py-1">
-                    ✓ {t("verifiedEmployer")}
-                  </Badge>
+
+                  <div className="flex items-center justify-between sm:justify-end gap-2.5 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                    <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3 py-1 rounded-full shrink-0 whitespace-nowrap shadow-2xs">
+                      ✓ {t("verifiedEmployer")}
+                    </Badge>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleEmployerLogout}
+                      className="h-8 px-3 rounded-xl border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300 font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-2xs shrink-0 whitespace-nowrap"
+                    >
+                      <LogOut className="size-3.5" />
+                      <span>{t("signOut")}</span>
+                    </Button>
+                  </div>
                 </div>
 
-                <form onSubmit={handleSaveProfile} className="space-y-6">
+                <form onSubmit={handleSaveProfile} className="space-y-5 sm:space-y-6">
                   {/* Profile Photo Avatar Section */}
-                  <div className="flex flex-col sm:flex-row items-center gap-6 p-5 rounded-2xl bg-[#F8FAFF] border border-[#E0E8F5]">
+                  <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 p-4 sm:p-5 rounded-2xl bg-[#F8FAFF] border border-[#E0E8F5]">
                     <div className="relative shrink-0">
                       {profileForm.profilePhoto ? (
                         <img
                           src={profileForm.profilePhoto}
                           alt="Profile Avatar"
-                          className="size-24 rounded-full object-cover shadow-md ring-4 ring-white border-2 border-[#063B78]"
+                          className="size-20 sm:size-24 rounded-full object-cover shadow-md ring-4 ring-white border-2 border-[#063B78]"
                         />
                       ) : (
-                        <div className="size-24 rounded-full bg-gradient-to-br from-[#063B78] to-[#125BB5] text-white font-black text-3xl flex items-center justify-center shadow-md ring-4 ring-white border-2 border-white">
+                        <div className="size-20 sm:size-24 rounded-full bg-gradient-to-br from-[#063B78] to-[#125BB5] text-white font-black text-2xl sm:text-3xl flex items-center justify-center shadow-md ring-4 ring-white border-2 border-white">
                           {(profileForm.fullName || "E").charAt(0).toUpperCase()}
                         </div>
                       )}
+                      <label
+                        htmlFor="employer-photo-input"
+                        className="absolute -bottom-1 -right-1 p-2 rounded-xl bg-[#063B78] hover:bg-[#082F63] text-white cursor-pointer shadow-md transition-colors"
+                        title={lang === "mr" ? "फोटो बदला" : "Upload photo"}
+                      >
+                        <Camera className="size-3.5 sm:size-4" />
+                        <input
+                          id="employer-photo-input"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleEmployerPhotoUpload}
+                          className="hidden"
+                        />
+                      </label>
                     </div>
-                    <div className="flex-1 space-y-2 w-full text-center sm:text-left">
-                      <h3 className="text-sm font-black text-[#10233F]">{t("profilePictureLogoUrl")}</h3>
-                      <p className="text-xs text-[#5B6B7F]">{t("providePhotoUrlDesc")}</p>
-                      <Input
-                        type="url"
-                        placeholder="https://example.com/logo.jpg"
-                        value={profileForm.profilePhoto}
-                        onChange={(e) => setProfileForm({ ...profileForm, profilePhoto: e.target.value })}
-                        className="text-xs font-semibold"
-                      />
+
+                    <div className="flex-1 space-y-2.5 w-full text-center sm:text-left">
+                      <div>
+                        <h3 className="text-sm font-black text-[#10233F]">
+                          {lang === "mr" ? "कंपनी प्रोफाईल फोटो / लोगो" : t("profilePictureLogoUrl")}
+                        </h3>
+                        <p className="text-xs text-[#5B6B7F]">
+                          {lang === "mr"
+                            ? "गॅलरीतून फोटो निवडा किंवा इमेज लिंक वापरा"
+                            : t("providePhotoUrlDesc")}
+                        </p>
+                      </div>
+
+                      {/* Photo Actions Row */}
+                      <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                        <label
+                          htmlFor="employer-photo-input"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#063B78] hover:bg-[#082F63] text-white font-bold text-xs cursor-pointer shadow-2xs transition-all"
+                        >
+                          <UploadCloud className="size-3.5" />
+                          <span>{lang === "mr" ? "फोटो निवडा" : "Choose Photo"}</span>
+                        </label>
+
+                        {profileForm.profilePhoto && (
+                          <button
+                            type="button"
+                            onClick={() => setProfileForm((prev) => ({ ...prev, profilePhoto: "" }))}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 font-bold text-xs transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="size-3.5" />
+                            <span>{lang === "mr" ? "काढा" : "Remove"}</span>
+                          </button>
+                        )}
+
+                        {profileForm.profilePhoto?.startsWith("data:image") ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            ✓ {lang === "mr" ? "फोटो सेव्ह झाला" : "Image selected"}
+                          </span>
+                        ) : null}
+                      </div>
+
+                      {/* URL input only when needed / not showing 50kb base64 */}
+                      <div className="pt-0.5">
+                        <Input
+                          type="text"
+                          placeholder={lang === "mr" ? "किंवा इमेज URL प्रविष्ट करा (उदा. https://...)" : "Or enter image URL (https://...)"}
+                          value={profileForm.profilePhoto?.startsWith("data:image") ? "" : profileForm.profilePhoto}
+                          onChange={(e) => setProfileForm({ ...profileForm, profilePhoto: e.target.value })}
+                          className="h-9 text-xs font-semibold rounded-xl bg-white"
+                        />
+                      </div>
                     </div>
                   </div>
 
                   {/* Form Fields Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
                     <div>
                       <label className="block text-xs font-bold text-[#5B6B7F] mb-1.5">{t("companyOrgName")}</label>
                       <Input
@@ -3948,7 +5679,7 @@ function AdminDashboardPage() {
                         value={profileForm.fullName}
                         onChange={(e) => setProfileForm({ ...profileForm, fullName: e.target.value })}
                         placeholder="e.g. Vikas Ropvatika & Nursery"
-                        className="text-xs font-semibold"
+                        className="h-10 sm:h-11 text-xs font-semibold rounded-xl"
                       />
                     </div>
 
@@ -3958,7 +5689,7 @@ function AdminDashboardPage() {
                         value={profileForm.contactPerson}
                         onChange={(e) => setProfileForm({ ...profileForm, contactPerson: e.target.value })}
                         placeholder="e.g. Vikas Patil"
-                        className="text-xs font-semibold"
+                        className="h-10 sm:h-11 text-xs font-semibold rounded-xl"
                       />
                     </div>
 
@@ -3970,7 +5701,7 @@ function AdminDashboardPage() {
                         value={profileForm.email}
                         onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
                         placeholder="e.g. ropvatika@gmail.com"
-                        className="text-xs font-semibold"
+                        className="h-10 sm:h-11 text-xs font-semibold rounded-xl"
                       />
                     </div>
 
@@ -3981,7 +5712,7 @@ function AdminDashboardPage() {
                         value={profileForm.mobile}
                         onChange={(e) => setProfileForm({ ...profileForm, mobile: e.target.value })}
                         placeholder="e.g. 9822011223"
-                        className="text-xs font-semibold"
+                        className="h-10 sm:h-11 text-xs font-semibold rounded-xl"
                       />
                     </div>
 
@@ -3991,7 +5722,7 @@ function AdminDashboardPage() {
                         value={profileForm.location}
                         onChange={(e) => setProfileForm({ ...profileForm, location: e.target.value })}
                         placeholder="e.g. Pune, Maharashtra"
-                        className="text-xs font-semibold"
+                        className="h-10 sm:h-11 text-xs font-semibold rounded-xl"
                       />
                     </div>
 
@@ -4001,20 +5732,45 @@ function AdminDashboardPage() {
                         value={profileForm.industry}
                         onChange={(e) => setProfileForm({ ...profileForm, industry: e.target.value })}
                         placeholder="e.g. Plant Nursery & Agricultural Services"
-                        className="text-xs font-semibold"
+                        className="h-10 sm:h-11 text-xs font-semibold rounded-xl"
                       />
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#EBF1F8]">
+                  <div className="flex items-center justify-end pt-3 sm:pt-4 border-t border-[#EBF1F8]">
                     <Button
                       type="submit"
-                      className="px-6 py-2.5 rounded-xl bg-[#063B78] hover:bg-[#0A4F9E] text-white font-black text-xs shadow-md flex items-center gap-2"
+                      className="w-full sm:w-auto px-6 py-2.5 h-11 rounded-xl bg-[#063B78] hover:bg-[#0A4F9E] text-white font-black text-xs shadow-md flex items-center justify-center gap-2 cursor-pointer"
                     >
                       <CheckCircle2 className="size-4" /> {t("saveProfileDetails")}
                     </Button>
                   </div>
                 </form>
+              </div>
+
+              {/* Account Sign Out Card */}
+              <div className="bg-white rounded-2xl sm:rounded-3xl border border-rose-100 p-4 sm:p-6 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3 text-center sm:text-left w-full sm:w-auto">
+                  <div className="size-10 sm:size-11 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+                    <LogOut className="size-5" />
+                  </div>
+                  <div className="text-left">
+                    <h4 className="text-sm font-black text-[#10233F]">
+                      {lang === "mr" ? "खात्यातून लॉग आउट करा" : "Sign Out of Employer Portal"}
+                    </h4>
+                    <p className="text-xs font-semibold text-slate-500">
+                      {lang === "mr" ? "कंपनी पोर्टल सत्र सुरक्षितपणे बंद करण्यासाठी येथे क्लिक करा." : "Safely end your employer session and return to login page."}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  onClick={handleEmployerLogout}
+                  className="h-10 px-6 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md flex items-center gap-2 cursor-pointer w-full sm:w-auto justify-center shrink-0"
+                >
+                  <LogOut className="size-4" />
+                  <span>{t("signOut")}</span>
+                </Button>
               </div>
             </div>
           </div>
@@ -4247,187 +6003,322 @@ function AdminDashboardPage() {
           <div className={activeTab === "reports" ? "block" : "hidden"}>
             <div className="space-y-6 sm:space-y-8 animate-fade-in min-w-0">
 
-              {/* ── 10 QUICK FEATURE CARDS (COMPACT 5-COLUMN DASHBOARD GRID) ── */}
+              {/* ── 10 QUICK FEATURE CARDS (EXACT MATCH WITH IMAGE 2) ── */}
               <div className="bg-white p-3 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs max-w-5xl mx-auto">
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5 sm:gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
                   {/* Card 1: Cashbook */}
                   <button
+                    type="button"
                     onClick={() => setSelectedReportCard(selectedReportCard === "cashbook" ? null : "cashbook")}
-                    className={`rounded-2xl p-2.5 sm:p-3 border transition-all duration-150 flex flex-col items-center justify-center text-center cursor-pointer group min-h-[90px] sm:min-h-[100px] ${
+                    className={`rounded-2xl sm:rounded-[22px] bg-white border transition-all duration-200 flex flex-col items-center cursor-pointer group overflow-hidden shadow-xs hover:shadow-md ${
                       selectedReportCard === "cashbook"
-                        ? "border-[#063B78] ring-2 ring-[#063B78] bg-blue-50/50 shadow-xs"
-                        : "bg-white border-slate-200/80 hover:border-slate-300 hover:bg-slate-50/60 shadow-2xs"
+                        ? "border-[#0083B0] ring-2 ring-[#0083B0] shadow-md"
+                        : "border-slate-200/90 hover:border-slate-300"
                     }`}
                   >
-                    <div className="size-10 sm:size-11 rounded-xl bg-[#EEF4FF] text-[#2563EB] flex items-center justify-center mb-1.5 group-hover:scale-105 transition-transform">
-                      <BookOpen className="size-5" />
+                    <div className="w-full h-20 sm:h-22 bg-gradient-to-r from-[#00c6ff] to-[#0072ff] relative flex items-center justify-center pt-1">
+                      <svg className="absolute -bottom-0.5 left-0 w-full h-4 sm:h-5 text-white" viewBox="0 0 100 20" preserveAspectRatio="none">
+                        <path d="M0,0 Q50,20 100,0 L100,20 L0,20 Z" fill="currentColor" />
+                      </svg>
+                      <div className="relative z-10 size-13 sm:size-14 rounded-full bg-white shadow-[0_4px_12px_rgba(0,0,0,0.12)] border-2 border-white flex items-center justify-center">
+                        <div className="relative flex items-center justify-center">
+                          <div className="size-7 sm:size-8 rounded-lg bg-[#E0F2FE] flex items-center justify-center">
+                            <BarChart2 className="size-4.5 sm:size-5 text-[#0284C7]" />
+                          </div>
+                          <div className="absolute -bottom-1 -right-1 size-3.5 sm:size-4 rounded-full bg-[#F59E0B] text-white flex items-center justify-center text-[8px] sm:text-[9px] font-black shadow-xs border border-white">
+                            ₹
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight">Cashbook</span>
-                    {selectedReportCard === "cashbook" && (
-                      <span className="mt-1 text-[9px] font-black text-blue-700 bg-blue-100 px-1.5 py-0.2 rounded-full">Active</span>
-                    )}
+                    <div className="w-full bg-white flex flex-col items-center justify-between pb-2.5 pt-1 px-1">
+                      <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight text-center">{rl.cashbook}</span>
+                      <div className="size-5.5 sm:size-6 rounded-full bg-[#0072ff] text-white flex items-center justify-center mt-1.5 shadow-xs group-hover:scale-110 transition-transform">
+                        <ArrowRight className="size-3 sm:size-3.5 stroke-[2.5]" />
+                      </div>
+                    </div>
                   </button>
 
                   {/* Card 2: My Report */}
                   <button
+                    type="button"
                     onClick={() => setSelectedReportCard(selectedReportCard === "my-report" ? null : "my-report")}
-                    className={`rounded-2xl p-2.5 sm:p-3 border transition-all duration-150 flex flex-col items-center justify-center text-center cursor-pointer group min-h-[90px] sm:min-h-[100px] ${
+                    className={`rounded-2xl sm:rounded-[22px] bg-white border transition-all duration-200 flex flex-col items-center cursor-pointer group overflow-hidden shadow-xs hover:shadow-md ${
                       selectedReportCard === "my-report"
-                        ? "border-[#DC2626] ring-2 ring-[#DC2626] bg-rose-50/50 shadow-xs"
-                        : "bg-white border-slate-200/80 hover:border-slate-300 hover:bg-slate-50/60 shadow-2xs"
+                        ? "border-[#15803D] ring-2 ring-[#15803D] shadow-md"
+                        : "border-slate-200/90 hover:border-slate-300"
                     }`}
                   >
-                    <div className="size-10 sm:size-11 rounded-xl bg-[#FEECEC] text-[#DC2626] flex items-center justify-center mb-1.5 group-hover:scale-105 transition-transform">
-                      <BarChart3 className="size-5" />
+                    <div className="w-full h-20 sm:h-22 bg-gradient-to-r from-[#4ade80] to-[#15803d] relative flex items-center justify-center pt-1">
+                      <svg className="absolute -bottom-0.5 left-0 w-full h-4 sm:h-5 text-white" viewBox="0 0 100 20" preserveAspectRatio="none">
+                        <path d="M0,0 Q50,20 100,0 L100,20 L0,20 Z" fill="currentColor" />
+                      </svg>
+                      <div className="relative z-10 size-13 sm:size-14 rounded-full bg-white shadow-[0_4px_12px_rgba(0,0,0,0.12)] border-2 border-white flex items-center justify-center">
+                        <div className="relative flex items-center justify-center">
+                          <div className="size-7 sm:size-8 rounded-lg bg-[#DCFCE7] flex items-center justify-center">
+                            <TrendingUp className="size-4.5 sm:size-5 text-[#16A34A]" />
+                          </div>
+                          <div className="absolute -bottom-1 -right-1 size-3.5 sm:size-4 rounded-full bg-[#16A34A] text-white flex items-center justify-center text-[8px] sm:text-[9px] font-black shadow-xs border border-white">
+                            ↗
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight">My Report</span>
-                    {selectedReportCard === "my-report" && (
-                      <span className="mt-1 text-[9px] font-black text-rose-700 bg-rose-100 px-1.5 py-0.2 rounded-full">Active</span>
-                    )}
+                    <div className="w-full bg-white flex flex-col items-center justify-between pb-2.5 pt-1 px-1">
+                      <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight text-center">{rl.myReport}</span>
+                      <div className="size-5.5 sm:size-6 rounded-full bg-[#16A34A] text-white flex items-center justify-center mt-1.5 shadow-xs group-hover:scale-110 transition-transform">
+                        <ArrowRight className="size-3 sm:size-3.5 stroke-[2.5]" />
+                      </div>
+                    </div>
                   </button>
 
                   {/* Card 3: Expenses */}
                   <button
+                    type="button"
                     onClick={() => setSelectedReportCard(selectedReportCard === "expenses" ? null : "expenses")}
-                    className={`rounded-2xl p-2.5 sm:p-3 border transition-all duration-150 flex flex-col items-center justify-center text-center cursor-pointer group min-h-[90px] sm:min-h-[100px] ${
+                    className={`rounded-2xl sm:rounded-[22px] bg-white border transition-all duration-200 flex flex-col items-center cursor-pointer group overflow-hidden shadow-xs hover:shadow-md ${
                       selectedReportCard === "expenses"
-                        ? "border-[#D97706] ring-2 ring-[#D97706] bg-amber-50/50 shadow-xs"
-                        : "bg-white border-slate-200/80 hover:border-slate-300 hover:bg-slate-50/60 shadow-2xs"
+                        ? "border-[#EA580C] ring-2 ring-[#EA580C] shadow-md"
+                        : "border-slate-200/90 hover:border-slate-300"
                     }`}
                   >
-                    <div className="size-10 sm:size-11 rounded-xl bg-[#FEF7EC] text-[#D97706] flex items-center justify-center mb-1.5 group-hover:scale-105 transition-transform">
-                      <IndianRupee className="size-5" />
+                    <div className="w-full h-20 sm:h-22 bg-gradient-to-r from-[#fbbf24] via-[#f59e0b] to-[#ea580c] relative flex items-center justify-center pt-1">
+                      <svg className="absolute -bottom-0.5 left-0 w-full h-4 sm:h-5 text-white" viewBox="0 0 100 20" preserveAspectRatio="none">
+                        <path d="M0,0 Q50,20 100,0 L100,20 L0,20 Z" fill="currentColor" />
+                      </svg>
+                      <div className="relative z-10 size-13 sm:size-14 rounded-full bg-white shadow-[0_4px_12px_rgba(0,0,0,0.12)] border-2 border-white flex items-center justify-center">
+                        <div className="relative flex items-center justify-center">
+                          <div className="size-7 sm:size-8 rounded-lg bg-[#FEF3C7] flex items-center justify-center">
+                            <Receipt className="size-4.5 sm:size-5 text-[#D97706]" />
+                          </div>
+                          <div className="absolute -bottom-1 -right-1 size-3.5 sm:size-4 rounded-full bg-[#F59E0B] text-white flex items-center justify-center text-[8px] sm:text-[9px] font-black shadow-xs border border-white">
+                            ₹
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight">Expenses</span>
-                    {selectedReportCard === "expenses" && (
-                      <span className="mt-1 text-[9px] font-black text-amber-700 bg-amber-100 px-1.5 py-0.2 rounded-full">Active</span>
-                    )}
+                    <div className="w-full bg-white flex flex-col items-center justify-between pb-2.5 pt-1 px-1">
+                      <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight text-center">{rl.expenses}</span>
+                      <div className="size-5.5 sm:size-6 rounded-full bg-[#EA580C] text-white flex items-center justify-center mt-1.5 shadow-xs group-hover:scale-110 transition-transform">
+                        <ArrowRight className="size-3 sm:size-3.5 stroke-[2.5]" />
+                      </div>
+                    </div>
                   </button>
 
                   {/* Card 4: Financial Reports */}
                   <button
+                    type="button"
                     onClick={() => setSelectedReportCard(selectedReportCard === "financial-reports" ? null : "financial-reports")}
-                    className={`rounded-2xl p-2.5 sm:p-3 border transition-all duration-150 flex flex-col items-center justify-center text-center cursor-pointer group min-h-[90px] sm:min-h-[100px] ${
+                    className={`rounded-2xl sm:rounded-[22px] bg-white border transition-all duration-200 flex flex-col items-center cursor-pointer group overflow-hidden shadow-xs hover:shadow-md ${
                       selectedReportCard === "financial-reports"
-                        ? "border-[#7C3AED] ring-2 ring-[#7C3AED] bg-purple-50/50 shadow-xs"
-                        : "bg-white border-slate-200/80 hover:border-slate-300 hover:bg-slate-50/60 shadow-2xs"
+                        ? "border-[#7C3AED] ring-2 ring-[#7C3AED] shadow-md"
+                        : "border-slate-200/90 hover:border-slate-300"
                     }`}
                   >
-                    <div className="size-10 sm:size-11 rounded-xl bg-[#F5F0FF] text-[#7C3AED] flex items-center justify-center mb-1.5 group-hover:scale-105 transition-transform">
-                      <FileText className="size-5" />
+                    <div className="w-full h-20 sm:h-22 bg-gradient-to-r from-[#c084fc] via-[#9333ea] to-[#7c3aed] relative flex items-center justify-center pt-1">
+                      <svg className="absolute -bottom-0.5 left-0 w-full h-4 sm:h-5 text-white" viewBox="0 0 100 20" preserveAspectRatio="none">
+                        <path d="M0,0 Q50,20 100,0 L100,20 L0,20 Z" fill="currentColor" />
+                      </svg>
+                      <div className="relative z-10 size-13 sm:size-14 rounded-full bg-white shadow-[0_4px_12px_rgba(0,0,0,0.12)] border-2 border-white flex items-center justify-center">
+                        <div className="relative flex items-center justify-center">
+                          <div className="size-7 sm:size-8 rounded-lg bg-[#F3E8FF] flex items-center justify-center">
+                            <PieChart className="size-4.5 sm:size-5 text-[#7C3AED]" />
+                          </div>
+                          <div className="absolute -bottom-1 -right-1 size-3.5 sm:size-4 rounded-full bg-[#7C3AED] text-white flex items-center justify-center text-[8px] sm:text-[9px] font-black shadow-xs border border-white">
+                            ₹
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight">Financial Reports</span>
-                    {selectedReportCard === "financial-reports" && (
-                      <span className="mt-1 text-[9px] font-black text-purple-700 bg-purple-100 px-1.5 py-0.2 rounded-full">Active</span>
-                    )}
+                    <div className="w-full bg-white flex flex-col items-center justify-between pb-2.5 pt-1 px-1">
+                      <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight text-center">{rl.financialReports}</span>
+                      <div className="size-5.5 sm:size-6 rounded-full bg-[#7C3AED] text-white flex items-center justify-center mt-1.5 shadow-xs group-hover:scale-110 transition-transform">
+                        <ArrowRight className="size-3 sm:size-3.5 stroke-[2.5]" />
+                      </div>
+                    </div>
                   </button>
 
                   {/* Card 5: Items */}
                   <button
+                    type="button"
                     onClick={() => setSelectedReportCard(selectedReportCard === "items" ? null : "items")}
-                    className={`rounded-2xl p-2.5 sm:p-3 border transition-all duration-150 flex flex-col items-center justify-center text-center cursor-pointer group min-h-[90px] sm:min-h-[100px] ${
+                    className={`rounded-2xl sm:rounded-[22px] bg-white border transition-all duration-200 flex flex-col items-center cursor-pointer group overflow-hidden shadow-xs hover:shadow-md ${
                       selectedReportCard === "items"
-                        ? "border-[#059669] ring-2 ring-[#059669] bg-emerald-50/50 shadow-xs"
-                        : "bg-white border-slate-200/80 hover:border-slate-300 hover:bg-slate-50/60 shadow-2xs"
+                        ? "border-[#0D9488] ring-2 ring-[#0D9488] shadow-md"
+                        : "border-slate-200/90 hover:border-slate-300"
                     }`}
                   >
-                    <div className="size-10 sm:size-11 rounded-xl bg-[#EDFBF2] text-[#059669] flex items-center justify-center mb-1.5 group-hover:scale-105 transition-transform">
-                      <Package className="size-5" />
+                    <div className="w-full h-20 sm:h-22 bg-gradient-to-r from-[#2dd4bf] to-[#0d9488] relative flex items-center justify-center pt-1">
+                      <svg className="absolute -bottom-0.5 left-0 w-full h-4 sm:h-5 text-white" viewBox="0 0 100 20" preserveAspectRatio="none">
+                        <path d="M0,0 Q50,20 100,0 L100,20 L0,20 Z" fill="currentColor" />
+                      </svg>
+                      <div className="relative z-10 size-13 sm:size-14 rounded-full bg-white shadow-[0_4px_12px_rgba(0,0,0,0.12)] border-2 border-white flex items-center justify-center">
+                        <div className="size-7 sm:size-8 rounded-lg bg-[#CCFBF1] flex items-center justify-center">
+                          <Package className="size-4.5 sm:size-5 text-[#0D9488]" />
+                        </div>
+                      </div>
                     </div>
-                    <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight">Items</span>
-                    {selectedReportCard === "items" && (
-                      <span className="mt-1 text-[9px] font-black text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded-full">Active</span>
-                    )}
+                    <div className="w-full bg-white flex flex-col items-center justify-between pb-2.5 pt-1 px-1">
+                      <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight text-center">{rl.items}</span>
+                      <div className="size-5.5 sm:size-6 rounded-full bg-[#0D9488] text-white flex items-center justify-center mt-1.5 shadow-xs group-hover:scale-110 transition-transform">
+                        <ArrowRight className="size-3 sm:size-3.5 stroke-[2.5]" />
+                      </div>
+                    </div>
                   </button>
 
                   {/* Card 6: Staff */}
                   <button
+                    type="button"
                     onClick={() => setSelectedReportCard(selectedReportCard === "staff" ? null : "staff")}
-                    className={`rounded-2xl p-2.5 sm:p-3 border transition-all duration-150 flex flex-col items-center justify-center text-center cursor-pointer group min-h-[90px] sm:min-h-[100px] ${
+                    className={`rounded-2xl sm:rounded-[22px] bg-white border transition-all duration-200 flex flex-col items-center cursor-pointer group overflow-hidden shadow-xs hover:shadow-md ${
                       selectedReportCard === "staff"
-                        ? "border-[#0891B2] ring-2 ring-[#0891B2] bg-cyan-50/50 shadow-xs"
-                        : "bg-white border-slate-200/80 hover:border-slate-300 hover:bg-slate-50/60 shadow-2xs"
+                        ? "border-[#E11D48] ring-2 ring-[#E11D48] shadow-md"
+                        : "border-slate-200/90 hover:border-slate-300"
                     }`}
                   >
-                    <div className="size-10 sm:size-11 rounded-xl bg-[#E5F9FC] text-[#0891B2] flex items-center justify-center mb-1.5 group-hover:scale-105 transition-transform">
-                      <Users className="size-5" />
+                    <div className="w-full h-20 sm:h-22 bg-gradient-to-r from-[#fb7185] via-[#f43f5e] to-[#e11d48] relative flex items-center justify-center pt-1">
+                      <svg className="absolute -bottom-0.5 left-0 w-full h-4 sm:h-5 text-white" viewBox="0 0 100 20" preserveAspectRatio="none">
+                        <path d="M0,0 Q50,20 100,0 L100,20 L0,20 Z" fill="currentColor" />
+                      </svg>
+                      <div className="relative z-10 size-13 sm:size-14 rounded-full bg-white shadow-[0_4px_12px_rgba(0,0,0,0.12)] border-2 border-white flex items-center justify-center">
+                        <div className="size-7 sm:size-8 rounded-lg bg-[#FFE4E6] flex items-center justify-center">
+                          <Users className="size-4.5 sm:size-5 text-[#E11D48]" />
+                        </div>
+                      </div>
                     </div>
-                    <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight">Staff</span>
-                    {selectedReportCard === "staff" && (
-                      <span className="mt-1 text-[9px] font-black text-cyan-700 bg-cyan-100 px-1.5 py-0.2 rounded-full">Active</span>
-                    )}
+                    <div className="w-full bg-white flex flex-col items-center justify-between pb-2.5 pt-1 px-1">
+                      <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight text-center">{rl.staff}</span>
+                      <div className="size-5.5 sm:size-6 rounded-full bg-[#E11D48] text-white flex items-center justify-center mt-1.5 shadow-xs group-hover:scale-110 transition-transform">
+                        <ArrowRight className="size-3 sm:size-3.5 stroke-[2.5]" />
+                      </div>
+                    </div>
                   </button>
 
                   {/* Card 7: My Order */}
                   <button
+                    type="button"
                     onClick={() => setSelectedReportCard(selectedReportCard === "my-order" ? null : "my-order")}
-                    className={`rounded-2xl p-2.5 sm:p-3 border transition-all duration-150 flex flex-col items-center justify-center text-center cursor-pointer group min-h-[90px] sm:min-h-[100px] ${
+                    className={`rounded-2xl sm:rounded-[22px] bg-white border transition-all duration-200 flex flex-col items-center cursor-pointer group overflow-hidden shadow-xs hover:shadow-md ${
                       selectedReportCard === "my-order"
-                        ? "border-[#A21CAF] ring-2 ring-[#A21CAF] bg-pink-50/50 shadow-xs"
-                        : "bg-white border-slate-200/80 hover:border-slate-300 hover:bg-slate-50/60 shadow-2xs"
+                        ? "border-[#7C3AED] ring-2 ring-[#7C3AED] shadow-md"
+                        : "border-slate-200/90 hover:border-slate-300"
                     }`}
                   >
-                    <div className="size-10 sm:size-11 rounded-xl bg-[#FAF0FE] text-[#A21CAF] flex items-center justify-center mb-1.5 group-hover:scale-105 transition-transform">
-                      <ShoppingBag className="size-5" />
+                    <div className="w-full h-20 sm:h-22 bg-gradient-to-r from-[#c084fc] via-[#9333ea] to-[#6366f1] relative flex items-center justify-center pt-1">
+                      <svg className="absolute -bottom-0.5 left-0 w-full h-4 sm:h-5 text-white" viewBox="0 0 100 20" preserveAspectRatio="none">
+                        <path d="M0,0 Q50,20 100,0 L100,20 L0,20 Z" fill="currentColor" />
+                      </svg>
+                      <div className="relative z-10 size-13 sm:size-14 rounded-full bg-white shadow-[0_4px_12px_rgba(0,0,0,0.12)] border-2 border-white flex items-center justify-center">
+                        <div className="size-7 sm:size-8 rounded-lg bg-[#EDE9FE] flex items-center justify-center">
+                          <ShoppingBag className="size-4.5 sm:size-5 text-[#7C3AED]" />
+                        </div>
+                      </div>
                     </div>
-                    <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight">My Order</span>
-                    {selectedReportCard === "my-order" && (
-                      <span className="mt-1 text-[9px] font-black text-pink-700 bg-pink-100 px-1.5 py-0.2 rounded-full">Active</span>
-                    )}
+                    <div className="w-full bg-white flex flex-col items-center justify-between pb-2.5 pt-1 px-1">
+                      <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight text-center">{rl.myOrder}</span>
+                      <div className="size-5.5 sm:size-6 rounded-full bg-[#7C3AED] text-white flex items-center justify-center mt-1.5 shadow-xs group-hover:scale-110 transition-transform">
+                        <ArrowRight className="size-3 sm:size-3.5 stroke-[2.5]" />
+                      </div>
+                    </div>
                   </button>
 
                   {/* Card 8: Collections List */}
                   <button
+                    type="button"
                     onClick={() => setSelectedReportCard(selectedReportCard === "collections-list" ? null : "collections-list")}
-                    className={`rounded-2xl p-2.5 sm:p-3 border transition-all duration-150 flex flex-col items-center justify-center text-center cursor-pointer group min-h-[90px] sm:min-h-[100px] ${
+                    className={`rounded-2xl sm:rounded-[22px] bg-white border transition-all duration-200 flex flex-col items-center cursor-pointer group overflow-hidden shadow-xs hover:shadow-md ${
                       selectedReportCard === "collections-list"
-                        ? "border-[#CA8A04] ring-2 ring-[#CA8A04] bg-yellow-50/50 shadow-xs"
-                        : "bg-white border-slate-200/80 hover:border-slate-300 hover:bg-slate-50/60 shadow-2xs"
+                        ? "border-[#CA8A04] ring-2 ring-[#CA8A04] shadow-md"
+                        : "border-slate-200/90 hover:border-slate-300"
                     }`}
                   >
-                    <div className="size-10 sm:size-11 rounded-xl bg-[#FEFBE8] text-[#CA8A04] flex items-center justify-center mb-1.5 group-hover:scale-105 transition-transform">
-                      <Bell className="size-5" />
+                    <div className="w-full h-20 sm:h-22 bg-gradient-to-r from-[#fde047] via-[#facc15] to-[#ca8a04] relative flex items-center justify-center pt-1">
+                      <svg className="absolute -bottom-0.5 left-0 w-full h-4 sm:h-5 text-white" viewBox="0 0 100 20" preserveAspectRatio="none">
+                        <path d="M0,0 Q50,20 100,0 L100,20 L0,20 Z" fill="currentColor" />
+                      </svg>
+                      <div className="relative z-10 size-13 sm:size-14 rounded-full bg-white shadow-[0_4px_12px_rgba(0,0,0,0.12)] border-2 border-white flex items-center justify-center">
+                        <div className="relative flex items-center justify-center">
+                          <div className="size-7 sm:size-8 rounded-lg bg-[#FEF9C3] flex items-center justify-center">
+                            <Bell className="size-4.5 sm:size-5 text-[#CA8A04]" />
+                          </div>
+                          <div className="absolute -top-1 -right-1 size-3.5 sm:size-4 rounded-full bg-[#EF4444] text-white flex items-center justify-center text-[8px] sm:text-[9px] font-black shadow-xs border border-white">
+                            3
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight">Collections List</span>
-                    {selectedReportCard === "collections-list" && (
-                      <span className="mt-1 text-[9px] font-black text-amber-700 bg-yellow-100 px-1.5 py-0.2 rounded-full">Active</span>
-                    )}
+                    <div className="w-full bg-white flex flex-col items-center justify-between pb-2.5 pt-1 px-1">
+                      <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight text-center">{rl.collectionsList}</span>
+                      <div className="size-5.5 sm:size-6 rounded-full bg-[#CA8A04] text-white flex items-center justify-center mt-1.5 shadow-xs group-hover:scale-110 transition-transform">
+                        <ArrowRight className="size-3 sm:size-3.5 stroke-[2.5]" />
+                      </div>
+                    </div>
                   </button>
 
                   {/* Card 9: Online to Cash */}
                   <button
+                    type="button"
                     onClick={() => setSelectedReportCard(selectedReportCard === "online-to-cash" ? null : "online-to-cash")}
-                    className={`rounded-2xl p-2.5 sm:p-3 border transition-all duration-150 flex flex-col items-center justify-center text-center cursor-pointer group min-h-[90px] sm:min-h-[100px] ${
+                    className={`rounded-2xl sm:rounded-[22px] bg-white border transition-all duration-200 flex flex-col items-center cursor-pointer group overflow-hidden shadow-xs hover:shadow-md ${
                       selectedReportCard === "online-to-cash"
-                        ? "border-[#0284C7] ring-2 ring-[#0284C7] bg-sky-50/50 shadow-xs"
-                        : "bg-white border-slate-200/80 hover:border-slate-300 hover:bg-slate-50/60 shadow-2xs"
+                        ? "border-[#0284C7] ring-2 ring-[#0284C7] shadow-md"
+                        : "border-slate-200/90 hover:border-slate-300"
                     }`}
                   >
-                    <div className="size-10 sm:size-11 rounded-xl bg-[#EEF8FF] text-[#0284C7] flex items-center justify-center mb-1.5 group-hover:scale-105 transition-transform">
-                      <Smartphone className="size-5" />
+                    <div className="w-full h-20 sm:h-22 bg-gradient-to-r from-[#38bdf8] to-[#0284c7] relative flex items-center justify-center pt-1">
+                      <svg className="absolute -bottom-0.5 left-0 w-full h-4 sm:h-5 text-white" viewBox="0 0 100 20" preserveAspectRatio="none">
+                        <path d="M0,0 Q50,20 100,0 L100,20 L0,20 Z" fill="currentColor" />
+                      </svg>
+                      <div className="relative z-10 size-13 sm:size-14 rounded-full bg-white shadow-[0_4px_12px_rgba(0,0,0,0.12)] border-2 border-white flex items-center justify-center">
+                        <div className="relative flex items-center justify-center">
+                          <div className="size-7 sm:size-8 rounded-lg bg-[#E0F2FE] flex items-center justify-center">
+                            <Smartphone className="size-4.5 sm:size-5 text-[#0284C7]" />
+                          </div>
+                          <span className="absolute inset-0 flex items-center justify-center text-[10px] font-black text-[#0284C7] pb-0.5 pointer-events-none">
+                            ₹
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight">Online to Cash</span>
-                    {selectedReportCard === "online-to-cash" && (
-                      <span className="mt-1 text-[9px] font-black text-sky-700 bg-sky-100 px-1.5 py-0.2 rounded-full">Active</span>
-                    )}
+                    <div className="w-full bg-white flex flex-col items-center justify-between pb-2.5 pt-1 px-1">
+                      <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight text-center">{rl.onlineToCash}</span>
+                      <div className="size-5.5 sm:size-6 rounded-full bg-[#0284C7] text-white flex items-center justify-center mt-1.5 shadow-xs group-hover:scale-110 transition-transform">
+                        <ArrowRight className="size-3 sm:size-3.5 stroke-[2.5]" />
+                      </div>
+                    </div>
                   </button>
 
                   {/* Card 10: Cash Out */}
                   <button
+                    type="button"
                     onClick={() => setSelectedReportCard(selectedReportCard === "cash-out" ? null : "cash-out")}
-                    className={`rounded-2xl p-2.5 sm:p-3 border transition-all duration-150 flex flex-col items-center justify-center text-center cursor-pointer group min-h-[90px] sm:min-h-[100px] ${
+                    className={`rounded-2xl sm:rounded-[22px] bg-white border transition-all duration-200 flex flex-col items-center cursor-pointer group overflow-hidden shadow-xs hover:shadow-md ${
                       selectedReportCard === "cash-out"
-                        ? "border-[#E11D48] ring-2 ring-[#E11D48] bg-rose-50/50 shadow-xs"
-                        : "bg-white border-slate-200/80 hover:border-slate-300 hover:bg-slate-50/60 shadow-2xs"
+                        ? "border-[#E11D48] ring-2 ring-[#E11D48] shadow-md"
+                        : "border-slate-200/90 hover:border-slate-300"
                     }`}
                   >
-                    <div className="size-10 sm:size-11 rounded-xl bg-[#FEECEF] text-[#E11D48] flex items-center justify-center mb-1.5 group-hover:scale-105 transition-transform">
-                      <ArrowUpRight className="size-5" />
+                    <div className="w-full h-20 sm:h-22 bg-gradient-to-r from-[#fb7185] via-[#f43f5e] to-[#be123c] relative flex items-center justify-center pt-1">
+                      <svg className="absolute -bottom-0.5 left-0 w-full h-4 sm:h-5 text-white" viewBox="0 0 100 20" preserveAspectRatio="none">
+                        <path d="M0,0 Q50,20 100,0 L100,20 L0,20 Z" fill="currentColor" />
+                      </svg>
+                      <div className="relative z-10 size-13 sm:size-14 rounded-full bg-white shadow-[0_4px_12px_rgba(0,0,0,0.12)] border-2 border-white flex items-center justify-center">
+                        <div className="relative flex items-center justify-center">
+                          <div className="size-7 sm:size-8 rounded-lg bg-[#FFE4E6] flex items-center justify-center">
+                            <CreditCard className="size-4.5 sm:size-5 text-[#E11D48]" />
+                          </div>
+                          <div className="absolute -bottom-1 -right-1 size-3.5 sm:size-4 rounded-full bg-[#E11D48] text-white flex items-center justify-center text-[7px] sm:text-[8px] font-black shadow-xs border border-white">
+                            →
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight">Cash Out</span>
-                    {selectedReportCard === "cash-out" && (
-                      <span className="mt-1 text-[9px] font-black text-rose-700 bg-rose-100 px-1.5 py-0.2 rounded-full">Active</span>
-                    )}
+                    <div className="w-full bg-white flex flex-col items-center justify-between pb-2.5 pt-1 px-1">
+                      <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight text-center">{rl.cashOut}</span>
+                      <div className="size-5.5 sm:size-6 rounded-full bg-[#E11D48] text-white flex items-center justify-center mt-1.5 shadow-xs group-hover:scale-110 transition-transform">
+                        <ArrowRight className="size-3 sm:size-3.5 stroke-[2.5]" />
+                      </div>
+                    </div>
                   </button>
                 </div>
               </div>
@@ -4435,7 +6326,7 @@ function AdminDashboardPage() {
               {/* ── HELPER HINT WHEN NO CARD IS CLICKED ── */}
               {!selectedReportCard && (
                 <div className="text-center py-3 text-xs sm:text-sm font-semibold text-slate-400">
-                  Click any card above to view its detailed report and records.
+                  {rl.hint}
                 </div>
               )}
 
@@ -4463,8 +6354,8 @@ function AdminDashboardPage() {
                           <BookOpen className="size-6" />
                         </div>
                         <div>
-                          <h3 className="text-lg sm:text-xl font-black text-slate-800">Cashbook Register & Daily Ledger</h3>
-                          <p className="text-xs text-slate-500 font-semibold">Incoming package payments, wage disbursements, and net cash balance.</p>
+                          <h3 className="text-lg sm:text-xl font-black text-slate-800">{rl.cashbookTitle}</h3>
+                          <p className="text-xs text-slate-500 font-semibold">{rl.cashbookSub}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -4474,7 +6365,7 @@ function AdminDashboardPage() {
                           onClick={() => setSelectedReportCard(null)}
                           className="h-9 px-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
                         >
-                          <X className="size-3.5 mr-1" /> Close View
+                          <X className="size-3.5 mr-1" /> {rl.closeView}
                         </Button>
                       </div>
                     </div>
@@ -4482,19 +6373,19 @@ function AdminDashboardPage() {
                     {/* Cashbook Stats */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                       <div className="bg-emerald-50/60 p-4 rounded-2xl border border-emerald-100">
-                        <span className="text-[11px] font-black text-emerald-800 uppercase tracking-wider block">Total Inflow (Cr)</span>
+                        <span className="text-[11px] font-black text-emerald-800 uppercase tracking-wider block">{rl.totalInflow}</span>
                         <div className="text-2xl font-black text-emerald-700 mt-1">₹{totalInflow.toLocaleString("en-IN")}</div>
-                        <span className="text-[11px] text-emerald-600 font-semibold">Package credits added</span>
+                        <span className="text-[11px] text-emerald-600 font-semibold">{rl.packageCreditsAdded}</span>
                       </div>
                       <div className="bg-rose-50/60 p-4 rounded-2xl border border-rose-100">
-                        <span className="text-[11px] font-black text-rose-800 uppercase tracking-wider block">Total Outflow (Dr)</span>
+                        <span className="text-[11px] font-black text-rose-800 uppercase tracking-wider block">{rl.totalOutflow}</span>
                         <div className="text-2xl font-black text-rose-700 mt-1">₹{Math.round(totalOutflow).toLocaleString("en-IN")}</div>
-                        <span className="text-[11px] text-rose-600 font-semibold">Calculated staff wages</span>
+                        <span className="text-[11px] text-rose-600 font-semibold">{rl.calculatedStaffWages}</span>
                       </div>
                       <div className="bg-blue-50/60 p-4 rounded-2xl border border-blue-100">
-                        <span className="text-[11px] font-black text-blue-800 uppercase tracking-wider block">Net Ledger Balance</span>
+                        <span className="text-[11px] font-black text-blue-800 uppercase tracking-wider block">{rl.netBalance}</span>
                         <div className="text-2xl font-black text-[#063B78] mt-1">₹{netBalance.toLocaleString("en-IN")}</div>
-                        <span className="text-[11px] text-blue-600 font-semibold">Reconciled cash position</span>
+                        <span className="text-[11px] text-blue-600 font-semibold">{rl.reconciledCash}</span>
                       </div>
                     </div>
 
@@ -4503,13 +6394,13 @@ function AdminDashboardPage() {
                       <table className="w-full text-left text-xs border-collapse">
                         <thead>
                           <tr className="bg-[#F8FAFF] border-b border-[#E0E8F5] text-[#5B6B7F] font-black uppercase tracking-wider text-[11px]">
-                            <th className="p-3 whitespace-nowrap">Date</th>
-                            <th className="p-3 whitespace-nowrap">Reference / Particulars</th>
-                            <th className="p-3 whitespace-nowrap">Type</th>
-                            <th className="p-3 whitespace-nowrap">Mode</th>
-                            <th className="p-3 whitespace-nowrap text-right">Inflow (Cr)</th>
-                            <th className="p-3 whitespace-nowrap text-right">Outflow (Dr)</th>
-                            <th className="p-3 whitespace-nowrap text-center">Status</th>
+                            <th className="p-3 whitespace-nowrap">{rl.date}</th>
+                            <th className="p-3 whitespace-nowrap">{rl.reference}</th>
+                            <th className="p-3 whitespace-nowrap">{rl.type}</th>
+                            <th className="p-3 whitespace-nowrap">{rl.mode}</th>
+                            <th className="p-3 whitespace-nowrap text-right">{rl.inflow}</th>
+                            <th className="p-3 whitespace-nowrap text-right">{rl.outflow}</th>
+                            <th className="p-3 whitespace-nowrap text-center">{rl.status}</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-[#E0E8F5] font-semibold text-[#10233F]">
@@ -4585,8 +6476,8 @@ function AdminDashboardPage() {
                           <BarChart3 className="size-6" />
                         </div>
                         <div>
-                          <h3 className="text-lg sm:text-xl font-black text-slate-800">My Consolidated Business Report</h3>
-                          <p className="text-xs text-slate-500 font-semibold">All-in-one performance report of employees, jobs, and finances.</p>
+                          <h3 className="text-lg sm:text-xl font-black text-slate-800">{rl.myReportTitle}</h3>
+                          <p className="text-xs text-slate-500 font-semibold">{rl.myReportSub}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -4598,7 +6489,7 @@ function AdminDashboardPage() {
                           variant="outline"
                           className="h-9 px-3 rounded-xl text-xs font-bold text-[#063B78] hover:bg-slate-50"
                         >
-                          <Printer className="size-3.5 mr-1" /> Print Report
+                          <Printer className="size-3.5 mr-1" /> {rl.printReport}
                         </Button>
                         <Button
                           size="sm"
@@ -4606,7 +6497,7 @@ function AdminDashboardPage() {
                           onClick={() => setSelectedReportCard(null)}
                           className="h-9 px-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
                         >
-                          <X className="size-3.5 mr-1" /> Close View
+                          <X className="size-3.5 mr-1" /> {rl.closeView}
                         </Button>
                       </div>
                     </div>
@@ -4614,32 +6505,32 @@ function AdminDashboardPage() {
                     {/* KPI 4 Cards */}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                       <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                        <span className="text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider block">TOTAL EMPLOYEES</span>
+                        <span className="text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider block">{rl.totalEmployees}</span>
                         <div className="text-2xl sm:text-3xl font-black text-[#10233F] mt-1">{workers.length}</div>
-                        <div className="text-[11px] font-semibold text-emerald-700 mt-0.5">Registered staff</div>
+                        <div className="text-[11px] font-semibold text-emerald-700 mt-0.5">{rl.registeredStaff}</div>
                       </div>
                       <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                        <span className="text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider block">ATTENDANCE & OT</span>
+                        <span className="text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider block">{rl.attendanceOt}</span>
                         <div className="text-2xl sm:text-3xl font-black text-[#10233F] mt-1">
                           {reportAttendanceRecords.filter((a: DailyAttendanceRecord) => a.status === "Present" || a.status === "Overtime").length}
-                          <span className="text-xs font-bold text-slate-500 ml-1">Days</span>
+                          <span className="text-xs font-bold text-slate-500 ml-1">{t("days")}</span>
                         </div>
                         <div className="text-[11px] font-semibold text-amber-700 mt-0.5">
-                          +{reportAttendanceRecords.reduce((sum: number, a: DailyAttendanceRecord) => sum + (Number(a.overtimeHours) || 0), 0)} hrs OT
+                          +{reportAttendanceRecords.reduce((sum: number, a: DailyAttendanceRecord) => sum + (Number(a.overtimeHours) || 0), 0)} {lang === "mr" ? "तास OT" : "hrs OT"}
                         </div>
                       </div>
                       <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                        <span className="text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider block">PAYROLL EXPENSES</span>
+                        <span className="text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider block">{rl.payrollExpenses}</span>
                         <div className="text-2xl sm:text-3xl font-black text-emerald-700 mt-1">₹{Math.round(totalPayroll).toLocaleString("en-IN")}</div>
-                        <div className="text-[11px] font-semibold text-slate-500 mt-0.5">Calculated liability</div>
+                        <div className="text-[11px] font-semibold text-slate-500 mt-0.5">{rl.calculatedLiability}</div>
                       </div>
                       <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                        <span className="text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider block">JOBS & APPLICANTS</span>
+                        <span className="text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider block">{rl.jobsApplicants}</span>
                         <div className="text-2xl sm:text-3xl font-black text-[#10233F] mt-1">
                           {jobs.length}
-                          <span className="text-xs font-bold text-slate-500 ml-1">Jobs</span>
+                          <span className="text-xs font-bold text-slate-500 ml-1">{t("jobs")}</span>
                         </div>
-                        <div className="text-[11px] font-semibold text-purple-700 mt-0.5">{applications.length} applications</div>
+                        <div className="text-[11px] font-semibold text-purple-700 mt-0.5">{applications.length} {t("applications")}</div>
                       </div>
                     </div>
                   </div>
@@ -4670,8 +6561,8 @@ function AdminDashboardPage() {
                           <IndianRupee className="size-6" />
                         </div>
                         <div>
-                          <h3 className="text-lg sm:text-xl font-black text-slate-800">Company & Payroll Expenses</h3>
-                          <p className="text-xs text-slate-500 font-semibold">Base staff salaries, overtime compensation, and worker allowances.</p>
+                          <h3 className="text-lg sm:text-xl font-black text-slate-800">{rl.expensesTitle}</h3>
+                          <p className="text-xs text-slate-500 font-semibold">{rl.expensesSub}</p>
                         </div>
                       </div>
                       <Button
@@ -4680,25 +6571,25 @@ function AdminDashboardPage() {
                         onClick={() => setSelectedReportCard(null)}
                         className="h-9 px-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
                       >
-                        <X className="size-3.5 mr-1" /> Close View
+                        <X className="size-3.5 mr-1" /> {rl.closeView}
                       </Button>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                       <div className="bg-amber-50/60 p-4 rounded-2xl border border-amber-100">
-                        <span className="text-[11px] font-black text-amber-800 uppercase tracking-wider block">Base Wages</span>
+                        <span className="text-[11px] font-black text-amber-800 uppercase tracking-wider block">{rl.baseWages}</span>
                         <div className="text-2xl font-black text-amber-700 mt-1">₹{Math.round(totalWages).toLocaleString("en-IN")}</div>
-                        <span className="text-[11px] text-amber-600 font-semibold">Standard working days</span>
+                        <span className="text-[11px] text-amber-600 font-semibold">{lang === "mr" ? "नियमित कामाचे दिवस" : "Standard working days"}</span>
                       </div>
                       <div className="bg-purple-50/60 p-4 rounded-2xl border border-purple-100">
-                        <span className="text-[11px] font-black text-purple-800 uppercase tracking-wider block">Overtime Pay</span>
+                        <span className="text-[11px] font-black text-purple-800 uppercase tracking-wider block">{rl.overtimePay}</span>
                         <div className="text-2xl font-black text-purple-700 mt-1">₹{Math.round(totalOt).toLocaleString("en-IN")}</div>
-                        <span className="text-[11px] text-purple-600 font-semibold">Extra duty hours</span>
+                        <span className="text-[11px] text-purple-600 font-semibold">{lang === "mr" ? "ओव्हरटाईम तास मोबदला" : "Extra duty hours"}</span>
                       </div>
                       <div className="bg-emerald-50/60 p-4 rounded-2xl border border-emerald-100">
-                        <span className="text-[11px] font-black text-emerald-800 uppercase tracking-wider block">Total Liability</span>
+                        <span className="text-[11px] font-black text-emerald-800 uppercase tracking-wider block">{rl.totalLiability}</span>
                         <div className="text-2xl font-black text-emerald-700 mt-1">₹{Math.round(totalWages + totalOt).toLocaleString("en-IN")}</div>
-                        <span className="text-[11px] text-emerald-600 font-semibold">Combined staff expense</span>
+                        <span className="text-[11px] text-emerald-600 font-semibold">{lang === "mr" ? "एकूण देय पगार" : "Combined staff expense"}</span>
                       </div>
                     </div>
 
@@ -4706,12 +6597,12 @@ function AdminDashboardPage() {
                       <table className="w-full text-left text-xs border-collapse">
                         <thead>
                           <tr className="bg-[#F8FAFF] border-b border-[#E0E8F5] text-[#5B6B7F] font-black uppercase tracking-wider text-[11px]">
-                            <th className="p-3 whitespace-nowrap">Staff Member</th>
-                            <th className="p-3 whitespace-nowrap">Role / Trade</th>
-                            <th className="p-3 whitespace-nowrap">Daily Rate</th>
-                            <th className="p-3 whitespace-nowrap text-right">Base Wages</th>
-                            <th className="p-3 whitespace-nowrap text-right">OT Pay</th>
-                            <th className="p-3 whitespace-nowrap text-right">Total Expense</th>
+                            <th className="p-3 whitespace-nowrap">{rl.staffName}</th>
+                            <th className="p-3 whitespace-nowrap">{rl.roleTrade}</th>
+                            <th className="p-3 whitespace-nowrap">{rl.dailyRate}</th>
+                            <th className="p-3 whitespace-nowrap text-right">{rl.baseWages}</th>
+                            <th className="p-3 whitespace-nowrap text-right">{rl.overtimePay}</th>
+                            <th className="p-3 whitespace-nowrap text-right">{rl.totalLiability}</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-[#E0E8F5] font-semibold text-[#10233F]">
@@ -4759,8 +6650,8 @@ function AdminDashboardPage() {
                           <FileText className="size-6" />
                         </div>
                         <div>
-                          <h3 className="text-lg sm:text-xl font-black text-slate-800">Financial Reports & Tax Invoices</h3>
-                          <p className="text-xs text-slate-500 font-semibold">Official billing statements, payment receipts, and GST breakdown.</p>
+                          <h3 className="text-lg sm:text-xl font-black text-slate-800">{rl.financialTitle}</h3>
+                          <p className="text-xs text-slate-500 font-semibold">{rl.financialSub}</p>
                         </div>
                       </div>
                       <Button
@@ -4769,7 +6660,7 @@ function AdminDashboardPage() {
                         onClick={() => setSelectedReportCard(null)}
                         className="h-9 px-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
                       >
-                        <X className="size-3.5 mr-1" /> Close View
+                        <X className="size-3.5 mr-1" /> {rl.closeView}
                       </Button>
                     </div>
 
@@ -4777,13 +6668,13 @@ function AdminDashboardPage() {
                       <table className="w-full text-left text-xs border-collapse">
                         <thead>
                           <tr className="bg-[#F8FAFF] border-b border-[#E0E8F5] text-[#5B6B7F] font-black uppercase tracking-wider text-[11px]">
-                            <th className="p-3 whitespace-nowrap">Transaction ID</th>
+                            <th className="p-3 whitespace-nowrap">{rl.reference}</th>
                             <th className="p-3 whitespace-nowrap">Plan Name</th>
                             <th className="p-3 whitespace-nowrap">Amount Paid</th>
                             <th className="p-3 whitespace-nowrap">Job Credits</th>
-                            <th className="p-3 whitespace-nowrap">Payment Method</th>
-                            <th className="p-3 whitespace-nowrap">Date</th>
-                            <th className="p-3 whitespace-nowrap text-center">Status</th>
+                            <th className="p-3 whitespace-nowrap">{rl.mode}</th>
+                            <th className="p-3 whitespace-nowrap">{rl.date}</th>
+                            <th className="p-3 whitespace-nowrap text-center">{rl.status}</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-[#E0E8F5] font-semibold text-[#10233F]">
@@ -4821,8 +6712,8 @@ function AdminDashboardPage() {
                         <Package className="size-6" />
                       </div>
                       <div>
-                        <h3 className="text-lg sm:text-xl font-black text-slate-800">Items & Job Vacancies</h3>
-                        <p className="text-xs text-slate-500 font-semibold">Active job openings, open vacancies, and applicant response rate.</p>
+                        <h3 className="text-lg sm:text-xl font-black text-slate-800">{rl.itemsTitle}</h3>
+                        <p className="text-xs text-slate-500 font-semibold">{rl.itemsSub}</p>
                       </div>
                     </div>
                     <Button
@@ -4831,7 +6722,7 @@ function AdminDashboardPage() {
                       onClick={() => setSelectedReportCard(null)}
                       className="h-9 px-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
                     >
-                      <X className="size-3.5 mr-1" /> Close View
+                      <X className="size-3.5 mr-1" /> {rl.closeView}
                     </Button>
                   </div>
 
@@ -4896,8 +6787,8 @@ function AdminDashboardPage() {
                         <Users className="size-6" />
                       </div>
                       <div>
-                        <h3 className="text-lg sm:text-xl font-black text-slate-800">Staff Attendance & Workforce Log</h3>
-                        <p className="text-xs text-slate-500 font-semibold">Registered employees, attendance statement, and daily pay rate.</p>
+                        <h3 className="text-lg sm:text-xl font-black text-slate-800">{rl.staffTitle}</h3>
+                        <p className="text-xs text-slate-500 font-semibold">{rl.staffSub}</p>
                       </div>
                     </div>
                     <Button
@@ -4906,7 +6797,7 @@ function AdminDashboardPage() {
                       onClick={() => setSelectedReportCard(null)}
                       className="h-9 px-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
                     >
-                      <X className="size-3.5 mr-1" /> Close View
+                      <X className="size-3.5 mr-1" /> {rl.closeView}
                     </Button>
                   </div>
 
@@ -4914,15 +6805,15 @@ function AdminDashboardPage() {
                     <table className="w-full text-left text-xs border-collapse">
                       <thead>
                         <tr className="bg-[#F8FAFF] border-b border-[#E0E8F5] text-[#5B6B7F] font-black uppercase tracking-wider text-[11px]">
-                          <th className="p-3 whitespace-nowrap">Staff Name</th>
-                          <th className="p-3 whitespace-nowrap">Role / Trade</th>
-                          <th className="p-3 whitespace-nowrap">Daily Rate</th>
-                          <th className="p-3 whitespace-nowrap text-center">Present (P)</th>
-                          <th className="p-3 whitespace-nowrap text-center">Half Day (HD)</th>
-                          <th className="p-3 whitespace-nowrap text-center">Absent (A)</th>
-                          <th className="p-3 whitespace-nowrap text-center">Overtime (OT)</th>
-                          <th className="p-3 whitespace-nowrap text-right">Total Wages</th>
-                          <th className="p-3 whitespace-nowrap text-center">Action</th>
+                          <th className="p-3 whitespace-nowrap">{rl.staffName}</th>
+                          <th className="p-3 whitespace-nowrap">{rl.roleTrade}</th>
+                          <th className="p-3 whitespace-nowrap">{rl.dailyRate}</th>
+                          <th className="p-3 whitespace-nowrap text-center">{rl.present}</th>
+                          <th className="p-3 whitespace-nowrap text-center">{rl.halfDay}</th>
+                          <th className="p-3 whitespace-nowrap text-center">{rl.absent}</th>
+                          <th className="p-3 whitespace-nowrap text-center">{rl.overtime}</th>
+                          <th className="p-3 whitespace-nowrap text-right">{rl.totalWages}</th>
+                          <th className="p-3 whitespace-nowrap text-center">{rl.action}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-[#E0E8F5] font-semibold text-[#10233F]">
@@ -4946,7 +6837,7 @@ function AdminDashboardPage() {
                                   {w.trade || "Staff"}
                                 </span>
                               </td>
-                              <td className="p-3 whitespace-nowrap font-black text-slate-700">₹{rate} / day</td>
+                              <td className="p-3 whitespace-nowrap font-black text-slate-700">₹{rate} / {lang === "mr" ? "दिवस" : "day"}</td>
                               <td className="p-3 whitespace-nowrap text-center">
                                 <span className="size-6 inline-flex items-center justify-center rounded-md bg-emerald-100 text-emerald-800 font-black text-xs">
                                   {pCount}
@@ -4980,7 +6871,7 @@ function AdminDashboardPage() {
                                   onClick={() => setSelectedWorkerReport(w)}
                                   className="bg-[#063B78] hover:bg-[#082F63] text-white text-xs font-bold h-7 px-3 rounded-lg shadow-2xs cursor-pointer"
                                 >
-                                  Salary Slip
+                                  {rl.salarySlip}
                                 </Button>
                               </td>
                             </tr>
@@ -5010,8 +6901,8 @@ function AdminDashboardPage() {
                           <ShoppingBag className="size-6" />
                         </div>
                         <div>
-                          <h3 className="text-lg sm:text-xl font-black text-slate-800">My Orders & Packages</h3>
-                          <p className="text-xs text-slate-500 font-semibold">Purchased membership packages, credits, and active plans.</p>
+                          <h3 className="text-lg sm:text-xl font-black text-slate-800">{rl.myOrderTitle}</h3>
+                          <p className="text-xs text-slate-500 font-semibold">{rl.myOrderSub}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -5028,7 +6919,7 @@ function AdminDashboardPage() {
                           onClick={() => setSelectedReportCard(null)}
                           className="h-9 px-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
                         >
-                          <X className="size-3.5 mr-1" /> Close View
+                          <X className="size-3.5 mr-1" /> {rl.closeView}
                         </Button>
                       </div>
                     </div>
@@ -5089,7 +6980,7 @@ function AdminDashboardPage() {
                       onClick={() => setSelectedReportCard(null)}
                       className="h-9 px-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
                     >
-                      <X className="size-3.5 mr-1" /> Close View
+                      <X className="size-3.5 mr-1" /> {rl.closeView}
                     </Button>
                   </div>
 
@@ -5141,8 +7032,8 @@ function AdminDashboardPage() {
                           <Smartphone className="size-6" />
                         </div>
                         <div>
-                          <h3 className="text-lg sm:text-xl font-black text-slate-800">Online to Cash Reconciliation</h3>
-                          <p className="text-xs text-slate-500 font-semibold">Online payments (Razorpay UPI, cards, netbanking) settled to employer cash ledger.</p>
+                          <h3 className="text-lg sm:text-xl font-black text-slate-800">{rl.onlineToCashTitle}</h3>
+                          <p className="text-xs text-slate-500 font-semibold">{rl.onlineToCashSub}</p>
                         </div>
                       </div>
                       <Button
@@ -5151,7 +7042,7 @@ function AdminDashboardPage() {
                         onClick={() => setSelectedReportCard(null)}
                         className="h-9 px-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
                       >
-                        <X className="size-3.5 mr-1" /> Close View
+                        <X className="size-3.5 mr-1" /> {rl.closeView}
                       </Button>
                     </div>
 
@@ -5219,8 +7110,8 @@ function AdminDashboardPage() {
                         <ArrowUpRight className="size-6" />
                       </div>
                       <div>
-                        <h3 className="text-lg sm:text-xl font-black text-slate-800">Cash Out & Wage Disbursements</h3>
-                        <p className="text-xs text-slate-500 font-semibold">Worker payout receipts, generated salary slips, and cash distributions.</p>
+                        <h3 className="text-lg sm:text-xl font-black text-slate-800">{rl.cashOutTitle}</h3>
+                        <p className="text-xs text-slate-500 font-semibold">{rl.cashOutSub}</p>
                       </div>
                     </div>
                     <Button
@@ -5229,7 +7120,7 @@ function AdminDashboardPage() {
                       onClick={() => setSelectedReportCard(null)}
                       className="h-9 px-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
                     >
-                      <X className="size-3.5 mr-1" /> Close View
+                      <X className="size-3.5 mr-1" /> {rl.closeView}
                     </Button>
                   </div>
 
@@ -5237,12 +7128,12 @@ function AdminDashboardPage() {
                     <table className="w-full text-left text-xs border-collapse">
                       <thead>
                         <tr className="bg-[#F8FAFF] border-b border-[#E0E8F5] text-[#5B6B7F] font-black uppercase tracking-wider text-[11px]">
-                          <th className="p-3 whitespace-nowrap">Staff Member</th>
-                          <th className="p-3 whitespace-nowrap">Trade / Role</th>
-                          <th className="p-3 whitespace-nowrap">Daily Rate</th>
-                          <th className="p-3 whitespace-nowrap text-center">Days Worked</th>
-                          <th className="p-3 whitespace-nowrap text-right">Net Payable</th>
-                          <th className="p-3 whitespace-nowrap text-center">Disbursement Voucher</th>
+                          <th className="p-3 whitespace-nowrap">{rl.staffName}</th>
+                          <th className="p-3 whitespace-nowrap">{rl.roleTrade}</th>
+                          <th className="p-3 whitespace-nowrap">{rl.dailyRate}</th>
+                          <th className="p-3 whitespace-nowrap text-center">{rl.daysWorked}</th>
+                          <th className="p-3 whitespace-nowrap text-right">{rl.netPayable}</th>
+                          <th className="p-3 whitespace-nowrap text-center">{rl.disbursementVoucher}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-[#E0E8F5] font-semibold text-[#10233F]">
@@ -5268,7 +7159,7 @@ function AdminDashboardPage() {
                                   className="h-7 px-3 rounded-lg text-xs font-bold bg-[#E11D48] hover:bg-[#be123c] text-white flex items-center gap-1 mx-auto cursor-pointer"
                                 >
                                   <Download className="size-3" />
-                                  <span>Download Slip PDF</span>
+                                  <span>{rl.downloadSlip}</span>
                                 </Button>
                               </td>
                             </tr>
@@ -6006,8 +7897,8 @@ function AdminDashboardPage() {
                             }));
                           }}
                           className={`px-2.5 py-1 rounded-lg text-[11px] font-black transition-all flex items-center gap-1 cursor-pointer ${workerForm.overtimeRateMode === "auto"
-                              ? "bg-amber-500 text-white shadow-xs"
-                              : "text-slate-600 hover:text-slate-900"
+                            ? "bg-amber-500 text-white shadow-xs"
+                            : "text-slate-600 hover:text-slate-900"
                             }`}
                         >
                           <Zap className="size-3 fill-current" /> Auto Calculate
@@ -6022,8 +7913,8 @@ function AdminDashboardPage() {
                             }));
                           }}
                           className={`px-2.5 py-1 rounded-lg text-[11px] font-black transition-all flex items-center gap-1 cursor-pointer ${workerForm.overtimeRateMode === "manual"
-                              ? "bg-[#063B78] text-white shadow-xs"
-                              : "text-slate-600 hover:text-slate-900"
+                            ? "bg-[#063B78] text-white shadow-xs"
+                            : "text-slate-600 hover:text-slate-900"
                             }`}
                         >
                           <Edit3 className="size-3" /> Manual Rate
@@ -6056,8 +7947,8 @@ function AdminDashboardPage() {
                             }));
                           }}
                           className={`h-11 pl-8 pr-16 rounded-xl text-sm font-black border-slate-300 ${workerForm.overtimeRateMode === "auto"
-                              ? "bg-amber-50/60 text-amber-950 border-amber-300 font-extrabold"
-                              : "bg-white text-emerald-800 border-emerald-400 ring-2 ring-emerald-400/20"
+                            ? "bg-amber-50/60 text-amber-950 border-amber-300 font-extrabold"
+                            : "bg-white text-emerald-800 border-emerald-400 ring-2 ring-emerald-400/20"
                             }`}
                         />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-extrabold text-slate-400">
@@ -6635,8 +8526,8 @@ function AdminDashboardPage() {
                         type="button"
                         onClick={() => { setSlipRangeStartDay(10); setSlipRangeEndDay(20); }}
                         className={`px-1.5 py-0.5 rounded text-[10px] font-black cursor-pointer border ${slipRangeStartDay === 10 && slipRangeEndDay === 20
-                            ? "bg-[#063B78] text-white border-[#063B78]"
-                            : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
+                          ? "bg-[#063B78] text-white border-[#063B78]"
+                          : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
                           }`}
                         title="Set 10 to 20"
                       >
@@ -7004,10 +8895,10 @@ function AdminDashboardPage() {
                       <div
                         key={dateStr}
                         className={`relative min-h-[46px] sm:min-h-[76px] p-1 sm:p-2 rounded-xl sm:rounded-2xl border flex flex-col justify-between transition-all ${isFuture
-                            ? "bg-slate-50/70 border-slate-100 opacity-40 cursor-not-allowed select-none"
-                            : isSunday
-                              ? "border-slate-100 bg-white hover:border-slate-300"
-                              : "border-slate-200 bg-white hover:border-slate-300"
+                          ? "bg-slate-50/70 border-slate-100 opacity-40 cursor-not-allowed select-none"
+                          : isSunday
+                            ? "border-slate-100 bg-white hover:border-slate-300"
+                            : "border-slate-200 bg-white hover:border-slate-300"
                           } ${isSelected && !isFuture ? "ring-2 ring-[#7C3AED] shadow-lg z-30" : "shadow-2xs"}`}
                       >
                         <div className="flex items-center justify-between">
@@ -7101,10 +8992,10 @@ function AdminDashboardPage() {
                           {isSelected && !isFuture && (
                             <div
                               className={`absolute ${isTopRow ? "top-full mt-2" : "bottom-full mb-2"} w-40 sm:w-44 bg-white rounded-2xl p-1.5 shadow-2xl border border-slate-200 z-50 animate-in fade-in zoom-in-95 ${colIdx <= 1
-                                  ? "left-0"
-                                  : colIdx >= 5
-                                    ? "right-0"
-                                    : "left-1/2 -translate-x-1/2"
+                                ? "left-0"
+                                : colIdx >= 5
+                                  ? "right-0"
+                                  : "left-1/2 -translate-x-1/2"
                                 }`}
                               onClick={(e) => e.stopPropagation()}
                             >
@@ -7381,33 +9272,248 @@ function AdminDashboardPage() {
       })()}
 
       {/* ── MOBILE BOTTOM NAVIGATION BAR (Visible on < md) ── */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[#021D3D] text-white border-t border-white/10 z-40 px-2 py-1.5 flex items-center justify-around shadow-2xl">
-        {[
-          { id: "overview", label: "Dashboard", icon: BarChart3 },
-          { id: "jobs", label: "Jobs", icon: BriefcaseBusiness, count: jobs.length },
-          { id: "applications", label: "Applications", icon: FileText, count: applications.length },
-          { id: "reports", label: "Reports", icon: PieChart },
-          { id: "salary", label: "E-Salary", icon: FileText },
-          { id: "attendance", label: "Attendance", icon: CalendarCheck },
-          { id: "profile", label: "Profile", icon: User },
-        ].map((item) => {
-          const isActive = activeTab === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id as any)}
-              className={`flex flex-col items-center gap-0.5 px-2.5 py-1 rounded-xl text-[10px] font-bold transition-all relative ${isActive ? "text-[#FFC400] bg-white/10" : "text-white/60 hover:text-white"
+      <nav aria-label="Mobile Navigation" className="md:hidden fixed bottom-0 left-0 right-0 bg-[#021D3D]/95 backdrop-blur-md text-white border-t border-white/10 z-40 px-1 py-1 shadow-2xl safe-area-bottom">
+        <div className="flex items-center justify-between overflow-x-auto no-scrollbar scroll-smooth gap-0.5 max-w-full">
+          {[
+            { id: "overview", label: lang === "mr" ? "डॅशबोर्ड" : (lang === "hi" ? "डैशबोर्ड" : "Dashboard"), icon: BarChart3 },
+            { id: "jobs", label: lang === "mr" ? "नोकऱ्या" : (lang === "hi" ? "जॉब्स" : "Jobs"), icon: BriefcaseBusiness, count: jobs.length },
+            { id: "applications", label: lang === "mr" ? "अर्ज" : (lang === "hi" ? "आवेदन" : "Applications"), icon: FileText, count: applications.length },
+            { id: "attendance", label: lang === "mr" ? "हजेरी" : (lang === "hi" ? "उपस्थिति" : "Attendance"), icon: CalendarCheck, count: workers.length },
+            { id: "salary", label: lang === "mr" ? "पगार" : (lang === "hi" ? "वेतन" : "Salary"), icon: FileText },
+            { id: "reports", label: lang === "mr" ? "रिपोर्ट्स" : (lang === "hi" ? "रिपोर्ट्स" : "Reports"), icon: PieChart },
+            { id: "profile", label: lang === "mr" ? "प्रोफाइल" : (lang === "hi" ? "प्रोफाइल" : "Profile"), icon: User },
+          ].map((item) => {
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id as any)}
+                className={`flex-1 min-w-[46px] sm:min-w-[54px] flex flex-col items-center justify-center gap-0.5 py-1 px-0.5 rounded-xl text-[10px] font-bold transition-all relative shrink-0 cursor-pointer ${
+                  isActive
+                    ? "text-[#FFC400] bg-white/15 shadow-xs font-black"
+                    : "text-white/70 hover:text-white hover:bg-white/5"
                 }`}
-            >
-              <item.icon className={`size-4.5 ${isActive ? "text-[#FFC400]" : "text-white/60"}`} />
-              <span className="truncate max-w-[68px]">{item.label}</span>
-              {isActive && (
-                <span className="absolute -top-1 size-1 bg-[#FFC400] rounded-full"></span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+              >
+                <div className="relative flex items-center justify-center">
+                  <item.icon className={`size-4 ${isActive ? "text-[#FFC400]" : "text-white/70"}`} />
+                  {item.count !== undefined && item.count > 0 && (
+                    <span className="absolute -top-1.5 -right-2 min-w-3.5 h-3.5 px-0.5 rounded-full bg-[#E11D48] text-white text-[8px] font-black flex items-center justify-center">
+                      {item.count > 99 ? "99+" : item.count}
+                    </span>
+                  )}
+                </div>
+                <span className="whitespace-nowrap leading-none tracking-tight text-[9px] sm:text-[10px]">
+                  {item.label}
+                </span>
+                {isActive && (
+                  <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-4 h-0.5 bg-[#FFC400] rounded-full shadow-[0_0_6px_#FFC400]"></span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+
+      {/* ── FILTER MODAL (Exact Seeker Style & White Theme) ── */}
+      {isFilterModalOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-150"
+          onClick={() => setIsFilterModalOpen(false)}
+        >
+          <div
+            className="bg-white text-slate-800 w-full sm:max-w-md h-[92vh] sm:h-auto sm:max-h-[85vh] rounded-t-3xl sm:rounded-3xl border border-slate-200 shadow-2xl flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header matching Seeker exact layout */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-white sticky top-0 z-10 shrink-0">
+              <div className="flex items-center gap-2">
+                <h3 className="font-black text-xl text-[#0A2540] tracking-tight">Filter Jobs</h3>
+                {activeFilterCount > 0 && (
+                  <span className="bg-[#0284C7] text-white text-[11px] font-black px-2 py-0.5 rounded-full">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2.5">
+                <SlidersHorizontal className="size-5 text-[#0A2540]" />
+                <button
+                  type="button"
+                  onClick={() => setIsFilterModalOpen(false)}
+                  className="p-1 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                  title="Close"
+                >
+                  <X className="size-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Search filters input matching Seeker */}
+            <div className="px-4 pt-3.5 pb-1 shrink-0 bg-white">
+              <div className="relative">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
+                <input
+                  type="text"
+                  value={filterSearchQuery}
+                  onChange={(e) => setFilterSearchQuery(e.target.value)}
+                  placeholder="Search filters..."
+                  className="w-full pl-10 pr-9 py-2.5 rounded-full border border-slate-200 bg-slate-50 text-xs sm:text-sm font-medium text-[#0A2540] placeholder:text-slate-400 focus:outline-none focus:border-[#0284C7] focus:bg-white transition-all"
+                />
+                {filterSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setFilterSearchQuery("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Scrollable Filter List with 100% English text & Seeker Accordions */}
+            <div className="p-4 space-y-2.5 overflow-y-auto flex-1">
+              {FILTER_SECTIONS_DATA.map((section) => {
+                const isOpen = expandedFilterSection === section.id;
+                const filteredOptions = section.options.filter((opt) =>
+                  opt.toLowerCase().includes(filterSearchQuery.toLowerCase())
+                );
+
+                if (
+                  filterSearchQuery &&
+                  filteredOptions.length === 0 &&
+                  !section.title.toLowerCase().includes(filterSearchQuery.toLowerCase())
+                ) {
+                  return null;
+                }
+
+                const hasActive =
+                  (section.id === 1 && selectedLanguage !== "all") ||
+                  (section.id === 2 && selectedCategory !== "all") ||
+                  (section.id === 3 && selectedJobType !== "all") ||
+                  (section.id === 4 && selectedLocation !== "all") ||
+                  (section.id === 5 && selectedExperience !== "all") ||
+                  (section.id === 6 && selectedSkillQual !== "all") ||
+                  (section.id === 7 && selectedSalaryExp !== "all") ||
+                  (section.id === 8 && selectedAvailability !== "all") ||
+                  (section.id === 9 && selectedWorkSchedule !== "all") ||
+                  (section.id === 10 && selectedGender !== "all") ||
+                  (section.id === 11 && selectedVerification !== "all") ||
+                  (section.id === 12 && selectedRatingsActivity !== "all");
+
+                const activeLabel =
+                  section.id === 1 && selectedLanguage !== "all"
+                    ? selectedLanguage
+                    : section.id === 2 && selectedCategory !== "all"
+                    ? selectedCategory
+                    : section.id === 3 && selectedJobType !== "all"
+                    ? selectedJobType
+                    : section.id === 4 && selectedLocation !== "all"
+                    ? selectedLocation
+                    : section.id === 5 && selectedExperience !== "all"
+                    ? selectedExperience
+                    : section.id === 6 && selectedSkillQual !== "all"
+                    ? selectedSkillQual
+                    : section.id === 7 && selectedSalaryExp !== "all"
+                    ? selectedSalaryExp
+                    : section.id === 8 && selectedAvailability !== "all"
+                    ? selectedAvailability
+                    : section.id === 9 && selectedWorkSchedule !== "all"
+                    ? selectedWorkSchedule
+                    : section.id === 10 && selectedGender !== "all"
+                    ? selectedGender
+                    : section.id === 11 && selectedVerification !== "all"
+                    ? selectedVerification
+                    : section.id === 12 && selectedRatingsActivity !== "all"
+                    ? selectedRatingsActivity
+                    : section.optionCount;
+
+                return (
+                  <div
+                    key={section.id}
+                    className="rounded-2xl border border-slate-200/90 bg-white hover:border-[#0284C7]/50 shadow-xs transition-all overflow-hidden"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => toggleFilterSection(section.id)}
+                      className="w-full flex items-center justify-between p-3.5 text-left cursor-pointer transition-colors"
+                    >
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold text-[14px] text-[#0A2540]">{section.title}</p>
+                          {hasActive && <span className="size-2 rounded-full bg-[#0284C7]" />}
+                        </div>
+                        <p className="text-xs text-slate-500 font-medium mt-0.5">
+                          {activeLabel}
+                        </p>
+                      </div>
+                      <div className="size-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
+                        <ChevronDown
+                          className={`size-4 transition-transform duration-200 ${
+                            isOpen ? "rotate-180 text-[#0284C7]" : ""
+                          }`}
+                        />
+                      </div>
+                    </button>
+
+                    {isOpen && (
+                      <div className="px-3.5 pb-3.5 pt-2 border-t border-slate-100 space-y-1.5 animate-in fade-in duration-150 max-h-60 overflow-y-auto">
+                        {filteredOptions.map((opt) => {
+                          const isSelected = isFilterOptionSelected(section.id, opt);
+                          return (
+                            <button
+                              key={opt}
+                              type="button"
+                              onClick={() => handleSelectFilterOption(section.id, opt)}
+                              className={`w-full flex items-center gap-3 py-2 px-3 rounded-xl border text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+                                isSelected
+                                  ? "bg-blue-50/80 border-[#0284C7] text-[#0284C7] font-bold shadow-xs"
+                                  : "bg-slate-50/60 border-slate-200 text-slate-700 hover:bg-slate-100"
+                              }`}
+                            >
+                              <div
+                                className={`size-4.5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                                  isSelected
+                                    ? "border-[#0284C7] bg-[#0284C7]"
+                                    : "border-slate-400 bg-white"
+                                }`}
+                              >
+                                {isSelected && <div className="size-1.5 rounded-full bg-white" />}
+                              </div>
+                              <span className="text-left">{opt}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Bottom Action Footer matching Seeker */}
+            <div className="p-3.5 sm:p-4 border-t border-slate-100 bg-slate-50/90 flex items-center gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={resetAllFilters}
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs transition-colors cursor-pointer text-center"
+              >
+                Reset Filters
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsFilterModalOpen(false);
+                  setActiveTab("jobs");
+                }}
+                className="flex-1 py-2.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-extrabold text-xs shadow-xs transition-colors cursor-pointer text-center"
+              >
+                View Jobs ({filteredJobs.length})
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

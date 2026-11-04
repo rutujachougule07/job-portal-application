@@ -5792,7 +5792,7 @@ const getInitialLanguage = (): LanguageCode => {
       if (stored && languages.some((l) => l.code === stored)) {
         return stored;
       }
-    } catch {}
+    } catch { }
   }
   return "mr";
 };
@@ -5809,7 +5809,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       // Clean up any stale googtrans cookie to prevent Google Translate interference
       document.cookie = "googtrans=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
       document.cookie = `googtrans=; path=/; domain=${window.location.hostname}; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
-    } catch {}
+    } catch { }
   }, []);
 
   const setLang = (value: LanguageCode) => {
@@ -5820,7 +5820,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
         // Clear old googtrans cookie
         document.cookie = "googtrans=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
         document.cookie = `googtrans=; path=/; domain=${window.location.hostname}; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
-      } catch {}
+      } catch { }
     }
   };
 

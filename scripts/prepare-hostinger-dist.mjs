@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { execSync } from "node:child_process";
+import JSZip from "jszip";
 
 const rootDir = process.cwd();
 const clientDir = path.join(rootDir, "dist", "client");
@@ -10,6 +10,19 @@ const zipPath = path.join(rootDir, "dist.zip");
 const htaccessSource = path.join(rootDir, "public", ".htaccess");
 
 console.log("\n🚀 [Prepare Hostinger Dist] Starting validation and deployment packaging...");
+
+// 0. Clean stale archives in root (e.g. dist (2).zip, old dist.zip)
+const staleZipPattern = /^dist(\s*\(\d+\))?\.zip$/i;
+for (const file of fs.readdirSync(rootDir)) {
+  if (staleZipPattern.test(file)) {
+    try {
+      fs.unlinkSync(path.join(rootDir, file));
+      console.log(`🧹 Cleaned stale archive: ${file}`);
+    } catch {
+      // ignore
+    }
+  }
+}
 
 // 1. Verify client build directory exists
 if (!fs.existsSync(clientDir)) {
@@ -56,9 +69,9 @@ console.log(`✅ All ${localRefs.length} local CSS/JS references in index.html v
 
 // 4. Ensure .htaccess is in client directory
 const htaccessTarget = path.join(clientDir, ".htaccess");
-if (!fs.existsSync(htaccessTarget) && fs.existsSync(htaccessSource)) {
+if (fs.existsSync(htaccessSource)) {
   fs.copyFileSync(htaccessSource, htaccessTarget);
-  console.log("✅ Copied .htaccess to client build directory.");
+  console.log("✅ Copied latest .htaccess to client build directory.");
 }
 
 // 5. Populate dist-hostinger directory (clean mirror ready for public_html)
@@ -69,50 +82,61 @@ fs.mkdirSync(hostingerDir, { recursive: true });
 fs.cpSync(clientDir, hostingerDir, { recursive: true });
 console.log("✅ Created clean 'dist-hostinger' directory with all deployable files.");
 
-// 6. Also sync index.html, .htaccess, robots.txt, sitemap.xml and assets directly to dist root so dist/ itself is valid
-fs.copyFileSync(indexHtmlPath, path.join(distDir, "index.html"));
-if (fs.existsSync(htaccessTarget)) {
-  fs.copyFileSync(htaccessTarget, path.join(distDir, ".htaccess"));
+// 6. Synchronize ALL static files into dist root (so dist/ itself is 100% complete for Vercel or any static host)
+for (const item of fs.readdirSync(clientDir)) {
+  const srcPath = path.join(clientDir, item);
+  const destPath = path.join(distDir, item);
+  fs.cpSync(srcPath, destPath, { recursive: true, force: true });
 }
-const robotsTarget = path.join(clientDir, "robots.txt");
-if (fs.existsSync(robotsTarget)) {
-  fs.copyFileSync(robotsTarget, path.join(distDir, "robots.txt"));
-}
-const sitemapTarget = path.join(clientDir, "sitemap.xml");
-if (fs.existsSync(sitemapTarget)) {
-  fs.copyFileSync(sitemapTarget, path.join(distDir, "sitemap.xml"));
-}
-const distAssetsDir = path.join(distDir, "assets");
-const clientAssetsDir = path.join(clientDir, "assets");
-if (fs.existsSync(clientAssetsDir)) {
-  fs.cpSync(clientAssetsDir, distAssetsDir, { recursive: true });
-  console.log("✅ Mirrored assets, robots.txt and sitemap.xml to dist/ root.");
-}
+console.log("✅ Mirrored complete client build (all images, assets, scripts, php, .htaccess) into 'dist/' root.");
 
-// 7. Generate clean dist.zip directly containing the files of dist-hostinger
-if (fs.existsSync(zipPath)) {
-  fs.unlinkSync(zipPath);
-}
+// 7. Generate clean, standards-compliant dist.zip using JSZip
+// This guarantees:
+// - Standard forward slashes (/) for all directory paths (essential for Hostinger / Linux extraction)
+// - Preserves hidden files (.htaccess)
+// - Sets proper UNIX file permissions and attributes
+console.log("📦 Creating production dist.zip for Hostinger public_html using JSZip...");
+const zip = new JSZip();
 
-console.log("📦 Creating production dist.zip for Hostinger public_html...");
-try {
-  if (process.platform === "win32") {
-    execSync(
-      `powershell -NoProfile -Command "Get-ChildItem -Path '${hostingerDir}' -Force | Compress-Archive -DestinationPath '${zipPath}' -Force"`,
-      { stdio: "inherit" }
-    );
-    console.log("🎉 dist.zip successfully generated at:", zipPath);
-  } else {
-    try {
-      execSync(`cd "${hostingerDir}" && zip -r "${zipPath}" .`, { stdio: "inherit" });
-      console.log("🎉 dist.zip successfully generated at:", zipPath);
-    } catch {
-      console.log("ℹ️ Skipping zip creation on non-Windows environment without zip utility.");
+function addFilesRecursively(dirPath, zipFolder) {
+  const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = path.join(dirPath, entry.name);
+    if (entry.isDirectory()) {
+      const subFolder = zipFolder.folder(entry.name);
+      addFilesRecursively(fullPath, subFolder);
+    } else {
+      const fileData = fs.readFileSync(fullPath);
+      zipFolder.file(entry.name, fileData);
     }
   }
-} catch (err) {
-  console.log("⚠️ Could not generate zip archive:", err.message);
 }
+
+addFilesRecursively(hostingerDir, zip);
+
+const zipBuffer = await zip.generateAsync({
+  type: "nodebuffer",
+  compression: "DEFLATE",
+  compressionOptions: { level: 6 },
+  platform: "UNIX",
+});
+
+fs.writeFileSync(zipPath, zipBuffer);
+console.log("🎉 dist.zip successfully generated at:", zipPath);
+
+// Validate dist.zip contents
+const loadedZip = await JSZip.loadAsync(zipBuffer);
+const zipFileNames = Object.keys(loadedZip.files);
+const hasBackslash = zipFileNames.some((name) => name.includes("\\"));
+const hasHtaccess = zipFileNames.includes(".htaccess");
+const hasIndex = zipFileNames.includes("index.html");
+
+if (hasBackslash) {
+  console.warn("⚠️ Warning: dist.zip contains backslashes!");
+} else {
+  console.log("✅ dist.zip verified: 100% forward-slash (/) Linux-compatible paths.");
+}
+console.log(`✅ dist.zip verified: ${zipFileNames.length} entries (.htaccess: ${hasHtaccess}, index.html: ${hasIndex}).`);
 
 // 8. Generate .vercel/output for Vercel Build Output API v3 compatibility
 try {

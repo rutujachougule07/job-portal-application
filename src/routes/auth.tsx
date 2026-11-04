@@ -8,6 +8,8 @@ import {
   Check,
   Eye,
   EyeOff,
+  HardHat,
+  Languages,
   Loader2,
   Lock,
   LogIn,
@@ -23,7 +25,7 @@ import { LogoIcon } from "@/components/portal/Brand";
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, languages, type LanguageCode } from "@/lib/i18n";
 import { toast } from "sonner";
 import { dataStore, type EmployerWorker } from "@/lib/data-store";
 import { uploadFileToFirebaseStorage, uploadDataUrlToFirebaseStorage } from "@/lib/storage-service";
@@ -44,14 +46,605 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
+type AuthTranslations = {
+  workerTitle: string;
+  workerSubtitle: string;
+  posterTitle: string;
+  posterSubtitle: string;
+  workerLoginTitle: string;
+  posterLoginTitle: string;
+  employeeLoginTitle: string;
+  workerLoginSubtitle: string;
+  posterLoginSubtitle: string;
+  employeeLoginSubtitle: string;
+  resetPasswordTitle: string;
+  loginTab: string;
+  registerTab: string;
+  languageLabel: string;
+  workerAndOwnerLabel: string;
+  workerRole: string;
+  ownerRole: string;
+  fullNameLabel: string;
+  fullNamePlaceholder: string;
+  companyNameLabel: string;
+  companyNamePlaceholder: string;
+  photoTitleWorker: string;
+  photoTitleOwner: string;
+  photoSubtitle: string;
+  photoAttached: string;
+  uploadPhoto: string;
+  changePhoto: string;
+  takePhoto: string;
+  emailLabel: string;
+  emailPlaceholder: string;
+  loginEmailLabel: string;
+  loginEmailPlaceholder: string;
+  employeeMobileLabel: string;
+  employeeMobilePlaceholder: string;
+  phoneLabel: string;
+  phonePlaceholder: string;
+  sendOtp: string;
+  resendOtp: string;
+  otpLabel: string;
+  otpPlaceholder: string;
+  otpSentSuccess: string;
+  passwordLabel: string;
+  passwordPlaceholder: string;
+  employeePinLabel: string;
+  employeePinPlaceholder: string;
+  passwordOptionalHint: string;
+  setCustomPassword: string;
+  hideCustomPassword: string;
+  customPasswordPlaceholder: string;
+  registerBtn: string;
+  verifyAndRegisterBtn: string;
+  sendResetLink: string;
+  signInBtn: string;
+  alreadyHaveAccount: string;
+  dontHaveAccount: string;
+  signInLink: string;
+  registerLink: string;
+  forgotPasswordLink: string;
+  rememberMe: string;
+  cameraTitle: string;
+  retakePhoto: string;
+  usePhoto: string;
+  snapPhoto: string;
+};
+
+const AUTH_TRANSLATIONS: Record<string, AuthTranslations> = {
+  en: {
+    workerTitle: "Worker / User Registration",
+    workerSubtitle: "For job seekers: Create a new profile and start finding jobs.",
+    posterTitle: "Job Poster Registration",
+    posterSubtitle: "For employers & companies: Register an account to find workers.",
+    workerLoginTitle: "Worker / User Login",
+    posterLoginTitle: "Job Poster Login",
+    employeeLoginTitle: "Employee Login",
+    workerLoginSubtitle: "Please enter your email and password to log in and find jobs.",
+    posterLoginSubtitle: "For employers & admins: Login to post jobs and search candidates.",
+    employeeLoginSubtitle: "For existing factory employees: Enter mobile number & PIN to punch in.",
+    resetPasswordTitle: "Reset Password",
+    loginTab: "Login",
+    registerTab: "Register",
+    languageLabel: "Language *",
+    workerAndOwnerLabel: "Worker and owner *",
+    workerRole: "Worker",
+    ownerRole: "Owner",
+    fullNameLabel: "Full Name *",
+    fullNamePlaceholder: "e.g. Rahul Sharma",
+    companyNameLabel: "Company / Owner Name *",
+    companyNamePlaceholder: "e.g. Tata Motors / L&T",
+    photoTitleWorker: "Profile Photo",
+    photoTitleOwner: "Company Logo / Photo",
+    photoSubtitle: "Choose file or take live camera photo",
+    photoAttached: "✓ Photo Attached",
+    uploadPhoto: "Upload File",
+    changePhoto: "Change",
+    takePhoto: "Take Photo",
+    emailLabel: "E-mail Address (Optional)",
+    emailPlaceholder: "name@example.com (Optional)",
+    loginEmailLabel: "Email Address or Mobile Number *",
+    loginEmailPlaceholder: "Email or Mobile (e.g. 98220 00000 / user@gmail.com)",
+    employeeMobileLabel: "Mobile Number *",
+    employeeMobilePlaceholder: "e.g. 98220 00000",
+    phoneLabel: "Phone No. *",
+    phonePlaceholder: "98220 00000",
+    sendOtp: "Send OTP",
+    resendOtp: "Resend",
+    otpLabel: "O.T.P *",
+    otpPlaceholder: "Enter 6-digit OTP",
+    otpSentSuccess: "OTP sent successfully. Please check your SMS.",
+    passwordLabel: "Password *",
+    passwordPlaceholder: "••••••••",
+    employeePinLabel: "4-Digit PIN *",
+    employeePinPlaceholder: "e.g. 1234",
+    passwordOptionalHint: "Password: (Defaults to your mobile number)",
+    setCustomPassword: "Set Custom",
+    hideCustomPassword: "Hide",
+    customPasswordPlaceholder: "Enter custom password (min 6 characters)",
+    registerBtn: "Send OTP to Register",
+    verifyAndRegisterBtn: "Verify OTP & Register",
+    sendResetLink: "Send Reset Link",
+    signInBtn: "Sign In",
+    alreadyHaveAccount: "Already have an account?",
+    dontHaveAccount: "Don't have an account?",
+    signInLink: "Sign In",
+    registerLink: "Register",
+    forgotPasswordLink: "Forgot Password?",
+    rememberMe: "Remember me",
+    cameraTitle: "Live Camera Capture",
+    retakePhoto: "Retake",
+    usePhoto: "Use Photo",
+    snapPhoto: "Snap Photo",
+  },
+  mr: {
+    workerTitle: "कामगार नोंदणी",
+    workerSubtitle: "नोकरी शोधणाऱ्यांसाठी: नवीन प्रोफाईल तयार करा आणि काम मिळवा.",
+    posterTitle: "जॉब पोस्टर नोंदणी",
+    posterSubtitle: "कंपन्या व मालकांसाठी: कामगार शोधण्यासाठी खाते नोंदणी करा.",
+    workerLoginTitle: "कामगार लॉगिन",
+    posterLoginTitle: "जॉब पोस्टर लॉगिन",
+    employeeLoginTitle: "कर्मचारी लॉगिन",
+    workerLoginSubtitle: "लॉगिन करण्यासाठी कृपया ईमेल किंवा मोबाईल नंबर टाका.",
+    posterLoginSubtitle: "मालक व कंपन्यांसाठी: कामगार शोधण्यासाठी लॉगिन करा.",
+    employeeLoginSubtitle: "हजेरी नोंदवण्यासाठी मोबाईल नंबर आणि पिन टाका.",
+    resetPasswordTitle: "पासवर्ड बदला",
+    loginTab: "लॉगिन",
+    registerTab: "नोंदणी",
+    languageLabel: "भाषा *",
+    workerAndOwnerLabel: "कामगार आणि मालक *",
+    workerRole: "कामगार",
+    ownerRole: "मालक",
+    fullNameLabel: "पूर्ण नाव *",
+    fullNamePlaceholder: "उदा. राहुल शर्मा",
+    companyNameLabel: "कंपनी किंवा मालकाचे नाव *",
+    companyNamePlaceholder: "उदा. टाटा मोटर्स / एल अँड टी",
+    photoTitleWorker: "प्रोफाईल फोटो",
+    photoTitleOwner: "कंपनी लोगो किंवा फोटो",
+    photoSubtitle: "फाईल निवडा किंवा कॅमेऱ्यातून थेट फोटो काढा",
+    photoAttached: "✓ फोटो जोडला गेला आहे",
+    uploadPhoto: "फाईल अपलोड करा",
+    changePhoto: "बदला",
+    takePhoto: "कॅमेरा उघडा",
+    emailLabel: "ई-मेल पत्ता (ऐच्छिक)",
+    emailPlaceholder: "नाव@example.com (ऐच्छिक)",
+    loginEmailLabel: "ईमेल किंवा मोबाईल नंबर *",
+    loginEmailPlaceholder: "उदा. ९८२२० ००००० किंवा user@gmail.com",
+    employeeMobileLabel: "मोबाईल नंबर *",
+    employeeMobilePlaceholder: "उदा. ९८२२० ०००००",
+    phoneLabel: "मोबाईल नंबर *",
+    phonePlaceholder: "९८२२० ०००००",
+    sendOtp: "OTP पाठवा",
+    resendOtp: "पुन्हा पाठवा",
+    otpLabel: "ओ.टी.पी (OTP) *",
+    otpPlaceholder: "६-अंकी OTP टाका",
+    otpSentSuccess: "मोबाईलवर OTP पाठवला आहे. कृपया SMS तपासा.",
+    passwordLabel: "पासवर्ड *",
+    passwordPlaceholder: "••••••••",
+    employeePinLabel: "४-अंकी पिन *",
+    employeePinPlaceholder: "उदा. १२३४",
+    passwordOptionalHint: "पासवर्ड: (बाय डीफॉल्ट तुमचा मोबाईल नंबर राहील)",
+    setCustomPassword: "पासवर्ड सेट करा",
+    hideCustomPassword: "लपवा",
+    customPasswordPlaceholder: "नवीन पासवर्ड टाका (किमान ६ अक्षरे)",
+    registerBtn: "OTP पाठवा आणि नोंदणी करा",
+    verifyAndRegisterBtn: "OTP तपासा आणि नोंदणी करा",
+    sendResetLink: "रीसेट लिंक पाठवा",
+    signInBtn: "साइन इन करा",
+    alreadyHaveAccount: "आधीच खाते आहे का?",
+    dontHaveAccount: "खाते नाही का?",
+    signInLink: "साइन इन करा",
+    registerLink: "नोंदणी करा",
+    forgotPasswordLink: "पासवर्ड विसरलात?",
+    rememberMe: "माझे लक्षात ठेवा",
+    cameraTitle: "थेट फोटो काढा",
+    retakePhoto: "पुन्हा काढा",
+    usePhoto: "फोटो वापरा",
+    snapPhoto: "फोटो काढा",
+  },
+  hi: {
+    workerTitle: "श्रमिक पंजीकरण",
+    workerSubtitle: "नौकरी चाहने वालों के लिए: नया प्रोफाइल बनाएं और काम पाएं।",
+    posterTitle: "नियोक्ता पंजीकरण",
+    posterSubtitle: "कंपनियों और मालिकों के लिए: कामगार खोजने के लिए खाता बनाएं।",
+    workerLoginTitle: "श्रमिक लॉगिन",
+    posterLoginTitle: "नियोक्ता लॉगिन",
+    employeeLoginTitle: "कर्मचारी लॉगिन",
+    workerLoginSubtitle: "लॉगिन करने के लिए कृपया ईमेल या मोबाइल नंबर दर्ज करें।",
+    posterLoginSubtitle: "मालिकों के लिए: कामगार खोजने हेतु लॉगिन करें।",
+    employeeLoginSubtitle: "हाजिरी दर्ज करने के लिए मोबाइल नंबर और पिन दर्ज करें।",
+    resetPasswordTitle: "पासवर्ड रीसेट करें",
+    loginTab: "लॉग इन",
+    registerTab: "पंजीकरण",
+    languageLabel: "भाषा *",
+    workerAndOwnerLabel: "श्रमिक और मालिक *",
+    workerRole: "श्रमिक",
+    ownerRole: "मालिक",
+    fullNameLabel: "पूरा नाम *",
+    fullNamePlaceholder: "उदा. राहुल शर्मा",
+    companyNameLabel: "कंपनी या मालिक का नाम *",
+    companyNamePlaceholder: "उदा. टाटा मोटर्स / एल एंड टी",
+    photoTitleWorker: "प्रोफ़ाइल फ़ोटो",
+    photoTitleOwner: "कंपनी लोगो या फ़ोटो",
+    photoSubtitle: "फ़ाइल चुनें या कैमरे से फ़ोटो लें",
+    photoAttached: "✓ फ़ोटो संलग्न है",
+    uploadPhoto: "फ़ाइल अपलोड करें",
+    changePhoto: "बदलें",
+    takePhoto: "फ़ोटो खींचें",
+    emailLabel: "ई-मेल पता (वैकल्पिक)",
+    emailPlaceholder: "name@example.com (वैकल्पिक)",
+    loginEmailLabel: "ईमेल या मोबाइल नंबर *",
+    loginEmailPlaceholder: "उदा. 98220 00000 या user@gmail.com",
+    employeeMobileLabel: "मोबाइल नंबर *",
+    employeeMobilePlaceholder: "उदा. 98220 00000",
+    phoneLabel: "मोबाइल नंबर *",
+    phonePlaceholder: "98220 00000",
+    sendOtp: "OTP भेजें",
+    resendOtp: "पुनः भेजें",
+    otpLabel: "ओ.टी.पी (OTP) *",
+    otpPlaceholder: "6-अंकों का OTP दर्ज करें",
+    otpSentSuccess: "मोबाइल पर OTP भेजा गया है। कृपया SMS देखें।",
+    passwordLabel: "पासवर्ड *",
+    passwordPlaceholder: "••••••••",
+    employeePinLabel: "4-अंकों का पिन *",
+    employeePinPlaceholder: "उदा. 1234",
+    passwordOptionalHint: "पासवर्ड: (डिफ़ॉल्ट रूप से आपका मोबाइल नंबर)",
+    setCustomPassword: "पासवर्ड सेट करें",
+    hideCustomPassword: "छिपाएं",
+    customPasswordPlaceholder: "नया पासवर्ड दर्ज करें (न्यूनतम 6 अक्षर)",
+    registerBtn: "OTP भेजें और पंजीकरण करें",
+    verifyAndRegisterBtn: "OTP सत्यापित करें और रजिस्टर करें",
+    sendResetLink: "रीसेट लिंक भेजें",
+    signInBtn: "साइन इन करें",
+    alreadyHaveAccount: "पहले से खाता है?",
+    dontHaveAccount: "खाता नहीं है?",
+    signInLink: "साइन इन करें",
+    registerLink: "रजिस्टर करें",
+    forgotPasswordLink: "पासवर्ड भूल गए?",
+    rememberMe: "मुझे याद रखें",
+    cameraTitle: "लाइव कैमरा से फोटो लें",
+    retakePhoto: "दोबारा लें",
+    usePhoto: "फोटो उपयोग करें",
+    snapPhoto: "फोटो खींचें",
+  },
+  gu: {
+    workerTitle: "કારીગર નોંધણી",
+    workerSubtitle: "નોકરી શોધનારાઓ માટે: નવી પ્રોફાઇલ બનાવો અને કામ શોધો.",
+    posterTitle: "એમ્પ્લોયર નોંધણી",
+    posterSubtitle: "કંપનીઓ અને માલિકો માટે: કારીગરો શોધવા માટે એકાઉન્ટ બનાવો.",
+    workerLoginTitle: "કારીગર લૉગિન",
+    posterLoginTitle: "એમ્પ્લોયર લૉગિન",
+    employeeLoginTitle: "કર્મચારી લૉગિન",
+    workerLoginSubtitle: "લૉગિન કરવા માટે કૃપા કરીને ઇમેઇલ અથવા મોબાઇલ નંબર દાખલ કરો.",
+    posterLoginSubtitle: "માલિકો માટે: કારીગરો શોધવા માટે લૉગિન કરો.",
+    employeeLoginSubtitle: "મોબાઇલ નંબર અને પિન દાખલ કરો.",
+    resetPasswordTitle: "પાસવર્ડ રીસેટ કરો",
+    loginTab: "લૉગિન",
+    registerTab: "નોંધણી",
+    languageLabel: "ભાષા *",
+    workerAndOwnerLabel: "કારીગર અને માલિક *",
+    workerRole: "કારીગર",
+    ownerRole: "માલિક",
+    fullNameLabel: "પૂરું નામ *",
+    fullNamePlaceholder: "દા.ત. રાહુલ શર્મા",
+    companyNameLabel: "કંપની / માલિકનું નામ *",
+    companyNamePlaceholder: "દા.ત. ટાટા મોટર્સ",
+    photoTitleWorker: "પ્રોફાઇલ ફોટો",
+    photoTitleOwner: "કંપની લોગો / ફોટો",
+    photoSubtitle: "ફાઇલ પસંદ કરો અથવા કેમેરાથી ફોટો લો",
+    photoAttached: "✓ ફોટો જોડાયેલ છે",
+    uploadPhoto: "ફાઇલ અપલોડ કરો",
+    changePhoto: "બદલો",
+    takePhoto: "ફોટો પાડો",
+    emailLabel: "ઇ-મેઇલ સરનામું (વૈકલ્પિક)",
+    emailPlaceholder: "name@example.com (વૈકલ્પિક)",
+    loginEmailLabel: "ઇમેઇલ અથવા મોબાઇલ નંબર *",
+    loginEmailPlaceholder: "દા.ત. 98220 00000",
+    employeeMobileLabel: "મોબાઇલ નંબર *",
+    employeeMobilePlaceholder: "દા.ત. 98220 00000",
+    phoneLabel: "મોબાઇલ નંબર *",
+    phonePlaceholder: "98220 00000",
+    sendOtp: "OTP મોકલો",
+    resendOtp: "ફરી મોકલો",
+    otpLabel: "ઓ.ટી.પી (OTP) *",
+    otpPlaceholder: "6-અંકનો OTP દાખલ કરો",
+    otpSentSuccess: "OTP સફળતાપૂર્વક મોકલવામાં આવ્યો.",
+    passwordLabel: "પાસવર્ડ *",
+    passwordPlaceholder: "••••••••",
+    employeePinLabel: "4-અંકનો પિન *",
+    employeePinPlaceholder: "દા.ત. 1234",
+    passwordOptionalHint: "પાસવર્ડ: (મૂળભૂત રીતે તમારો મોબાઇલ નંબર)",
+    setCustomPassword: "પાસવર્ડ સેટ કરો",
+    hideCustomPassword: "છુપાવો",
+    customPasswordPlaceholder: "નવો પાસવર્ડ દાખલ કરો (ઓછામાં ઓછા 6 અક્ષરો)",
+    registerBtn: "OTP મોકલો અને નોંધણી કરો",
+    verifyAndRegisterBtn: "OTP ચકાસો અને નોંધણી કરો",
+    sendResetLink: "રીસેટ લિંક મોકલો",
+    signInBtn: "સાઇન ઇન કરો",
+    alreadyHaveAccount: "પહેલેથી ખાતું છે?",
+    dontHaveAccount: "ખાતું નથી?",
+    signInLink: "સાઇન ઇન કરો",
+    registerLink: "નોંધણી કરો",
+    forgotPasswordLink: "પાસવર્ડ ભૂલી ગયા છો?",
+    rememberMe: "મને યાદ રાખો",
+    cameraTitle: "લાઇવ કેમેરા કેપ્ચર",
+    retakePhoto: "ફરીથી લો",
+    usePhoto: "ફોટો વાપરો",
+    snapPhoto: "ફોટો પાડો",
+  },
+  kn: {
+    workerTitle: "ಕೆಲಸಗಾರ ನೋಂದಣಿ",
+    workerSubtitle: "ಉದ್ಯೋಗಾಕಾಂಕ್ಷಿಗಳಿಗೆ: ಹೊಸ ಪ್ರೊಫೈಲ್ ರಚಿಸಿ ಮತ್ತು ಕೆಲಸ ಹುಡುಕಿ.",
+    posterTitle: "ಉದ್ಯೋಗ ಪೋಸ್ಟರ್ ನೋಂದಣಿ",
+    posterSubtitle: "ಉದ್ಯೋಗದಾತರು ಮತ್ತು ಕಂಪನಿಗಳಿಗೆ: ಖಾತೆ ನೋಂದಾಯಿಸಿ.",
+    workerLoginTitle: "ಕೆಲಸಗಾರ ಲಾಗಿನ್",
+    posterLoginTitle: "ಉದ್ಯೋಗ ಪೋಸ್ಟರ್ ಲಾಗಿನ್",
+    employeeLoginTitle: "ನೌಕರರ ಲಾಗಿನ್",
+    workerLoginSubtitle: "ಲಾಗಿನ್ ಮಾಡಲು ಇಮೇಲ್ ಅಥವಾ ಮೊಬೈಲ್ ಸಂಖ್ಯೆಯನ್ನು ನಮೂದಿಸಿ.",
+    posterLoginSubtitle: "ಉದ್ಯೋಗದಾತರಿಗೆ: ಕೆಲಸಗಾರರನ್ನು ಹುಡುಕಲು ಲಾಗಿನ್ ಮಾಡಿ.",
+    employeeLoginSubtitle: "ಹಾಜರಾತಿ ದಾಖಲಿಸಲು ಮೊಬೈಲ್ ಸಂಖ್ಯೆ ಮತ್ತು ಪಿನ್ ನಮೂದಿಸಿ.",
+    resetPasswordTitle: "ಪಾಸ್‌ವರ್ಡ್ ಮರುಹೊಂದಿಸಿ",
+    loginTab: "ಲಾಗಿನ್",
+    registerTab: "ನೋಂದಣಿ",
+    languageLabel: "ಭಾಷೆ *",
+    workerAndOwnerLabel: "ಕೆಲಸಗಾರ ಮತ್ತು ಮಾಲೀಕರು *",
+    workerRole: "ಕೆಲಸಗಾರ",
+    ownerRole: "ಮಾಲೀಕರು",
+    fullNameLabel: "ಪೂರ್ಣ ಹೆಸರು *",
+    fullNamePlaceholder: "ಉದಾ. ರಾಹುಲ್ ಶರ್ಮಾ",
+    companyNameLabel: "ಕಂಪನಿ ಅಥವಾ ಮಾಲೀಕರ ಹೆಸರು *",
+    companyNamePlaceholder: "ಉದಾ. ಟಾಟಾ ಮೋಟಾರ್ಸ್",
+    photoTitleWorker: "ಪ್ರೊಫೈಲ್ ಫೋಟೋ",
+    photoTitleOwner: "ಕಂಪನಿ ಲೋಗೋ ಅಥವಾ ಫೋಟೋ",
+    photoSubtitle: "ಫೈಲ್ ಆಯ್ಕೆಮಾಡಿ ಅಥವಾ ಕ್ಯಾಮೆರಾದಿಂದ ಫೋಟೋ ತೆಗೆಯಿರಿ",
+    photoAttached: "✓ ಫೋಟೋ ಲಗತ್ತಿಸಲಾಗಿದೆ",
+    uploadPhoto: "ಫೈಲ್ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ",
+    changePhoto: "ಬದಲಾಯಿಸಿ",
+    takePhoto: "ಫೋಟೋ ತೆಗೆಯಿರಿ",
+    emailLabel: "ಇ-ಮೇಲ್ ವಿಳಾಸ (ಐಚ್ಛಿಕ)",
+    emailPlaceholder: "name@example.com (ಐಚ್ಛಿಕ)",
+    loginEmailLabel: "ಇಮೇಲ್ ಅಥವಾ ಮೊಬೈಲ್ ಸಂಖ್ಯೆ *",
+    loginEmailPlaceholder: "ಉದಾ. 98220 00000",
+    employeeMobileLabel: "ಮೊಬೈಲ್ ಸಂಖ್ಯೆ *",
+    employeeMobilePlaceholder: "ಉದಾ. 98220 00000",
+    phoneLabel: "ಮೊಬೈಲ್ ಸಂಖ್ಯೆ *",
+    phonePlaceholder: "98220 00000",
+    sendOtp: "OTP ಕಳುಹಿಸಿ",
+    resendOtp: "ಮತ್ತೆ ಕಳುಹಿಸಿ",
+    otpLabel: "ಒ.ಟಿ.ಪಿ (OTP) *",
+    otpPlaceholder: "6-ಅಂಕಿಯ OTP ನಮೂದಿಸಿ",
+    otpSentSuccess: "OTP ಯಶಸ್ವಿಯಾಗಿ ಕಳುಹಿಸಲಾಗಿದೆ.",
+    passwordLabel: "ಪಾಸ್‌ವರ್ಡ್ *",
+    passwordPlaceholder: "••••••••",
+    employeePinLabel: "4-ಅಂಕಿಯ ಪಿನ್ *",
+    employeePinPlaceholder: "ಉದಾ. 1234",
+    passwordOptionalHint: "ಪಾಸ್‌ವರ್ಡ್: (ಡೀಫಾಲ್ಟ್ ನಿಮ್ಮ ಮೊಬೈಲ್ ಸಂಖ್ಯೆ)",
+    setCustomPassword: "ಪಾಸ್‌ವರ್ಡ್ ಹೊಂದಿಸಿ",
+    hideCustomPassword: "ಮರೆಮಾಡಿ",
+    customPasswordPlaceholder: "ಹೊಸ ಪಾಸ್‌ವರ್ಡ್ ನಮೂದಿಸಿ (ಕನಿಷ್ಠ 6 ಅಕ್ಷರಗಳು)",
+    registerBtn: "OTP ಕಳುಹಿಸಿ ಮತ್ತು ನೋಂದಾಯಿಸಿ",
+    verifyAndRegisterBtn: "OTP ಪರಿಶೀಲಿಸಿ ಮತ್ತು ನೋಂದಾಯಿಸಿ",
+    sendResetLink: "ಮರುಹೊಂದಿಸುವ ಲಿಂಕ್ ಕಳುಹಿಸಿ",
+    signInBtn: "ಸೈನ್ ಇನ್",
+    alreadyHaveAccount: "ಈಗಾಗಲೇ ಖಾತೆ ಹೊಂದಿದ್ದೀರಾ?",
+    dontHaveAccount: "ಖಾತೆ ಇಲ್ಲವೇ?",
+    signInLink: "ಸೈನ್ ಇನ್",
+    registerLink: "ನೋಂದಣಿ",
+    forgotPasswordLink: "ಪಾಸ್‌ವರ್ಡ್ ಮರೆತಿರಾ?",
+    rememberMe: "ನನ್ನನ್ನು ನೆನಪಿಡಿ",
+    cameraTitle: "ಲೈವ್ ಕ್ಯಾಮೆರಾ",
+    retakePhoto: "ಮತ್ತೆ ತೆಗೆಯಿರಿ",
+    usePhoto: "ಫೋಟೋ ಬಳಸಿ",
+    snapPhoto: "ಫೋಟೋ ತೆಗೆಯಿರಿ",
+  },
+  te: {
+    workerTitle: "వర్కర్ నమోదు",
+    workerSubtitle: "ఉద్యోగార్థులకు: కొత్త ప్రొఫైల్ సృష్టించి పనిని పొందండి.",
+    posterTitle: "ఎంప్లాయర్ నమోదు",
+    posterSubtitle: "కంపెనీలు మరియు యజమానులకు: ఖాతాను నమోదు చేయండి.",
+    workerLoginTitle: "వర్కర్ లాగిన్",
+    posterLoginTitle: "ఎంప్లాయర్ లాగిన్",
+    employeeLoginTitle: "ఉద్యోగి లాగిన్",
+    workerLoginSubtitle: "లాగిన్ చేయడానికి ఇమెయిల్ లేదా మొబైల్ నంబర్ నమోదు చేయండి.",
+    posterLoginSubtitle: "యజమానుల కోసం: పనివారిని శోధించడానికి లాగిన్ అవ్వండి.",
+    employeeLoginSubtitle: "హాజరు కోసం మొబైల్ నంబర్ మరియు పిన్ నమోదు చేయండి.",
+    resetPasswordTitle: "పాస్‌వర్డ్ రీసెట్ చేయండి",
+    loginTab: "లాగిన్",
+    registerTab: "నమోదు",
+    languageLabel: "భాష *",
+    workerAndOwnerLabel: "వర్కర్ మరియు యజమాని *",
+    workerRole: "వర్కర్",
+    ownerRole: "యజమాని",
+    fullNameLabel: "పూర్తి పేరు *",
+    fullNamePlaceholder: "ఉదా. రాహుల్ శర్మ",
+    companyNameLabel: "కంపెనీ లేదా యజమాని పేరు *",
+    companyNamePlaceholder: "ఉదా. టాటా మోటార్స్",
+    photoTitleWorker: "ప్రొఫైల్ ఫోటో",
+    photoTitleOwner: "కంపెనీ లోగో లేదా ఫోటో",
+    photoSubtitle: "ఫైల్‌ను ఎంచుకోండి లేదా కెమెరాతో ఫోటో తీయండి",
+    photoAttached: "✓ ఫోటో జతచేయబడింది",
+    uploadPhoto: "ఫైల్ అప్‌లోడ్ చేయండి",
+    changePhoto: "మార్చండి",
+    takePhoto: "ఫోటో తీయండి",
+    emailLabel: "ఇ-మెయిల్ చిరునామా (ఐచ్ఛికం)",
+    emailPlaceholder: "name@example.com (ఐచ్ఛికం)",
+    loginEmailLabel: "ఇమెయిల్ లేదా మొబైల్ నంబర్ *",
+    loginEmailPlaceholder: "ఉదా. 98220 00000",
+    employeeMobileLabel: "మొబైల్ నంబర్ *",
+    employeeMobilePlaceholder: "ఉదా. 98220 00000",
+    phoneLabel: "మొబైల్ నంబర్ *",
+    phonePlaceholder: "98220 00000",
+    sendOtp: "OTP పంపండి",
+    resendOtp: "మళ్లీ పంపండి",
+    otpLabel: "ఓ.టి.పి (OTP) *",
+    otpPlaceholder: "6-అంకెల OTP నమోదు చేయండి",
+    otpSentSuccess: "OTP విజయవంతంగా పంపబడింది.",
+    passwordLabel: "పాస్‌వర్డ్ *",
+    passwordPlaceholder: "••••••••",
+    employeePinLabel: "4-అంకెల పిన్ *",
+    employeePinPlaceholder: "ఉదా. 1234",
+    passwordOptionalHint: "పాస్‌వర్డ్: (డిఫాల్ట్‌గా మీ మొబైల్ నంబర్)",
+    setCustomPassword: "పాస్‌వర్డ్ సెట్ చేయండి",
+    hideCustomPassword: "దాచండి",
+    customPasswordPlaceholder: "కొత్త పాస్‌వర్డ్ నమోదు చేయండి (కనీసం 6 అక్షరాలు)",
+    registerBtn: "OTP పంపండి మరియు నమోదు చేయండి",
+    verifyAndRegisterBtn: "OTP ధృవీకరించి నమోదు చేయండి",
+    sendResetLink: "రీసెట్ లింక్ పంపండి",
+    signInBtn: "సైన్ ఇన్",
+    alreadyHaveAccount: "ఇప్పటికే ఖాతా ఉందా?",
+    dontHaveAccount: "ఖాతా లేదా?",
+    signInLink: "సైన్ ఇన్",
+    registerLink: "నమోదు",
+    forgotPasswordLink: "పాస్‌వర్డ్ మర్చిపోయారా?",
+    rememberMe: "నన్ను గుర్తుంచుకో",
+    cameraTitle: "లైవ్ కెమెరా",
+    retakePhoto: "మళ్లీ తీయండి",
+    usePhoto: "ఫోటో ఉపయోగించండి",
+    snapPhoto: "ఫోటో తీయండి",
+  },
+  ta: {
+    workerTitle: "பணியாளர் பதிவு",
+    workerSubtitle: "வேலை தேடுபவர்களுக்கு: சுயவிவரத்தை உருவாக்கி வேலை பெறுங்கள்.",
+    posterTitle: "முதலாளி பதிவு",
+    posterSubtitle: "நிறுவனங்களுக்கு: கணக்கைப் பதிவு செய்யவும்.",
+    workerLoginTitle: "பணியாளர் உள்நுழைவு",
+    posterLoginTitle: "முதலாளி உள்நுழைவு",
+    employeeLoginTitle: "ஊழியர் உள்நுழைவு",
+    workerLoginSubtitle: "உள்நுழைய மின்னஞ்சல் அல்லது மொபைல் எண்ணை உள்ளிடவும்.",
+    posterLoginSubtitle: "முதலாளிகளுக்கு: பணியாளர்களைக் கண்டறிய உள்நுழையவும்.",
+    employeeLoginSubtitle: "வருகையைப் பதிவு செய்ய மொபைல் எண் மற்றும் பின்னை உள்ளிடவும்.",
+    resetPasswordTitle: "கடவுச்சொல்லை மீட்டமை",
+    loginTab: "உள்நுழைவு",
+    registerTab: "பதிவு",
+    languageLabel: "மொழி *",
+    workerAndOwnerLabel: "பணியாளர் மற்றும் முதலாளி *",
+    workerRole: "பணியாளர்",
+    ownerRole: "முதலாளி",
+    fullNameLabel: "முழு பெயர் *",
+    fullNamePlaceholder: "எ.கா. ராகுல் சர்மா",
+    companyNameLabel: "நிறுவனம் அல்லது முதலாளி பெயர் *",
+    companyNamePlaceholder: "எ.கா. டாடா மோட்டார்ஸ்",
+    photoTitleWorker: "சுயவிவரப் படம்",
+    photoTitleOwner: "நிறுவன லோகோ அல்லது படம்",
+    photoSubtitle: "கோப்பைத் தேர்ந்தெடுக்கவும் அல்லது கேமரா படம் எடுக்கவும்",
+    photoAttached: "✓ படம் இணைக்கப்பட்டது",
+    uploadPhoto: "பதிவேற்றவும்",
+    changePhoto: "மாற்றவும்",
+    takePhoto: "படம் எடுங்கள்",
+    emailLabel: "மின்னஞ்சல் முகவரி (விருப்பத்தேர்வு)",
+    emailPlaceholder: "name@example.com (விருப்பத்தேர்வு)",
+    loginEmailLabel: "மின்னஞ்சல் அல்லது மொபைல் எண் *",
+    loginEmailPlaceholder: "எ.கா. 98220 00000",
+    employeeMobileLabel: "மொபைல் எண் *",
+    employeeMobilePlaceholder: "எ.கா. 98220 00000",
+    phoneLabel: "மொபைல் எண் *",
+    phonePlaceholder: "98220 00000",
+    sendOtp: "OTP அனுப்பு",
+    resendOtp: "மீண்டும் அனுப்பு",
+    otpLabel: "OTP *",
+    otpPlaceholder: "6-இலக்க OTP உள்ளிடவும்",
+    otpSentSuccess: "OTP வெற்றிகரமாக அனுப்பப்பட்டது.",
+    passwordLabel: "கடவுச்சொல் *",
+    passwordPlaceholder: "••••••••",
+    employeePinLabel: "4-இலக்க பின் *",
+    employeePinPlaceholder: "எ.கா. 1234",
+    passwordOptionalHint: "கடவுச்சொல்: (இயல்புநிலையாக உங்கள் மொபைல் எண்)",
+    setCustomPassword: "கடவுச்சொல்லை அமைக்கவும்",
+    hideCustomPassword: "மறைக்கவும்",
+    customPasswordPlaceholder: "புதிய கடவுச்சொல்லை உள்ளிடவும் (குறைந்தது 6 எழுத்துக்கள்)",
+    registerBtn: "OTP அனுப்பி பதிவு செய்யவும்",
+    verifyAndRegisterBtn: "OTP சரிபார்த்து பதிவு செய்யவும்",
+    sendResetLink: "இணைப்பை அனுப்பு",
+    signInBtn: "உள்நுழைய",
+    alreadyHaveAccount: "ஏற்கனவே கணக்கு உள்ளதா?",
+    dontHaveAccount: "கணக்கு இல்லையா?",
+    signInLink: "உள்நுழைய",
+    registerLink: "பதிவு செய்ய",
+    forgotPasswordLink: "கடவுச்சொல் மறந்துவிட்டதா?",
+    rememberMe: "என்னை நினைவில் கொள்",
+    cameraTitle: "நேரடி கேமரா",
+    retakePhoto: "மீண்டும் எடுங்கள்",
+    usePhoto: "படத்தைப் பயன்படுத்துங்கள்",
+    snapPhoto: "படம் எடுங்கள்",
+  },
+  bn: {
+    workerTitle: "শ্রমিক নিবন্ধন",
+    workerSubtitle: "চাকরি সন্ধানীদের জন্য: প্রোফাইল তৈরি করুন এবং কাজ পান।",
+    posterTitle: "নিয়োগকারী নিবন্ধন",
+    posterSubtitle: "কোম্পানি ও মালিকদের জন্য: অ্যাকাউন্ট নিবন্ধন করুন।",
+    workerLoginTitle: "শ্রমিক লগইন",
+    posterLoginTitle: "নিয়োগকারী লগইন",
+    employeeLoginTitle: "কর্মচারী লগইন",
+    workerLoginSubtitle: "লগইন করতে অনুগ্রহ করে ইমেল বা মোবাইল নম্বর লিখুন।",
+    posterLoginSubtitle: "মালিকদের জন্য: কর্মী খুঁজতে লগইন করুন।",
+    employeeLoginSubtitle: "হাজিরার জন্য মোবাইল নম্বর এবং পিন দিন।",
+    resetPasswordTitle: "পাসওয়ার্ড রিসেট করুন",
+    loginTab: "লগইন",
+    registerTab: "নিবন্ধন",
+    languageLabel: "ভাষা *",
+    workerAndOwnerLabel: "শ্রমিক ও মালিক *",
+    workerRole: "শ্রমिक",
+    ownerRole: "মালিক",
+    fullNameLabel: "পুরো নাম *",
+    fullNamePlaceholder: "যেমন: রাহুল শর্মা",
+    companyNameLabel: "কোম্পানি বা মালিকের নাম *",
+    companyNamePlaceholder: "যেমন: টাটা মোটরস",
+    photoTitleWorker: "প্রোফাইল ছবি",
+    photoTitleOwner: "কোম্পানি লোগো বা ছবি",
+    photoSubtitle: "ফাইল নির্বাচন করুন বা ক্যামেরা দিয়ে ছবি তুলুন",
+    photoAttached: "✓ ছবি সংযুক্ত হয়েছে",
+    uploadPhoto: "ফাইল আপলোড করুন",
+    changePhoto: "পরিবর্তন করুন",
+    takePhoto: "ছবি তুলুন",
+    emailLabel: "ই-মেইল ঠিকানা (ঐচ্ছিক)",
+    emailPlaceholder: "name@example.com (ঐচ্ছিক)",
+    loginEmailLabel: "ইমেল বা মোবাইল নম্বর *",
+    loginEmailPlaceholder: "যেমন: 98220 00000",
+    employeeMobileLabel: "মোবাইল নম্বর *",
+    employeeMobilePlaceholder: "যেমন: 98220 00000",
+    phoneLabel: "মোবাইল নম্বর *",
+    phonePlaceholder: "98220 00000",
+    sendOtp: "OTP পাঠান",
+    resendOtp: "পুনরায় পাঠান",
+    otpLabel: "ওটিপি (OTP) *",
+    otpPlaceholder: "৬-সংখ্যার OTP দিন",
+    otpSentSuccess: "OTP সফলভাবে পাঠানো হয়েছে।",
+    passwordLabel: "পাসওয়ার্ড *",
+    passwordPlaceholder: "••••••••",
+    employeePinLabel: "৪-সংখ্যার পিন *",
+    employeePinPlaceholder: "যেমন: 1234",
+    passwordOptionalHint: "পাসওয়ার্ড: (ডিফল্ট আপনার মোবাইল নম্বর)",
+    setCustomPassword: "পাসওয়ার্ড সেট করুন",
+    hideCustomPassword: "লুকান",
+    customPasswordPlaceholder: "নতুন পাসওয়ার্ড দিন (কমপক্ষে ৬ অক্ষর)",
+    registerBtn: "OTP পাঠান ও নিবন্ধন করুন",
+    verifyAndRegisterBtn: "OTP যাচাই ও নিবন্ধন করুন",
+    sendResetLink: "রিসেট লিংক পাঠান",
+    signInBtn: "সাইন ইন",
+    alreadyHaveAccount: "ইতিমধ্যে অ্যাকাউন্ট আছে?",
+    dontHaveAccount: "অ্যাকাউন্ট নেই?",
+    signInLink: "সাইন ইন",
+    registerLink: "নিবন্ধন",
+    forgotPasswordLink: "পাসওয়ার্ড ভুলে গেছেন?",
+    rememberMe: "আমাকে মনে রাখুন",
+    cameraTitle: "লাইভ ক্যামেরা",
+    retakePhoto: "আবার তুলুন",
+    usePhoto: "ছবি ব্যবহার করুন",
+    snapPhoto: "ছবি তুলুন",
+  },
+};
+
 function AuthPage() {
   const search = Route.useSearch();
   const navigate = useNavigate();
-  const { lang } = useI18n();
+  const { lang, setLang } = useI18n();
+  const str: AuthTranslations = ((AUTH_TRANSLATIONS as any)[lang] || (AUTH_TRANSLATIONS as any)["en"]) as AuthTranslations;
 
   const [mode, setMode] = useState<"login" | "register" | "forgot">((search.mode as any) || "login");
   const [role, setRole] = useState<"worker" | "employer" | "admin" | "employee">((search.role as any) || "worker");
   const [showPassword, setShowPassword] = useState(false);
+  const [showCustomPassword, setShowCustomPassword] = useState(false);
   const [busy, setBusy] = useState(false);
 
   // SYNC_SEARCH_PARAMS_EFFECT
@@ -83,11 +676,8 @@ function AuthPage() {
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
   const [tempCaptured, setTempCaptured] = useState<string | null>(null);
 
-  // Clear inputs on mode or role change
+  // Reset OTP states on mode switch
   useEffect(() => {
-    setEmail("");
-    setPassword("");
-    setProfilePhoto("");
     setShowOtpField(false);
     setInputOtp("");
     setServerOtp("");
@@ -276,7 +866,19 @@ function AuthPage() {
 
       if (mode === "register") {
         const rawName = role === "employer" || role === "admin" ? companyName : workerName;
-        const userMobile = (role === "employer" || role === "admin") ? employerPhone : workerPhone;
+        const userMobile = ((role === "employer" || role === "admin") ? employerPhone : workerPhone).replace(/\D/g, "");
+
+        if (!rawName.trim()) {
+          toast.error(role === "employer" || role === "admin" ? "Please enter Company or Owner Name." : "Please enter your Full Name.");
+          setBusy(false);
+          return;
+        }
+
+        if (!userMobile || userMobile.length !== 10) {
+          toast.error("Please enter a valid 10-digit mobile number.");
+          setBusy(false);
+          return;
+        }
 
         if (!showOtpField) {
           await sendOtpToMobile(userMobile);
@@ -285,7 +887,12 @@ function AuthPage() {
         }
 
         if (showOtpField) {
-          if (inputOtp !== serverOtp) {
+          if (!inputOtp || inputOtp.trim().length !== 6) {
+            toast.error("Please enter the 6-digit OTP sent to your mobile.");
+            setBusy(false);
+            return;
+          }
+          if (inputOtp.trim() !== serverOtp.trim()) {
             toast.error("Invalid OTP! Please try again.");
             setBusy(false);
             return;
@@ -295,9 +902,14 @@ function AuthPage() {
         // Proceed to save user if OTP verified
         let finalEmail = email.trim().toLowerCase();
         if (!finalEmail && userMobile) {
-          finalEmail = `${userMobile.replace(/\D/g, "")}@realjob.com`;
+          finalEmail = `${userMobile}@realjob.com`;
         }
         const nameString = (rawName && rawName.trim()) ? rawName.trim() : (finalEmail ? (finalEmail.split("@")[0] || "User") : "User");
+
+        // Fallback password if user did not enter a custom password
+        const finalPassword = password.trim().length >= 6
+          ? password.trim()
+          : (userMobile.length >= 6 ? userMobile : "RealJob@123");
 
         const { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } = await import("firebase/auth");
         const { getFirestore, doc, setDoc } = await import("firebase/firestore");
@@ -306,12 +918,12 @@ function AuthPage() {
 
         let uid: string;
         try {
-          const credential = await createUserWithEmailAndPassword(auth, finalEmail, password);
+          const credential = await createUserWithEmailAndPassword(auth, finalEmail, finalPassword);
           uid = credential.user.uid;
         } catch (createErr: any) {
           if (createErr?.code === "auth/email-already-in-use") {
             try {
-              const signCred = await signInWithEmailAndPassword(auth, finalEmail, password);
+              const signCred = await signInWithEmailAndPassword(auth, finalEmail, finalPassword);
               uid = signCred.user.uid;
             } catch {
               throw createErr;
@@ -334,7 +946,7 @@ function AuthPage() {
         const userObj = {
           id: uid,
           email: finalEmail,
-          password, // Optionally keeping this if needed for local compatibility
+          password: finalPassword,
           role: role === "admin" ? "employer" : role,
           fullName: nameString,
           mobile: userMobile || "",
@@ -408,120 +1020,120 @@ function AuthPage() {
       }
 
       let existingAccount: any = undefined;
-      
+
       if (role === "employee") {
-         // for employee, enteredEmail is actually their mobile number
-         const searchMobile = enteredEmail.replace(/\D/g, "");
-         const allEmployerWorkers = (dataStore as any).getAllEmployerWorkers ? (dataStore as any).getAllEmployerWorkers() : [];
-         
-         const deletedIds = new Set<string>(
-           typeof window !== "undefined"
-             ? JSON.parse(localStorage.getItem("realjob_deleted_worker_ids") || "[]")
-             : []
-         );
-         deletedIds.add("empw-1791635953540");
-         deletedIds.add("empw-1791785681836");
+        // for employee, enteredEmail is actually their mobile number
+        const searchMobile = enteredEmail.replace(/\D/g, "");
+        const allEmployerWorkers = (dataStore as any).getAllEmployerWorkers ? (dataStore as any).getAllEmployerWorkers() : [];
 
-         let candidates = allEmployerWorkers.filter((w: any) => {
-           const clean = (w.mobile || "").replace(/\D/g, "");
-           return clean === searchMobile &&
-             !deletedIds.has(w.id) &&
-             w.status !== "Inactive" &&
-             w.status !== "Deleted" &&
-             !w.isDeleted;
-         });
+        const deletedIds = new Set<string>(
+          typeof window !== "undefined"
+            ? JSON.parse(localStorage.getItem("realjob_deleted_worker_ids") || "[]")
+            : []
+        );
+        deletedIds.add("empw-1791635953540");
+        deletedIds.add("empw-1791785681836");
 
-         // In case candidates not yet loaded into localStorage, check directly from Firestore
-         if (candidates.length === 0) {
-           try {
-             const { getFirestore, collection, getDocs } = await import("firebase/firestore");
-             const db = getFirestore();
-             const qSnap = await getDocs(collection(db, "workers"));
-             const fbCandidates: any[] = [];
-             qSnap.forEach((docSnap) => {
-               const data = docSnap.data() as EmployerWorker;
-               const m = (data.mobile || "").replace(/\D/g, "");
-               if (
-                 m === searchMobile &&
-                 !deletedIds.has(docSnap.id) &&
-                 !deletedIds.has(data.id) &&
-                 data.status !== "Inactive" &&
-                 data.status !== "Deleted" &&
-                 !data.isDeleted
-               ) {
-                 fbCandidates.push({ ...data, id: docSnap.id });
-               }
-             });
-             if (fbCandidates.length > 0) {
-               candidates = fbCandidates;
-             }
-           } catch {}
-         }
-         
-         if (candidates.length === 0) {
-            toast.error("❌ हा कर्मचारी सध्या सक्रिय नाही किंवा काढून टाकला आहे! (Employee not found or has been removed.)");
-            setBusy(false);
-            return;
-         }
+        let candidates = allEmployerWorkers.filter((w: any) => {
+          const clean = (w.mobile || "").replace(/\D/g, "");
+          return clean === searchMobile &&
+            !deletedIds.has(w.id) &&
+            w.status !== "Inactive" &&
+            w.status !== "Deleted" &&
+            !w.isDeleted;
+        });
 
-         // Sort newest first so most recently added profile matches
-         candidates.sort((a: any, b: any) => (b.id || "").localeCompare(a.id || ""));
-
-         existingAccount = candidates.find((c: any) => (c.pin || "1234") === password);
-         
-         if (!existingAccount) {
-            toast.error("❌ चुकीचा पासकोड! (Wrong PIN. Please enter correct PIN.)");
-            setBusy(false);
-            return;
-         }
-
-         } else {
-          const { getAuth, signInWithEmailAndPassword } = await import("firebase/auth");
-          const { getFirestore, doc, getDoc } = await import("firebase/firestore");
-          const auth = getAuth();
-          const db = getFirestore();
-          
+        // In case candidates not yet loaded into localStorage, check directly from Firestore
+        if (candidates.length === 0) {
           try {
-            const credential = await signInWithEmailAndPassword(auth, enteredEmail, password);
-            const uid = credential.user.uid;
-            const userDoc = await getDoc(doc(db, "users", uid));
-            
-            if (userDoc.exists()) {
-              existingAccount = userDoc.data();
-              // Keep local store cache in sync with actual Firebase record
-              dataStore.registerAccount({ ...(existingAccount as any), id: uid });
-            } else {
-              // Self-heal: User authenticated successfully in Firebase Auth, but Firestore doc was missing
-              const fallbackRole = role === "worker" ? "worker" : "employer";
-              const cleanName = credential.user.displayName || (enteredEmail.split("@")[0] || "User");
-              const reconstructedUser: any = {
-                id: uid,
-                email: credential.user.email || enteredEmail,
-                role: fallbackRole,
-                fullName: cleanName,
-                mobile: credential.user.phoneNumber || "",
-                profilePhoto: credential.user.photoURL || "",
-                createdAt: new Date().toISOString(),
-              };
-              const { setDoc } = await import("firebase/firestore");
-              await setDoc(doc(db, "users", uid), reconstructedUser).catch(() => {});
-              existingAccount = reconstructedUser;
-              dataStore.registerAccount(reconstructedUser);
+            const { getFirestore, collection, getDocs } = await import("firebase/firestore");
+            const db = getFirestore();
+            const qSnap = await getDocs(collection(db, "workers"));
+            const fbCandidates: any[] = [];
+            qSnap.forEach((docSnap) => {
+              const data = docSnap.data() as EmployerWorker;
+              const m = (data.mobile || "").replace(/\D/g, "");
+              if (
+                m === searchMobile &&
+                !deletedIds.has(docSnap.id) &&
+                !deletedIds.has(data.id) &&
+                data.status !== "Inactive" &&
+                data.status !== "Deleted" &&
+                !data.isDeleted
+              ) {
+                fbCandidates.push({ ...data, id: docSnap.id });
+              }
+            });
+            if (fbCandidates.length > 0) {
+              candidates = fbCandidates;
             }
-          } catch (firebaseErr: any) {
-            console.error("Firebase Login Error:", firebaseErr);
-            const code = firebaseErr?.code || "";
-            if (code === "auth/user-not-found" || code === "auth/invalid-credential" || code === "auth/wrong-password") {
-              toast.error("❌ चुकीचा ईमेल किंवा पासवर्ड! किंवा खाते अस्तित्वात नाही.");
-            } else if (code === "auth/too-many-requests") {
-              toast.error("⚠️ अनेक अयशस्वी प्रयत्नांमुळे खाते तात्पुरते ब्लॉक झाले आहे. कृपया थोड्या वेळाने प्रयत्न करा.");
-            } else {
-              toast.error(firebaseErr?.message || "❌ लॉगिन अयशस्वी झाले. खाते अस्तित्वात नाही.");
-            }
-            setBusy(false);
-            return;
+          } catch { }
+        }
+
+        if (candidates.length === 0) {
+          toast.error("❌ हा कर्मचारी सध्या सक्रिय नाही किंवा काढून टाकला आहे! (Employee not found or has been removed.)");
+          setBusy(false);
+          return;
+        }
+
+        // Sort newest first so most recently added profile matches
+        candidates.sort((a: any, b: any) => (b.id || "").localeCompare(a.id || ""));
+
+        existingAccount = candidates.find((c: any) => (c.pin || "1234") === password);
+
+        if (!existingAccount) {
+          toast.error("❌ चुकीचा पासकोड! (Wrong PIN. Please enter correct PIN.)");
+          setBusy(false);
+          return;
+        }
+
+      } else {
+        const { getAuth, signInWithEmailAndPassword } = await import("firebase/auth");
+        const { getFirestore, doc, getDoc } = await import("firebase/firestore");
+        const auth = getAuth();
+        const db = getFirestore();
+
+        try {
+          const credential = await signInWithEmailAndPassword(auth, enteredEmail, password);
+          const uid = credential.user.uid;
+          const userDoc = await getDoc(doc(db, "users", uid));
+
+          if (userDoc.exists()) {
+            existingAccount = userDoc.data();
+            // Keep local store cache in sync with actual Firebase record
+            dataStore.registerAccount({ ...(existingAccount as any), id: uid });
+          } else {
+            // Self-heal: User authenticated successfully in Firebase Auth, but Firestore doc was missing
+            const fallbackRole = role === "worker" ? "worker" : "employer";
+            const cleanName = credential.user.displayName || (enteredEmail.split("@")[0] || "User");
+            const reconstructedUser: any = {
+              id: uid,
+              email: credential.user.email || enteredEmail,
+              role: fallbackRole,
+              fullName: cleanName,
+              mobile: credential.user.phoneNumber || "",
+              profilePhoto: credential.user.photoURL || "",
+              createdAt: new Date().toISOString(),
+            };
+            const { setDoc } = await import("firebase/firestore");
+            await setDoc(doc(db, "users", uid), reconstructedUser).catch(() => { });
+            existingAccount = reconstructedUser;
+            dataStore.registerAccount(reconstructedUser);
           }
-       }
+        } catch (firebaseErr: any) {
+          console.error("Firebase Login Error:", firebaseErr);
+          const code = firebaseErr?.code || "";
+          if (code === "auth/user-not-found" || code === "auth/invalid-credential" || code === "auth/wrong-password") {
+            toast.error("❌ चुकीचा ईमेल किंवा पासवर्ड! किंवा खाते अस्तित्वात नाही.");
+          } else if (code === "auth/too-many-requests") {
+            toast.error("⚠️ अनेक अयशस्वी प्रयत्नांमुळे खाते तात्पुरते ब्लॉक झाले आहे. कृपया थोड्या वेळाने प्रयत्न करा.");
+          } else {
+            toast.error(firebaseErr?.message || "❌ लॉगिन अयशस्वी झाले. खाते अस्तित्वात नाही.");
+          }
+          setBusy(false);
+          return;
+        }
+      }
 
       if (existingAccount) {
         const accRole = (existingAccount.role || "").toLowerCase();
@@ -641,34 +1253,34 @@ function AuthPage() {
           <LogoIcon className="h-9 sm:h-10 object-contain" />
         </div>
 
-        {/* Title Header (Strictly English) */}
+        {/* Title Header */}
         <div className="text-center space-y-1 mb-2.5">
           <h1 className="text-xl sm:text-2xl font-black text-[#0A3B7B] tracking-tight leading-tight">
             {role === "admin"
               ? mode === "register"
-                ? "Job Poster Registration"
+                ? str.posterTitle
                 : mode === "forgot"
-                  ? "Reset Password"
-                  : "Job Poster Login"
+                  ? str.resetPasswordTitle
+                  : str.posterLoginTitle
               : role === "employee"
-                ? "Employee Login"
-              : mode === "register"
-                ? "Worker / User Registration"
-                : mode === "forgot"
-                  ? "Reset Password"
-                  : "Worker / User Login"}
+                ? str.employeeLoginTitle
+                : mode === "register"
+                  ? str.workerTitle
+                  : mode === "forgot"
+                    ? str.resetPasswordTitle
+                    : str.workerLoginTitle}
           </h1>
 
           <p className="text-xs sm:text-[13px] font-semibold text-gray-600 px-1 leading-snug">
             {role === "admin"
               ? mode === "register"
-                ? "For employers & companies: Register an account to find workers."
-                : "For employers & admins: Login to post jobs and search candidates."
+                ? str.posterSubtitle
+                : str.posterLoginSubtitle
               : role === "employee"
-                ? "For existing factory employees: Enter mobile number & PIN to punch in."
-              : mode === "register"
-                ? "For job seekers: Create a new profile and start finding jobs."
-                : "Please enter your email and password to log in and find jobs."}
+                ? str.employeeLoginSubtitle
+                : mode === "register"
+                  ? str.workerSubtitle
+                  : str.workerLoginSubtitle}
           </p>
         </div>
 
@@ -683,7 +1295,7 @@ function AuthPage() {
                 : "text-gray-700 hover:text-black font-extrabold"
                 }`}
             >
-              <User className="size-4 sm:size-4.5" /> Login
+              <User className="size-4 sm:size-4.5" /> {str.loginTab}
             </button>
             <button
               type="button"
@@ -693,7 +1305,7 @@ function AuthPage() {
                 : "text-gray-700 hover:text-black font-extrabold"
                 }`}
             >
-              <UserPlus className="size-4 sm:size-4.5" /> Register
+              <UserPlus className="size-4 sm:size-4.5" /> {str.registerTab}
             </button>
           </div>
         )}
@@ -701,303 +1313,417 @@ function AuthPage() {
         {/* Form Container */}
         <form onSubmit={handleSubmit} autoComplete="off" className="space-y-3">
 
-          {/* WORKER REGISTRATION FIELDS */}
-          {mode === "register" && role === "worker" && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <div>
-                <Label className="text-xs sm:text-[13px] font-extrabold text-gray-800 mb-1 block">Full Name *</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
-                  <input
-                    required
-                    type="text"
-                    autoComplete="off"
-                    placeholder="e.g. Rahul Sharma"
-                    value={workerName}
-                    onChange={(e) => setWorkerName(e.target.value)}
-                    className="w-full h-9.5 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs sm:text-[13px] font-bold text-gray-900 placeholder:text-xs sm:placeholder:text-[13px] focus:outline-none focus:ring-2 focus:ring-[#0A3B7B]"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label className="text-xs sm:text-[13px] font-extrabold text-gray-800 mb-1 block">Mobile Number *</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
-                  <input
-                    required
-                    type="tel"
-                    autoComplete="off"
-                    placeholder="+91 98220 00000"
-                    value={workerPhone}
-                    onChange={(e) => setWorkerPhone(e.target.value)}
-                    className="w-full h-9.5 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs sm:text-[13px] font-bold text-gray-900 placeholder:text-xs sm:placeholder:text-[13px] focus:outline-none focus:ring-2 focus:ring-[#0A3B7B]"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* EMPLOYER REGISTRATION FIELDS */}
-          {mode === "register" && (role === "employer" || role === "admin") && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <div>
-                <Label className="text-xs sm:text-[13px] font-extrabold text-gray-800 mb-1 block">Company Name *</Label>
-                <div className="relative">
-                  <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
-                  <input
-                    required
-                    type="text"
-                    autoComplete="off"
-                    placeholder="e.g. Tata Motors / L&T"
-                    value={companyName}
-                    onChange={(e) => setCompanyName(e.target.value)}
-                    className="w-full h-9.5 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs sm:text-[13px] font-bold text-gray-900 placeholder:text-xs sm:placeholder:text-[13px] focus:outline-none focus:ring-2 focus:ring-[#0A3B7B]"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label className="text-xs sm:text-[13px] font-extrabold text-gray-800 mb-1 block">Mobile Number *</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
-                  <input
-                    required
-                    type="tel"
-                    autoComplete="off"
-                    placeholder="+91 98220 00000"
-                    value={employerPhone}
-                    onChange={(e) => setEmployerPhone(e.target.value)}
-                    className="w-full h-9.5 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs sm:text-[13px] font-bold text-gray-900 placeholder:text-xs sm:placeholder:text-[13px] focus:outline-none focus:ring-2 focus:ring-[#0A3B7B]"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* PROFILE / COMPANY PHOTO UPLOAD & LIVE CAMERA FIELD */}
+          {/* ============================================================ */}
+          {/* REGISTRATION FORM (ORIGINAL REAL JOB THEME + ADDED FIELDS)   */}
+          {/* ============================================================ */}
           {mode === "register" && (
-            <div className="bg-blue-50/80 p-2 sm:p-2.5 rounded-xl border border-blue-100 space-y-1.5">
-              <div className="flex items-center gap-2">
-                {profilePhoto ? (
-                  <img src={profilePhoto} alt="Profile Preview" className="size-9 rounded-full object-cover ring-2 ring-[#0A3B7B] shadow-xs" />
-                ) : (
-                  <div className="size-9 rounded-full bg-[#0A3B7B]/10 text-[#0A3B7B] flex items-center justify-center shrink-0 border border-[#0A3B7B]/20">
-                    <Camera className="size-4" />
+            <>
+              {/* 1. Language Selection */}
+              <div>
+                <Label htmlFor="reg-lang" className="text-xs sm:text-[13px] font-extrabold text-gray-800 mb-1 block">
+                  {str.languageLabel}
+                </Label>
+                <div className="relative">
+                  <Languages className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#0A3B7B]" />
+                  <select
+                    id="reg-lang"
+                    value={lang}
+                    onChange={(e) => setLang(e.target.value as any)}
+                    className="w-full h-9.5 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs sm:text-[13px] font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B] shadow-xs cursor-pointer"
+                  >
+                    {languages.map((l) => (
+                      <option key={l.code} value={l.code} className="text-gray-900 bg-white font-bold">
+                        {l.code === "en" ? "English" : `${l.native} (${l.name})`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* 2. Worker and owner (Role Switcher) */}
+              <div>
+                <Label className="text-xs sm:text-[13px] font-extrabold text-gray-800 mb-1 block">
+                  {str.workerAndOwnerLabel}
+                </Label>
+                <div className="bg-gray-100/90 p-1 rounded-xl flex items-center gap-1.5 border border-gray-200">
+                  <button
+                    type="button"
+                    onClick={() => setRole("worker")}
+                    className={`flex-1 py-1.5 px-2 rounded-lg text-xs sm:text-[13px] font-black transition-all cursor-pointer flex items-center justify-center gap-1.5 ${role === "worker"
+                      ? "bg-[#0A3B7B] text-white shadow-xs"
+                      : "bg-transparent text-gray-700 hover:text-black font-extrabold"
+                      }`}
+                  >
+                    <User className="size-3.5" /> {str.workerRole}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRole("admin")}
+                    className={`flex-1 py-1.5 px-2 rounded-lg text-xs sm:text-[13px] font-black transition-all cursor-pointer flex items-center justify-center gap-1.5 ${role === "admin" || role === "employer"
+                      ? "bg-[#0A3B7B] text-white shadow-xs"
+                      : "bg-transparent text-gray-700 hover:text-black font-extrabold"
+                      }`}
+                  >
+                    <Building2 className="size-3.5" /> {str.ownerRole}
+                  </button>
+                </div>
+              </div>
+
+              {/* 3. Name Field */}
+              <div>
+                <Label className="text-xs sm:text-[13px] font-extrabold text-gray-800 mb-1 block">
+                  {role === "admin" || role === "employer" ? str.companyNameLabel : str.fullNameLabel}
+                </Label>
+                <div className="relative">
+                  {role === "admin" || role === "employer" ? (
+                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+                  ) : (
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+                  )}
+                  <input
+                    required
+                    type="text"
+                    autoComplete="off"
+                    placeholder={role === "admin" || role === "employer" ? str.companyNamePlaceholder : str.fullNamePlaceholder}
+                    value={role === "admin" || role === "employer" ? companyName : workerName}
+                    onChange={(e) => {
+                      if (role === "admin" || role === "employer") {
+                        setCompanyName(e.target.value);
+                      } else {
+                        setWorkerName(e.target.value);
+                      }
+                    }}
+                    className="w-full h-9.5 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs sm:text-[13px] font-bold text-gray-900 placeholder:text-gray-400 placeholder:text-xs sm:placeholder:text-[13px] focus:outline-none focus:ring-2 focus:ring-[#0A3B7B] shadow-xs"
+                  />
+                </div>
+              </div>
+
+              {/* 4. Profile / Company Photo Upload & Live Camera */}
+              <div className="bg-blue-50/80 p-2 sm:p-2.5 rounded-xl border border-blue-100 space-y-1.5">
+                <div className="flex items-center gap-2">
+                  {profilePhoto ? (
+                    <img src={profilePhoto} alt="Profile Preview" className="size-9 rounded-full object-cover ring-2 ring-[#0A3B7B] shadow-xs" />
+                  ) : (
+                    <div className="size-9 rounded-full bg-[#0A3B7B]/10 text-[#0A3B7B] flex items-center justify-center shrink-0 border border-[#0A3B7B]/20">
+                      <Camera className="size-4" />
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-xs sm:text-[13px] font-extrabold text-[#0A3B7B]">
+                      {role === "employer" || role === "admin" ? str.photoTitleOwner : str.photoTitleWorker}
+                    </p>
+                    <p className="text-xs text-gray-500 font-bold">
+                      {profilePhoto ? str.photoAttached : str.photoSubtitle}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 pt-0.5">
+                  <label className="flex-1 py-1.5 px-2.5 rounded-lg bg-[#0A3B7B] text-white text-xs sm:text-[13px] font-black cursor-pointer hover:bg-[#072B5B] transition-colors shadow-xs flex items-center justify-center gap-1.5">
+                    <Upload className="size-3.5" /> {profilePhoto ? str.changePhoto : str.uploadPhoto}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoUpload}
+                      className="hidden"
+                    />
+                  </label>
+
+                  <button
+                    type="button"
+                    onClick={startCamera}
+                    className="flex-1 py-1.5 px-2.5 rounded-lg bg-emerald-700 text-white text-xs sm:text-[13px] font-black hover:bg-emerald-800 transition-colors shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Camera className="size-3.5" /> {str.takePhoto}
+                  </button>
+                </div>
+              </div>
+
+              {/* 5. E-mail Field */}
+              <div>
+                <Label htmlFor="reg-email" className="text-xs sm:text-[13px] font-extrabold text-gray-800 mb-1 block">
+                  {str.emailLabel}
+                </Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+                  <input
+                    id="reg-email"
+                    type="email"
+                    autoComplete="off"
+                    placeholder={str.emailPlaceholder}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full h-9.5 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs sm:text-[13px] font-bold text-gray-900 placeholder:text-gray-400 placeholder:text-xs sm:placeholder:text-[13px] focus:outline-none focus:ring-2 focus:ring-[#0A3B7B] shadow-xs"
+                  />
+                </div>
+              </div>
+
+              {/* 6. Phone Number & Send OTP */}
+              <div>
+                <Label htmlFor="reg-phone" className="text-xs sm:text-[13px] font-extrabold text-gray-800 mb-1 block">
+                  {str.phoneLabel}
+                </Label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+                    <input
+                      id="reg-phone"
+                      type="tel"
+                      required
+                      maxLength={10}
+                      autoComplete="off"
+                      placeholder={str.phonePlaceholder}
+                      value={role === "admin" || role === "employer" ? employerPhone : workerPhone}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, "");
+                        setWorkerPhone(val);
+                        setEmployerPhone(val);
+                      }}
+                      className="w-full h-9.5 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs sm:text-[13px] font-bold text-gray-900 placeholder:text-gray-400 placeholder:text-xs sm:placeholder:text-[13px] focus:outline-none focus:ring-2 focus:ring-[#0A3B7B] shadow-xs"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    disabled={isResending}
+                    onClick={() => {
+                      const p = role === "admin" || role === "employer" ? employerPhone : workerPhone;
+                      sendOtpToMobile(p);
+                    }}
+                    className="px-3 h-9.5 rounded-lg bg-[#0A3B7B] hover:bg-[#072B5B] text-white text-xs font-black shrink-0 shadow-xs cursor-pointer transition-colors"
+                  >
+                    {showOtpField ? str.resendOtp : str.sendOtp}
+                  </button>
+                </div>
+              </div>
+
+              {/* 7. O.T.P Field (when sent) */}
+              {showOtpField && (
+                <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200 animate-in fade-in zoom-in-95 duration-300">
+                  <div className="flex items-center justify-between mb-1">
+                    <Label htmlFor="otp" className="text-xs sm:text-[13px] font-extrabold text-emerald-800 block">
+                      {str.otpLabel}
+                    </Label>
+                    <button
+                      type="button"
+                      disabled={resendCooldown > 0 || isResending}
+                      onClick={handleResendOtp}
+                      className={`text-[11px] sm:text-xs font-black transition-all flex items-center gap-1.5 px-2 py-0.5 rounded-md ${resendCooldown > 0
+                        ? "text-gray-400 bg-gray-100 cursor-not-allowed"
+                        : "text-[#0A3B7B] bg-blue-50 hover:bg-blue-100 cursor-pointer shadow-2xs"
+                        }`}
+                      title="Resend OTP"
+                    >
+                      <RotateCcw className={`size-3 ${isResending ? "animate-spin" : ""}`} />
+                      <span>{resendCooldown > 0 ? `${str.resendOtp} (${resendCooldown}s)` : str.resendOtp}</span>
+                    </button>
+                  </div>
+
+                  <div className="relative">
+                    <Eye className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-emerald-600" />
+                    <input
+                      id="otp"
+                      type="text"
+                      required
+                      placeholder={str.otpPlaceholder}
+                      maxLength={6}
+                      value={inputOtp}
+                      onChange={(e) => setInputOtp(e.target.value.replace(/\D/g, ""))}
+                      className="w-full h-9.5 pl-9 pr-3 bg-white rounded-lg border border-emerald-300 text-sm font-bold tracking-widest text-emerald-900 placeholder:text-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm"
+                      autoFocus
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between mt-1.5 text-xs">
+                    <p className="text-emerald-600 font-semibold">
+                      {str.otpSentSuccess}
+                    </p>
+                    {resendCooldown === 0 && (
+                      <button
+                        type="button"
+                        onClick={handleResendOtp}
+                        className="text-[#0A3B7B] font-extrabold hover:underline cursor-pointer"
+                      >
+                        {str.resendOtp}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Optional Password toggle */}
+              <div className="pt-0.5">
+                <div className="flex items-center justify-between text-xs text-gray-500 font-semibold">
+                  <span>{str.passwordOptionalHint}</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowCustomPassword(!showCustomPassword)}
+                    className="text-[#0A3B7B] font-bold hover:underline cursor-pointer"
+                  >
+                    {showCustomPassword ? str.hideCustomPassword : str.setCustomPassword}
+                  </button>
+                </div>
+                {showCustomPassword && (
+                  <div className="relative mt-1">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      autoComplete="new-password"
+                      placeholder={str.customPasswordPlaceholder}
+                      minLength={6}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full h-9.5 pl-9 pr-9 bg-white rounded-lg border border-gray-200 text-xs sm:text-[13px] font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A3B7B] shadow-xs"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
+                    >
+                      {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    </button>
                   </div>
                 )}
-                <div>
-                  <p className="text-xs sm:text-[13px] font-extrabold text-[#0A3B7B]">
-                    {role === "employer" || role === "admin" ? "Company Logo / Photo" : "Profile Photo (प्रोफाईल फोटो)"}
-                  </p>
-                  <p className="text-xs text-gray-500 font-bold">
-                    {profilePhoto ? "✓ Photo Attached" : "Choose file or take live camera photo"}
-                  </p>
+              </div>
+
+              {/* REGISTER SUBMIT BUTTON */}
+              <Button
+                disabled={busy}
+                type="submit"
+                className="w-full h-11 bg-[#0A3B7B] hover:bg-[#072B5B] text-white font-black text-sm sm:text-[15px] rounded-xl shadow-md shadow-[#0A3B7B]/20 hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 mt-1 cursor-pointer"
+              >
+                {busy ? (
+                  <Loader2 className="animate-spin size-4" />
+                ) : showOtpField ? (
+                  <>
+                    <Check className="size-4" /> {str.verifyAndRegisterBtn}
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="size-4" /> {str.registerBtn}
+                  </>
+                )}
+              </Button>
+            </>
+          )}
+
+          {/* ============================================================ */}
+          {/* LOGIN / FORGOT FORM FIELDS (UNCHANGED ORIGINAL REAL JOB)     */}
+          {/* ============================================================ */}
+          {mode !== "register" && (
+            <>
+              <div>
+                <Label htmlFor="email" className="text-xs sm:text-[13px] font-extrabold text-gray-800 mb-1 block">
+                  {role === "employee"
+                    ? str.employeeMobileLabel
+                    : str.loginEmailLabel}
+                </Label>
+                <div className="relative">
+                  {/^\d+$/.test(email.replace(/\D/g, "")) && email.length >= 5 ? (
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#0A3B7B]" />
+                  ) : (
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+                  )}
+                  <input
+                    id="email"
+                    type="text"
+                    required
+                    autoComplete="off"
+                    placeholder={role === "employee" ? str.employeeMobilePlaceholder : str.loginEmailPlaceholder}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full h-9.5 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs sm:text-[13px] font-bold text-gray-900 placeholder:text-gray-400 placeholder:text-xs sm:placeholder:text-[13px] focus:outline-none focus:ring-2 focus:ring-[#0A3B7B] shadow-xs"
+                  />
                 </div>
               </div>
 
-              {/* Action Buttons: 1. Upload File 2. Live Camera */}
-              <div className="flex items-center gap-2 pt-0.5">
-                <label className="flex-1 py-1.5 px-2.5 rounded-lg bg-[#0A3B7B] text-white text-xs sm:text-[13px] font-black cursor-pointer hover:bg-[#072B5B] transition-colors shadow-xs flex items-center justify-center gap-1.5">
-                  <Upload className="size-3.5" /> {profilePhoto ? "Change" : "Upload File"}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePhotoUpload}
-                    className="hidden"
-                  />
-                </label>
+              {mode !== "forgot" && (
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <Label htmlFor="password" className="text-xs sm:text-[13px] font-extrabold text-gray-800">
+                      {role === "employee" ? str.employeePinLabel : str.passwordLabel}
+                    </Label>
+                    {role !== "employee" && (
+                      <button
+                        type="button"
+                        onClick={() => setMode("forgot")}
+                        className="text-xs sm:text-[13px] font-bold text-[#0A3B7B] hover:underline cursor-pointer"
+                      >
+                        {str.forgotPasswordLink}
+                      </button>
+                    )}
+                  </div>
 
-                <button
-                  type="button"
-                  onClick={startCamera}
-                  className="flex-1 py-1.5 px-2.5 rounded-lg bg-emerald-700 text-white text-xs sm:text-[13px] font-black hover:bg-emerald-800 transition-colors shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <Camera className="size-3.5" /> {lang === "mr" ? "कॅमेरा उघडा" : "Take Photo"}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* EMAIL OR MOBILE FIELD */}
-          <div>
-            <Label htmlFor="email" className="text-xs sm:text-[13px] font-extrabold text-gray-800 mb-1 block">
-              {role === "employee" 
-                ? "Mobile Number (मोबाईल नंबर) *"
-                : mode === "login" 
-                  ? "Email Address or Mobile Number *" 
-                  : "Email Address (Optional / ऐच्छिक)"}
-            </Label>
-            <div className="relative">
-              {mode === "login" && /^\d+$/.test(email.replace(/\D/g, "")) && email.length >= 5 ? (
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#0A3B7B]" />
-              ) : (
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+                    <input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      required
+                      autoComplete="current-password"
+                      placeholder={role === "employee" ? str.employeePinPlaceholder : str.passwordPlaceholder}
+                      minLength={4}
+                      maxLength={role === "employee" ? 4 : undefined}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full h-9.5 pl-9 pr-9 bg-white rounded-lg border border-gray-200 text-xs sm:text-[13px] font-bold text-gray-900 placeholder:text-gray-400 placeholder:text-xs sm:placeholder:text-[13px] focus:outline-none focus:ring-2 focus:ring-[#0A3B7B] shadow-xs"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
+                    >
+                      {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    </button>
+                  </div>
+                </div>
               )}
-              <input
-                id="email"
-                type={mode === "login" || role === "employee" ? "text" : "email"}
-                required={mode === "login" || role === "employee"}
-                autoComplete="off"
-                placeholder={role === "employee" ? "e.g. 98220 00000" : mode === "login" ? "Email or Mobile (e.g. 98220 00000 / user@gmail.com)" : "name@example.com (Optional)"}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full h-9.5 pl-9 pr-3 bg-white rounded-lg border border-gray-200 text-xs sm:text-[13px] font-bold text-gray-900 placeholder:text-gray-400 placeholder:text-xs sm:placeholder:text-[13px] focus:outline-none focus:ring-2 focus:ring-[#0A3B7B] shadow-xs"
-              />
-            </div>
-          </div>
 
-          {/* PASSWORD FIELD */}
-          {mode !== "forgot" && (
-            <div>
-              <div className="flex justify-between items-center mb-1">
-                <Label htmlFor="password" className="text-xs sm:text-[13px] font-extrabold text-gray-800">
-                  {role === "employee" ? "4-Digit PIN (पासकोड) *" : "Password *"}
-                </Label>
-                {mode === "login" && role !== "employee" && (
-                  <button
-                    type="button"
-                    onClick={() => setMode("forgot")}
-                    className="text-xs sm:text-[13px] font-bold text-[#0A3B7B] hover:underline"
-                  >
-                    Forgot Password?
-                  </button>
+              {/* REMEMBER ME CHECKBOX */}
+              {mode === "login" && (
+                <div className="flex items-center gap-2 pt-0.5">
+                  <input
+                    type="checkbox"
+                    id="remember"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="size-4 rounded border-gray-300 text-[#0A3B7B] focus:ring-[#0A3B7B] accent-[#0A3B7B] cursor-pointer"
+                  />
+                  <label htmlFor="remember" className="text-xs sm:text-[13px] font-bold text-gray-700 cursor-pointer select-none">
+                    {str.rememberMe}
+                  </label>
+                </div>
+              )}
+
+              {/* LOGIN SUBMIT BUTTON */}
+              <Button
+                disabled={busy}
+                type="submit"
+                className="w-full h-11 bg-[#0A3B7B] hover:bg-[#072B5B] text-white font-black text-sm sm:text-[15px] rounded-xl shadow-md shadow-[#0A3B7B]/20 hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 mt-1 cursor-pointer"
+              >
+                {busy ? (
+                  <Loader2 className="animate-spin size-4" />
+                ) : mode === "forgot" ? (
+                  str.sendResetLink
+                ) : (
+                  <>
+                    <LogIn className="size-4" /> {str.signInBtn}
+                  </>
                 )}
-              </div>
-
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
-                <input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  required
-                  autoComplete="new-password"
-                  placeholder={role === "employee" ? "e.g. 1234" : "••••••••"}
-                  minLength={4}
-                  maxLength={role === "employee" ? 4 : undefined}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full h-9.5 pl-9 pr-9 bg-white rounded-lg border border-gray-200 text-xs sm:text-[13px] font-bold text-gray-900 placeholder:text-gray-400 placeholder:text-xs sm:placeholder:text-[13px] focus:outline-none focus:ring-2 focus:ring-[#0A3B7B] shadow-xs"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                </button>
-              </div>
-            </div>
+              </Button>
+            </>
           )}
-
-          {/* OTP FIELD FOR REGISTRATION */}
-          {mode === "register" && showOtpField && (
-            <div className="mt-2 p-3 bg-emerald-50 rounded-lg border border-emerald-200 animate-in fade-in zoom-in-95 duration-300">
-              <div className="flex items-center justify-between mb-1">
-                <Label htmlFor="otp" className="text-xs sm:text-[13px] font-extrabold text-emerald-800 block">
-                  Enter 6-Digit OTP *
-                </Label>
-                <button
-                  type="button"
-                  disabled={resendCooldown > 0 || isResending}
-                  onClick={handleResendOtp}
-                  className={`text-[11px] sm:text-xs font-black transition-all flex items-center gap-1.5 px-2 py-0.5 rounded-md ${
-                    resendCooldown > 0
-                      ? "text-gray-400 bg-gray-100 cursor-not-allowed"
-                      : "text-[#0A3B7B] bg-blue-50 hover:bg-blue-100 cursor-pointer shadow-2xs"
-                  }`}
-                  title="Resend OTP"
-                >
-                  <RotateCcw className={`size-3 ${isResending ? "animate-spin" : ""}`} />
-                  <span>{resendCooldown > 0 ? `Resend (${resendCooldown}s)` : "Resend OTP"}</span>
-                </button>
-              </div>
-
-              <div className="relative">
-                <input
-                  id="otp"
-                  type="text"
-                  required
-                  placeholder="Enter OTP sent to your mobile"
-                  maxLength={6}
-                  value={inputOtp}
-                  onChange={(e) => setInputOtp(e.target.value.replace(/\D/g, ""))}
-                  className="w-full h-9.5 px-3 bg-white rounded-lg border border-emerald-300 text-sm sm:text-base font-bold text-center tracking-widest text-emerald-900 placeholder:text-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm"
-                  autoFocus
-                />
-              </div>
-
-              <div className="flex items-center justify-between mt-1.5 text-xs">
-                <p className="text-emerald-600 font-semibold">
-                  OTP sent successfully. Please check your SMS.
-                </p>
-                {resendCooldown === 0 && (
-                  <button
-                    type="button"
-                    onClick={handleResendOtp}
-                    className="text-[#0A3B7B] font-extrabold hover:underline cursor-pointer"
-                  >
-                    पुन्हा पाठवा (Resend)
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* REMEMBER ME CHECKBOX */}
-          {mode === "login" && (
-            <div className="flex items-center gap-2 pt-0.5">
-              <input
-                type="checkbox"
-                id="remember"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                className="size-4 rounded border-gray-300 text-[#0A3B7B] focus:ring-[#0A3B7B] accent-[#0A3B7B] cursor-pointer"
-              />
-              <label htmlFor="remember" className="text-xs sm:text-[13px] font-bold text-gray-700 cursor-pointer select-none">
-                Remember me
-              </label>
-            </div>
-          )}
-
-          {/* SUBMIT BUTTON */}
-          <Button
-            disabled={busy}
-            type="submit"
-            className="w-full h-11 bg-[#0A3B7B] hover:bg-[#072B5B] text-white font-black text-sm sm:text-[15px] rounded-xl shadow-md shadow-[#0A3B7B]/20 hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 mt-1"
-          >
-            {busy ? (
-              <Loader2 className="animate-spin size-4" />
-            ) : mode === "register" ? (
-              showOtpField ? (
-                <>
-                  <Check className="size-4" /> Verify OTP & Register
-                </>
-              ) : (
-                <>
-                  <UserPlus className="size-4" /> Send OTP to Register
-                </>
-              )
-            ) : mode === "forgot" ? (
-              "Send Reset Link"
-            ) : (
-              <>
-                <LogIn className="size-4" /> Sign In
-              </>
-            )}
-          </Button>
         </form>
 
-        {/* BOTTOM REGISTER LINK */}
+        {/* BOTTOM REGISTER / LOGIN SWITCH */}
         {role !== "employee" && (
           <div className="mt-3 text-center text-xs sm:text-[13px] font-bold text-gray-600">
-            {mode === "register" ? "Already have an account?" : "Don't have an account?"}{" "}
+            {mode === "register" ? str.alreadyHaveAccount : str.dontHaveAccount}{" "}
             <button
               type="button"
               onClick={() => setMode(mode === "register" ? "login" : "register")}
-              className="text-[#0A3B7B] font-black hover:underline ml-1"
+              className="text-[#0A3B7B] font-black hover:underline ml-1 cursor-pointer"
             >
-              {mode === "register" ? "Sign In" : "Register"}
+              {mode === "register" ? str.signInLink : str.registerLink}
             </button>
           </div>
         )}
@@ -1014,7 +1740,7 @@ function AuthPage() {
                   <Camera className="size-4" />
                 </div>
                 <span className="font-black text-sm text-[#0A3B7B]">
-                  {lang === "mr" ? "थेट फोटो काढा (Take Photo)" : "Live Camera Capture"}
+                  {str.cameraTitle}
                 </span>
               </div>
               <button
@@ -1050,14 +1776,14 @@ function AuthPage() {
                     onClick={() => setTempCaptured(null)}
                     className="px-4 py-2.5 rounded-xl border border-gray-300 text-xs font-bold text-gray-700 hover:bg-gray-50 flex items-center gap-1.5 transition-colors cursor-pointer"
                   >
-                    <RotateCcw className="size-4" /> {lang === "mr" ? "पुन्हा काढा (Retake)" : "Retake"}
+                    <RotateCcw className="size-4" /> {str.retakePhoto}
                   </button>
                   <button
                     type="button"
                     onClick={confirmCapturedPhoto}
                     className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black shadow-md flex items-center gap-1.5 transition-colors cursor-pointer"
                   >
-                    <Check className="size-4" /> {lang === "mr" ? "फोटो वापरा (Use Photo)" : "Use Photo"}
+                    <Check className="size-4" /> {str.usePhoto}
                   </button>
                 </>
               ) : (
@@ -1066,7 +1792,7 @@ function AuthPage() {
                   onClick={capturePhoto}
                   className="px-6 py-3 rounded-full bg-[#0A3B7B] hover:bg-[#072B5B] text-white text-xs font-black shadow-lg shadow-[#0A3B7B]/30 flex items-center gap-2 transition-all transform active:scale-95 cursor-pointer"
                 >
-                  <Camera className="size-4" /> 📷 {lang === "mr" ? "फोटो काढा (Snap Photo)" : "Snap Photo"}
+                  <Camera className="size-4" /> 📷 {str.snapPhoto}
                 </button>
               )}
             </div>

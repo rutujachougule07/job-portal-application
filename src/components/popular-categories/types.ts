@@ -41,13 +41,16 @@ export const CATEGORY_ICONS: Record<string, React.ElementType> = {
 };
 
 export const DEFAULT_JOB_CATEGORIES: JobCategory[] = [
-  { id: "factory", label: "Factory Worker", iconName: "Factory", theme: "blue" },
   { id: "construction", label: "Construction", iconName: "HardHat", theme: "yellow" },
-  { id: "technical", label: "Technical Staff", iconName: "Wrench", theme: "purple" },
-  { id: "logistics", label: "Transport & Logistics", iconName: "Truck", theme: "green" },
+  { id: "factory", label: "Factory / Industry", iconName: "Factory", theme: "blue" },
   { id: "electrician", label: "Electrician", iconName: "Zap", theme: "orange" },
-  { id: "security", label: "Security Guard", iconName: "Shield", theme: "red" },
-  { id: "office", label: "Office Staff", iconName: "Briefcase", theme: "blue" },
+  { id: "driver", label: "Driver", iconName: "Truck", theme: "green" },
+  { id: "office", label: "Office / Data Entry", iconName: "Briefcase", theme: "blue" },
+  { id: "app-developer", label: "Application Developer", iconName: "Monitor", theme: "purple" },
+  { id: "web-developer", label: "Web Developer", iconName: "Monitor", theme: "cyan" },
+  { id: "software-developer", label: "Software Developer", iconName: "Monitor", theme: "indigo" },
+  { id: "mobile-developer", label: "Mobile App Developer", iconName: "Monitor", theme: "rose" },
+  { id: "other", label: "Other", iconName: "Sparkles", theme: "slate" },
 ];
 
 export const CATEGORY_PALETTES = [

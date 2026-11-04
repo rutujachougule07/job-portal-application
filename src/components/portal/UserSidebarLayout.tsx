@@ -8,11 +8,11 @@ import {
   LogOut,
   FileText,
   BadgeCheck,
-  Search,
   Home,
   Menu,
   X,
-  Briefcase
+  Briefcase,
+  Search
 } from "lucide-react";
 
 export function UserSidebarLayout({ children, activeTab }: { children: ReactNode, activeTab: string }) {
@@ -20,46 +20,75 @@ export function UserSidebarLayout({ children, activeTab }: { children: ReactNode
   const user = dataStore.getCurrentUser("worker");
   const { lang, setLang, t } = useI18n();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   if (!user) {
     return <>{children}</>;
   }
 
   const tabs = [
-    { id: "overview", label: t("dashboard"), icon: Home, path: "/dashboard" },
-    { id: "find-jobs", label: t("jobs"), icon: Search, path: "/jobs" },
-    { id: "applied", label: t("appliedJobsTab"), icon: FileText, path: "/dashboard", search: { tab: "applied" } },
-    { id: "saved", label: t("savedJobsTab"), icon: Bookmark, path: "/dashboard", search: { tab: "saved" } },
-    { id: "profile", label: t("myProfile"), icon: User, path: "/dashboard", search: { tab: "profile" } },
+    { id: "overview", label: t("dashboard"), mobileLabel: lang === "mr" ? "डॅशबोर्ड" : "Home", icon: Home, path: "/dashboard" },
+    { id: "find-jobs", label: t("jobs"), mobileLabel: lang === "mr" ? "नोकऱ्या" : "Jobs", icon: Briefcase, path: "/jobs" },
+    { id: "applied", label: t("appliedJobsTab"), mobileLabel: lang === "mr" ? "माझे अर्ज" : "Applied", icon: FileText, path: "/dashboard", search: { tab: "applied" } },
+    { id: "saved", label: t("savedJobsTab"), mobileLabel: lang === "mr" ? "सेव्ह" : "Saved", icon: Bookmark, path: "/dashboard", search: { tab: "saved" } },
+    { id: "profile", label: t("myProfile"), mobileLabel: lang === "mr" ? "प्रोफाइल" : "Profile", icon: User, path: "/dashboard", search: { tab: "profile" } },
   ];
 
   return (
     <div className="h-screen bg-[#F5F8FC] flex flex-col md:flex-row font-sans max-w-full overflow-hidden">
       
-      {/* ================= MOBILE TOP NAVBAR HEADER (Visible only on < 768px) ================= */}
-      <header className="md:hidden bg-[#051B38] text-white px-4 py-3 sticky top-0 z-40 flex items-center justify-between shadow-md border-b border-white/10 shrink-0 w-full">
-        <div className="flex items-center gap-3 min-w-0 pr-2">
+      {/* ================= MOBILE TOP NAVBAR HEADER (Matching Sketch Structure) ================= */}
+      <header className="md:hidden bg-[#051B38] text-white px-3 py-2 sticky top-0 z-40 flex items-center justify-between shadow-md border-b border-white/10 shrink-0 w-full gap-2">
+        {/* Profile Avatar on top & Name below (Matching Drawing) */}
+        <Link
+          to="/dashboard"
+          search={{ tab: "profile" }}
+          className="flex flex-col items-center justify-center min-w-0 shrink-0 cursor-pointer hover:opacity-90 active:scale-95 transition-all text-center pt-0.5"
+          title="View Profile"
+        >
           {user.profilePhoto ? (
             <img
               src={user.profilePhoto}
               alt={user.fullName || "User"}
-              className="size-9 rounded-full object-cover shadow-md ring-2 ring-white/20 border border-white shrink-0"
+              className="size-8.5 rounded-full object-cover shadow-md ring-2 ring-white/20 border border-white shrink-0"
             />
           ) : (
-            <div className="size-9 rounded-full bg-[#125BB5] text-white flex items-center justify-center font-black text-sm shadow-md ring-2 ring-white/20 shrink-0">
+            <div className="size-8.5 rounded-full bg-[#125BB5] text-white flex items-center justify-center font-black text-xs shadow-md ring-2 ring-white/20 shrink-0">
               {user.fullName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || "C"}
             </div>
           )}
-          <div className="min-w-0 flex-1">
-            <h1 className="font-black text-xs text-white truncate leading-tight">{user.fullName || user.email?.split("@")[0] || "Candidate"}</h1>
-            <span className="text-[10px] text-[#FFC400] font-black uppercase block tracking-wider leading-tight mt-0.5">{t("candidatePortal")}</span>
-          </div>
-        </div>
+          <span className="font-bold text-[10px] text-white truncate max-w-[55px] sm:max-w-[70px] leading-tight mt-0.5">
+            {user.fullName || user.email?.split("@")[0] || "payal"}
+          </span>
+        </Link>
 
-        <div className="flex items-center gap-1.5 shrink-0 ml-1">
+        {/* Search Bar in between Profile and Menu (Capsule Pill matching Drawing) */}
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (searchQuery.trim()) {
+              navigate({ to: "/jobs", search: { q: searchQuery.trim() } as any });
+            }
+          }}
+          className="flex-1 min-w-0 mx-1 sm:mx-2"
+        >
+          <div className="relative flex items-center">
+            <Search className="size-3.5 text-white/50 absolute left-3 pointer-events-none shrink-0" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search"
+              className="w-full bg-white/10 hover:bg-white/15 focus:bg-white/20 text-white placeholder:text-white/50 text-xs font-medium rounded-full pl-8.5 pr-3 py-1.5 border border-white/15 focus:border-white/30 focus:outline-none transition-all shadow-inner"
+            />
+          </div>
+        </form>
+
+        {/* Menu Hamburger Button [ ≡ ] */}
+        <div className="flex items-center shrink-0">
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="p-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-all cursor-pointer"
+            className="size-9 rounded-xl bg-white/10 text-white hover:bg-white/20 flex items-center justify-center transition-all cursor-pointer border border-white/10"
             aria-label="Toggle menu"
           >
             {isMobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
@@ -92,9 +121,21 @@ export function UserSidebarLayout({ children, activeTab }: { children: ReactNode
                       {user.fullName?.charAt(0).toUpperCase() || "U"}
                     </div>
                   )}
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <h2 className="font-black text-sm text-white truncate">{user.fullName || "User"}</h2>
                     <p className="text-[11px] text-white/70 truncate">{user.email || ""}</p>
+                    <button
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        dataStore.logout("worker");
+                        navigate({ to: "/", hash: "main", replace: true });
+                        if (typeof window !== "undefined") window.scrollTo(0, 0);
+                      }}
+                      className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-bold text-rose-300 hover:text-white bg-rose-500/20 hover:bg-rose-500/30 px-2.5 py-0.5 rounded-full border border-rose-400/40 transition-colors cursor-pointer"
+                    >
+                      <LogOut className="size-3" />
+                      <span>{t("signOut")}</span>
+                    </button>
                   </div>
                 </div>
                 <button
@@ -153,25 +194,45 @@ export function UserSidebarLayout({ children, activeTab }: { children: ReactNode
         <div>
           {/* User Profile Card */}
           <div className="pt-1 pb-4 px-2 text-center border-b border-white/10 mb-4">
-            {user.profilePhoto ? (
-              <img
-                src={user.profilePhoto}
-                alt={user.fullName || "User"}
-                className="size-20 rounded-full object-cover mx-auto mb-2 shadow-lg ring-4 ring-white/20 border-2 border-white"
-              />
-            ) : (
-              <div className="size-20 rounded-full bg-[#125BB5] text-white flex items-center justify-center font-black text-3xl mx-auto mb-2 shadow-lg ring-4 ring-white/10">
-                {user.fullName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || "U"}
+            <Link
+              to="/dashboard"
+              search={{ tab: "profile" }}
+              className="block cursor-pointer hover:opacity-90 transition-opacity"
+              title="View Profile"
+            >
+              {user.profilePhoto ? (
+                <img
+                  src={user.profilePhoto}
+                  alt={user.fullName || "User"}
+                  className="size-20 rounded-full object-cover mx-auto mb-2 shadow-lg ring-4 ring-white/20 border-2 border-white"
+                />
+              ) : (
+                <div className="size-20 rounded-full bg-[#125BB5] text-white flex items-center justify-center font-black text-3xl mx-auto mb-2 shadow-lg ring-4 ring-white/10">
+                  {user.fullName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || "U"}
+                </div>
+              )}
+              <h2 className="font-black text-lg text-white tracking-tight">{user.fullName || user.email?.split("@")[0] || "User"}</h2>
+              <p className="text-xs font-semibold text-white/70 truncate px-2">{user.email || ""}</p>
+            </Link>
+
+            <div className="mt-2.5 flex items-center justify-center gap-2 flex-wrap">
+              <div className="inline-flex items-center gap-1.5 bg-[#FFC400]/20 border border-[#FFC400] text-[#FFC400] px-2.5 py-0.5 rounded-full text-[11px] font-black">
+                <BadgeCheck className="size-3.5" /> {t("verifiedUser")}
               </div>
-            )}
-            <h2 className="font-black text-lg text-white tracking-tight">{user.fullName || user.email?.split("@")[0] || "User"}</h2>
-            <p className="text-xs font-semibold text-white/70 truncate px-2">{user.email || ""}</p>
-
-            <div className="mt-2.5 inline-flex items-center gap-1.5 bg-[#FFC400]/20 border border-[#FFC400] text-[#FFC400] px-3 py-0.5 rounded-full text-[11px] font-black">
-              <BadgeCheck className="size-3.5" /> {t("verifiedUser")}
+              <button
+                type="button"
+                onClick={() => {
+                  dataStore.logout("worker");
+                  navigate({ to: "/", hash: "main", replace: true });
+                  if (typeof window !== "undefined") window.scrollTo(0, 0);
+                }}
+                className="inline-flex items-center gap-1 bg-rose-500/20 border border-rose-400/40 hover:bg-rose-500/35 text-rose-300 hover:text-white px-2.5 py-0.5 rounded-full text-[11px] font-bold cursor-pointer transition-colors shadow-2xs"
+                title={t("signOut")}
+              >
+                <LogOut className="size-3" />
+                <span>{t("signOut")}</span>
+              </button>
             </div>
-
-
           </div>
 
           {/* Navigation Links */}
@@ -223,7 +284,7 @@ export function UserSidebarLayout({ children, activeTab }: { children: ReactNode
       </main>
 
       {/* ================= MOBILE BOTTOM NAVIGATION BAR (Visible on < 768px for easy thumb tapping) ================= */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[#051B38] text-white border-t border-white/10 z-40 px-2 py-1.5 flex items-center justify-around shadow-2xl">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[#051B38] text-white border-t border-white/10 z-40 px-1 py-1.5 flex items-center justify-around shadow-2xl safe-area-bottom">
         {tabs.map((item) => {
           const isActive = activeTab === item.id;
           const linkProps = item.search ? { to: item.path, search: item.search } : { to: item.path };
@@ -231,11 +292,12 @@ export function UserSidebarLayout({ children, activeTab }: { children: ReactNode
             <Link
               key={item.id}
               {...(linkProps as any)}
-              className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg text-[10px] font-bold transition-all ${isActive ? "text-[#FFC400]" : "text-white/60 hover:text-white"
-                }`}
+              className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-xl text-[10px] font-bold transition-all ${
+                isActive ? "text-[#FFC400] bg-white/10" : "text-white/70 hover:text-white"
+              }`}
             >
-              <item.icon className={`size-4.5 ${isActive ? "text-[#FFC400]" : "text-white/60"}`} />
-              <span className="truncate max-w-[64px]">{item.label}</span>
+              <item.icon className={`size-4.5 ${isActive ? "text-[#FFC400]" : "text-white/70"}`} />
+              <span className="truncate max-w-[68px] text-center">{item.mobileLabel || item.label}</span>
             </Link>
           );
         })}

@@ -76,9 +76,9 @@ import { dataStore } from "@/lib/data-store";
 import { isVideoMedia, getYouTubeEmbedUrl } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
-  beforeLoad: () => {
+  beforeLoad: ({ search }: any) => {
     if (typeof window !== "undefined") {
-      if (window.location.search.includes("view=website")) {
+      if (search?.view === "website" || window.location.search.includes("view=website") || window.location.search.includes("landing=true")) {
         return;
       }
       try {
@@ -273,9 +273,21 @@ function LandingGatewayPage() {
 
     if (savedTitle) setHeroTitle(savedTitle);
     if (savedSubtitle) setHeroSubtitle(savedSubtitle);
-    if (savedImages) setImages(JSON.parse(savedImages));
-    if (savedMetrics) setMetrics(JSON.parse(savedMetrics));
-    if (savedAbout) setAboutData(JSON.parse(savedAbout));
+    if (savedImages) {
+      try {
+        setImages(JSON.parse(savedImages));
+      } catch (e) {}
+    }
+    if (savedMetrics) {
+      try {
+        setMetrics(JSON.parse(savedMetrics));
+      } catch (e) {}
+    }
+    if (savedAbout) {
+      try {
+        setAboutData(JSON.parse(savedAbout));
+      } catch (e) {}
+    }
     if (savedPillars) {
       try {
         setCompanyPillars(JSON.parse(savedPillars));

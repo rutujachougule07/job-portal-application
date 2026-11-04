@@ -56,8 +56,8 @@ function SelectLanguagePage() {
               key={item.code}
               onClick={() => setSelectedLang(item.code)}
               className={`relative flex items-center justify-between p-3 sm:p-3.5 rounded-xl border-2 transition-all duration-200 cursor-pointer ${selectedLang === item.code
-                  ? "border-[#0A3B7B] bg-[#EBF1F8] shadow-md ring-2 ring-[#0A3B7B]/20"
-                  : "border-white/60 bg-white/70 hover:bg-white hover:border-[#DCE5F0]"
+                ? "border-[#0A3B7B] bg-[#EBF1F8] shadow-md ring-2 ring-[#0A3B7B]/20"
+                : "border-white/60 bg-white/70 hover:bg-white hover:border-[#DCE5F0]"
                 }`}
             >
               <div className="flex flex-col text-left">

@@ -47,8 +47,8 @@ export type EmployerProfile = {
   createdAt: string;
 };
 
-export type SalaryType = "Daily" | "Monthly" | "Yearly";
-export type JobType = "Full Time" | "Part Time" | "Contract" | "Internship" | "Daily Wage" | "Temporary";
+export type SalaryType = "Daily" | "Monthly" | "Yearly" | "Weekly" | "Negotiable" | string;
+export type JobType = "Full Time" | "Part Time" | "Contract" | "Internship" | "Daily Wage" | "Temporary" | "Permanent" | "Freelancer" | "Apprentice / Trainee" | string;
 export type WorkMode = "On-site" | "Work From Home" | "Hybrid";
 export type JobStatus = "Active" | "Closed";
 export type ApprovalStatus = "pending" | "approved" | "rejected";
@@ -84,6 +84,11 @@ export type JobRecord = {
   featured?: boolean;
   status: JobStatus;
   approvalStatus?: ApprovalStatus;
+  preferredLanguage?: string;
+  skillLevel?: string;
+  availability?: string;
+  workSchedule?: string;
+  genderPreference?: string;
 };
 
 export type ApplicationStatus = "Applied" | "Viewed" | "Shortlisted" | "Interview" | "Selected" | "Rejected";
@@ -343,13 +348,19 @@ export type RegisteredUser = {
 };
 
 export const DEFAULT_SUPERADMIN_CATEGORIES = [
-  { label: "Factory Worker", iconName: "Factory", theme: "blue" },
   { label: "Construction", iconName: "HardHat", theme: "yellow" },
-  { label: "Technical Staff", iconName: "Wrench", theme: "purple" },
-  { label: "Transport & Logistics", iconName: "Truck", theme: "green" },
+  { label: "Factory / Industry", iconName: "Factory", theme: "blue" },
   { label: "Electrician", iconName: "Zap", theme: "orange" },
+  { label: "Driver", iconName: "Truck", theme: "green" },
+  { label: "Office / Data Entry", iconName: "Briefcase", theme: "blue" },
+  { label: "Application Developer", iconName: "Laptop", theme: "purple" },
+  { label: "Web Developer", iconName: "Laptop", theme: "blue" },
+  { label: "Software Developer", iconName: "Laptop", theme: "indigo" },
+  { label: "Mobile App Developer", iconName: "Smartphone", theme: "green" },
+  { label: "Other", iconName: "Compass", theme: "slate" },
+  { label: "Factory Worker", iconName: "Factory", theme: "blue" },
+  { label: "Technical Staff", iconName: "Wrench", theme: "purple" },
   { label: "Security Guard", iconName: "Shield", theme: "red" },
-  { label: "Office Staff", iconName: "Briefcase", theme: "blue" },
 ];
 
 const INITIAL_JOBS: JobRecord[] = [];
@@ -1063,6 +1074,12 @@ export class DataStoreManager {
 
   public getJobById(jobId: string): JobRecord | undefined {
     return this.getAllJobs().find((j) => j.id === jobId);
+  }
+
+  public getEmployerById(identifier: string): RegisteredUser | undefined {
+    return this.getRegisteredUserAccounts().find(
+      (u) => u.email === identifier || u.fullName === identifier
+    );
   }
 
   public createJob(jobData: Omit<JobRecord, "id" | "postedDate" | "postedAgo" | "initials"> & { approvalStatus?: ApprovalStatus }): JobRecord {

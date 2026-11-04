@@ -14,6 +14,9 @@ export default defineConfig({
     server: {
       port: 8081,
     },
+    build: {
+      chunkSizeWarningLimit: 1000,
+    },
     plugins: [
       {
         name: "local-uploaded-file-resolver",

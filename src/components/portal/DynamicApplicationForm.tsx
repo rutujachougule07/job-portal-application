@@ -1426,7 +1426,7 @@ export const DynamicApplicationForm = ({
                 Preferred Shift *
               </label>
               <div className="grid grid-cols-2 gap-2">
-                {["Day Shift", "Night Shift", "Rotational Shift", "Flexible"].map((s) => (
+                {["Day Shift", "Night Shift", "Rotational Shift", "8 Hours", "12 Hours", "Flexible Timing", "Overtime"].map((s) => (
                   <button
                     type="button"
                     key={s}
