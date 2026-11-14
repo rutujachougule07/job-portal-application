@@ -11,6 +11,10 @@ function fbSync(fn: () => Promise<unknown>) {
   if (typeof window !== "undefined") fn().catch(console.error);
 }
 
+export const formatCurrency = (amt: number): string => {
+  return "₹" + (amt || 0).toLocaleString("en-IN");
+};
+
 export type UserRole = "worker" | "employer" | "admin" | "employee";
 
 export type JobSeekerProfile = {
@@ -347,6 +351,44 @@ export type RegisteredUser = {
   worksiteLocationLink?: string;
 };
 
+export type CashbookEntry = {
+  id: string;
+  employerId: string;
+  type: "IN" | "OUT";
+  amount: number;
+  paymentMode: "CASH" | "ONLINE";
+  partyName?: string;
+  partyMobile?: string;
+  category: string;
+  note: string;
+  date: string;
+  timestamp: number;
+};
+
+export type ExpenseEntry = {
+  id: string;
+  employerId: string;
+  type: "PAID" | "REFUND";
+  amount: number;
+  paymentMode: "CASH" | "ONLINE" | "UPI" | "BANK";
+  category: string;
+  note: string;
+  date: string;
+  timestamp: number;
+};
+
+export type CollectionReminderEntry = {
+  id: string;
+  employerId: string;
+  customerName: string;
+  customerPhone: string;
+  amount: number;
+  reminderDate: string; // YYYY-MM-DD
+  reminderNote?: string | undefined;
+  status: "PENDING" | "RECEIVED";
+  timestamp: number;
+};
+
 export const DEFAULT_SUPERADMIN_CATEGORIES = [
   { label: "Construction", iconName: "HardHat", theme: "yellow" },
   { label: "Factory / Industry", iconName: "Factory", theme: "blue" },
@@ -385,6 +427,9 @@ export class DataStoreManager {
     EMP_WORKERS: "realjob_db_emp_workers",
     ATTENDANCE: "realjob_db_attendance",
     SUBADMINS: "realjob_db_subadmins",
+    CASHBOOK: "realjob_db_cashbook",
+    EXPENSES: "realjob_db_expenses",
+    COLLECTIONS: "realjob_db_collections",
   };
 
   constructor() {
@@ -425,6 +470,119 @@ export class DataStoreManager {
     if (!localStorage.getItem(this.STORAGE_KEYS.SUBADMINS)) {
       localStorage.setItem(this.STORAGE_KEYS.SUBADMINS, JSON.stringify(INITIAL_SUBADMINS));
     }
+    if (!localStorage.getItem(this.STORAGE_KEYS.CASHBOOK)) {
+      localStorage.setItem(this.STORAGE_KEYS.CASHBOOK, JSON.stringify([]));
+    }
+    if (!localStorage.getItem(this.STORAGE_KEYS.EXPENSES)) {
+      localStorage.setItem(this.STORAGE_KEYS.EXPENSES, JSON.stringify([]));
+    }
+    if (!localStorage.getItem(this.STORAGE_KEYS.COLLECTIONS)) {
+      localStorage.setItem(this.STORAGE_KEYS.COLLECTIONS, JSON.stringify([]));
+    } else {
+      // Purge any legacy sample/dummy collections
+      try {
+        const raw = localStorage.getItem(this.STORAGE_KEYS.COLLECTIONS) || "[]";
+        const parsed = JSON.parse(raw);
+        const cleaned = parsed.filter(
+          (c: any) => c && c.id && !c.id.startsWith("col-1") && !c.id.startsWith("col-2") && !c.id.startsWith("col-3") && c.employerId
+        );
+        if (cleaned.length !== parsed.length) {
+          localStorage.setItem(this.STORAGE_KEYS.COLLECTIONS, JSON.stringify(cleaned));
+        }
+      } catch {}
+    }
+
+    // Universal purge of legacy dummy records across all Bill Book tools
+    try {
+      if (typeof window !== "undefined") {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (!key) continue;
+          if (key.startsWith("billbook_online_to_cash_")) {
+            const raw = localStorage.getItem(key);
+            if (raw) {
+              const list = JSON.parse(raw);
+              if (Array.isArray(list)) {
+                const cleaned = list.filter(
+                  (r: any) =>
+                    r &&
+                    r.id &&
+                    !String(r.id).startsWith("otc-1") &&
+                    !String(r.id).startsWith("otc-2") &&
+                    !String(r.id).startsWith("otc-3") &&
+                    !/[\u0900-\u097F]/.test(String(r.sourceNote || "")) &&
+                    !String(r.sourceNote || "").includes("SBI ATM") &&
+                    !String(r.sourceNote || "").includes("HDFC")
+                );
+                if (cleaned.length !== list.length) {
+                  localStorage.setItem(key, JSON.stringify(cleaned));
+                }
+              }
+            }
+          } else if (key.startsWith("billbook_cashout_")) {
+            const raw = localStorage.getItem(key);
+            if (raw) {
+              const list = JSON.parse(raw);
+              if (Array.isArray(list)) {
+                const cleaned = list.filter(
+                  (r: any) =>
+                    r &&
+                    r.id &&
+                    !String(r.id).startsWith("co-1") &&
+                    !String(r.id).startsWith("co-2") &&
+                    !String(r.id).startsWith("co-3") &&
+                    !/[\u0900-\u097F]/.test(String(r.note || "")) &&
+                    !String(r.note || "").includes("SBI Bank") &&
+                    !String(r.note || "").includes("Owner personal")
+                );
+                if (cleaned.length !== list.length) {
+                  localStorage.setItem(key, JSON.stringify(cleaned));
+                }
+              }
+            }
+          } else if (key.startsWith("billbook_items_")) {
+            const raw = localStorage.getItem(key);
+            if (raw) {
+              const list = JSON.parse(raw);
+              if (Array.isArray(list)) {
+                const cleaned = list.filter(
+                  (p: any) =>
+                    p &&
+                    p.id &&
+                    !String(p.id).startsWith("item-1") &&
+                    !String(p.id).startsWith("item-2") &&
+                    !String(p.id).startsWith("item-3") &&
+                    !String(p.id).startsWith("item-4") &&
+                    !String(p.id).startsWith("item-5") &&
+                    !String(p.id).startsWith("item-6")
+                );
+                if (cleaned.length !== list.length) {
+                  localStorage.setItem(key, JSON.stringify(cleaned));
+                }
+              }
+            }
+          } else if (key.startsWith("billbook_orders_")) {
+            const raw = localStorage.getItem(key);
+            if (raw) {
+              const list = JSON.parse(raw);
+              if (Array.isArray(list)) {
+                const cleaned = list.filter(
+                  (o: any) =>
+                    o &&
+                    o.id &&
+                    !String(o.id).startsWith("ord-1") &&
+                    !String(o.id).startsWith("ord-2") &&
+                    !String(o.id).startsWith("ord-3")
+                );
+                if (cleaned.length !== list.length) {
+                  localStorage.setItem(key, JSON.stringify(cleaned));
+                }
+              }
+            }
+          }
+        }
+      }
+    } catch {}
 
     // Bidirectional sync with Firebase
     // Firestore is the authoritative source of truth
@@ -2136,6 +2294,249 @@ export class DataStoreManager {
 
   public replyToApplication(applicationId: string, replyMessage: string): ApplicationRecord | null {
     return this.updateApplicationReply(applicationId, replyMessage);
+  }
+
+  // ── Cashbook Management (Shri Bill Book) ──
+  public getCashbookEntries(employerId?: string): CashbookEntry[] {
+    const raw = typeof window !== "undefined" ? localStorage.getItem(this.STORAGE_KEYS.CASHBOOK) : null;
+    const all: CashbookEntry[] = raw ? JSON.parse(raw) : [];
+    if (!employerId) return all;
+    return all.filter((e) => !e.employerId || e.employerId === employerId);
+  }
+
+  public addCashbookEntry(entry: Omit<CashbookEntry, "id" | "timestamp">): CashbookEntry {
+    const raw = typeof window !== "undefined" ? localStorage.getItem(this.STORAGE_KEYS.CASHBOOK) : null;
+    const all: CashbookEntry[] = raw ? JSON.parse(raw) : [];
+    const newEntry: CashbookEntry = {
+      ...entry,
+      id: `cb-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      timestamp: Date.now(),
+    };
+    all.unshift(newEntry);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(this.STORAGE_KEYS.CASHBOOK, JSON.stringify(all));
+      fbSync(() => setDoc(doc(db, "cashbook", newEntry.id), newEntry));
+    }
+    return newEntry;
+  }
+
+  public deleteCashbookEntry(id: string): void {
+    const raw = typeof window !== "undefined" ? localStorage.getItem(this.STORAGE_KEYS.CASHBOOK) : null;
+    const all: CashbookEntry[] = raw ? JSON.parse(raw) : [];
+    const filtered = all.filter((e) => e.id !== id);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(this.STORAGE_KEYS.CASHBOOK, JSON.stringify(filtered));
+      fbSync(() => deleteDoc(doc(db, "cashbook", id)));
+    }
+  }
+
+  public getCashbookTotals(employerId?: string) {
+    const entries = this.getCashbookEntries(employerId);
+    let totalCashIn = 0;
+    let totalCashOut = 0;
+    let totalOnlineIn = 0;
+    let totalOnlineOut = 0;
+
+    const now = new Date();
+    const pad = (n: number) => n.toString().padStart(2, "0");
+    const todayDate = now.toISOString().split("T")[0]!;
+    const todaySlash = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()}`;
+
+    let todayCashIn = 0;
+    let todayCashOut = 0;
+    let todayOnlineIn = 0;
+    let todayOnlineOut = 0;
+    let todayEntryCount = 0;
+
+    entries.forEach((e) => {
+      const isToday = e.date === todayDate || e.date === todaySlash || (e.timestamp && (Date.now() - e.timestamp < 24 * 3600 * 1000 && new Date(e.timestamp).getDate() === now.getDate()));
+      const isIn = e.type === "IN";
+      const isOnline = e.paymentMode === "ONLINE";
+
+      if (isIn) {
+        if (isOnline) {
+          totalOnlineIn += Number(e.amount) || 0;
+          if (isToday) todayOnlineIn += Number(e.amount) || 0;
+        } else {
+          totalCashIn += Number(e.amount) || 0;
+          if (isToday) todayCashIn += Number(e.amount) || 0;
+        }
+      } else {
+        if (isOnline) {
+          totalOnlineOut += Number(e.amount) || 0;
+          if (isToday) todayOnlineOut += Number(e.amount) || 0;
+        } else {
+          totalCashOut += Number(e.amount) || 0;
+          if (isToday) todayCashOut += Number(e.amount) || 0;
+        }
+      }
+
+      if (isToday) todayEntryCount++;
+    });
+
+    const cashInHand = totalCashIn - totalCashOut;
+    const onlineBalance = totalOnlineIn - totalOnlineOut;
+    const totalBalance = cashInHand + onlineBalance;
+
+    const todayCashInHand = todayCashIn - todayCashOut;
+    const todayOnline = todayOnlineIn - todayOnlineOut;
+    const todayBalance = todayCashInHand + todayOnline;
+
+    const todayTotalOut = todayCashOut + todayOnlineOut;
+    const todayTotalIn = todayCashIn + todayOnlineIn;
+
+    return {
+      totalBalance,
+      cashInHand,
+      onlineBalance,
+      todayBalance,
+      todayCashInHand,
+      todayOnline,
+      todayTotalOut,
+      todayTotalIn,
+      todayEntryCount,
+    };
+  }
+
+  // ── Expense Management (Shri Bill Book) ──
+  public getExpenseEntries(employerId?: string, dateFilter?: string): ExpenseEntry[] {
+    const raw = typeof window !== "undefined" ? localStorage.getItem(this.STORAGE_KEYS.EXPENSES) : null;
+    const all: ExpenseEntry[] = raw ? JSON.parse(raw) : [];
+    let filtered = employerId ? all.filter((e) => !e.employerId || e.employerId === employerId) : all;
+    if (dateFilter) {
+      filtered = filtered.filter((e) => e.date === dateFilter);
+    }
+    return filtered;
+  }
+
+  public addExpenseEntry(entry: Omit<ExpenseEntry, "id" | "timestamp">): ExpenseEntry {
+    const raw = typeof window !== "undefined" ? localStorage.getItem(this.STORAGE_KEYS.EXPENSES) : null;
+    const all: ExpenseEntry[] = raw ? JSON.parse(raw) : [];
+    const newEntry: ExpenseEntry = {
+      ...entry,
+      id: `exp-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      timestamp: Date.now(),
+    };
+    all.unshift(newEntry);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(this.STORAGE_KEYS.EXPENSES, JSON.stringify(all));
+      fbSync(() => setDoc(doc(db, "expenses", newEntry.id), newEntry));
+    }
+    return newEntry;
+  }
+
+  public deleteExpenseEntry(id: string): void {
+    const raw = typeof window !== "undefined" ? localStorage.getItem(this.STORAGE_KEYS.EXPENSES) : null;
+    const all: ExpenseEntry[] = raw ? JSON.parse(raw) : [];
+    const filtered = all.filter((e) => e.id !== id);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(this.STORAGE_KEYS.EXPENSES, JSON.stringify(filtered));
+      fbSync(() => deleteDoc(doc(db, "expenses", id)));
+    }
+  }
+
+  public getExpenseTotals(employerId?: string, dateFilter?: string) {
+    const list = this.getExpenseEntries(employerId, dateFilter);
+    let totalPaid = 0;
+    let totalRefund = 0;
+    list.forEach((e) => {
+      if (e.type === "PAID") {
+        totalPaid += Number(e.amount) || 0;
+      } else {
+        totalRefund += Number(e.amount) || 0;
+      }
+    });
+    return {
+      totalPaid,
+      totalRefund,
+      netExpense: totalPaid - totalRefund,
+      entryCount: list.length,
+    };
+  }
+
+  // ── Collection Reminders Management (Shri Bill Book) ──
+  public getCollectionReminders(employerId?: string): CollectionReminderEntry[] {
+    const raw = typeof window !== "undefined" ? localStorage.getItem(this.STORAGE_KEYS.COLLECTIONS) : null;
+    const all: CollectionReminderEntry[] = raw ? JSON.parse(raw) : [];
+    if (!employerId) return all;
+    return all.filter((c) => c.employerId === employerId);
+  }
+
+  public addCollectionReminder(
+    entry: Omit<CollectionReminderEntry, "id" | "timestamp" | "status">
+  ): CollectionReminderEntry {
+    const raw = typeof window !== "undefined" ? localStorage.getItem(this.STORAGE_KEYS.COLLECTIONS) : null;
+    const all: CollectionReminderEntry[] = raw ? JSON.parse(raw) : [];
+    const newEntry: CollectionReminderEntry = {
+      ...entry,
+      id: `col-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      status: "PENDING",
+      timestamp: Date.now(),
+    };
+    all.unshift(newEntry);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(this.STORAGE_KEYS.COLLECTIONS, JSON.stringify(all));
+      fbSync(() => setDoc(doc(db, "collections", newEntry.id), newEntry));
+    }
+    return newEntry;
+  }
+
+  public markCollectionReceived(id: string): void {
+    const raw = typeof window !== "undefined" ? localStorage.getItem(this.STORAGE_KEYS.COLLECTIONS) : null;
+    const all: CollectionReminderEntry[] = raw ? JSON.parse(raw) : [];
+    const item = all.find((c) => c.id === id);
+    if (item) {
+      item.status = "RECEIVED";
+      if (typeof window !== "undefined") {
+        localStorage.setItem(this.STORAGE_KEYS.COLLECTIONS, JSON.stringify(all));
+        fbSync(() => updateDoc(doc(db, "collections", id), { status: "RECEIVED" }));
+      }
+    }
+  }
+
+  public rescheduleCollectionReminder(id: string, newDate: string, note?: string): void {
+    const raw = typeof window !== "undefined" ? localStorage.getItem(this.STORAGE_KEYS.COLLECTIONS) : null;
+    const all: CollectionReminderEntry[] = raw ? JSON.parse(raw) : [];
+    const item = all.find((c) => c.id === id);
+    if (item) {
+      item.reminderDate = newDate;
+      if (note !== undefined) item.reminderNote = note;
+      item.status = "PENDING";
+      if (typeof window !== "undefined") {
+        localStorage.setItem(this.STORAGE_KEYS.COLLECTIONS, JSON.stringify(all));
+        fbSync(() =>
+          updateDoc(doc(db, "collections", id), {
+            reminderDate: newDate,
+            reminderNote: item.reminderNote,
+            status: "PENDING",
+          })
+        );
+      }
+    }
+  }
+
+  public deleteCollectionReminder(id: string): void {
+    const raw = typeof window !== "undefined" ? localStorage.getItem(this.STORAGE_KEYS.COLLECTIONS) : null;
+    const all: CollectionReminderEntry[] = raw ? JSON.parse(raw) : [];
+    const filtered = all.filter((c) => c.id !== id);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(this.STORAGE_KEYS.COLLECTIONS, JSON.stringify(filtered));
+      fbSync(() => deleteDoc(doc(db, "collections", id)));
+    }
+  }
+
+  public getCollectionTotals(employerId?: string) {
+    const list = this.getCollectionReminders(employerId);
+    const pendingList = list.filter((c) => c.status === "PENDING");
+    const totalDue = pendingList.reduce((sum, c) => sum + (Number(c.amount) || 0), 0);
+    const receivedList = list.filter((c) => c.status === "RECEIVED");
+    const totalReceived = receivedList.reduce((sum, c) => sum + (Number(c.amount) || 0), 0);
+    return {
+      totalDue,
+      pendingCount: pendingList.length,
+      totalReceived,
+      receivedCount: receivedList.length,
+    };
   }
 }
 

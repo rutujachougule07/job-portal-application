@@ -21,7 +21,8 @@ import {
   UserCheck,
   ChevronLeft,
   ChevronRight,
-  FileText
+  FileText,
+  ArrowLeft
 } from "lucide-react";
 import SalarySlip from "@/components/SalarySlip";
 import { Button } from "@/components/ui/button";
@@ -569,6 +570,19 @@ function EmployeeDashboard() {
       {/* ── TOP HEADER BAR (Website Navy Theme #063B78) ── */}
       {!selectedActivityDate && (
         <header className="bg-[#063B78] text-white px-4 py-3.5 flex items-center justify-between shadow-lg border-b border-blue-400/20 shrink-0 z-20">
+          {navTab !== "punch" ? (
+            <button
+              type="button"
+              onClick={() => setNavTab("punch")}
+              className="size-9 rounded-xl bg-white/15 hover:bg-white/25 active:scale-95 text-white flex items-center justify-center transition-all cursor-pointer shrink-0 mr-2 shadow-2xs"
+              title="Back"
+            >
+              <ArrowLeft className="size-5 text-white stroke-[2.5]" />
+            </button>
+          ) : (
+            <div className="w-9" />
+          )}
+
           <div className="flex-1 text-center pr-2 min-w-0">
             <h1 className="font-black text-sm sm:text-base text-white truncate leading-tight tracking-tight">
               {employerName || user?.employerName || "Alpha Byte"}

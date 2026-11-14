@@ -24,6 +24,7 @@ import {
   ShoppingBag,
   ArrowUpRight,
   ArrowRight,
+  ArrowLeft,
   Receipt,
   TrendingUp,
   BarChart2,
@@ -42,6 +43,7 @@ import {
   Home,
   Wallet,
   Layers,
+  LayoutGrid,
   Filter,
   Download,
   Printer,
@@ -65,6 +67,12 @@ import {
   Loader2,
   Camera,
   UploadCloud,
+  Info,
+  Mail,
+  Globe,
+  Target,
+  Eye,
+  Briefcase,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { parseMapCoordinates } from "@/lib/location-utils";
@@ -85,6 +93,10 @@ import {
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { initiateRazorpayCheckout } from "@/lib/razorpay";
+import { BillBookHub } from "@/components/billbook/BillBookHub";
+import { CashbookView } from "@/components/billbook/CashbookView";
+import { ExpensesView } from "@/components/billbook/ExpensesView";
+import { MyReportView } from "@/components/billbook/MyReportView";
 
 import {
   Area,
@@ -717,7 +729,7 @@ function AdminDashboardPage() {
   const rl = reportLabels[lang] || reportLabels['mr'] || reportLabels['en'];
 
   const initialTab = (search.tab as any) || "overview";
-  const [activeTabState, setActiveTabState] = useState<"overview" | "jobs" | "applications" | "attendance" | "salary" | "reports" | "packages" | "profile">(initialTab);
+  const [activeTabState, setActiveTabState] = useState<"overview" | "jobs" | "applications" | "attendance" | "salary" | "reports" | "packages" | "profile" | "billbook">(initialTab);
 
   // Synchronize state when user navigates using browser back / forward buttons
   useEffect(() => {
@@ -751,7 +763,7 @@ function AdminDashboardPage() {
   };
 
   const activeTab = activeTabState;
-  const setActiveTab = (tab: "overview" | "jobs" | "applications" | "attendance" | "salary" | "reports" | "packages" | "profile" | any) => {
+  const setActiveTab = (tab: "overview" | "jobs" | "applications" | "attendance" | "salary" | "reports" | "packages" | "profile" | "billbook" | any) => {
     if (tab === activeTabState) return;
     // 1. Immediately switch tab in React state (instant 0ms response)
     setActiveTabState(tab);
@@ -783,6 +795,7 @@ function AdminDashboardPage() {
 
   // Filter Modal & Filter States (Strictly English matching Seeker style & white theme, 10 sections)
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [isAboutCompanyModalOpen, setIsAboutCompanyModalOpen] = useState(false);
   const [filterSearchQuery, setFilterSearchQuery] = useState("");
   const [expandedFilterSection, setExpandedFilterSection] = useState<number | null>(null);
   const [selectedLanguage, setSelectedLanguage] = useState<string>("all");
@@ -942,7 +955,6 @@ function AdminDashboardPage() {
   const [reportAttendanceRecords, setReportAttendanceRecords] = useState<DailyAttendanceRecord[]>([]);
   const [reportFilterType, setReportFilterType] = useState<"all" | "attendance" | "recruitment" | "billing">("all");
   const [reportSearchTerm, setReportSearchTerm] = useState("");
-  const [selectedReportCard, setSelectedReportCard] = useState<string | null>(null);
 
   // Worker Individual Report & Salary Slip states
   const [selectedWorkerReport, setSelectedWorkerReport] = useState<EmployerWorker | null>(null);
@@ -3076,19 +3088,51 @@ function AdminDashboardPage() {
     <div className="h-screen bg-[#F0F4FA] flex flex-col md:flex-row font-sans w-full overflow-hidden">
       {/* ── MOBILE TOP NAVBAR HEADER (Visible on < md) ── */}
       <header className="md:hidden bg-gradient-to-r from-[#0352A0] via-[#0266D0] to-[#013F85] text-white px-3.5 sm:px-4 py-2.5 sticky top-0 z-40 flex items-center justify-between shadow-md border-b-[2px] border-[#A3E635]/70 shrink-0 w-full min-w-0">
-        {/* 1. Left: Company Name & Subtitle */}
-        <div className="flex items-center min-w-0 pr-2">
+        {/* 1. Left: Profile Photo & Company Name & Subtitle */}
+        <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 pr-2">
+          {activeTab !== "overview" && (
+            <button
+              type="button"
+              onClick={() => setActiveTab("overview")}
+              className="size-9 rounded-xl bg-white/20 hover:bg-white/30 active:scale-90 text-white flex items-center justify-center transition-all cursor-pointer shrink-0 shadow-sm border border-white/30"
+              title={lang === "mr" ? "मागे डॅशबोर्डवर जा" : "Back to Dashboard"}
+              aria-label="Back to Dashboard"
+            >
+              <ArrowLeft className="size-5 text-white stroke-[2.5]" />
+            </button>
+          )}
+
+          {/* Employer Profile Photo before name */}
+          <button
+            type="button"
+            onClick={() => setActiveTab("profile")}
+            className="shrink-0 cursor-pointer active:scale-95 transition-transform"
+            title="View Profile"
+          >
+            {currentUser?.profilePhoto || profileForm?.profilePhoto ? (
+              <img
+                src={currentUser?.profilePhoto || profileForm?.profilePhoto}
+                alt={currentUser?.fullName || "Employer"}
+                className="size-9 sm:size-10 rounded-full object-cover border-2 border-white/50 shadow-xs ring-1 ring-white/30"
+              />
+            ) : (
+              <div className="size-9 sm:size-10 rounded-full bg-white/20 border-2 border-white/40 flex items-center justify-center font-black text-sm text-white shadow-xs">
+                {(currentUser?.fullName || "E").charAt(0).toUpperCase()}
+              </div>
+            )}
+          </button>
+
           <div className="flex flex-col min-w-0">
             <div className="flex items-center gap-1 leading-tight">
-              <span className="font-black text-sm sm:text-base tracking-tight text-white">
+              <span className="font-black text-sm sm:text-base tracking-tight text-white truncate max-w-[140px] sm:max-w-none">
                 {companyFirstWord}
               </span>
               {companyRestWords ? (
-                <span className="font-black text-sm sm:text-base tracking-tight text-[#A3E635]">
+                <span className="font-black text-sm sm:text-base tracking-tight text-[#A3E635] truncate max-w-[110px] sm:max-w-none">
                   {companyRestWords}
                 </span>
               ) : (
-                <span className="size-1.5 rounded-full bg-[#A3E635] inline-block mb-0.5" />
+                <span className="size-1.5 rounded-full bg-[#A3E635] inline-block mb-0.5 shrink-0" />
               )}
             </div>
             <span className="text-[9px] sm:text-[10px] text-white/80 font-semibold tracking-wider leading-none mt-0.5 whitespace-nowrap">
@@ -3246,11 +3290,11 @@ function AdminDashboardPage() {
               <nav className="space-y-1.5">
                 {[
                   { id: "overview", label: t("dashboardOverview"), icon: BarChart3 },
+                  { id: "reports", label: t("reports"), icon: PieChart },
                   { id: "jobs", label: t("jobListings"), icon: BriefcaseBusiness, count: jobs.length },
                   { id: "applications", label: t("jobApplications"), icon: FileText, count: applications.length },
                   { id: "attendance", label: t("attendancePayroll"), icon: CalendarCheck, count: workers.length },
                   { id: "salary", label: t("eSalarySlips"), icon: FileText },
-                  { id: "reports", label: t("reports"), icon: PieChart },
                   { id: "packages", label: t("myPackagesBilling"), icon: IndianRupee },
                   { id: "profile", label: t("myProfile"), icon: User },
                 ].map((item) => {
@@ -3308,11 +3352,11 @@ function AdminDashboardPage() {
           <div className="text-[10px] font-black uppercase text-[#9DAEC5] tracking-widest px-3 mb-2">{t("mainNavigation")}</div>
           {[
             { id: "overview", label: t("dashboardOverview"), icon: BarChart3 },
+            { id: "reports", label: t("reports"), icon: PieChart },
             { id: "jobs", label: t("jobListings"), icon: BriefcaseBusiness, count: jobs.length },
             { id: "applications", label: t("jobApplications"), icon: FileText, count: applications.length },
             { id: "attendance", label: t("attendancePayroll"), icon: CalendarCheck, count: workers.length },
             { id: "salary", label: t("eSalarySlips"), icon: FileText },
-            { id: "reports", label: t("reports"), icon: PieChart },
             { id: "packages", label: t("myPackagesBilling"), icon: IndianRupee },
             { id: "profile", label: t("myProfile"), icon: User },
           ].map((item) => {
@@ -3347,15 +3391,28 @@ function AdminDashboardPage() {
         {/* Top Navbar Header (Hidden on mobile as requested, visible on md+) */}
         <header className="hidden md:flex h-16 sm:h-20 bg-white border-b border-[#E0E8F5] items-center justify-between px-3 sm:px-8 shrink-0 z-30 shadow-2xs min-w-0">
           <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1 mr-2">
+            {activeTab !== "overview" && (
+              <button
+                type="button"
+                onClick={() => setActiveTab("overview")}
+                className="size-10 rounded-xl bg-[#F0F4FA] hover:bg-[#063B78] text-[#063B78] hover:text-white flex items-center justify-center transition-all cursor-pointer shrink-0 shadow-2xs border border-[#DCE5F0] group active:scale-95"
+                title={lang === "mr" ? "मागे डॅशबोर्डवर जा" : "Back to Dashboard"}
+                aria-label="Back to Dashboard"
+              >
+                <ArrowLeft className="size-5 group-hover:-translate-x-0.5 transition-transform stroke-[2.5]" />
+              </button>
+            )}
             <h2 className="text-sm sm:text-xl font-black text-[#063B78] truncate leading-tight">
               {activeTab === "overview" && t("dashboardOverview")}
+              {(activeTab === "billbook" || activeTab === "reports") && (
+                <span>{lang === "mr" ? "अहवाल" : "Reports"}</span>
+              )}
               {activeTab === "jobs" && t("jobListings")}
               {activeTab === "applications" && t("jobApplications")}
               {activeTab === "attendance" && t("attendancePayroll")}
               {activeTab === "packages" && t("myPackagesBilling")}
               {activeTab === "profile" && t("myProfile")}
               {activeTab === "salary" && t("employeeSalarySlipsTitle")}
-              {activeTab === "reports" && t("reports")}
             </h2>
           </div>
 
@@ -3467,65 +3524,60 @@ function AdminDashboardPage() {
 
               {/* ── MOBILE VIEW: Employer Dashboard (Matching Screenshot Color Combination) ── */}
               <div className="block md:hidden space-y-4">
-                {/* 1. Mobile Search Bar & Filter Pills */}
-                <div className="space-y-2">
-                  <div className="relative w-full">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-[#0062FF]" />
+                {/* 1. Mobile Search Bar & Filter Buttons (Compact Single Row - Fits all 4 tabs without scrolling) */}
+                <div className="flex items-center gap-1 sm:gap-1.5 w-full">
+                  <div className="relative flex-1 min-w-0">
+                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-3.5 text-[#0062FF]" />
                     <input
                       type="text"
-                      placeholder={mdI18n.searchPlaceholder}
+                      placeholder={lang === "mr" ? "शोधा..." : "Search..."}
                       value={jobSearch}
                       onChange={(e) => {
                         setJobSearch(e.target.value);
                         setJobsPage(1);
                       }}
-                      className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#CCE3FF] rounded-full text-xs font-semibold text-[#10233F] placeholder:text-[#7A8B9E] focus:outline-none focus:border-[#0062FF] shadow-2xs"
+                      className="w-full pl-6 pr-1.5 h-8.5 bg-white border border-[#CCE3FF] rounded-lg sm:rounded-xl text-[11px] font-semibold text-[#10233F] placeholder:text-[#7A8B9E] focus:outline-none focus:border-[#0062FF] shadow-2xs truncate"
                     />
                   </div>
 
-                  <div className="flex items-center gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
-                    <button
-                      type="button"
-                      onClick={() => openFilterWithSection(4)}
-                      className={`flex-1 py-1.5 px-3 rounded-full border text-xs font-bold flex items-center justify-center gap-1 shadow-2xs whitespace-nowrap transition-all cursor-pointer ${
-                        selectedLocation !== "all"
-                          ? "bg-[#0062FF] text-white border-[#0062FF]"
-                          : "bg-white border-[#CCE3FF] text-[#0062FF]"
-                      }`}
-                    >
-                      <MapPin className="size-3.5 shrink-0" />
-                      <span className="truncate max-w-[85px]">{selectedLocation !== "all" ? selectedLocation : t("location")}</span>
-                      <ChevronDown className="size-3" />
-                    </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsAboutCompanyModalOpen(true)}
+                    className="h-8.5 px-1.5 sm:px-2 rounded-lg sm:rounded-xl border border-[#CCE3FF] bg-white text-[#0062FF] hover:bg-blue-50/60 text-[11px] sm:text-xs font-bold flex items-center justify-center gap-0.5 sm:gap-1 shadow-2xs whitespace-nowrap transition-all cursor-pointer shrink-0 active:scale-95"
+                    title={lang === "mr" ? "कंपनीची माहिती (About Company)" : "About Company"}
+                  >
+                    <Info className="size-3 shrink-0 text-[#0062FF]" />
+                    <span className="truncate max-w-[46px] sm:max-w-[65px]">About</span>
+                    <ChevronDown className="size-2.5 shrink-0" />
+                  </button>
 
-                    <button
-                      type="button"
-                      onClick={() => openFilterWithSection(2)}
-                      className={`flex-1 py-1.5 px-3 rounded-full border text-xs font-bold flex items-center justify-center gap-1 shadow-2xs whitespace-nowrap transition-all cursor-pointer ${
-                        selectedCategory !== "all"
-                          ? "bg-[#0062FF] text-white border-[#0062FF]"
-                          : "bg-white border-[#CCE3FF] text-[#0062FF]"
-                      }`}
-                    >
-                      <Layers className="size-3.5 shrink-0" />
-                      <span className="truncate max-w-[85px]">{selectedCategory !== "all" ? selectedCategory : t("categories")}</span>
-                      <ChevronDown className="size-3" />
-                    </button>
+                  <button
+                    type="button"
+                    onClick={() => openFilterWithSection(2)}
+                    className={`h-8.5 px-1.5 sm:px-2 rounded-lg sm:rounded-xl border text-[11px] sm:text-xs font-bold flex items-center justify-center gap-0.5 sm:gap-1 shadow-2xs whitespace-nowrap transition-all cursor-pointer shrink-0 ${
+                      selectedCategory !== "all"
+                        ? "bg-[#0062FF] text-white border-[#0062FF]"
+                        : "bg-white border-[#CCE3FF] text-[#0062FF] hover:bg-blue-50/60"
+                    }`}
+                  >
+                    <LayoutGrid className={`size-3 shrink-0 ${selectedCategory !== "all" ? "text-white fill-white" : "text-[#0062FF] fill-[#0062FF]"}`} />
+                    <span className="truncate max-w-[48px] sm:max-w-[65px]">{selectedCategory !== "all" ? selectedCategory : "Category"}</span>
+                    <ChevronDown className="size-2.5 shrink-0" />
+                  </button>
 
-                    <button
-                      type="button"
-                      onClick={() => openFilterWithSection(1)}
-                      className={`flex-1 py-1.5 px-3 rounded-full border text-xs font-bold flex items-center justify-center gap-1 shadow-2xs whitespace-nowrap transition-all cursor-pointer ${
-                        activeFilterCount > 0
-                          ? "bg-[#0062FF] text-white border-[#0062FF]"
-                          : "bg-white border-[#CCE3FF] text-[#0062FF]"
-                      }`}
-                    >
-                      <Filter className="size-3.5 shrink-0" />
-                      <span>{mdI18n.filterText} {activeFilterCount > 0 ? `(${activeFilterCount})` : ""}</span>
-                      <ChevronDown className="size-3" />
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => openFilterWithSection(1)}
+                    className={`h-8.5 px-1.5 sm:px-2 rounded-lg sm:rounded-xl border text-[11px] sm:text-xs font-bold flex items-center justify-center gap-0.5 sm:gap-1 shadow-2xs whitespace-nowrap transition-all cursor-pointer shrink-0 ${
+                      activeFilterCount > 0
+                        ? "bg-[#0062FF] text-white border-[#0062FF]"
+                        : "bg-white border-[#CCE3FF] text-[#0062FF] hover:bg-blue-50/60"
+                    }`}
+                  >
+                    <Filter className={`size-3 shrink-0 ${activeFilterCount > 0 ? "text-white fill-white" : "text-[#0062FF] fill-[#0062FF]"}`} />
+                    <span>Filter{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}</span>
+                    <ChevronDown className="size-2.5 shrink-0" />
+                  </button>
                 </div>
 
                 {/* 2. Two Action Cards: Find Workers & Post Job */}
@@ -3573,96 +3625,252 @@ function AdminDashboardPage() {
                   </div>
                 </div>
 
-                {/* 3. Four Metric Cards (2x2 Grid) - Exact Colors from Screenshot */}
-                <div className="grid grid-cols-2 gap-2.5">
+                {/* 2.5 Quick Access Banner: Shri Bill Book (खातावही) */}
+                <div
+                  onClick={() => setActiveTab("billbook")}
+                  className="bg-gradient-to-r from-[#0055B3] via-[#0066CC] to-[#0A84FF] rounded-2xl p-3 text-white flex items-center justify-between shadow-md cursor-pointer active:scale-98 transition-transform border border-white/20"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="size-9 rounded-xl bg-white text-[#0066CC] flex items-center justify-center shrink-0 shadow-xs font-black text-sm">
+                      BB
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <h4 className="font-black text-xs sm:text-sm text-white">{lang === "mr" ? "अहवाल (Reports)" : "Reports"}</h4>
+                        <span className="text-[9px] bg-yellow-400 text-slate-900 font-extrabold px-1.5 py-0.2 rounded-full">NEW</span>
+                      </div>
+                      <p className="text-[10px] text-white/85 font-medium truncate mt-0.5">
+                        {lang === "mr" ? "कॅशबुक • दैनिक खर्च • नफा-तोटा अहवाल" : "Cashbook • Daily Expenses • Reports"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="px-2.5 py-1 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold text-[11px] shrink-0 flex items-center gap-1">
+                    <span>{lang === "mr" ? "उघडा" : "Open"}</span>
+                    <ChevronRight className="size-3" />
+                  </div>
+                </div>
+
+                {/* 3. Four Metric Cards (1 Row - 4 Columns) */}
+                <div className="grid grid-cols-4 gap-1 sm:gap-1.5">
                   {/* Card 1: Total Job Posts (Pink) */}
                   <div
                     onClick={() => setActiveTab("jobs")}
-                    className="bg-[#FFF0F4] border border-[#FFD5DF] rounded-2xl p-3 flex flex-col justify-between shadow-2xs cursor-pointer active:scale-98 transition-transform"
+                    className="bg-[#FFD9E2] border-[1.5px] border-[#FFA6BE] rounded-xl p-1.5 sm:p-2 flex flex-col justify-between shadow-xs cursor-pointer active:scale-95 transition-transform"
                   >
-                    <div className="size-8 rounded-full bg-[#FF3366] text-white flex items-center justify-center shrink-0 shadow-xs">
-                      <FileText className="size-4" />
-                    </div>
-                    <div className="mt-2">
-                      <span className="text-[11px] font-bold text-[#4B5563] block">{t("totalPostedJobs")}</span>
-                      <div className="flex items-center justify-between mt-0.5">
-                        <span className="text-2xl font-black text-[#1F2937] leading-none">{n(jobs.length)}</span>
-                        <ChevronRight className="size-4 text-[#FF3366]" />
+                    <div className="flex items-center justify-between">
+                      <div className="size-6 sm:size-7 rounded-full bg-[#FF3366] text-white flex items-center justify-center shrink-0 shadow-xs">
+                        <FileText className="size-3 sm:size-3.5" />
                       </div>
+                      <ChevronRight className="size-3 text-[#FF3366] shrink-0" />
                     </div>
-                    <div className="mt-2 flex items-center gap-1 text-[10px] font-black text-emerald-600">
+                    <div className="mt-1 min-w-0">
+                      <span className="text-[9px] sm:text-[10px] font-bold text-[#4B5563] truncate block leading-tight">
+                        {t("totalPostedJobs")}
+                      </span>
+                      <span className="text-base sm:text-xl font-black text-[#1F2937] leading-none mt-1 block">
+                        {n(jobs.length)}
+                      </span>
+                    </div>
+                    <div className="mt-1 flex items-center gap-0.5 text-[8px] sm:text-[9px] font-bold text-emerald-700 truncate">
                       <span>📌</span>
-                      <span>+{n(Math.max(1, Math.min(jobs.length, 2)))} {t("thisWeek")}</span>
+                      <span className="truncate">+{n(Math.max(1, Math.min(jobs.length, 2)))}</span>
                     </div>
                   </div>
 
                   {/* Card 2: Applications Received (Blue) */}
                   <div
                     onClick={() => setActiveTab("applications")}
-                    className="bg-[#EDF6FF] border border-[#CCE3FF] rounded-2xl p-3 flex flex-col justify-between shadow-2xs cursor-pointer active:scale-98 transition-transform"
+                    className="bg-[#D4E6FF] border-[1.5px] border-[#99C4FF] rounded-xl p-1.5 sm:p-2 flex flex-col justify-between shadow-xs cursor-pointer active:scale-95 transition-transform"
                   >
-                    <div className="size-8 rounded-full bg-[#0080FF] text-white flex items-center justify-center shrink-0 shadow-xs">
-                      <Users className="size-4" />
-                    </div>
-                    <div className="mt-2">
-                      <span className="text-[11px] font-bold text-[#4B5563] block">{t("totalApplications")}</span>
-                      <div className="flex items-center justify-between mt-0.5">
-                        <span className="text-2xl font-black text-[#1F2937] leading-none">{n(applications.length)}</span>
-                        <ChevronRight className="size-4 text-[#0080FF]" />
+                    <div className="flex items-center justify-between">
+                      <div className="size-6 sm:size-7 rounded-full bg-[#0080FF] text-white flex items-center justify-center shrink-0 shadow-xs">
+                        <Users className="size-3 sm:size-3.5" />
                       </div>
+                      <ChevronRight className="size-3 text-[#0080FF] shrink-0" />
                     </div>
-                    <div className="mt-2 flex items-center gap-1 text-[10px] font-black text-emerald-600">
+                    <div className="mt-1 min-w-0">
+                      <span className="text-[9px] sm:text-[10px] font-bold text-[#4B5563] truncate block leading-tight">
+                        {t("totalApplications")}
+                      </span>
+                      <span className="text-base sm:text-xl font-black text-[#1F2937] leading-none mt-1 block">
+                        {n(applications.length)}
+                      </span>
+                    </div>
+                    <div className="mt-1 flex items-center gap-0.5 text-[8px] sm:text-[9px] font-bold text-emerald-700 truncate">
                       <span>📌</span>
-                      <span>+{n(Math.max(1, Math.min(applications.length, 5)))} {t("thisWeek")}</span>
+                      <span className="truncate">+{n(Math.max(1, Math.min(applications.length, 5)))}</span>
                     </div>
                   </div>
 
                   {/* Card 3: Hired Workers (Yellow/Orange) */}
                   <div
                     onClick={() => setActiveTab("attendance")}
-                    className="bg-[#FFF9E6] border border-[#FFE8A3] rounded-2xl p-3 flex flex-col justify-between shadow-2xs cursor-pointer active:scale-98 transition-transform"
+                    className="bg-[#FFE7A8] border-[1.5px] border-[#FFC84A] rounded-xl p-1.5 sm:p-2 flex flex-col justify-between shadow-xs cursor-pointer active:scale-95 transition-transform"
                   >
-                    <div className="size-8 rounded-full bg-[#FF9900] text-white flex items-center justify-center shrink-0 shadow-xs">
-                      <HardHat className="size-4" />
-                    </div>
-                    <div className="mt-2">
-                      <span className="text-[11px] font-bold text-[#4B5563] block">{t("totalEmployeesLabel")}</span>
-                      <div className="flex items-center justify-between mt-0.5">
-                        <span className="text-2xl font-black text-[#1F2937] leading-none">{n(workers.length)}</span>
-                        <ChevronRight className="size-4 text-[#FF9900]" />
+                    <div className="flex items-center justify-between">
+                      <div className="size-6 sm:size-7 rounded-full bg-[#FF9900] text-white flex items-center justify-center shrink-0 shadow-xs">
+                        <HardHat className="size-3 sm:size-3.5" />
                       </div>
+                      <ChevronRight className="size-3 text-[#FF9900] shrink-0" />
                     </div>
-                    <div className="mt-2 flex items-center gap-1 text-[10px] font-black text-emerald-600">
+                    <div className="mt-1 min-w-0">
+                      <span className="text-[9px] sm:text-[10px] font-bold text-[#4B5563] truncate block leading-tight">
+                        {t("totalEmployeesLabel")}
+                      </span>
+                      <span className="text-base sm:text-xl font-black text-[#1F2937] leading-none mt-1 block">
+                        {n(workers.length)}
+                      </span>
+                    </div>
+                    <div className="mt-1 flex items-center gap-0.5 text-[8px] sm:text-[9px] font-bold text-emerald-700 truncate">
                       <span>📌</span>
-                      <span>+{n(Math.max(1, Math.min(workers.length, 3)))} {t("thisWeek")}</span>
+                      <span className="truncate">+{n(Math.max(1, Math.min(workers.length, 3)))}</span>
                     </div>
                   </div>
 
                   {/* Card 4: Active Jobs (Purple) */}
                   <div
                     onClick={() => setActiveTab("jobs")}
-                    className="bg-[#F8EEFF] border border-[#E9CCFF] rounded-2xl p-3 flex flex-col justify-between shadow-2xs cursor-pointer active:scale-98 transition-transform"
+                    className="bg-[#ECD8FF] border-[1.5px] border-[#CAA3FF] rounded-xl p-1.5 sm:p-2 flex flex-col justify-between shadow-xs cursor-pointer active:scale-95 transition-transform"
                   >
-                    <div className="size-8 rounded-full bg-[#9333EA] text-white flex items-center justify-center shrink-0 shadow-xs">
-                      <CalendarCheck className="size-4" />
-                    </div>
-                    <div className="mt-2">
-                      <span className="text-[11px] font-bold text-[#4B5563] block">{t("activeJobsLabel")}</span>
-                      <div className="flex items-center justify-between mt-0.5">
-                        <span className="text-2xl font-black text-[#1F2937] leading-none">
-                          {n(jobs.filter((j) => j.status === "Active").length)}
-                        </span>
-                        <ChevronRight className="size-4 text-[#9333EA]" />
+                    <div className="flex items-center justify-between">
+                      <div className="size-6 sm:size-7 rounded-full bg-[#9333EA] text-white flex items-center justify-center shrink-0 shadow-xs">
+                        <CalendarCheck className="size-3 sm:size-3.5" />
                       </div>
+                      <ChevronRight className="size-3 text-[#9333EA] shrink-0" />
                     </div>
-                    <div className="mt-2 flex items-center gap-1 text-[10px] font-black text-emerald-600">
+                    <div className="mt-1 min-w-0">
+                      <span className="text-[9px] sm:text-[10px] font-bold text-[#4B5563] truncate block leading-tight">
+                        {t("activeJobsLabel")}
+                      </span>
+                      <span className="text-base sm:text-xl font-black text-[#1F2937] leading-none mt-1 block">
+                        {n(jobs.filter((j) => j.status === "Active").length)}
+                      </span>
+                    </div>
+                    <div className="mt-1 flex items-center gap-0.5 text-[8px] sm:text-[9px] font-bold text-emerald-700 truncate">
                       <span>📌</span>
-                      <span>+1 {t("thisWeek")}</span>
+                      <span className="truncate">+1</span>
                     </div>
                   </div>
                 </div>
 
-                {/* 4. POSTED JOB CARD - Matching Screenshot Color Combination */}
+                {/* 4. Six Navigation Cards (Ordered according to Bottom Nav: Dashboard, Jobs, Applications, Attendance, Salary, Reports) */}
+                <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+                  {/* 1. Dashboard */}
+                  <div
+                    onClick={() => setActiveTab("overview")}
+                    className="bg-[#D4E6FF] border-[1.5px] border-[#99C4FF] rounded-xl p-1.5 sm:p-2 flex items-center justify-between gap-1 shadow-xs cursor-pointer active:scale-95 transition-transform"
+                  >
+                    <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                      <div className="size-6 sm:size-7 rounded-full bg-[#0062FF] text-white flex items-center justify-center shrink-0 shadow-2xs">
+                        <BarChart3 className="size-3 sm:size-3.5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h5 className="font-black text-[10px] sm:text-xs text-[#10233F] leading-tight truncate">
+                          {lang === "mr" ? "डॅशबोर्ड" : (lang === "hi" ? "डैशबोर्ड" : "Dashboard")}
+                        </h5>
+                        <p className="text-[8px] sm:text-[9px] text-[#475569] truncate leading-tight mt-0.5 font-semibold">{mdI18n.homeDesc}</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="size-3 text-[#0062FF] shrink-0" />
+                  </div>
+
+                  {/* 2. Jobs */}
+                  <div
+                    onClick={() => setActiveTab("jobs")}
+                    className="bg-[#FFE7A8] border-[1.5px] border-[#FFC84A] rounded-xl p-1.5 sm:p-2 flex items-center justify-between gap-1 shadow-xs cursor-pointer active:scale-95 transition-transform"
+                  >
+                    <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                      <div className="size-6 sm:size-7 rounded-full bg-[#FF9900] text-white flex items-center justify-center shrink-0 shadow-2xs">
+                        <BriefcaseBusiness className="size-3 sm:size-3.5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h5 className="font-black text-[10px] sm:text-xs text-[#10233F] leading-tight truncate">
+                          {lang === "mr" ? "नोकऱ्या" : (lang === "hi" ? "जॉब्स" : "Jobs")}
+                        </h5>
+                        <p className="text-[8px] sm:text-[9px] text-[#475569] truncate leading-tight mt-0.5 font-semibold">{mdI18n.jobsDesc}</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="size-3 text-[#FF9900] shrink-0" />
+                  </div>
+
+                  {/* 3. Applications */}
+                  <div
+                    onClick={() => setActiveTab("applications")}
+                    className="bg-[#ECD8FF] border-[1.5px] border-[#CAA3FF] rounded-xl p-1.5 sm:p-2 flex items-center justify-between gap-1 shadow-xs cursor-pointer active:scale-95 transition-transform"
+                  >
+                    <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                      <div className="size-6 sm:size-7 rounded-full bg-[#9333EA] text-white flex items-center justify-center shrink-0 shadow-2xs">
+                        <FileText className="size-3 sm:size-3.5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h5 className="font-black text-[10px] sm:text-xs text-[#10233F] leading-tight truncate">
+                          {lang === "mr" ? "अर्ज" : (lang === "hi" ? "आवेदन" : "Applications")}
+                        </h5>
+                        <p className="text-[8px] sm:text-[9px] text-[#475569] truncate leading-tight mt-0.5 font-semibold">{mdI18n.appsDesc}</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="size-3 text-[#9333EA] shrink-0" />
+                  </div>
+
+                  {/* 4. Attendance */}
+                  <div
+                    onClick={() => setActiveTab("attendance")}
+                    className="bg-[#FCD2E6] border-[1.5px] border-[#F675B6] rounded-xl p-1.5 sm:p-2 flex items-center justify-between gap-1 shadow-xs cursor-pointer active:scale-95 transition-transform"
+                  >
+                    <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                      <div className="size-6 sm:size-7 rounded-full bg-[#EC4899] text-white flex items-center justify-center shrink-0 shadow-2xs">
+                        <CalendarCheck className="size-3 sm:size-3.5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h5 className="font-black text-[10px] sm:text-xs text-[#10233F] leading-tight truncate">
+                          {lang === "mr" ? "हजेरी" : (lang === "hi" ? "उपस्थिति" : "Attendance")}
+                        </h5>
+                        <p className="text-[8px] sm:text-[9px] text-[#475569] truncate leading-tight mt-0.5 font-semibold">{mdI18n.attendanceDesc}</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="size-3 text-[#EC4899] shrink-0" />
+                  </div>
+
+                  {/* 5. Salary */}
+                  <div
+                    onClick={() => setActiveTab("salary")}
+                    className="bg-[#C1F4E8] border-[1.5px] border-[#57DFC0] rounded-xl p-1.5 sm:p-2 flex items-center justify-between gap-1 shadow-xs cursor-pointer active:scale-95 transition-transform"
+                  >
+                    <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                      <div className="size-6 sm:size-7 rounded-full bg-[#00B488] text-white flex items-center justify-center shrink-0 shadow-2xs">
+                        <Wallet className="size-3 sm:size-3.5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h5 className="font-black text-[10px] sm:text-xs text-[#10233F] leading-tight truncate">
+                          {lang === "mr" ? "पगार" : (lang === "hi" ? "वेतन" : "Salary")}
+                        </h5>
+                        <p className="text-[8px] sm:text-[9px] text-[#475569] truncate leading-tight mt-0.5 font-semibold">{mdI18n.salaryDesc}</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="size-3 text-[#00B488] shrink-0" />
+                  </div>
+
+                  {/* 6. Reports */}
+                  <div
+                    onClick={() => setActiveTab("reports")}
+                    className="bg-[#FFD9E2] border-[1.5px] border-[#FFA6BE] rounded-xl p-1.5 sm:p-2 flex items-center justify-between gap-1 shadow-xs cursor-pointer active:scale-95 transition-transform"
+                  >
+                    <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                      <div className="size-6 sm:size-7 rounded-full bg-[#FF3366] text-white flex items-center justify-center shrink-0 shadow-2xs">
+                        <PieChart className="size-3 sm:size-3.5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h5 className="font-black text-[10px] sm:text-xs text-[#10233F] leading-tight truncate">
+                          {lang === "mr" ? "रिपोर्ट्स" : (lang === "hi" ? "रिपोर्ट्स" : "Reports")}
+                        </h5>
+                        <p className="text-[8px] sm:text-[9px] text-[#475569] truncate leading-tight mt-0.5 font-semibold">{mdI18n.reportsDesc}</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="size-3 text-[#FF3366] shrink-0" />
+                  </div>
+                </div>
+
+                {/* 5. POSTED JOB CARD - Displayed at the very end (Last) */}
                 {(() => {
                   const sampleJob = jobs[0] || {
                     id: "demo-helper-labour",
@@ -3678,11 +3886,14 @@ function AdminDashboardPage() {
                     <div className="bg-[#F0F7FF] border border-[#CCE5FF] rounded-2xl p-3.5 shadow-2xs space-y-3">
                       <div className="flex items-start gap-3">
                         {/* Thumbnail with Active badge */}
-                        <div className="relative size-20 sm:size-24 rounded-xl overflow-hidden shrink-0 border border-blue-100 shadow-2xs">
+                        <div className="relative size-20 sm:size-24 rounded-xl overflow-hidden shrink-0 border border-blue-100 shadow-2xs bg-blue-50">
                           <img
                             src={getJobThumbnail(sampleJob.category)}
                             alt={sampleJob.title}
                             className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = "/logo.png";
+                            }}
                           />
                           <span className="absolute top-1 right-1 bg-[#10B981] text-white text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-xs">
                             {sampleJob.status === "Active" ? mdI18n.activeBadge : sampleJob.status}
@@ -3727,111 +3938,6 @@ function AdminDashboardPage() {
                     </div>
                   );
                 })()}
-
-                {/* 5. Six Navigation Cards (2 Columns x 3 Rows) */}
-                <div className="grid grid-cols-2 gap-2.5">
-                  {/* 1. Home */}
-                  <div
-                    onClick={() => setActiveTab("overview")}
-                    className="bg-[#F0F7FF] border border-[#CCE5FF] rounded-2xl p-2.5 flex items-center justify-between shadow-2xs cursor-pointer active:scale-98 transition-transform"
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="size-8 rounded-full bg-[#0062FF] text-white flex items-center justify-center shrink-0 shadow-2xs">
-                        <Home className="size-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <h5 className="font-black text-xs text-[#10233F] leading-tight">{t("home")}</h5>
-                        <p className="text-[9px] text-[#5B6B7F] line-clamp-1">{mdI18n.homeDesc}</p>
-                      </div>
-                    </div>
-                    <ChevronRight className="size-4 text-[#0062FF] shrink-0" />
-                  </div>
-
-                  {/* 2. Job */}
-                  <div
-                    onClick={() => setActiveTab("jobs")}
-                    className="bg-[#FFF9E6] border border-[#FFE8A3] rounded-2xl p-2.5 flex items-center justify-between shadow-2xs cursor-pointer active:scale-98 transition-transform"
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="size-8 rounded-full bg-[#FF9900] text-white flex items-center justify-center shrink-0 shadow-2xs">
-                        <BriefcaseBusiness className="size-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <h5 className="font-black text-xs text-[#10233F] leading-tight">{t("jobs")}</h5>
-                        <p className="text-[9px] text-[#5B6B7F] line-clamp-1">{mdI18n.jobsDesc}</p>
-                      </div>
-                    </div>
-                    <ChevronRight className="size-4 text-[#FF9900] shrink-0" />
-                  </div>
-
-                  {/* 3. Applications */}
-                  <div
-                    onClick={() => setActiveTab("applications")}
-                    className="bg-[#F8EEFF] border border-[#E9CCFF] rounded-2xl p-2.5 flex items-center justify-between shadow-2xs cursor-pointer active:scale-98 transition-transform"
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="size-8 rounded-full bg-[#9333EA] text-white flex items-center justify-center shrink-0 shadow-2xs">
-                        <FileText className="size-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <h5 className="font-black text-xs text-[#10233F] leading-tight">{t("applications")}</h5>
-                        <p className="text-[9px] text-[#5B6B7F] line-clamp-1">{mdI18n.appsDesc}</p>
-                      </div>
-                    </div>
-                    <ChevronRight className="size-4 text-[#9333EA] shrink-0" />
-                  </div>
-
-                  {/* 4. Report */}
-                  <div
-                    onClick={() => setActiveTab("reports")}
-                    className="bg-[#FFF0F4] border border-[#FFD5DF] rounded-2xl p-2.5 flex items-center justify-between shadow-2xs cursor-pointer active:scale-98 transition-transform"
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="size-8 rounded-full bg-[#FF3366] text-white flex items-center justify-center shrink-0 shadow-2xs">
-                        <TrendingUp className="size-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <h5 className="font-black text-xs text-[#10233F] leading-tight">{t("reports")}</h5>
-                        <p className="text-[9px] text-[#5B6B7F] line-clamp-1">{mdI18n.reportsDesc}</p>
-                      </div>
-                    </div>
-                    <ChevronRight className="size-4 text-[#FF3366] shrink-0" />
-                  </div>
-
-                  {/* 5. E-Salary */}
-                  <div
-                    onClick={() => setActiveTab("salary")}
-                    className="bg-[#E6F8F5] border border-[#B3EFE4] rounded-2xl p-2.5 flex items-center justify-between shadow-2xs cursor-pointer active:scale-98 transition-transform"
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="size-8 rounded-full bg-[#00B488] text-white flex items-center justify-center shrink-0 shadow-2xs">
-                        <Wallet className="size-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <h5 className="font-black text-xs text-[#10233F] leading-tight">{t("eSalarySlips")}</h5>
-                        <p className="text-[9px] text-[#5B6B7F] line-clamp-1">{mdI18n.salaryDesc}</p>
-                      </div>
-                    </div>
-                    <ChevronRight className="size-4 text-[#00B488] shrink-0" />
-                  </div>
-
-                  {/* 6. Attendance */}
-                  <div
-                    onClick={() => setActiveTab("attendance")}
-                    className="bg-[#FDF2F8] border border-[#FBCFE8] rounded-2xl p-2.5 flex items-center justify-between shadow-2xs cursor-pointer active:scale-98 transition-transform"
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="size-8 rounded-full bg-[#EC4899] text-white flex items-center justify-center shrink-0 shadow-2xs">
-                        <CalendarCheck className="size-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <h5 className="font-black text-xs text-[#10233F] leading-tight">{t("attendancePayroll")}</h5>
-                        <p className="text-[9px] text-[#5B6B7F] line-clamp-1">{mdI18n.attendanceDesc}</p>
-                      </div>
-                    </div>
-                    <ChevronRight className="size-4 text-[#EC4899] shrink-0" />
-                  </div>
-                </div>
               </div>
 
               {/* ── DESKTOP VIEW: Stat Cards & Sections (Visible on md+) ── */}
@@ -3914,6 +4020,40 @@ function AdminDashboardPage() {
                       {t("attendanceShift")}
                     </span>
                   </div>
+                </div>
+              </div>
+
+              {/* Desktop Quick Banner: Shri Bill Book (खातावही) */}
+              <div
+                onClick={() => setActiveTab("billbook")}
+                className="hidden md:flex bg-gradient-to-r from-[#0055B3] via-[#0066CC] to-[#0A84FF] rounded-2xl p-4 text-white items-center justify-between shadow-md cursor-pointer hover:shadow-lg transition-all border border-white/20"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="size-11 rounded-2xl bg-white text-[#0066CC] flex items-center justify-center shrink-0 shadow-sm font-black text-lg">
+                    BB
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-black text-base text-white">{lang === "mr" ? "अहवाल (Reports)" : "Reports"}</h4>
+                      <span className="text-[10px] bg-yellow-400 text-slate-900 font-extrabold px-2 py-0.5 rounded-full">NEW INTEGRATION</span>
+                    </div>
+                    <p className="text-xs text-white/90 font-medium mt-0.5">
+                      {lang === "mr" ? "कॅशबुक, दैनिक खर्च, आणि डिजिटल ताळेबंद अहवाल व्यवस्थापन" : "Cashbook, Daily Expenses, and Digital Financial Ledger Management"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveTab("billbook");
+                    }}
+                    className="px-4 py-2 rounded-xl bg-white text-[#0066CC] hover:bg-white/90 font-black text-xs shadow-sm transition-all cursor-pointer"
+                  >
+                    {lang === "mr" ? "अहवाल पहा" : "View Reports"} →
+                  </button>
                 </div>
               </div>
 
@@ -4017,7 +4157,18 @@ function AdminDashboardPage() {
 
           {/* TAB 2: JOBS CONTROL */}
           <div className={activeTab === "jobs" ? "block" : "hidden"}>
-            <div className="bg-white p-6 rounded-2xl border border-[#DCE5F0] shadow-sm space-y-6">
+            <div className="space-y-4">
+              {/* Back to Dashboard Button */}
+              <button
+                type="button"
+                onClick={() => setActiveTab("overview")}
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-[#063B78] text-[#063B78] hover:text-white border border-[#DCE5F0] text-xs font-black transition-all shadow-2xs hover:shadow cursor-pointer active:scale-95 group"
+              >
+                <ArrowLeft className="size-4 group-hover:-translate-x-1 transition-transform stroke-[2.5]" />
+                <span>{lang === "mr" ? "मागे डॅशबोर्डवर जा" : "Back to Dashboard"}</span>
+              </button>
+
+              <div className="bg-white p-6 rounded-2xl border border-[#DCE5F0] shadow-sm space-y-6">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                   <h2 className="text-xl font-black text-[#10233F]">
@@ -4392,10 +4543,22 @@ function AdminDashboardPage() {
               )}
             </div>
           </div>
+        </div>
 
           {/* TAB 3: APPLICATIONS */}
           <div className={activeTab === "applications" ? "block" : "hidden"}>
-            <div className="bg-white p-6 rounded-2xl border border-[#DCE5F0] shadow-sm space-y-6">
+            <div className="space-y-4">
+              {/* Back to Dashboard Button */}
+              <button
+                type="button"
+                onClick={() => setActiveTab("overview")}
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-[#063B78] text-[#063B78] hover:text-white border border-[#DCE5F0] text-xs font-black transition-all shadow-2xs hover:shadow cursor-pointer active:scale-95 group"
+              >
+                <ArrowLeft className="size-4 group-hover:-translate-x-1 transition-transform stroke-[2.5]" />
+                <span>{lang === "mr" ? "मागे डॅशबोर्डवर जा" : "Back to Dashboard"}</span>
+              </button>
+
+              <div className="bg-white p-6 rounded-2xl border border-[#DCE5F0] shadow-sm space-y-6">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                   <h2 className="text-xl font-black text-[#10233F]">
@@ -4573,10 +4736,21 @@ function AdminDashboardPage() {
               </div>
             </div>
           </div>
+        </div>
 
           {/* TAB 4: ATTENDANCE & WORKER MANAGEMENT */}
           <div className={activeTab === "attendance" ? "block" : "hidden"}>
-            <div className="space-y-6 sm:space-y-8 animate-fade-in min-w-0">
+            <div className="space-y-4 sm:space-y-6 animate-fade-in min-w-0">
+              {/* Back to Dashboard Button */}
+              <button
+                type="button"
+                onClick={() => setActiveTab("overview")}
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-[#063B78] text-[#063B78] hover:text-white border border-[#DCE5F0] text-xs font-black transition-all shadow-2xs hover:shadow cursor-pointer active:scale-95 group"
+              >
+                <ArrowLeft className="size-4 group-hover:-translate-x-1 transition-transform stroke-[2.5]" />
+                <span>{lang === "mr" ? "मागे डॅशबोर्डवर जा" : "Back to Dashboard"}</span>
+              </button>
+
               {/* Top Attendance Header Banner */}
               <div className="rounded-2xl border border-[#DCE5F0] bg-white p-4 sm:p-6 shadow-xs flex flex-col xl:flex-row xl:items-center justify-between gap-6 min-w-0 overflow-hidden flex-wrap">
                 <div className="space-y-1.5 min-w-[280px] flex-1">
@@ -5023,33 +5197,34 @@ function AdminDashboardPage() {
 
                                     return (
                                       <tr key={worker.id} className="hover:bg-[#F8FAFF] transition-colors">
-                                        <td className="p-4 font-black text-[#10233F] min-w-[200px] whitespace-nowrap">
+                                        <td className="p-4 font-black text-[#10233F] whitespace-nowrap">
                                           <div className="flex items-center gap-3">
                                             <div className="size-9 rounded-full bg-[#063B78]/10 text-[#063B78] font-black flex items-center justify-center text-sm shrink-0">
                                               {worker.name.slice(0, 1).toUpperCase()}
                                             </div>
-                                            <div className="min-w-0">
-                                              <div className="flex items-center gap-2">
-                                                <span className="text-sm font-black text-[#10233F] whitespace-nowrap">{worker.name}</span>
-                                                <button
-                                                  type="button"
-                                                  onClick={() => {
-                                                    setCalendarWorker(worker);
-                                                    setCalendarMonth(new Date().getMonth());
-                                                    setCalendarYear(new Date().getFullYear());
-                                                    setActiveCalendarDate(null);
-                                                  }}
-                                                  title={t("openAttendanceCalendar")}
-                                                  className="size-7 rounded-lg bg-blue-50 hover:bg-[#063B78] text-[#063B78] hover:text-white border border-blue-200 flex items-center justify-center transition-all shadow-2xs hover:scale-110 cursor-pointer shrink-0"
-                                                >
-                                                  <Calendar className="size-3.5 text-[#063B78] hover:text-white" />
-                                                </button>
+                                            <div className="w-44 sm:w-48 shrink-0">
+                                              <div className="text-sm font-black text-[#10233F] truncate" title={worker.name}>
+                                                {worker.name}
                                               </div>
                                               <div className="flex items-center gap-1.5 text-xs text-[#5B6B7F] font-bold whitespace-nowrap mt-0.5">
                                                 <Phone className="size-3 text-slate-400 shrink-0" />
                                                 <span>{worker.mobile || "N/A"}</span>
                                               </div>
                                             </div>
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                setCalendarWorker(worker);
+                                                setCalendarMonth(new Date().getMonth());
+                                                setCalendarYear(new Date().getFullYear());
+                                                setActiveCalendarDate(null);
+                                              }}
+                                              title={t("openAttendanceCalendar")}
+                                              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-blue-50 hover:bg-[#063B78] text-[#063B78] hover:text-white border border-blue-200 text-xs font-black transition-all shadow-2xs hover:shadow-xs cursor-pointer active:scale-95 group/cal shrink-0"
+                                            >
+                                              <Calendar className="size-3.5 text-[#063B78] group-hover/cal:text-white transition-colors" />
+                                              <span>Attendance</span>
+                                            </button>
                                           </div>
                                         </td>
 
@@ -5516,6 +5691,16 @@ function AdminDashboardPage() {
           {/* TAB 5: MY PROFILE */}
           <div className={activeTab === "profile" ? "block" : "hidden"}>
             <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
+              {/* Back to Dashboard Button */}
+              <button
+                type="button"
+                onClick={() => setActiveTab("overview")}
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-[#063B78] text-[#063B78] hover:text-white border border-[#DCE5F0] text-xs font-black transition-all shadow-2xs hover:shadow cursor-pointer active:scale-95 group"
+              >
+                <ArrowLeft className="size-4 group-hover:-translate-x-1 transition-transform stroke-[2.5]" />
+                <span>{lang === "mr" ? "मागे डॅशबोर्डवर जा" : "Back to Dashboard"}</span>
+              </button>
+
               <div className="bg-white rounded-2xl sm:rounded-3xl border border-[#DCE5F0] p-4 sm:p-6 md:p-8 shadow-sm">
                 
                 {/* Header: Responsive Flex Stack on mobile, side-by-side on tablet/desktop */}
@@ -5741,7 +5926,17 @@ function AdminDashboardPage() {
 
           {/* TAB 6: MY PACKAGES & BILLING */}
           <div className={activeTab === "packages" ? "block" : "hidden"}>
-            <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in duration-300">
+            <div className="max-w-5xl mx-auto space-y-4 sm:space-y-6 animate-in fade-in duration-300">
+              {/* Back to Dashboard Button */}
+              <button
+                type="button"
+                onClick={() => setActiveTab("overview")}
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-[#063B78] text-[#063B78] hover:text-white border border-[#DCE5F0] text-xs font-black transition-all shadow-2xs hover:shadow cursor-pointer active:scale-95 group"
+              >
+                <ArrowLeft className="size-4 group-hover:-translate-x-1 transition-transform stroke-[2.5]" />
+                <span>{lang === "mr" ? "मागे डॅशबोर्डवर जा" : "Back to Dashboard"}</span>
+              </button>
+
               {(() => {
                 const userId = currentUser?.id || currentUser?.email || empIdentifier;
                 const userPkgs = dataStore.getUserPackages(userId);
@@ -5866,7 +6061,16 @@ function AdminDashboardPage() {
 
           {/* TAB: E-SALARY / SLIPS */}
           <div className={activeTab === "salary" ? "block" : "hidden"}>
-            <div className="space-y-6 sm:space-y-8 animate-fade-in min-w-0">
+            <div className="space-y-4 sm:space-y-6 animate-fade-in min-w-0">
+              {/* Back to Dashboard Button */}
+              <button
+                type="button"
+                onClick={() => setActiveTab("overview")}
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-[#063B78] text-[#063B78] hover:text-white border border-[#DCE5F0] text-xs font-black transition-all shadow-2xs hover:shadow cursor-pointer active:scale-95 group"
+              >
+                <ArrowLeft className="size-4 group-hover:-translate-x-1 transition-transform stroke-[2.5]" />
+                <span>{lang === "mr" ? "मागे डॅशबोर्डवर जा" : "Back to Dashboard"}</span>
+              </button>
 
               {/* Top Salary Header Banner */}
               <div className="rounded-2xl border border-[#DCE5F0] bg-white p-4 sm:p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 min-w-0 overflow-hidden flex-wrap">
@@ -5963,1184 +6167,24 @@ function AdminDashboardPage() {
             </div>
           </div>
 
-          {/* TAB: REPORTS & ANALYTICS */}
-          <div className={activeTab === "reports" ? "block" : "hidden"}>
-            <div className="space-y-6 sm:space-y-8 animate-fade-in min-w-0">
-
-              {/* ── 10 QUICK FEATURE CARDS (EXACT MATCH WITH IMAGE 2) ── */}
-              <div className="bg-white p-3 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs max-w-5xl mx-auto">
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
-                  {/* Card 1: Cashbook */}
-                  <button
-                    type="button"
-                    onClick={() => setSelectedReportCard(selectedReportCard === "cashbook" ? null : "cashbook")}
-                    className={`rounded-2xl sm:rounded-[22px] bg-white border transition-all duration-200 flex flex-col items-center cursor-pointer group overflow-hidden shadow-xs hover:shadow-md ${
-                      selectedReportCard === "cashbook"
-                        ? "border-[#0083B0] ring-2 ring-[#0083B0] shadow-md"
-                        : "border-slate-200/90 hover:border-slate-300"
-                    }`}
-                  >
-                    <div className="w-full h-20 sm:h-22 bg-gradient-to-r from-[#00c6ff] to-[#0072ff] relative flex items-center justify-center pt-1">
-                      <svg className="absolute -bottom-0.5 left-0 w-full h-4 sm:h-5 text-white" viewBox="0 0 100 20" preserveAspectRatio="none">
-                        <path d="M0,0 Q50,20 100,0 L100,20 L0,20 Z" fill="currentColor" />
-                      </svg>
-                      <div className="relative z-10 size-13 sm:size-14 rounded-full bg-white shadow-[0_4px_12px_rgba(0,0,0,0.12)] border-2 border-white flex items-center justify-center">
-                        <div className="relative flex items-center justify-center">
-                          <div className="size-7 sm:size-8 rounded-lg bg-[#E0F2FE] flex items-center justify-center">
-                            <BarChart2 className="size-4.5 sm:size-5 text-[#0284C7]" />
-                          </div>
-                          <div className="absolute -bottom-1 -right-1 size-3.5 sm:size-4 rounded-full bg-[#F59E0B] text-white flex items-center justify-center text-[8px] sm:text-[9px] font-black shadow-xs border border-white">
-                            ₹
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="w-full bg-white flex flex-col items-center justify-between pb-2.5 pt-1 px-1">
-                      <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight text-center">{rl.cashbook}</span>
-                      <div className="size-5.5 sm:size-6 rounded-full bg-[#0072ff] text-white flex items-center justify-center mt-1.5 shadow-xs group-hover:scale-110 transition-transform">
-                        <ArrowRight className="size-3 sm:size-3.5 stroke-[2.5]" />
-                      </div>
-                    </div>
-                  </button>
-
-                  {/* Card 2: My Report */}
-                  <button
-                    type="button"
-                    onClick={() => setSelectedReportCard(selectedReportCard === "my-report" ? null : "my-report")}
-                    className={`rounded-2xl sm:rounded-[22px] bg-white border transition-all duration-200 flex flex-col items-center cursor-pointer group overflow-hidden shadow-xs hover:shadow-md ${
-                      selectedReportCard === "my-report"
-                        ? "border-[#15803D] ring-2 ring-[#15803D] shadow-md"
-                        : "border-slate-200/90 hover:border-slate-300"
-                    }`}
-                  >
-                    <div className="w-full h-20 sm:h-22 bg-gradient-to-r from-[#4ade80] to-[#15803d] relative flex items-center justify-center pt-1">
-                      <svg className="absolute -bottom-0.5 left-0 w-full h-4 sm:h-5 text-white" viewBox="0 0 100 20" preserveAspectRatio="none">
-                        <path d="M0,0 Q50,20 100,0 L100,20 L0,20 Z" fill="currentColor" />
-                      </svg>
-                      <div className="relative z-10 size-13 sm:size-14 rounded-full bg-white shadow-[0_4px_12px_rgba(0,0,0,0.12)] border-2 border-white flex items-center justify-center">
-                        <div className="relative flex items-center justify-center">
-                          <div className="size-7 sm:size-8 rounded-lg bg-[#DCFCE7] flex items-center justify-center">
-                            <TrendingUp className="size-4.5 sm:size-5 text-[#16A34A]" />
-                          </div>
-                          <div className="absolute -bottom-1 -right-1 size-3.5 sm:size-4 rounded-full bg-[#16A34A] text-white flex items-center justify-center text-[8px] sm:text-[9px] font-black shadow-xs border border-white">
-                            ↗
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="w-full bg-white flex flex-col items-center justify-between pb-2.5 pt-1 px-1">
-                      <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight text-center">{rl.myReport}</span>
-                      <div className="size-5.5 sm:size-6 rounded-full bg-[#16A34A] text-white flex items-center justify-center mt-1.5 shadow-xs group-hover:scale-110 transition-transform">
-                        <ArrowRight className="size-3 sm:size-3.5 stroke-[2.5]" />
-                      </div>
-                    </div>
-                  </button>
-
-                  {/* Card 3: Expenses */}
-                  <button
-                    type="button"
-                    onClick={() => setSelectedReportCard(selectedReportCard === "expenses" ? null : "expenses")}
-                    className={`rounded-2xl sm:rounded-[22px] bg-white border transition-all duration-200 flex flex-col items-center cursor-pointer group overflow-hidden shadow-xs hover:shadow-md ${
-                      selectedReportCard === "expenses"
-                        ? "border-[#EA580C] ring-2 ring-[#EA580C] shadow-md"
-                        : "border-slate-200/90 hover:border-slate-300"
-                    }`}
-                  >
-                    <div className="w-full h-20 sm:h-22 bg-gradient-to-r from-[#fbbf24] via-[#f59e0b] to-[#ea580c] relative flex items-center justify-center pt-1">
-                      <svg className="absolute -bottom-0.5 left-0 w-full h-4 sm:h-5 text-white" viewBox="0 0 100 20" preserveAspectRatio="none">
-                        <path d="M0,0 Q50,20 100,0 L100,20 L0,20 Z" fill="currentColor" />
-                      </svg>
-                      <div className="relative z-10 size-13 sm:size-14 rounded-full bg-white shadow-[0_4px_12px_rgba(0,0,0,0.12)] border-2 border-white flex items-center justify-center">
-                        <div className="relative flex items-center justify-center">
-                          <div className="size-7 sm:size-8 rounded-lg bg-[#FEF3C7] flex items-center justify-center">
-                            <Receipt className="size-4.5 sm:size-5 text-[#D97706]" />
-                          </div>
-                          <div className="absolute -bottom-1 -right-1 size-3.5 sm:size-4 rounded-full bg-[#F59E0B] text-white flex items-center justify-center text-[8px] sm:text-[9px] font-black shadow-xs border border-white">
-                            ₹
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="w-full bg-white flex flex-col items-center justify-between pb-2.5 pt-1 px-1">
-                      <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight text-center">{rl.expenses}</span>
-                      <div className="size-5.5 sm:size-6 rounded-full bg-[#EA580C] text-white flex items-center justify-center mt-1.5 shadow-xs group-hover:scale-110 transition-transform">
-                        <ArrowRight className="size-3 sm:size-3.5 stroke-[2.5]" />
-                      </div>
-                    </div>
-                  </button>
-
-                  {/* Card 4: Financial Reports */}
-                  <button
-                    type="button"
-                    onClick={() => setSelectedReportCard(selectedReportCard === "financial-reports" ? null : "financial-reports")}
-                    className={`rounded-2xl sm:rounded-[22px] bg-white border transition-all duration-200 flex flex-col items-center cursor-pointer group overflow-hidden shadow-xs hover:shadow-md ${
-                      selectedReportCard === "financial-reports"
-                        ? "border-[#7C3AED] ring-2 ring-[#7C3AED] shadow-md"
-                        : "border-slate-200/90 hover:border-slate-300"
-                    }`}
-                  >
-                    <div className="w-full h-20 sm:h-22 bg-gradient-to-r from-[#c084fc] via-[#9333ea] to-[#7c3aed] relative flex items-center justify-center pt-1">
-                      <svg className="absolute -bottom-0.5 left-0 w-full h-4 sm:h-5 text-white" viewBox="0 0 100 20" preserveAspectRatio="none">
-                        <path d="M0,0 Q50,20 100,0 L100,20 L0,20 Z" fill="currentColor" />
-                      </svg>
-                      <div className="relative z-10 size-13 sm:size-14 rounded-full bg-white shadow-[0_4px_12px_rgba(0,0,0,0.12)] border-2 border-white flex items-center justify-center">
-                        <div className="relative flex items-center justify-center">
-                          <div className="size-7 sm:size-8 rounded-lg bg-[#F3E8FF] flex items-center justify-center">
-                            <PieChart className="size-4.5 sm:size-5 text-[#7C3AED]" />
-                          </div>
-                          <div className="absolute -bottom-1 -right-1 size-3.5 sm:size-4 rounded-full bg-[#7C3AED] text-white flex items-center justify-center text-[8px] sm:text-[9px] font-black shadow-xs border border-white">
-                            ₹
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="w-full bg-white flex flex-col items-center justify-between pb-2.5 pt-1 px-1">
-                      <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight text-center">{rl.financialReports}</span>
-                      <div className="size-5.5 sm:size-6 rounded-full bg-[#7C3AED] text-white flex items-center justify-center mt-1.5 shadow-xs group-hover:scale-110 transition-transform">
-                        <ArrowRight className="size-3 sm:size-3.5 stroke-[2.5]" />
-                      </div>
-                    </div>
-                  </button>
-
-                  {/* Card 5: Items */}
-                  <button
-                    type="button"
-                    onClick={() => setSelectedReportCard(selectedReportCard === "items" ? null : "items")}
-                    className={`rounded-2xl sm:rounded-[22px] bg-white border transition-all duration-200 flex flex-col items-center cursor-pointer group overflow-hidden shadow-xs hover:shadow-md ${
-                      selectedReportCard === "items"
-                        ? "border-[#0D9488] ring-2 ring-[#0D9488] shadow-md"
-                        : "border-slate-200/90 hover:border-slate-300"
-                    }`}
-                  >
-                    <div className="w-full h-20 sm:h-22 bg-gradient-to-r from-[#2dd4bf] to-[#0d9488] relative flex items-center justify-center pt-1">
-                      <svg className="absolute -bottom-0.5 left-0 w-full h-4 sm:h-5 text-white" viewBox="0 0 100 20" preserveAspectRatio="none">
-                        <path d="M0,0 Q50,20 100,0 L100,20 L0,20 Z" fill="currentColor" />
-                      </svg>
-                      <div className="relative z-10 size-13 sm:size-14 rounded-full bg-white shadow-[0_4px_12px_rgba(0,0,0,0.12)] border-2 border-white flex items-center justify-center">
-                        <div className="size-7 sm:size-8 rounded-lg bg-[#CCFBF1] flex items-center justify-center">
-                          <Package className="size-4.5 sm:size-5 text-[#0D9488]" />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="w-full bg-white flex flex-col items-center justify-between pb-2.5 pt-1 px-1">
-                      <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight text-center">{rl.items}</span>
-                      <div className="size-5.5 sm:size-6 rounded-full bg-[#0D9488] text-white flex items-center justify-center mt-1.5 shadow-xs group-hover:scale-110 transition-transform">
-                        <ArrowRight className="size-3 sm:size-3.5 stroke-[2.5]" />
-                      </div>
-                    </div>
-                  </button>
-
-                  {/* Card 6: Staff */}
-                  <button
-                    type="button"
-                    onClick={() => setSelectedReportCard(selectedReportCard === "staff" ? null : "staff")}
-                    className={`rounded-2xl sm:rounded-[22px] bg-white border transition-all duration-200 flex flex-col items-center cursor-pointer group overflow-hidden shadow-xs hover:shadow-md ${
-                      selectedReportCard === "staff"
-                        ? "border-[#E11D48] ring-2 ring-[#E11D48] shadow-md"
-                        : "border-slate-200/90 hover:border-slate-300"
-                    }`}
-                  >
-                    <div className="w-full h-20 sm:h-22 bg-gradient-to-r from-[#fb7185] via-[#f43f5e] to-[#e11d48] relative flex items-center justify-center pt-1">
-                      <svg className="absolute -bottom-0.5 left-0 w-full h-4 sm:h-5 text-white" viewBox="0 0 100 20" preserveAspectRatio="none">
-                        <path d="M0,0 Q50,20 100,0 L100,20 L0,20 Z" fill="currentColor" />
-                      </svg>
-                      <div className="relative z-10 size-13 sm:size-14 rounded-full bg-white shadow-[0_4px_12px_rgba(0,0,0,0.12)] border-2 border-white flex items-center justify-center">
-                        <div className="size-7 sm:size-8 rounded-lg bg-[#FFE4E6] flex items-center justify-center">
-                          <Users className="size-4.5 sm:size-5 text-[#E11D48]" />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="w-full bg-white flex flex-col items-center justify-between pb-2.5 pt-1 px-1">
-                      <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight text-center">{rl.staff}</span>
-                      <div className="size-5.5 sm:size-6 rounded-full bg-[#E11D48] text-white flex items-center justify-center mt-1.5 shadow-xs group-hover:scale-110 transition-transform">
-                        <ArrowRight className="size-3 sm:size-3.5 stroke-[2.5]" />
-                      </div>
-                    </div>
-                  </button>
-
-                  {/* Card 7: My Order */}
-                  <button
-                    type="button"
-                    onClick={() => setSelectedReportCard(selectedReportCard === "my-order" ? null : "my-order")}
-                    className={`rounded-2xl sm:rounded-[22px] bg-white border transition-all duration-200 flex flex-col items-center cursor-pointer group overflow-hidden shadow-xs hover:shadow-md ${
-                      selectedReportCard === "my-order"
-                        ? "border-[#7C3AED] ring-2 ring-[#7C3AED] shadow-md"
-                        : "border-slate-200/90 hover:border-slate-300"
-                    }`}
-                  >
-                    <div className="w-full h-20 sm:h-22 bg-gradient-to-r from-[#c084fc] via-[#9333ea] to-[#6366f1] relative flex items-center justify-center pt-1">
-                      <svg className="absolute -bottom-0.5 left-0 w-full h-4 sm:h-5 text-white" viewBox="0 0 100 20" preserveAspectRatio="none">
-                        <path d="M0,0 Q50,20 100,0 L100,20 L0,20 Z" fill="currentColor" />
-                      </svg>
-                      <div className="relative z-10 size-13 sm:size-14 rounded-full bg-white shadow-[0_4px_12px_rgba(0,0,0,0.12)] border-2 border-white flex items-center justify-center">
-                        <div className="size-7 sm:size-8 rounded-lg bg-[#EDE9FE] flex items-center justify-center">
-                          <ShoppingBag className="size-4.5 sm:size-5 text-[#7C3AED]" />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="w-full bg-white flex flex-col items-center justify-between pb-2.5 pt-1 px-1">
-                      <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight text-center">{rl.myOrder}</span>
-                      <div className="size-5.5 sm:size-6 rounded-full bg-[#7C3AED] text-white flex items-center justify-center mt-1.5 shadow-xs group-hover:scale-110 transition-transform">
-                        <ArrowRight className="size-3 sm:size-3.5 stroke-[2.5]" />
-                      </div>
-                    </div>
-                  </button>
-
-                  {/* Card 8: Collections List */}
-                  <button
-                    type="button"
-                    onClick={() => setSelectedReportCard(selectedReportCard === "collections-list" ? null : "collections-list")}
-                    className={`rounded-2xl sm:rounded-[22px] bg-white border transition-all duration-200 flex flex-col items-center cursor-pointer group overflow-hidden shadow-xs hover:shadow-md ${
-                      selectedReportCard === "collections-list"
-                        ? "border-[#CA8A04] ring-2 ring-[#CA8A04] shadow-md"
-                        : "border-slate-200/90 hover:border-slate-300"
-                    }`}
-                  >
-                    <div className="w-full h-20 sm:h-22 bg-gradient-to-r from-[#fde047] via-[#facc15] to-[#ca8a04] relative flex items-center justify-center pt-1">
-                      <svg className="absolute -bottom-0.5 left-0 w-full h-4 sm:h-5 text-white" viewBox="0 0 100 20" preserveAspectRatio="none">
-                        <path d="M0,0 Q50,20 100,0 L100,20 L0,20 Z" fill="currentColor" />
-                      </svg>
-                      <div className="relative z-10 size-13 sm:size-14 rounded-full bg-white shadow-[0_4px_12px_rgba(0,0,0,0.12)] border-2 border-white flex items-center justify-center">
-                        <div className="relative flex items-center justify-center">
-                          <div className="size-7 sm:size-8 rounded-lg bg-[#FEF9C3] flex items-center justify-center">
-                            <Bell className="size-4.5 sm:size-5 text-[#CA8A04]" />
-                          </div>
-                          <div className="absolute -top-1 -right-1 size-3.5 sm:size-4 rounded-full bg-[#EF4444] text-white flex items-center justify-center text-[8px] sm:text-[9px] font-black shadow-xs border border-white">
-                            3
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="w-full bg-white flex flex-col items-center justify-between pb-2.5 pt-1 px-1">
-                      <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight text-center">{rl.collectionsList}</span>
-                      <div className="size-5.5 sm:size-6 rounded-full bg-[#CA8A04] text-white flex items-center justify-center mt-1.5 shadow-xs group-hover:scale-110 transition-transform">
-                        <ArrowRight className="size-3 sm:size-3.5 stroke-[2.5]" />
-                      </div>
-                    </div>
-                  </button>
-
-                  {/* Card 9: Online to Cash */}
-                  <button
-                    type="button"
-                    onClick={() => setSelectedReportCard(selectedReportCard === "online-to-cash" ? null : "online-to-cash")}
-                    className={`rounded-2xl sm:rounded-[22px] bg-white border transition-all duration-200 flex flex-col items-center cursor-pointer group overflow-hidden shadow-xs hover:shadow-md ${
-                      selectedReportCard === "online-to-cash"
-                        ? "border-[#0284C7] ring-2 ring-[#0284C7] shadow-md"
-                        : "border-slate-200/90 hover:border-slate-300"
-                    }`}
-                  >
-                    <div className="w-full h-20 sm:h-22 bg-gradient-to-r from-[#38bdf8] to-[#0284c7] relative flex items-center justify-center pt-1">
-                      <svg className="absolute -bottom-0.5 left-0 w-full h-4 sm:h-5 text-white" viewBox="0 0 100 20" preserveAspectRatio="none">
-                        <path d="M0,0 Q50,20 100,0 L100,20 L0,20 Z" fill="currentColor" />
-                      </svg>
-                      <div className="relative z-10 size-13 sm:size-14 rounded-full bg-white shadow-[0_4px_12px_rgba(0,0,0,0.12)] border-2 border-white flex items-center justify-center">
-                        <div className="relative flex items-center justify-center">
-                          <div className="size-7 sm:size-8 rounded-lg bg-[#E0F2FE] flex items-center justify-center">
-                            <Smartphone className="size-4.5 sm:size-5 text-[#0284C7]" />
-                          </div>
-                          <span className="absolute inset-0 flex items-center justify-center text-[10px] font-black text-[#0284C7] pb-0.5 pointer-events-none">
-                            ₹
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="w-full bg-white flex flex-col items-center justify-between pb-2.5 pt-1 px-1">
-                      <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight text-center">{rl.onlineToCash}</span>
-                      <div className="size-5.5 sm:size-6 rounded-full bg-[#0284C7] text-white flex items-center justify-center mt-1.5 shadow-xs group-hover:scale-110 transition-transform">
-                        <ArrowRight className="size-3 sm:size-3.5 stroke-[2.5]" />
-                      </div>
-                    </div>
-                  </button>
-
-                  {/* Card 10: Cash Out */}
-                  <button
-                    type="button"
-                    onClick={() => setSelectedReportCard(selectedReportCard === "cash-out" ? null : "cash-out")}
-                    className={`rounded-2xl sm:rounded-[22px] bg-white border transition-all duration-200 flex flex-col items-center cursor-pointer group overflow-hidden shadow-xs hover:shadow-md ${
-                      selectedReportCard === "cash-out"
-                        ? "border-[#E11D48] ring-2 ring-[#E11D48] shadow-md"
-                        : "border-slate-200/90 hover:border-slate-300"
-                    }`}
-                  >
-                    <div className="w-full h-20 sm:h-22 bg-gradient-to-r from-[#fb7185] via-[#f43f5e] to-[#be123c] relative flex items-center justify-center pt-1">
-                      <svg className="absolute -bottom-0.5 left-0 w-full h-4 sm:h-5 text-white" viewBox="0 0 100 20" preserveAspectRatio="none">
-                        <path d="M0,0 Q50,20 100,0 L100,20 L0,20 Z" fill="currentColor" />
-                      </svg>
-                      <div className="relative z-10 size-13 sm:size-14 rounded-full bg-white shadow-[0_4px_12px_rgba(0,0,0,0.12)] border-2 border-white flex items-center justify-center">
-                        <div className="relative flex items-center justify-center">
-                          <div className="size-7 sm:size-8 rounded-lg bg-[#FFE4E6] flex items-center justify-center">
-                            <CreditCard className="size-4.5 sm:size-5 text-[#E11D48]" />
-                          </div>
-                          <div className="absolute -bottom-1 -right-1 size-3.5 sm:size-4 rounded-full bg-[#E11D48] text-white flex items-center justify-center text-[7px] sm:text-[8px] font-black shadow-xs border border-white">
-                            →
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="w-full bg-white flex flex-col items-center justify-between pb-2.5 pt-1 px-1">
-                      <span className="text-xs sm:text-sm font-bold text-slate-800 leading-tight text-center">{rl.cashOut}</span>
-                      <div className="size-5.5 sm:size-6 rounded-full bg-[#E11D48] text-white flex items-center justify-center mt-1.5 shadow-xs group-hover:scale-110 transition-transform">
-                        <ArrowRight className="size-3 sm:size-3.5 stroke-[2.5]" />
-                      </div>
-                    </div>
-                  </button>
-                </div>
-              </div>
-
-              {/* ── HELPER HINT WHEN NO CARD IS CLICKED ── */}
-              {!selectedReportCard && (
-                <div className="text-center py-3 text-xs sm:text-sm font-semibold text-slate-400">
-                  {rl.hint}
-                </div>
-              )}
-
-              {/* ── CARD 1 DETAILS: CASHBOOK ── */}
-              {selectedReportCard === "cashbook" && (() => {
-                const userId = currentUser?.id || currentUser?.email || empIdentifier;
-                const userPkgs = dataStore.getUserPackages(userId);
-                let totalOutflow = 0;
-                workers.forEach((w: any) => {
-                  const wAtt = reportAttendanceRecords.filter((a: DailyAttendanceRecord) => a.workerId === w.id);
-                  const pCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "Present" || a.status === "Overtime").length;
-                  const hdCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "HalfDay").length;
-                  const otHours = wAtt.reduce((sum: number, a: DailyAttendanceRecord) => sum + (Number(a.overtimeHours) || 0), 0);
-                  const rate = Number(w.dailyRate) || 0;
-                  totalOutflow += (pCount * rate) + (hdCount * rate * 0.5) + (otHours * (rate / 8));
-                });
-                const totalInflow = userPkgs.reduce((acc, p) => acc + (Number(p.price) || 0), 0);
-                const netBalance = totalInflow - Math.round(totalOutflow);
-
-                return (
-                  <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-8 shadow-xs space-y-6 animate-fade-in max-w-5xl mx-auto">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-                      <div className="flex items-center gap-3">
-                        <div className="size-12 rounded-2xl bg-[#EEF4FF] text-[#2563EB] flex items-center justify-center shrink-0">
-                          <BookOpen className="size-6" />
-                        </div>
-                        <div>
-                          <h3 className="text-lg sm:text-xl font-black text-slate-800">{rl.cashbookTitle}</h3>
-                          <p className="text-xs text-slate-500 font-semibold">{rl.cashbookSub}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setSelectedReportCard(null)}
-                          className="h-9 px-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
-                        >
-                          <X className="size-3.5 mr-1" /> {rl.closeView}
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Cashbook Stats */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                      <div className="bg-emerald-50/60 p-4 rounded-2xl border border-emerald-100">
-                        <span className="text-[11px] font-black text-emerald-800 uppercase tracking-wider block">{rl.totalInflow}</span>
-                        <div className="text-2xl font-black text-emerald-700 mt-1">₹{totalInflow.toLocaleString("en-IN")}</div>
-                        <span className="text-[11px] text-emerald-600 font-semibold">{rl.packageCreditsAdded}</span>
-                      </div>
-                      <div className="bg-rose-50/60 p-4 rounded-2xl border border-rose-100">
-                        <span className="text-[11px] font-black text-rose-800 uppercase tracking-wider block">{rl.totalOutflow}</span>
-                        <div className="text-2xl font-black text-rose-700 mt-1">₹{Math.round(totalOutflow).toLocaleString("en-IN")}</div>
-                        <span className="text-[11px] text-rose-600 font-semibold">{rl.calculatedStaffWages}</span>
-                      </div>
-                      <div className="bg-blue-50/60 p-4 rounded-2xl border border-blue-100">
-                        <span className="text-[11px] font-black text-blue-800 uppercase tracking-wider block">{rl.netBalance}</span>
-                        <div className="text-2xl font-black text-[#063B78] mt-1">₹{netBalance.toLocaleString("en-IN")}</div>
-                        <span className="text-[11px] text-blue-600 font-semibold">{rl.reconciledCash}</span>
-                      </div>
-                    </div>
-
-                    {/* Cashbook Transactions Table */}
-                    <div className="overflow-x-auto rounded-2xl border border-slate-200">
-                      <table className="w-full text-left text-xs border-collapse">
-                        <thead>
-                          <tr className="bg-[#F8FAFF] border-b border-[#E0E8F5] text-[#5B6B7F] font-black uppercase tracking-wider text-[11px]">
-                            <th className="p-3 whitespace-nowrap">{rl.date}</th>
-                            <th className="p-3 whitespace-nowrap">{rl.reference}</th>
-                            <th className="p-3 whitespace-nowrap">{rl.type}</th>
-                            <th className="p-3 whitespace-nowrap">{rl.mode}</th>
-                            <th className="p-3 whitespace-nowrap text-right">{rl.inflow}</th>
-                            <th className="p-3 whitespace-nowrap text-right">{rl.outflow}</th>
-                            <th className="p-3 whitespace-nowrap text-center">{rl.status}</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[#E0E8F5] font-semibold text-[#10233F]">
-                          {userPkgs.map((tx) => (
-                            <tr key={tx.id} className="hover:bg-slate-50/70">
-                              <td className="p-3 text-slate-600 whitespace-nowrap">{tx.purchaseDate}</td>
-                              <td className="p-3 whitespace-nowrap">
-                                <div className="font-bold text-[#063B78]">{tx.planName} Package</div>
-                                <div className="text-[10px] text-slate-400 font-mono">{tx.id}</div>
-                              </td>
-                              <td className="p-3 whitespace-nowrap">
-                                <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black">Credit</span>
-                              </td>
-                              <td className="p-3 whitespace-nowrap uppercase text-slate-600">{tx.paymentMethod}</td>
-                              <td className="p-3 whitespace-nowrap text-right font-black text-emerald-700">₹{tx.price}</td>
-                              <td className="p-3 whitespace-nowrap text-right text-slate-400">-</td>
-                              <td className="p-3 whitespace-nowrap text-center">
-                                <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black">Completed</span>
-                              </td>
-                            </tr>
-                          ))}
-                          {workers.map((w: any) => {
-                            const wAtt = reportAttendanceRecords.filter((a: DailyAttendanceRecord) => a.workerId === w.id);
-                            const pCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "Present" || a.status === "Overtime").length;
-                            const hdCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "HalfDay").length;
-                            const otHours = wAtt.reduce((sum: number, a: DailyAttendanceRecord) => sum + (Number(a.overtimeHours) || 0), 0);
-                            const rate = Number(w.dailyRate) || 0;
-                            const wages = Math.round((pCount * rate) + (hdCount * rate * 0.5) + (otHours * (rate / 8)));
-                            if (wages <= 0) return null;
-                            return (
-                              <tr key={`worker-${w.id}`} className="hover:bg-slate-50/70">
-                                <td className="p-3 text-slate-600 whitespace-nowrap">{new Date().toISOString().split("T")[0]}</td>
-                                <td className="p-3 whitespace-nowrap">
-                                  <div className="font-bold text-slate-800">Staff Payroll: {w.name}</div>
-                                  <div className="text-[10px] text-slate-400">{w.trade || "Staff"} • {pCount} days</div>
-                                </td>
-                                <td className="p-3 whitespace-nowrap">
-                                  <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 text-[10px] font-black">Debit</span>
-                                </td>
-                                <td className="p-3 whitespace-nowrap text-slate-600">CASH / BANK</td>
-                                <td className="p-3 whitespace-nowrap text-right text-slate-400">-</td>
-                                <td className="p-3 whitespace-nowrap text-right font-black text-rose-700">₹{wages.toLocaleString("en-IN")}</td>
-                                <td className="p-3 whitespace-nowrap text-center">
-                                  <span className="px-2 py-0.5 rounded-full bg-blue-100 text-[#063B78] text-[10px] font-black">Accrued</span>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* ── CARD 2 DETAILS: MY REPORT ── */}
-              {selectedReportCard === "my-report" && (() => {
-                let totalPayroll = 0;
-                workers.forEach((w: any) => {
-                  const wAtt = reportAttendanceRecords.filter((a: DailyAttendanceRecord) => a.workerId === w.id);
-                  const pCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "Present" || a.status === "Overtime").length;
-                  const hdCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "HalfDay").length;
-                  const otHours = wAtt.reduce((sum: number, a: DailyAttendanceRecord) => sum + (Number(a.overtimeHours) || 0), 0);
-                  const rate = Number(w.dailyRate) || 0;
-                  totalPayroll += (pCount * rate) + (hdCount * rate * 0.5) + (otHours * (rate / 8));
-                });
-
-                return (
-                  <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-8 shadow-xs space-y-6 animate-fade-in max-w-5xl mx-auto">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-                      <div className="flex items-center gap-3">
-                        <div className="size-12 rounded-2xl bg-[#FEECEC] text-[#DC2626] flex items-center justify-center shrink-0">
-                          <BarChart3 className="size-6" />
-                        </div>
-                        <div>
-                          <h3 className="text-lg sm:text-xl font-black text-slate-800">{rl.myReportTitle}</h3>
-                          <p className="text-xs text-slate-500 font-semibold">{rl.myReportSub}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          onClick={() => {
-                            if (typeof window !== "undefined") window.print();
-                          }}
-                          variant="outline"
-                          className="h-9 px-3 rounded-xl text-xs font-bold text-[#063B78] hover:bg-slate-50"
-                        >
-                          <Printer className="size-3.5 mr-1" /> {rl.printReport}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setSelectedReportCard(null)}
-                          className="h-9 px-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
-                        >
-                          <X className="size-3.5 mr-1" /> {rl.closeView}
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* KPI 4 Cards */}
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                        <span className="text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider block">{rl.totalEmployees}</span>
-                        <div className="text-2xl sm:text-3xl font-black text-[#10233F] mt-1">{workers.length}</div>
-                        <div className="text-[11px] font-semibold text-emerald-700 mt-0.5">{rl.registeredStaff}</div>
-                      </div>
-                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                        <span className="text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider block">{rl.attendanceOt}</span>
-                        <div className="text-2xl sm:text-3xl font-black text-[#10233F] mt-1">
-                          {reportAttendanceRecords.filter((a: DailyAttendanceRecord) => a.status === "Present" || a.status === "Overtime").length}
-                          <span className="text-xs font-bold text-slate-500 ml-1">{t("days")}</span>
-                        </div>
-                        <div className="text-[11px] font-semibold text-amber-700 mt-0.5">
-                          +{reportAttendanceRecords.reduce((sum: number, a: DailyAttendanceRecord) => sum + (Number(a.overtimeHours) || 0), 0)} {lang === "mr" ? "तास OT" : "hrs OT"}
-                        </div>
-                      </div>
-                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                        <span className="text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider block">{rl.payrollExpenses}</span>
-                        <div className="text-2xl sm:text-3xl font-black text-emerald-700 mt-1">₹{Math.round(totalPayroll).toLocaleString("en-IN")}</div>
-                        <div className="text-[11px] font-semibold text-slate-500 mt-0.5">{rl.calculatedLiability}</div>
-                      </div>
-                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                        <span className="text-[11px] font-black text-[#5B6B7F] uppercase tracking-wider block">{rl.jobsApplicants}</span>
-                        <div className="text-2xl sm:text-3xl font-black text-[#10233F] mt-1">
-                          {jobs.length}
-                          <span className="text-xs font-bold text-slate-500 ml-1">{t("jobs")}</span>
-                        </div>
-                        <div className="text-[11px] font-semibold text-purple-700 mt-0.5">{applications.length} {t("applications")}</div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* ── CARD 3 DETAILS: EXPENSES ── */}
-              {selectedReportCard === "expenses" && (() => {
-                let totalWages = 0;
-                let totalOt = 0;
-                workers.forEach((w: any) => {
-                  const wAtt = reportAttendanceRecords.filter((a: DailyAttendanceRecord) => a.workerId === w.id);
-                  const pCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "Present" || a.status === "Overtime").length;
-                  const hdCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "HalfDay").length;
-                  const otHours = wAtt.reduce((sum: number, a: DailyAttendanceRecord) => sum + (Number(a.overtimeHours) || 0), 0);
-                  const rate = Number(w.dailyRate) || 0;
-                  const base = (pCount * rate) + (hdCount * rate * 0.5);
-                  const ot = (otHours * (rate / 8));
-                  totalWages += base;
-                  totalOt += ot;
-                });
-
-                return (
-                  <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-8 shadow-xs space-y-6 animate-fade-in max-w-5xl mx-auto">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-                      <div className="flex items-center gap-3">
-                        <div className="size-12 rounded-2xl bg-[#FEF7EC] text-[#D97706] flex items-center justify-center shrink-0">
-                          <IndianRupee className="size-6" />
-                        </div>
-                        <div>
-                          <h3 className="text-lg sm:text-xl font-black text-slate-800">{rl.expensesTitle}</h3>
-                          <p className="text-xs text-slate-500 font-semibold">{rl.expensesSub}</p>
-                        </div>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setSelectedReportCard(null)}
-                        className="h-9 px-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
-                      >
-                        <X className="size-3.5 mr-1" /> {rl.closeView}
-                      </Button>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                      <div className="bg-amber-50/60 p-4 rounded-2xl border border-amber-100">
-                        <span className="text-[11px] font-black text-amber-800 uppercase tracking-wider block">{rl.baseWages}</span>
-                        <div className="text-2xl font-black text-amber-700 mt-1">₹{Math.round(totalWages).toLocaleString("en-IN")}</div>
-                        <span className="text-[11px] text-amber-600 font-semibold">{lang === "mr" ? "नियमित कामाचे दिवस" : "Standard working days"}</span>
-                      </div>
-                      <div className="bg-purple-50/60 p-4 rounded-2xl border border-purple-100">
-                        <span className="text-[11px] font-black text-purple-800 uppercase tracking-wider block">{rl.overtimePay}</span>
-                        <div className="text-2xl font-black text-purple-700 mt-1">₹{Math.round(totalOt).toLocaleString("en-IN")}</div>
-                        <span className="text-[11px] text-purple-600 font-semibold">{lang === "mr" ? "ओव्हरटाईम तास मोबदला" : "Extra duty hours"}</span>
-                      </div>
-                      <div className="bg-emerald-50/60 p-4 rounded-2xl border border-emerald-100">
-                        <span className="text-[11px] font-black text-emerald-800 uppercase tracking-wider block">{rl.totalLiability}</span>
-                        <div className="text-2xl font-black text-emerald-700 mt-1">₹{Math.round(totalWages + totalOt).toLocaleString("en-IN")}</div>
-                        <span className="text-[11px] text-emerald-600 font-semibold">{lang === "mr" ? "एकूण देय पगार" : "Combined staff expense"}</span>
-                      </div>
-                    </div>
-
-                    <div className="overflow-x-auto rounded-2xl border border-slate-200">
-                      <table className="w-full text-left text-xs border-collapse">
-                        <thead>
-                          <tr className="bg-[#F8FAFF] border-b border-[#E0E8F5] text-[#5B6B7F] font-black uppercase tracking-wider text-[11px]">
-                            <th className="p-3 whitespace-nowrap">{rl.staffName}</th>
-                            <th className="p-3 whitespace-nowrap">{rl.roleTrade}</th>
-                            <th className="p-3 whitespace-nowrap">{rl.dailyRate}</th>
-                            <th className="p-3 whitespace-nowrap text-right">{rl.baseWages}</th>
-                            <th className="p-3 whitespace-nowrap text-right">{rl.overtimePay}</th>
-                            <th className="p-3 whitespace-nowrap text-right">{rl.totalLiability}</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[#E0E8F5] font-semibold text-[#10233F]">
-                          {workers.map((w: any) => {
-                            const wAtt = reportAttendanceRecords.filter((a: DailyAttendanceRecord) => a.workerId === w.id);
-                            const pCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "Present" || a.status === "Overtime").length;
-                            const hdCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "HalfDay").length;
-                            const otHours = wAtt.reduce((sum: number, a: DailyAttendanceRecord) => sum + (Number(a.overtimeHours) || 0), 0);
-                            const rate = Number(w.dailyRate) || 0;
-                            const base = Math.round((pCount * rate) + (hdCount * rate * 0.5));
-                            const ot = Math.round(otHours * (rate / 8));
-                            return (
-                              <tr key={w.id} className="hover:bg-slate-50/70">
-                                <td className="p-3 whitespace-nowrap font-bold text-[#063B78]">{w.name}</td>
-                                <td className="p-3 whitespace-nowrap text-slate-600">{w.trade || "Staff"}</td>
-                                <td className="p-3 whitespace-nowrap font-black text-slate-700">₹{rate}</td>
-                                <td className="p-3 whitespace-nowrap text-right">₹{base.toLocaleString("en-IN")}</td>
-                                <td className="p-3 whitespace-nowrap text-right text-purple-700">₹{ot.toLocaleString("en-IN")}</td>
-                                <td className="p-3 whitespace-nowrap text-right font-black text-emerald-700 text-sm">₹{(base + ot).toLocaleString("en-IN")}</td>
-                              </tr>
-                            );
-                          })}
-                          {workers.length === 0 && (
-                            <tr>
-                              <td colSpan={6} className="p-6 text-center text-slate-500 font-bold">No staff registered.</td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* ── CARD 4 DETAILS: FINANCIAL REPORTS ── */}
-              {selectedReportCard === "financial-reports" && (() => {
-                const userId = currentUser?.id || currentUser?.email || empIdentifier;
-                const userPkgs = dataStore.getUserPackages(userId);
-
-                return (
-                  <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-8 shadow-xs space-y-6 animate-fade-in max-w-5xl mx-auto">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-                      <div className="flex items-center gap-3">
-                        <div className="size-12 rounded-2xl bg-[#F5F0FF] text-[#7C3AED] flex items-center justify-center shrink-0">
-                          <FileText className="size-6" />
-                        </div>
-                        <div>
-                          <h3 className="text-lg sm:text-xl font-black text-slate-800">{rl.financialTitle}</h3>
-                          <p className="text-xs text-slate-500 font-semibold">{rl.financialSub}</p>
-                        </div>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setSelectedReportCard(null)}
-                        className="h-9 px-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
-                      >
-                        <X className="size-3.5 mr-1" /> {rl.closeView}
-                      </Button>
-                    </div>
-
-                    <div className="overflow-x-auto rounded-2xl border border-slate-200">
-                      <table className="w-full text-left text-xs border-collapse">
-                        <thead>
-                          <tr className="bg-[#F8FAFF] border-b border-[#E0E8F5] text-[#5B6B7F] font-black uppercase tracking-wider text-[11px]">
-                            <th className="p-3 whitespace-nowrap">{rl.reference}</th>
-                            <th className="p-3 whitespace-nowrap">Plan Name</th>
-                            <th className="p-3 whitespace-nowrap">Amount Paid</th>
-                            <th className="p-3 whitespace-nowrap">Job Credits</th>
-                            <th className="p-3 whitespace-nowrap">{rl.mode}</th>
-                            <th className="p-3 whitespace-nowrap">{rl.date}</th>
-                            <th className="p-3 whitespace-nowrap text-center">{rl.status}</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[#E0E8F5] font-semibold text-[#10233F]">
-                          {userPkgs.map((tx) => (
-                            <tr key={tx.id} className="hover:bg-slate-50/70">
-                              <td className="p-3 font-mono text-[11px] text-[#063B78] whitespace-nowrap">{tx.id}</td>
-                              <td className="p-3 whitespace-nowrap font-bold">{tx.planName}</td>
-                              <td className="p-3 font-black text-emerald-700 text-sm whitespace-nowrap">₹{tx.price}</td>
-                              <td className="p-3 font-bold text-amber-700 whitespace-nowrap">{tx.jobCount >= 999 ? "Unlimited" : `${tx.jobCount} Jobs`}</td>
-                              <td className="p-3 whitespace-nowrap uppercase text-slate-600">{tx.paymentMethod}</td>
-                              <td className="p-3 text-slate-600 whitespace-nowrap">{tx.purchaseDate}</td>
-                              <td className="p-3 whitespace-nowrap text-center">
-                                <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black">Completed</span>
-                              </td>
-                            </tr>
-                          ))}
-                          {userPkgs.length === 0 && (
-                            <tr>
-                              <td colSpan={7} className="p-6 text-center text-slate-500 font-bold">No financial transactions recorded.</td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* ── CARD 5 DETAILS: ITEMS ── */}
-              {selectedReportCard === "items" && (
-                <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-8 shadow-xs space-y-6 animate-fade-in max-w-5xl mx-auto">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-                    <div className="flex items-center gap-3">
-                      <div className="size-12 rounded-2xl bg-[#EDFBF2] text-[#059669] flex items-center justify-center shrink-0">
-                        <Package className="size-6" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg sm:text-xl font-black text-slate-800">{rl.itemsTitle}</h3>
-                        <p className="text-xs text-slate-500 font-semibold">{rl.itemsSub}</p>
-                      </div>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setSelectedReportCard(null)}
-                      className="h-9 px-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
-                    >
-                      <X className="size-3.5 mr-1" /> {rl.closeView}
-                    </Button>
-                  </div>
-
-                  <div className="overflow-x-auto rounded-2xl border border-slate-200">
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead>
-                        <tr className="bg-[#F8FAFF] border-b border-[#E0E8F5] text-[#5B6B7F] font-black uppercase tracking-wider text-[11px]">
-                          <th className="p-3 whitespace-nowrap">Job Title</th>
-                          <th className="p-3 whitespace-nowrap">Category</th>
-                          <th className="p-3 whitespace-nowrap">Location</th>
-                          <th className="p-3 whitespace-nowrap text-center">Vacancies</th>
-                          <th className="p-3 whitespace-nowrap text-center">Applicants</th>
-                          <th className="p-3 whitespace-nowrap text-center">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[#E0E8F5] font-semibold text-[#10233F]">
-                        {jobs.map((j) => {
-                          const jobApps = applications.filter(a => a.jobId === j.id);
-                          return (
-                            <tr key={j.id} className="hover:bg-slate-50/70">
-                              <td className="p-3 whitespace-nowrap">
-                                <div className="font-bold text-[#063B78] text-sm">{j.title}</div>
-                                <div className="text-[10px] text-slate-500 font-normal">{j.jobType} • {j.workMode}</div>
-                              </td>
-                              <td className="p-3 whitespace-nowrap">
-                                <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold">
-                                  {j.category}
-                                </span>
-                              </td>
-                              <td className="p-3 whitespace-nowrap font-medium text-slate-700">{j.location}</td>
-                              <td className="p-3 whitespace-nowrap text-center font-bold text-slate-800">{j.vacancies || 1}</td>
-                              <td className="p-3 whitespace-nowrap text-center">
-                                <span className="px-2.5 py-0.5 rounded-full bg-blue-100 text-[#063B78] font-black text-xs">
-                                  {jobApps.length}
-                                </span>
-                              </td>
-                              <td className="p-3 whitespace-nowrap text-center">
-                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${j.status === "Active" ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"}`}>
-                                  {j.status}
-                                </span>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                        {jobs.length === 0 && (
-                          <tr>
-                            <td colSpan={6} className="p-6 text-center text-slate-500 font-bold">No jobs posted yet.</td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {/* ── CARD 6 DETAILS: STAFF ── */}
-              {selectedReportCard === "staff" && (
-                <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-8 shadow-xs space-y-6 animate-fade-in max-w-5xl mx-auto">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-                    <div className="flex items-center gap-3">
-                      <div className="size-12 rounded-2xl bg-[#E5F9FC] text-[#0891B2] flex items-center justify-center shrink-0">
-                        <Users className="size-6" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg sm:text-xl font-black text-slate-800">{rl.staffTitle}</h3>
-                        <p className="text-xs text-slate-500 font-semibold">{rl.staffSub}</p>
-                      </div>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setSelectedReportCard(null)}
-                      className="h-9 px-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
-                    >
-                      <X className="size-3.5 mr-1" /> {rl.closeView}
-                    </Button>
-                  </div>
-
-                  <div className="overflow-x-auto rounded-2xl border border-slate-200">
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead>
-                        <tr className="bg-[#F8FAFF] border-b border-[#E0E8F5] text-[#5B6B7F] font-black uppercase tracking-wider text-[11px]">
-                          <th className="p-3 whitespace-nowrap">{rl.staffName}</th>
-                          <th className="p-3 whitespace-nowrap">{rl.roleTrade}</th>
-                          <th className="p-3 whitespace-nowrap">{rl.dailyRate}</th>
-                          <th className="p-3 whitespace-nowrap text-center">{rl.present}</th>
-                          <th className="p-3 whitespace-nowrap text-center">{rl.halfDay}</th>
-                          <th className="p-3 whitespace-nowrap text-center">{rl.absent}</th>
-                          <th className="p-3 whitespace-nowrap text-center">{rl.overtime}</th>
-                          <th className="p-3 whitespace-nowrap text-right">{rl.totalWages}</th>
-                          <th className="p-3 whitespace-nowrap text-center">{rl.action}</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[#E0E8F5] font-semibold text-[#10233F]">
-                        {workers.map((w: any) => {
-                          const wAtt = reportAttendanceRecords.filter((a: DailyAttendanceRecord) => a.workerId === w.id);
-                          const pCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "Present" || a.status === "Overtime").length;
-                          const hdCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "HalfDay").length;
-                          const aCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "Absent").length;
-                          const otHours = wAtt.reduce((sum: number, a: DailyAttendanceRecord) => sum + (Number(a.overtimeHours) || 0), 0);
-                          const rate = Number(w.dailyRate) || 0;
-                          const grossWages = Math.round((pCount * rate) + (hdCount * rate * 0.5) + (otHours * (rate / 8)));
-
-                          return (
-                            <tr key={w.id} className="hover:bg-slate-50/70">
-                              <td className="p-3 whitespace-nowrap">
-                                <div className="font-bold text-[#063B78] text-sm">{w.name}</div>
-                                <div className="text-[10px] text-slate-500 font-normal">📞 {w.mobile || "N/A"}</div>
-                              </td>
-                              <td className="p-3 whitespace-nowrap">
-                                <span className="px-2 py-0.5 rounded-full bg-blue-50 text-[#063B78] border border-blue-200 text-[10px] font-bold">
-                                  {w.trade || "Staff"}
-                                </span>
-                              </td>
-                              <td className="p-3 whitespace-nowrap font-black text-slate-700">₹{rate} / {lang === "mr" ? "दिवस" : "day"}</td>
-                              <td className="p-3 whitespace-nowrap text-center">
-                                <span className="size-6 inline-flex items-center justify-center rounded-md bg-emerald-100 text-emerald-800 font-black text-xs">
-                                  {pCount}
-                                </span>
-                              </td>
-                              <td className="p-3 whitespace-nowrap text-center">
-                                <span className="size-6 inline-flex items-center justify-center rounded-md bg-amber-100 text-amber-800 font-black text-xs">
-                                  {hdCount}
-                                </span>
-                              </td>
-                              <td className="p-3 whitespace-nowrap text-center">
-                                <span className="size-6 inline-flex items-center justify-center rounded-md bg-rose-100 text-rose-800 font-black text-xs">
-                                  {aCount}
-                                </span>
-                              </td>
-                              <td className="p-3 whitespace-nowrap text-center">
-                                {otHours > 0 ? (
-                                  <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 font-black text-xs">
-                                    +{otHours}h
-                                  </span>
-                                ) : (
-                                  <span className="text-slate-400">-</span>
-                                )}
-                              </td>
-                              <td className="p-3 whitespace-nowrap text-right font-black text-emerald-700 text-sm">
-                                ₹{grossWages.toLocaleString("en-IN")}
-                              </td>
-                              <td className="p-3 whitespace-nowrap text-center">
-                                <Button
-                                  size="sm"
-                                  onClick={() => setSelectedWorkerReport(w)}
-                                  className="bg-[#063B78] hover:bg-[#082F63] text-white text-xs font-bold h-7 px-3 rounded-lg shadow-2xs cursor-pointer"
-                                >
-                                  {rl.salarySlip}
-                                </Button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                        {workers.length === 0 && (
-                          <tr>
-                            <td colSpan={9} className="p-6 text-center text-slate-500 font-bold">No staff registered yet.</td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {/* ── CARD 7 DETAILS: MY ORDER ── */}
-              {selectedReportCard === "my-order" && (() => {
-                const userId = currentUser?.id || currentUser?.email || empIdentifier;
-                const userPkgs = dataStore.getUserPackages(userId);
-
-                return (
-                  <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-8 shadow-xs space-y-6 animate-fade-in max-w-5xl mx-auto">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-                      <div className="flex items-center gap-3">
-                        <div className="size-12 rounded-2xl bg-[#FAF0FE] text-[#A21CAF] flex items-center justify-center shrink-0">
-                          <ShoppingBag className="size-6" />
-                        </div>
-                        <div>
-                          <h3 className="text-lg sm:text-xl font-black text-slate-800">{rl.myOrderTitle}</h3>
-                          <p className="text-xs text-slate-500 font-semibold">{rl.myOrderSub}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          onClick={() => setShowPackageModal(true)}
-                          className="h-9 px-4 rounded-xl text-xs font-black bg-[#A21CAF] hover:bg-[#86198f] text-white"
-                        >
-                          + Purchase New Plan
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setSelectedReportCard(null)}
-                          className="h-9 px-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
-                        >
-                          <X className="size-3.5 mr-1" /> {rl.closeView}
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="overflow-x-auto rounded-2xl border border-slate-200">
-                      <table className="w-full text-left text-xs border-collapse">
-                        <thead>
-                          <tr className="bg-[#F8FAFF] border-b border-[#E0E8F5] text-[#5B6B7F] font-black uppercase tracking-wider text-[11px]">
-                            <th className="p-3 whitespace-nowrap">Order ID</th>
-                            <th className="p-3 whitespace-nowrap">Plan Name</th>
-                            <th className="p-3 whitespace-nowrap">Amount</th>
-                            <th className="p-3 whitespace-nowrap">Job Posting Credits</th>
-                            <th className="p-3 whitespace-nowrap">Date</th>
-                            <th className="p-3 whitespace-nowrap text-center">Status</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[#E0E8F5] font-semibold text-[#10233F]">
-                          {userPkgs.map((tx) => (
-                            <tr key={tx.id} className="hover:bg-slate-50/70">
-                              <td className="p-3 font-mono text-[11px] text-[#063B78] whitespace-nowrap">{tx.id}</td>
-                              <td className="p-3 whitespace-nowrap font-bold text-slate-800">{tx.planName}</td>
-                              <td className="p-3 whitespace-nowrap font-black text-emerald-700">₹{tx.price}</td>
-                              <td className="p-3 whitespace-nowrap font-bold text-purple-700">{tx.jobCount >= 999 ? "Unlimited" : `${tx.jobCount} Jobs`}</td>
-                              <td className="p-3 whitespace-nowrap text-slate-600">{tx.purchaseDate}</td>
-                              <td className="p-3 whitespace-nowrap text-center">
-                                <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black">Success</span>
-                              </td>
-                            </tr>
-                          ))}
-                          {userPkgs.length === 0 && (
-                            <tr>
-                              <td colSpan={6} className="p-6 text-center text-slate-500 font-bold">No orders placed yet.</td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* ── CARD 8 DETAILS: COLLECTIONS LIST ── */}
-              {selectedReportCard === "collections-list" && (
-                <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-8 shadow-xs space-y-6 animate-fade-in max-w-5xl mx-auto">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-                    <div className="flex items-center gap-3">
-                      <div className="size-12 rounded-2xl bg-[#FEFBE8] text-[#CA8A04] flex items-center justify-center shrink-0">
-                        <Bell className="size-6" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg sm:text-xl font-black text-slate-800">Collections & Applications List</h3>
-                        <p className="text-xs text-slate-500 font-semibold">Candidate job applications received, resume profiles, and collection status.</p>
-                      </div>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setSelectedReportCard(null)}
-                      className="h-9 px-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
-                    >
-                      <X className="size-3.5 mr-1" /> {rl.closeView}
-                    </Button>
-                  </div>
-
-                  <div className="overflow-x-auto rounded-2xl border border-slate-200">
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead>
-                        <tr className="bg-[#F8FAFF] border-b border-[#E0E8F5] text-[#5B6B7F] font-black uppercase tracking-wider text-[11px]">
-                          <th className="p-3 whitespace-nowrap">Candidate Name</th>
-                          <th className="p-3 whitespace-nowrap">Applied Position</th>
-                          <th className="p-3 whitespace-nowrap">Contact / Phone</th>
-                          <th className="p-3 whitespace-nowrap">Applied Date</th>
-                          <th className="p-3 whitespace-nowrap text-center">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[#E0E8F5] font-semibold text-[#10233F]">
-                        {applications.map((app) => (
-                          <tr key={app.id} className="hover:bg-slate-50/70">
-                            <td className="p-3 whitespace-nowrap font-bold text-[#063B78]">{app.candidateName || "Candidate"}</td>
-                            <td className="p-3 whitespace-nowrap text-slate-700">{app.jobTitle}</td>
-                            <td className="p-3 whitespace-nowrap text-slate-600">📞 {app.candidateMobile || "N/A"}</td>
-                            <td className="p-3 whitespace-nowrap text-slate-500">{app.appliedDate || "Recent"}</td>
-                            <td className="p-3 whitespace-nowrap text-center">
-                              <span className="px-2.5 py-1 rounded-full bg-blue-100 text-[#063B78] text-[10px] font-black">{app.status || "Pending"}</span>
-                            </td>
-                          </tr>
-                        ))}
-                        {applications.length === 0 && (
-                          <tr>
-                            <td colSpan={5} className="p-6 text-center text-slate-500 font-bold">No candidate applications received yet.</td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {/* ── CARD 9 DETAILS: ONLINE TO CASH ── */}
-              {selectedReportCard === "online-to-cash" && (() => {
-                const userId = currentUser?.id || currentUser?.email || empIdentifier;
-                const userPkgs = dataStore.getUserPackages(userId);
-                const onlineTotal = userPkgs.reduce((acc, p) => acc + (Number(p.price) || 0), 0);
-
-                return (
-                  <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-8 shadow-xs space-y-6 animate-fade-in max-w-5xl mx-auto">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-                      <div className="flex items-center gap-3">
-                        <div className="size-12 rounded-2xl bg-[#EEF8FF] text-[#0284C7] flex items-center justify-center shrink-0">
-                          <Smartphone className="size-6" />
-                        </div>
-                        <div>
-                          <h3 className="text-lg sm:text-xl font-black text-slate-800">{rl.onlineToCashTitle}</h3>
-                          <p className="text-xs text-slate-500 font-semibold">{rl.onlineToCashSub}</p>
-                        </div>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setSelectedReportCard(null)}
-                        className="h-9 px-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
-                      >
-                        <X className="size-3.5 mr-1" /> {rl.closeView}
-                      </Button>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                      <div className="bg-sky-50/60 p-4 rounded-2xl border border-sky-100">
-                        <span className="text-[11px] font-black text-sky-800 uppercase tracking-wider block">Online Collected</span>
-                        <div className="text-2xl font-black text-sky-700 mt-1">₹{onlineTotal.toLocaleString("en-IN")}</div>
-                        <span className="text-[11px] text-sky-600 font-semibold">Digital transactions</span>
-                      </div>
-                      <div className="bg-emerald-50/60 p-4 rounded-2xl border border-emerald-100">
-                        <span className="text-[11px] font-black text-emerald-800 uppercase tracking-wider block">Cash Converted</span>
-                        <div className="text-2xl font-black text-emerald-700 mt-1">₹{onlineTotal.toLocaleString("en-IN")}</div>
-                        <span className="text-[11px] text-emerald-600 font-semibold">100% settled</span>
-                      </div>
-                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                        <span className="text-[11px] font-black text-slate-600 uppercase tracking-wider block">Pending Settlement</span>
-                        <div className="text-2xl font-black text-slate-700 mt-1">₹0</div>
-                        <span className="text-[11px] text-slate-500 font-semibold">All accounts clear</span>
-                      </div>
-                    </div>
-
-                    <div className="overflow-x-auto rounded-2xl border border-slate-200">
-                      <table className="w-full text-left text-xs border-collapse">
-                        <thead>
-                          <tr className="bg-[#F8FAFF] border-b border-[#E0E8F5] text-[#5B6B7F] font-black uppercase tracking-wider text-[11px]">
-                            <th className="p-3 whitespace-nowrap">Gateway Ref</th>
-                            <th className="p-3 whitespace-nowrap">Channel</th>
-                            <th className="p-3 whitespace-nowrap">Digital Amount</th>
-                            <th className="p-3 whitespace-nowrap">Settlement Date</th>
-                            <th className="p-3 whitespace-nowrap text-center">Cash Reconciliation</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[#E0E8F5] font-semibold text-[#10233F]">
-                          {userPkgs.map((tx) => (
-                            <tr key={tx.id} className="hover:bg-slate-50/70">
-                              <td className="p-3 font-mono text-[11px] text-[#063B78] whitespace-nowrap">
-                                {tx.razorpayPaymentId || tx.id}
-                              </td>
-                              <td className="p-3 whitespace-nowrap uppercase font-bold text-slate-700">{tx.paymentMethod}</td>
-                              <td className="p-3 whitespace-nowrap font-black text-emerald-700">₹{tx.price}</td>
-                              <td className="p-3 whitespace-nowrap text-slate-600">{tx.purchaseDate}</td>
-                              <td className="p-3 whitespace-nowrap text-center">
-                                <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black">Settled to Cash</span>
-                              </td>
-                            </tr>
-                          ))}
-                          {userPkgs.length === 0 && (
-                            <tr>
-                              <td colSpan={5} className="p-6 text-center text-slate-500 font-bold">No online gateway payments recorded.</td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* ── CARD 10 DETAILS: CASH OUT ── */}
-              {selectedReportCard === "cash-out" && (
-                <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-8 shadow-xs space-y-6 animate-fade-in max-w-5xl mx-auto">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-                    <div className="flex items-center gap-3">
-                      <div className="size-12 rounded-2xl bg-[#FEECEF] text-[#E11D48] flex items-center justify-center shrink-0">
-                        <ArrowUpRight className="size-6" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg sm:text-xl font-black text-slate-800">{rl.cashOutTitle}</h3>
-                        <p className="text-xs text-slate-500 font-semibold">{rl.cashOutSub}</p>
-                      </div>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setSelectedReportCard(null)}
-                      className="h-9 px-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
-                    >
-                      <X className="size-3.5 mr-1" /> {rl.closeView}
-                    </Button>
-                  </div>
-
-                  <div className="overflow-x-auto rounded-2xl border border-slate-200">
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead>
-                        <tr className="bg-[#F8FAFF] border-b border-[#E0E8F5] text-[#5B6B7F] font-black uppercase tracking-wider text-[11px]">
-                          <th className="p-3 whitespace-nowrap">{rl.staffName}</th>
-                          <th className="p-3 whitespace-nowrap">{rl.roleTrade}</th>
-                          <th className="p-3 whitespace-nowrap">{rl.dailyRate}</th>
-                          <th className="p-3 whitespace-nowrap text-center">{rl.daysWorked}</th>
-                          <th className="p-3 whitespace-nowrap text-right">{rl.netPayable}</th>
-                          <th className="p-3 whitespace-nowrap text-center">{rl.disbursementVoucher}</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[#E0E8F5] font-semibold text-[#10233F]">
-                        {workers.map((w: any) => {
-                          const wAtt = reportAttendanceRecords.filter((a: DailyAttendanceRecord) => a.workerId === w.id);
-                          const pCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "Present" || a.status === "Overtime").length;
-                          const hdCount = wAtt.filter((a: DailyAttendanceRecord) => a.status === "HalfDay").length;
-                          const otHours = wAtt.reduce((sum: number, a: DailyAttendanceRecord) => sum + (Number(a.overtimeHours) || 0), 0);
-                          const rate = Number(w.dailyRate) || 0;
-                          const grossWages = Math.round((pCount * rate) + (hdCount * rate * 0.5) + (otHours * (rate / 8)));
-
-                          return (
-                            <tr key={w.id} className="hover:bg-slate-50/70">
-                              <td className="p-3 whitespace-nowrap font-bold text-[#063B78]">{w.name}</td>
-                              <td className="p-3 whitespace-nowrap text-slate-600">{w.trade || "Staff"}</td>
-                              <td className="p-3 whitespace-nowrap font-black text-slate-700">₹{rate} / day</td>
-                              <td className="p-3 whitespace-nowrap text-center font-bold text-slate-800">{pCount + hdCount * 0.5} days</td>
-                              <td className="p-3 whitespace-nowrap text-right font-black text-rose-700 text-sm">₹{grossWages.toLocaleString("en-IN")}</td>
-                              <td className="p-3 whitespace-nowrap text-center">
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleDownloadPDFSalarySlip(w, "month")}
-                                  className="h-7 px-3 rounded-lg text-xs font-bold bg-[#E11D48] hover:bg-[#be123c] text-white flex items-center gap-1 mx-auto cursor-pointer"
-                                >
-                                  <Download className="size-3" />
-                                  <span>{rl.downloadSlip}</span>
-                                </Button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                        {workers.length === 0 && (
-                          <tr>
-                            <td colSpan={6} className="p-6 text-center text-slate-500 font-bold">No staff registered for cash out.</td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
+          {/* TAB: REPORTS & BILL BOOK (SHRI BILL BOOK) */}
+          <div className={activeTab === "reports" || activeTab === "billbook" ? "block" : "hidden"}>
+            <div className="w-full max-w-5xl lg:max-w-6xl mx-auto px-2 sm:px-4 mb-3">
+              <button
+                type="button"
+                onClick={() => setActiveTab("overview")}
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-[#063B78] text-[#063B78] hover:text-white border border-[#DCE5F0] text-xs font-black transition-all shadow-2xs hover:shadow cursor-pointer active:scale-95 group"
+              >
+                <ArrowLeft className="size-4 group-hover:-translate-x-1 transition-transform stroke-[2.5]" />
+                <span>{lang === "mr" ? "मागे डॅशबोर्डवर जा" : "Back to Dashboard"}</span>
+              </button>
             </div>
+            <BillBookHub
+              employerId={empIdentifier}
+              companyName={currentUser?.fullName || "Green Agro"}
+              onEditProfile={() => setActiveTab("profile")}
+              onOpenStaff={() => setActiveTab("attendance")}
+            />
           </div>
         </main>
       </div>
@@ -9240,11 +8284,11 @@ function AdminDashboardPage() {
         <div className="flex items-center justify-between overflow-x-auto no-scrollbar scroll-smooth gap-0.5 max-w-full">
           {[
             { id: "overview", label: lang === "mr" ? "डॅशबोर्ड" : (lang === "hi" ? "डैशबोर्ड" : "Dashboard"), icon: BarChart3 },
+            { id: "reports", label: lang === "mr" ? "रिपोर्ट्स" : (lang === "hi" ? "रिपोर्ट्स" : "Reports"), icon: PieChart },
             { id: "jobs", label: lang === "mr" ? "नोकऱ्या" : (lang === "hi" ? "जॉब्स" : "Jobs"), icon: BriefcaseBusiness, count: jobs.length },
             { id: "applications", label: lang === "mr" ? "अर्ज" : (lang === "hi" ? "आवेदन" : "Applications"), icon: FileText, count: applications.length },
             { id: "attendance", label: lang === "mr" ? "हजेरी" : (lang === "hi" ? "उपस्थिति" : "Attendance"), icon: CalendarCheck, count: workers.length },
             { id: "salary", label: lang === "mr" ? "पगार" : (lang === "hi" ? "वेतन" : "Salary"), icon: FileText },
-            { id: "reports", label: lang === "mr" ? "रिपोर्ट्स" : (lang === "hi" ? "रिपोर्ट्स" : "Reports"), icon: PieChart },
             { id: "profile", label: lang === "mr" ? "प्रोफाइल" : (lang === "hi" ? "प्रोफाइल" : "Profile"), icon: User },
           ].map((item) => {
             const isActive = activeTab === item.id;
@@ -9472,6 +8516,159 @@ function AdminDashboardPage() {
                 className="flex-1 py-2.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-extrabold text-xs shadow-xs transition-colors cursor-pointer text-center"
               >
                 View Jobs ({filteredJobs.length})
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── ABOUT COMPANY MODAL (Matching exact reference screenshot) ── */}
+      {isAboutCompanyModalOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-150"
+          onClick={() => setIsAboutCompanyModalOpen(false)}
+        >
+          <div
+            className="bg-white text-slate-800 w-full max-w-4xl max-h-[92vh] sm:max-h-[88vh] rounded-3xl border border-slate-200 shadow-2xl flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Top Bar */}
+            <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 bg-white sticky top-0 z-20 shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="h-[2px] w-6 bg-[#D4AF37]"></div>
+                <span className="text-[11px] font-black text-[#082F63] tracking-widest uppercase">
+                  {lang === "mr" ? "कंपनीची माहिती" : "ABOUT REAL JOB"}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAboutCompanyModalOpen(false)}
+                className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                title="Close"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+
+            {/* Scrollable Modal Body */}
+            <div className="p-4 sm:p-6 md:p-8 overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+                {/* Left Column: Image with curved gold frame and 3-item navy bar */}
+                <div className="md:col-span-5 flex flex-col">
+                  {/* Image container with gold curved edge matching screenshot */}
+                  <div className="relative h-[220px] sm:h-[260px] md:h-[300px] w-full rounded-tr-[50px] md:rounded-tr-[60px] rounded-bl-[50px] md:rounded-bl-[60px] overflow-hidden border-r-[6px] md:border-r-[8px] border-b-[6px] md:border-b-[8px] border-[#D4AF37] shadow-lg bg-slate-100">
+                    <img
+                      src="https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&q=80"
+                      alt="About Our Company Team"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-[#082F63]/10 mix-blend-multiply pointer-events-none"></div>
+                  </div>
+
+                  {/* Navy Pill Banner: Right Person • Right Job • Right Opportunity */}
+                  <div className="bg-gradient-to-r from-[#082F63] via-[#0D3B73] to-[#082F63] text-white rounded-2xl p-3 sm:p-4 shadow-xl border-t-[3px] border-[#D4AF37] mt-3 sm:mt-4">
+                    <div className="grid grid-cols-3 divide-x divide-white/15 text-center">
+                      <div className="flex flex-col items-center px-1">
+                        <div className="size-8 rounded-xl bg-[#D4AF37]/15 border border-[#D4AF37]/40 flex items-center justify-center mb-1 text-[#D4AF37]">
+                          <UserCheck className="size-4" />
+                        </div>
+                        <span className="text-[11px] sm:text-xs font-black text-white leading-tight">
+                          {t("rightPerson")}
+                        </span>
+                      </div>
+
+                      <div className="flex flex-col items-center px-1">
+                        <div className="size-8 rounded-xl bg-[#D4AF37]/15 border border-[#D4AF37]/40 flex items-center justify-center mb-1 text-[#D4AF37]">
+                          <Briefcase className="size-4" />
+                        </div>
+                        <span className="text-[11px] sm:text-xs font-black text-white leading-tight">
+                          {t("rightJob")}
+                        </span>
+                      </div>
+
+                      <div className="flex flex-col items-center px-1">
+                        <div className="size-8 rounded-xl bg-[#D4AF37]/15 border border-[#D4AF37]/40 flex items-center justify-center mb-1 text-[#D4AF37]">
+                          <Sparkles className="size-4" />
+                        </div>
+                        <span className="text-[11px] sm:text-xs font-black text-white leading-tight">
+                          {t("rightOpportunity")}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Column: Text, Tagline, and 2 Cards (Our Aim & Our Mission) */}
+                <div className="md:col-span-7 flex flex-col justify-center space-y-4">
+                  {/* Top Eyebrow Tagline */}
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                    <div className="flex items-center gap-2">
+                      <div className="h-[2px] w-6 bg-[#D4AF37]"></div>
+                      <span className="text-xs font-black text-[#082F63] tracking-[0.1em] uppercase">
+                        ABOUT REAL JOB
+                      </span>
+                    </div>
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FEF9E7] border border-[#FDE68A] text-[#B45309] font-black text-[11px] shadow-2xs">
+                      <Sparkles className="size-3 text-[#D97706]" />
+                      <span>
+                        Right Person • Right Job • Right Opportunity
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Main Heading */}
+                  <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-[#082F63] leading-tight tracking-tight">
+                    About Our Company
+                  </h2>
+
+                  {/* Description Paragraph matching user reference */}
+                  <p className="text-xs sm:text-sm font-medium text-gray-600 leading-relaxed">
+                    REAL JOB is a digital platform connecting workers and employers, launched from Ichalkaranji. We strive to make the work process easy, fast and convenient for both workers and employers.
+                  </p>
+
+                  {/* Two Cards: Our Aim & Our Mission */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pt-1">
+                    {/* Card 1: Our Aim */}
+                    <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-[0_4px_20px_rgb(0,0,0,0.06)] border border-gray-100 flex flex-col items-center text-center transition-all hover:shadow-[0_10px_25px_rgba(212,175,55,0.15)] hover:border-[#D4AF37]/40">
+                      <div className="size-11 sm:size-12 rounded-full border-2 border-[#D4AF37] flex items-center justify-center mb-3 text-[#D4AF37] bg-[#D4AF37]/5">
+                        <Target className="size-5 sm:size-6 text-[#D4AF37]" />
+                      </div>
+                      <h4 className="text-sm sm:text-base font-black text-[#082F63] mb-1.5">
+                        Our Aim
+                      </h4>
+                      <p className="text-[11px] sm:text-xs font-semibold text-gray-500 leading-relaxed">
+                        to provide employment opportunities to job seekers and to find the right workers to employers who need workers !
+                      </p>
+                    </div>
+
+                    {/* Card 2: Our Mission */}
+                    <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-[0_4px_20px_rgb(0,0,0,0.06)] border border-gray-100 flex flex-col items-center text-center transition-all hover:shadow-[0_10px_25px_rgba(212,175,55,0.15)] hover:border-[#D4AF37]/40">
+                      <div className="size-11 sm:size-12 rounded-full border-2 border-[#D4AF37] flex items-center justify-center mb-3 text-[#D4AF37] bg-[#D4AF37]/5">
+                        <Eye className="size-5 sm:size-6 text-[#D4AF37]" />
+                      </div>
+                      <h4 className="text-sm sm:text-base font-black text-[#082F63] mb-1.5">
+                        Our Mission
+                      </h4>
+                      <p className="text-[11px] sm:text-xs font-semibold text-gray-500 leading-relaxed">
+                        work opportunity for everyone and the right worker for every employer!
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Bottom Close Action Bar */}
+            <div className="p-3.5 sm:p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between gap-3 shrink-0">
+              <span className="text-[11px] font-bold text-slate-500 hidden sm:inline">
+                REAL JOB • Connecting Workers & Employers
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsAboutCompanyModalOpen(false)}
+                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-[#082F63] hover:bg-[#0A4F9E] text-white font-black text-xs shadow-xs transition-colors cursor-pointer text-center"
+              >
+                {lang === "mr" ? "बंद करा (Close)" : "Close"}
               </button>
             </div>
           </div>

@@ -29,7 +29,8 @@ import {
   X,
   UploadCloud,
   Check,
-  LogOut
+  LogOut,
+  ArrowLeft
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -197,7 +198,17 @@ function UserDashboard() {
       </div>
 
       <div className={activeTab === "applied" ? "block" : "hidden"}>
-        <div className="space-y-6 animate-in fade-in duration-500">
+        <div className="space-y-4 animate-in fade-in duration-500">
+          {/* Back to Dashboard Button */}
+          <button
+            type="button"
+            onClick={() => navigate({ to: "/dashboard", search: { tab: "overview" } })}
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-[#063B78] text-[#063B78] hover:text-white border border-[#DCE5F0] text-xs font-black transition-all shadow-2xs hover:shadow cursor-pointer active:scale-95 group"
+          >
+            <ArrowLeft className="size-4 group-hover:-translate-x-1 transition-transform stroke-[2.5]" />
+            <span>{lang === "mr" ? "मागे डॅशबोर्डवर जा" : "Back to Dashboard"}</span>
+          </button>
+
           <div className="flex items-center justify-between">
             <h2 className="text-2xl sm:text-3xl font-black text-[#10233F]">{t("appliedJobsHistory")}</h2>
             <span className="text-xs sm:text-sm font-bold text-[#5B6B7F] bg-white px-3 py-1 rounded-full border border-[#DCE5F0]">
@@ -265,7 +276,17 @@ function UserDashboard() {
 
       {/* Saved Jobs Tab */}
       <div className={activeTab === "saved" ? "block" : "hidden"}>
-        <div className="space-y-6 animate-in fade-in duration-500">
+        <div className="space-y-4 animate-in fade-in duration-500">
+          {/* Back to Dashboard Button */}
+          <button
+            type="button"
+            onClick={() => navigate({ to: "/dashboard", search: { tab: "overview" } })}
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-[#063B78] text-[#063B78] hover:text-white border border-[#DCE5F0] text-xs font-black transition-all shadow-2xs hover:shadow cursor-pointer active:scale-95 group"
+          >
+            <ArrowLeft className="size-4 group-hover:-translate-x-1 transition-transform stroke-[2.5]" />
+            <span>{lang === "mr" ? "मागे डॅशबोर्डवर जा" : "Back to Dashboard"}</span>
+          </button>
+
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-black text-[#10233F]">{t("savedJobsTab")}</h2>
             <span className="text-sm font-bold text-[#5B6B7F]">{savedJobsData.length} {t("savedJobs")}</span>
@@ -296,13 +317,31 @@ function UserDashboard() {
 
       {/* Profile Tab */}
       <div className={activeTab === "profile" ? "block" : "hidden"}>
-        <UserProfileSection user={user} />
+        <div className="space-y-4">
+          <button
+            type="button"
+            onClick={() => navigate({ to: "/dashboard", search: { tab: "overview" } })}
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-[#063B78] text-[#063B78] hover:text-white border border-[#DCE5F0] text-xs font-black transition-all shadow-2xs hover:shadow cursor-pointer active:scale-95 group mb-2"
+          >
+            <ArrowLeft className="size-4 group-hover:-translate-x-1 transition-transform stroke-[2.5]" />
+            <span>{lang === "mr" ? "मागे डॅशबोर्डवर जा" : "Back to Dashboard"}</span>
+          </button>
+          <UserProfileSection user={user} />
+        </div>
       </div>
-
 
       {/* Settings Tab Placeholder */}
       <div className={activeTab === "settings" ? "block" : "hidden"}>
-        <div className="space-y-6 animate-in fade-in duration-300">
+        <div className="space-y-4 animate-in fade-in duration-300">
+          <button
+            type="button"
+            onClick={() => navigate({ to: "/dashboard", search: { tab: "overview" } })}
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-[#063B78] text-[#063B78] hover:text-white border border-[#DCE5F0] text-xs font-black transition-all shadow-2xs hover:shadow cursor-pointer active:scale-95 group"
+          >
+            <ArrowLeft className="size-4 group-hover:-translate-x-1 transition-transform stroke-[2.5]" />
+            <span>{lang === "mr" ? "मागे डॅशबोर्डवर जा" : "Back to Dashboard"}</span>
+          </button>
+
           <h2 className="text-2xl font-black text-[#10233F] capitalize">{t("settings")}</h2>
           <div className="bg-white rounded-2xl shadow-sm border border-[#DCE5F0] p-12 text-center flex flex-col items-center justify-center">
             <div className="inline-flex items-center justify-center size-20 bg-blue-50 rounded-full mb-5 text-[#063B78]">

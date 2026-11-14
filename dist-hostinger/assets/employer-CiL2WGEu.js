@@ -1,0 +1,1 @@
+import{n as e}from"./Dashboards-LOZaeASB.js";var t=e;export{t as component};
